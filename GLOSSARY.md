@@ -13,4 +13,4 @@
 - **升级 Upgrade**:在复刻基线上被裁定允许的设计或代码改进;逐页型记账,边界由「内容改写边界」票定。
 - **终稿媒体集 Final Media Set**:本地管线产出的、上传即用的优化媒体文件(变体尺寸、格式、压缩全部完成);服务器零运行时转换。
 - **主域名 Canonical Domain**:metal-divider.com;metalpartition.com 全站 301 并入。
-- **语种 Locale**:首发 9 种:EN、ZH、ES、PT-BR、DE、FR、AR、ID、VI。
+- **语种 Locale**:首期只做 EN(完整);ZH/ES/PT-BR/DE/FR/AR/ID/VI 为二期(业主自购翻译资源后启动,引擎结论备而不用)。
