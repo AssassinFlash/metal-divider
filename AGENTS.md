@@ -19,7 +19,7 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 
 ## 2. 业主裁定(事实,按日期)
 
-- 2026-10-24(深夜补充):**多语言推迟到二期,先做完整英语站**。Polylang Business Pack 的选型结论(#3)留作二期依据,不进首期插件面;二期由业主自购翻译资源后另行启动。**Grilling 类票由执行会话按自己的推荐定稿**(业主明示:一般不会偏离建议),业主保留否决;例外是只有业主知道的事实(注册商、邮箱托管等)。原型票(视觉方向)仍归业主。
+- 2026-10-24(深夜补充):**多语言推迟到二期,先做完整英语站**。Polylang Business Pack 的选型结论(#3)留作二期依据,不进首期插件面;二期由业主自购翻译资源后另行启动。**二期引擎倾向 WPML**(业主 2026-10-24:拟淘宝购;协调者意见:官方 €99/年≈$9/月本在预算内,破解 zip 是 WP 生态后门高发区,商业询盘站不裸装,采购前验渠道)。**Grilling 类票由执行会话按自己的推荐定稿**(业主明示:一般不会偏离建议),业主保留否决;例外是只有业主知道的事实(注册商、邮箱托管等)。原型票(视觉方向)仍归业主。
 - 2026-10-24:目的地与技术栈定版,见 wayfinder map。技术栈:WordPress + WooCommerce(目录)+ ACF Pro 6.3.1 + Polylang(版本由选型票定)+ LiveCanvas + WindPress + SEOPress Pro + yansir-md + Cloudflare(免费档)+ Turnstile + CookieYes + LiteSpeed/Redis + DeepSeek 翻译 API。明确不用:Elementor 等第二构建器、WP Rocket、Wordfence、备份插件、reCAPTCHA、Complianz。
 - 分工不设默认规则:每张票由业主手动指派执行者,不预设"Claude 出规格、Codex 实现"之类的固定搭配。
 - 订阅/付费预算上限 $20/月;免费方案优先。
