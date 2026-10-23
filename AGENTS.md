@@ -49,13 +49,16 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 
 ## 6. 模型路由
 
-- 翻译管线:deepseek-flash,仅经官方 api.deepseek.com。
+- 站内翻译管线:deepseek-flash,仅经官方 api.deepseek.com。
 - 禁止临时起意用其他模型替代;任何模型改动 = 业主裁定。
 - 失败必须显性暴露(重试 + 报错),禁止静默降级。
+- 会话侧执行代理(子代理/新会话)默认用最低档(Haiku);设计或评审类活升级档位时在票上说明——这是成本纪律,与站内模型通道无关(业主 2026-10-24)。
 
 ## 7. 研究与核实
 
 外部事实只走一手来源(官方文档、实测数据);每个数字与阈值必须有来源注释。能看、能试、能查的先做再说;只问业主只有业主知道的事。代码、注释、文档里的数字都不是事实,追到业主裁定、一手证据或平台原生能力三者之一为止。
+
+**Apify 优先(业主 2026-10-24)**:凡需要搜索、外部信息验证、竞品研究、行业规则确认或资料获取,一律先用 Apify。令牌经环境变量使用,存于 `~/.config/metal-divider/apify.env`(`APIFY_TOKEN` 主用,`APIFY_TOKEN_SPARE1/2` 备用),永不写入仓库与日志;令牌按月轮换,业主每月提供新的。Apify 坏了就修——排查 Token、Actor 选择、参数、Dataset、请求格式、输出解析、timeout、rate limit——修到能用,不绕开;目标站限制某种抓取方式时,组合 Apify Actors 与其他手段(网站自身 API、sitemap、feed、页面源码、structured data、Crawl4AI/Firecrawl 等)。不允许因第一次失败就降级搜索深度或接受"找不到";换关键词、换页面、换数据源、换 Actor、换技术路径,充分调查之后仍不存在才许下"不存在"的结论。
 
 ## Agent skills
 
