@@ -1,0 +1,58 @@
+{
+ "_meta": {
+  "count": 3
+ },
+ "blogs": [
+  {
+   "handle": "design-guide",
+   "title": "design-guide | Metal Divider",
+   "article_count": 1,
+   "articles": [
+    {
+     "handle": "test-blog-6",
+     "title": "test blog 6 | Metal Divider",
+     "body_text_len": 321,
+     "zh_content_same_as_en": false
+    }
+   ]
+  },
+  {
+   "handle": "knowledge",
+   "title": "Metal Screen Hub | Metal Divider",
+   "article_count": 3,
+   "articles": [
+    {
+     "handle": "test-blog-5",
+     "title": "test blog 5 | Metal Divider",
+     "body_text_len": 318,
+     "zh_content_same_as_en": false
+    },
+    {
+     "handle": "test-blog-1",
+     "title": "test blog 1 | Metal Divider",
+     "body_text_len": 315,
+     "zh_content_same_as_en": false
+    },
+    {
+     "handle": "test-blog-2",
+     "title": "Test blog 2 | Metal Divider",
+     "body_text_len": 318,
+     "zh_content_same_as_en": false
+    }
+   ]
+  },
+  {
+   "handle": "technical",
+   "title": "Technical | Metal Divider",
+   "article_count": 1,
+   "articles": [
+    {
+     "handle": "test-blog-3",
+     "title": "Test blog 3 | Metal Divider",
+     "body_text_len": 318,
+     "zh_content_same_as_en": false
+    }
+   ]
+  }
+ ]
+}
