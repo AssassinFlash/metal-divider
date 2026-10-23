@@ -19,10 +19,7 @@ UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) research-au
 
 
 def download(rec: dict) -> str:
-    fn = rec["filename"]
-    if "/" in fn:
-        fn = fn.replace("/", "__")
-    dest = os.path.join(DEST, fn)
+    dest = os.path.join(DEST, rec["local_name"])
     if os.path.exists(dest) and os.path.getsize(dest) > 0:
         return "skip"
     if rec.get("master_src"):
@@ -50,15 +47,26 @@ def download(rec: dict) -> str:
 def main() -> None:
     man = json.load(open(MANIFEST))
     files = man["files"]
-    # attach cdn_path for HTML-sourced entries (filename field holds path w/ query)
+    # group by basename: same file may be referenced by product JSON (master_src)
+    # and by HTML with a version query -- download once per basename.
+    groups = {}
     for rec in files:
-        if not rec.get("master_src"):
-            rec.setdefault("cdn_path", rec["filename"])
-    print(f"{len(files)} files")
+        base = rec["filename"].split("/")[-1].split("?")[0]
+        g = groups.setdefault(base, [])
+        if rec.get("master_src") and not (g and g[0].get("master_src")):
+            g.insert(0, rec)
+        else:
+            g.append(rec)
+    uniq = [g[0] for g in groups.values()]
+    for rec in files:
+        base = rec["filename"].split("/")[-1].split("?")[0]
+        rec["local_name"] = base
+        rec.setdefault("cdn_path", rec["filename"])
+    print(f"{len(files)} entries -> {len(uniq)} unique files")
     n = 0
     fails = []
     with ThreadPoolExecutor(max_workers=5) as ex:
-        for rec, res in zip(files, ex.map(download, files)):
+        for rec, res in zip(uniq, ex.map(download, uniq)):
             n += 1
             if res == "fail":
                 fails.append(rec["filename"])
@@ -77,8 +85,7 @@ def main() -> None:
         return h.hexdigest()
 
     for rec in files:
-        fn = rec["filename"].replace("/", "__")
-        p = os.path.join(DEST, fn)
+        p = os.path.join(DEST, rec["local_name"])
         if os.path.exists(p) and os.path.getsize(p) > 0:
             rec["bytes"] = os.path.getsize(p)
             rec["sha256"] = sha(p)

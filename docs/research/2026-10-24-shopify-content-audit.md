@@ -31,7 +31,7 @@
 | 规格条 5 项(Pattern code / Style / Open area / Material route / Best fit) | 146/146 渲染 | 0 缺失 |
 | Pattern code | 146 唯一无重复 | tag `pattern-code` 与渲染值大小写差异 85 个,语义一致 |
 | Style | 8 个值 | 与 8 个非空系列一一对应(abstract 90 / geometric 15 / organic 16 / landscape 8 / moroccan-arabic 8 / asian 4 / vintage-retro 4 / perforated 1) |
-| Open area | 130 个为数值(6.0%–85.5%,68 个不同值);**16 个 = "Project set"(非数值,规格缺失)** | 16 个:atherton、baleine、coconut-dreaming、forrest-perforated、herringbone、hiroko、la-pante-gradient、lombok、nara-gradient、painted-daisy、papyrus、ripples、skyfall-gradient、tree-of-life、trees-by-the-lake、winderoo(完整 handle 见 products.json) |
+| Open area | 130 个为数值(6.0%–85.5%,68 个不同值);**16 个 = "Project set"(非数值,规格缺失)** | 16 个:atherton、baleine、coconut-dreaming、forrest-perforated、herringbone、hiroko、la-pente-gradient、lombok、nara-gradient、painted-daisy、papyrus、ripples、skyfall-gradient、tree-of-life、trees-by-the-lake、winderoo(完整 handle 见 products.json) |
 | Material route | 146 个全部同一值 "304 / 316 stainless" | 单一值 ⇒ 高度疑似模板默认而非逐品数据 |
 | Best fit | 仅 2 个值:Architectural screening 96 / Decorative screening 50 | 与 `pattern-source` 标签计数完全重合(parasoleil 96 / dsd 50),即由来源派生,非独立字段 |
 | Design intent | 146/146,但正文是模板:15 种变体 = 8 个风格名代入同一句式("{Style} geometry gives this screen its project read…"),标题 146 个全同 "Visual rhythm and light behavior" | 逐字对比得出 |
@@ -39,6 +39,7 @@
 | Technical FAQ(3 问) | 146/146,146 个 payload 完全相同(1 种) | 纯模板文案 |
 | body_html | 真有内容的仅约 10 个(>400 字符,如 herringbone 1113、baleine 911);其余为一句占位或空 | products.json `body_html_len` |
 | 图片 | 每产品 2–16 张(众数 8 张,59 个产品),0 个产品无图 | images 计数分布 |
+| 图片质量(产品图 1063 张,来源:产品 JSON 宽高) | 宽度 min 100 / 中位 1333 / max 3000 px;≥2000px 184 张;<600px 160 张(其中 <300px 仅 2 张:`0669__FUNK-DIVIDER-…250x500….png`、`pattern-media-zbid_62n.jpg`)。抽查下载原图尺寸与 JSON 记录一致(zelda.jpg 1024×1024、pattern-media-g3dxosvz.png 400×800,sips 实测) | 整体可用,小图集中在部分 DSD 采集图 |
 | meta description | 146/146,中位 160 字符(SEO 状态良好) | 渲染 HTML `<meta name='description'>` |
 | tags | `pattern-code` / `pattern-collection` / `pattern-style` / `pattern-source`(parasoleil 96 / dsd 50)/ `pattern-import-batch` | **注意:公开 JSON 里 tags 是逗号分隔字符串,不是数组** |
 
@@ -54,8 +55,9 @@
 
 - 产品页 146/146:**仅面包屑(Home→家)和导航翻译,`<main>` 正文与 EN 逐字符相同(diff 只差面包屑一个词)**。CJK 字符数(正文)中位约 5 个——就是「家」加个别符号。products.json 里每个产品有 `zh.verdict`,146 个全部 `en-only`。
 - 页面 24 个:同样只差面包屑(zh 与 en 的 main 文本相同或仅差「家 联系我们」级差异)。唯一例外 `appi` 页 EN 正文自带 312 个 CJK 字符——那是 Shopify 合规表单页的中文按钮文案,不是翻译。
-- 系列 9 个 / 博客 / 文章:同上,正文英文。
-- 定论:/zh 是「翻译导航 + 英文正文」的半壳。重建 9 语种时,中文正文需要从零翻译,不能从旧站搬。
+- 系列页 9 个:同上,仅面包屑「家」(zh 正文 CJK 字符 = 1)。
+- 博客列表页:zh 有部分翻译——分类名(知识/技术的/设计指南)与文章标题(测试博客 3)是中文,列表描述文案中英混杂;但文章本身是英文占位。文章详情页:仅面包屑与标题区翻译,正文英文。
+- 定论:/zh 是「翻译导航 + 英文正文」的半壳,产品/页面/系列几乎零翻译,博客列表是唯一有正文级中文的地方(内容还是 test 占位)。重建 9 语种时,中文正文需要从零翻译,不能从旧站搬。
 
 ## 5. 页面与博客底账
 
@@ -77,7 +79,8 @@
 - `data/shopify-public/media-manifest.json`:1420 个文件,每项含文件名、master_src(产品 JSON 权威 URL,带 ?v=)、宽高(产品图有)、引用位置(refs:product:/page:/collection:/home)、bytes、sha256(下载完成后回填)。
 - 文件名即来源指纹:`pattern-media-*` 629 个(产品主图/渲染)、`paralocal__*` 131 个(parasoleil 图案的本地重渲,文件名内嵌原 pattern 名)、`our-*` 91 个(自有项目照片)、`ext-*` 52 个(外部素材)、`06xx__原文件名-宽x高__hash.*` 一批(DSD 素材,原名与分辨率直接在文件名里)。这些全部可直接从 CDN 拿原图,不需要后台。
 - 与本地参考仓库 `/Users/chesterjohn/Documents/shopify-builder` 交叉:`uploaded_images.json`(500 条)中 183 个文件名与线上清单重合(主要是 our-* 项目图);`all_sourced_urls.json` 与 `batch_upload-batch-*.json`(70 条,Alibaba 供应商参考图)与线上 **0 重合**——那批参考图没有用在当前线上主题。即:线上媒体不依赖 builder 映射即可完整恢复,builder 映射只提供部分文件的本地上游线索。
-- 下载:`scripts/04_download.py`,5 并发、断点续跑(.part 临时文件 + os.replace),只下 manifest 内文件,落到 `data/media-raw/`(gitignore 排除)。
+- 下载结果(2026-10-24 完成):**1420 条清单 → 1340 个唯一文件(80 个重名 = 产品 JSON 与 HTML 双引用),585 MB,0 失败,0 空文件**;类型:png 631 / jpg 404 / webp 299 / **mp4 6**。mp4 是分类落地页(laser-cut-geometric / glass-hybrid / outdoor-privacy / chinese-style / stainless-steel)的 hero 视频,单个 10–28 MB,已一并下回。
+- 下载:`scripts/04_download.py`,5 并发、断点续跑(.part 临时文件 + os.replace),按 basename 去重,只下 manifest 内文件,落到 `data/media-raw/`(gitignore 排除)。
 
 ## 8. 发现的坑(重建时要注意)
 
