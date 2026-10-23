@@ -1,0 +1,25 @@
+# 数据与原始导出:体积大、含商业敏感候选,本地保留,不入库
+data/media-raw/
+data/shopify-admin-export/
+data/snapshots/
+*.sql
+*.sql.gz
+
+# 密钥与环境
+.env
+.env.*
+*.pem
+*license*.txt
+
+# 系统与工具噪声
+.DS_Store
+node_modules/
+vendor/
+.scratch/
+.playwright*/
+__pycache__/
+.venv/
+*.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
