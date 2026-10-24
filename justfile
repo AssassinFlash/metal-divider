@@ -2,9 +2,10 @@
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
-# Composer projects: tools/local for its local mu-plugins and router (the
-# plugins and mu-plugins of the site join this list as they land).
-php_projects := "tools/local"
+# Composer projects: tools/local for its local mu-plugins and router,
+# mu-plugins for the site's must-use plugins (the site's regular plugins join
+# this list as they land).
+php_projects := "tools/local mu-plugins"
 
 # uv projects: tools/local (md-local). The services and migrations of the
 # repository join this list as they land.
@@ -29,9 +30,20 @@ default:
 # Lint and static analysis of every chain.
 check: php-check py-check
 
-# Unit tests of every chain. tools/local's stack tests build real instances
-# with this Mac's MySQL and WP-CLI; CI, which has none of them, skips them.
-test: py-test
+# Unit tests of every chain. mu-plugins' PHPUnit runs everywhere; tools/local's
+# stack tests build real instances with this Mac's MySQL and WP-CLI; CI, which
+# has none of them, skips them.
+test: php-test py-test
+
+# The must-use plugins' smoke suite against a real instance (`just up <name>`
+# first): the security headers in real responses, the closed doors, the
+# recorder's file. CI runs it in the mu-smoke job on a bare instance.
+[positional-arguments]
+mu-smoke name="dev":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{ justfile_directory() }}/mu-plugins"
+    MD_MU_WP="just wp {{ name }}" PHP={{ php }} {{ php }} vendor/bin/phpunit --testsuite integration
 
 # Create the instance if needed, then (re)start it with this checkout's plugins.
 [positional-arguments]
@@ -117,6 +129,21 @@ php-check: php-install
         {{ php }} vendor/bin/phpcs -q
         # PHP's default 128 MB is too small once the WordPress stubs load.
         {{ php }} vendor/bin/phpstan analyse --no-progress --memory-limit=-1
+    done
+
+[private]
+php-test: php-install
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for project in {{ php_projects }}; do
+        cd "{{ justfile_directory() }}/$project"
+        # The unit tests run everywhere, CI included; the integration suite is
+        # `just mu-smoke`, which needs an instance. phpunit.xml.dist names the
+        # unit suite its default, and a project without one has nothing to run.
+        if [ -f phpunit.xml.dist ]; then
+            echo "== $project: PHPUnit"
+            {{ php }} vendor/bin/phpunit
+        fi
     done
 
 [private]
