@@ -16,11 +16,11 @@ use MetalDivider\Site\Seo\SchemaFilters;
 /**
  * Hooks MetalDivider Site into WordPress.
  *
- * The skeleton of the presentation layer (ticket #27): the ACF field
- * groups of the pattern data model, the two zero-design PDP
- * shortcodes, and the `wp md-site present` installer. The LiveCanvas
- * templates, the full WindPress volume, the compile providers and the
- * SEO plane's schema filters land with their own tickets.
+ * The presentation layer's assemblies: the ACF field groups of the
+ * pattern data model (#27), the PDP data shortcodes, the LiveCanvas
+ * templates and WindPress volume behind `wp md-site present` (#44),
+ * and the SEO plane — its configuration command `wp md-site seo` and
+ * the schema filters SEOPress's builders cannot express (#34).
  */
 final class Plugin {
 
