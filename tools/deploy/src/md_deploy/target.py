@@ -79,6 +79,11 @@ STAGING_AUTH_ENV = "MD_DEPLOY_STAGING_AUTH"
 # the entry walk stays.
 SMALL_UPLOAD_BYTES = 64 * 1024 * 1024
 
+# One batched media leg carries at most this many bytes: the host drops long
+# transfers, and a dropped leg costs the batch it was carrying (a re-run
+# skips what earlier legs already wrote).
+UPLOAD_BATCH_BYTES = 96 * 1024 * 1024
+
 # How many times one chunk of a remote transfer is retried before the step
 # fails: the host drops long connections (same platform, blueprint-measured),
 # and rsync resumes what a tar stream would restart.
@@ -368,7 +373,13 @@ class Target:
         )
 
     def _transfer(
-        self, arguments: list[str], what: str, *, link_dest: Path | None = None
+        self,
+        arguments: list[str],
+        what: str,
+        *,
+        link_dest: Path | None = None,
+        stdin: str | None = None,
+        delete: bool = True,
     ) -> None:
         """One retried rsync leg onto or off the host."""
         last = ""
@@ -377,7 +388,7 @@ class Target:
                 [
                     "rsync",
                     "-az",
-                    "--delete",
+                    *(("--delete",) if delete else ()),
                     "-e",
                     "ssh -o BatchMode=yes",
                     *_link_dest(link_dest),
@@ -386,6 +397,7 @@ class Target:
                 capture_output=True,
                 text=True,
                 check=False,
+                input=stdin,
             )
             if completed.returncode == 0:
                 return
@@ -440,24 +452,45 @@ class Target:
         base = self.path_of(relative).rstrip("/")
         if _tree_bytes(source) <= SMALL_UPLOAD_BYTES:
             # One leg for a small tree; `--delete` keeps the target a mirror
-            # of `base` exactly as the per-entry walk does.
+            # of `base` exactly as the batched walk does.
             self.shell(f"mkdir -p {shlex.quote(base)}")
             self._push_tree(source, base)
             return
-        entries = local_entries(source)
-        directories = {base}
+        # A big tree goes over in batches: one rsync leg per batch of files
+        # (`--files-from`), so a dropped connection costs one batch, not the
+        # whole tree — and re-running a leg skips the files it already wrote.
+        # Directories go first in one shell; the batch size bounds both the
+        # leg duration (the host drops long transfers) and the connection
+        # count (one per batch, never one per file).
+        self.shell(f"mkdir -p {shlex.quote(base)}")
+        entries = [e for e in local_entries(source) if e.is_file()]
+        batch: list[Path] = []
+        batch_bytes = 0
+        names_buffer: list[str] = []
+
+        def _flush() -> None:
+            if not names_buffer:
+                return
+            self._transfer(
+                [
+                    "--files-from=-",
+                    f"{source}/",
+                    f"{HOST}:{base}/",
+                ],
+                f"writing {len(batch)} file(s) ({batch_bytes} bytes) to {HOST}:{base}",
+                stdin="\n".join(names_buffer),
+                delete=False,
+            )
+
         for entry in entries:
-            local = entry.relative_to(source)
-            if entry.is_dir():
-                directories.add(f"{base}/{local}")
-            else:
-                parent = local.parent
-                directories.add(base if str(parent) == "." else f"{base}/{parent}")
-        self.shell(
-            "mkdir -p " + " ".join(shlex.quote(path) for path in sorted(directories))
-        )
-        for entry in entries:
-            self._push_entry(entry, f"{base}/{entry.relative_to(source)}")
+            size = entry.stat().st_size
+            if batch and batch_bytes + size > UPLOAD_BATCH_BYTES:
+                _flush()
+                batch, batch_bytes, names_buffer = [], 0, []
+            batch.append(entry)
+            batch_bytes += size
+            names_buffer.append(str(entry.relative_to(source)))
+        _flush()
 
     def _push_tree(self, source: Path, destination: str) -> None:
         """The whole small tree in one rsync leg, retried like `_push_entry`."""
