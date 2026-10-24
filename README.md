@@ -18,6 +18,8 @@ WordPress + WooCommerce(图案目录,无结账)+ ACF 免费版(产品规格字�
 | `mu-plugins/` | 生产 must-use 插件(安全层、错误记录等) |
 | `themes/` | 子主题(LiveCanvas/WindPress 承接呈现) |
 | `tools/local/` | 本地 WordPress 实例栈(uv 项目 `md-local`) |
+| `tools/pixel-baseline/` | 旧站像素门基准采集脚本与采集清单(#21;截图本体在 `data/pixel-baseline/`,不入库) |
+| `tools/pixel-check/` | 像素门比对工具:实例截图 vs 基准逐页型 diff + 掩膜清单(#30) |
 | `tools/php/` | 各 PHP 项目共享的 PHPCS/PHPStan 规则(PHP 8.3 锁 platform) |
 | `tools/` | 其余 just 模块与脚本(迁移、媒体终稿管线等,随建设生长) |
 | `docs/` | 规格、研究证据、验收记录 |
@@ -46,14 +48,16 @@ just wp dev plugin list   # 对实例跑 WP-CLI
 just down      # 停服务器(数据保留)
 just reset     # 删库删目录,原样重建
 just check && just test   # 静态检查与单元测试(CI 跑同一组)
+just pixel-check dev      # 像素门:实例按基准口径截图,逐页型 diff(掩膜外差异>0 则非零退出)
 ```
 
 首次使用前需要两样本机资产(都不进仓库):
 
-1. **付费件档案**——LiveCanvas、SEOPress PRO、yansir-md 的 zip 收进 `~/metal-divider-local/archives/`,SHA-256 记在 `archives.toml`。业主既有许可的收档命令(`de-linker` 数据根下的档案或快照目录作源):
+1. **付费件档案**——LiveCanvas、SEOPress PRO、yansir-md、picostrap5(基础主题)的 zip 收进 `~/metal-divider-local/archives/`,SHA-256 记在 `archives.toml`。业主既有许可与主题的收档命令(`de-linker` 数据根下的档案或快照目录作源):
    ```sh
    just archive livecanvas ~/de-linker-data/livecanvas-4.9.5
    just archive wp-seopress-pro ~/de-linker-data/20261022-2309/plugins/wp-seopress-pro
    just archive yansir-md ~/Downloads/yansir-md-1.0.1.zip
+   just archive picostrap5 ~/de-linker-data/20261022-2309/themes/picostrap5
    ```
 2. **许可键**——`~/.config/metal-divider/livecanvas.env`(`LIVECANVAS_LICENSE_KEY=…`)与 `seopress.env`(`SEOPRESS_LICENSE_KEY=…`),600 权限;缺失时 `up` 照常完成,但后台会留各自的激活提示。

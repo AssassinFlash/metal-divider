@@ -53,3 +53,60 @@ jobs:
 
       - name: just test
         run: just test
+
+  mu-smoke:
+    # The must-use plugins' smoke suite asserts properties of a real site (the
+    # five response headers with the CSP, the closed REST user list, XML-RPC
+    # off, the author redirects, the recorder's file), so it needs WordPress:
+    # this job builds the smallest one — a bare instance, no plugin face and
+    # none of the licensed archives — and runs `just mu-smoke`. MySQL is the
+    # runner image's own; phase 1 has no object cache, so no Redis is started
+    # (docs/specs/23-mu-plugins.md §5.4, branch research/spec-mu-plugins).
+    runs-on: ubuntu-24.04
+    env:
+      # The runner image's MySQL root credentials; see the MySQL step below.
+      MYSQL_PWD: root
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.3"
+          tools: composer:v2
+          coverage: none
+
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.4"
+          python-version: "3.12"
+
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+
+      # tools/local's wpcli.require_version() wants WP-CLI 2.12 (the pinned
+      # minor, versions.py); the runner image has no `wp` of its own.
+      - name: WP-CLI 2.12
+        run: |
+          curl -fsSL -o /usr/local/bin/wp https://github.com/wp-cli/wp-cli/releases/download/v2.12.0/wp-cli-2.12.0.phar
+          sudo chmod +x /usr/local/bin/wp
+          wp --version
+
+      # The stack administers MySQL as root (`mysql --user=root …`,
+      # tools/local/src/md_local/mysql.py) and the image's root is not
+      # passwordless (root/root, the runner image's own credentials), so the
+      # password rides in MYSQL_PWD: the stack's mysql calls inherit the job's
+      # environment, which is what the local stack on a Mac gets from
+      # Homebrew's passwordless root.
+      - name: MySQL for the instance
+        run: |
+          sudo systemctl start mysql
+          mysql --user=root --skip-column-names --execute 'SELECT VERSION();'
+
+      - name: a bare instance (no plugin face)
+        # No `--` separator: just passes a separator through to the recipe,
+        # and md-local's parser reads the bare `--` as an argument.
+        run: just up smoke --bare
+
+      - name: the must-use plugins' smoke suite
+        run: just mu-smoke smoke

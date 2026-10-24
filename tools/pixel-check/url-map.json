@@ -1,0 +1,1484 @@
+{
+  "ticket": "AssassinFlash/metal-divider#30",
+  "generated_at": "2026-10-24T07:31:26.345Z",
+  "sources": {
+    "baseline_manifest": "../pixel-baseline/manifest.json",
+    "baseline_manifest_sha256": "c0ae4f80415a2103d35d5f5359b420fa6c16bb55a748bfb28332276cfcb0bd86",
+    "shopify_public_sha256": {
+      "pages": "43c21333cedb493071e2ba19b65d1753f3e17737fb65835e090e9219d8835260",
+      "collections": "3d4e31a4a85013c9efb99e49e660e2518cc050780d872f663ed39a35326fb90a",
+      "products": "3f19c439fdb1da8c662abe837596fc2c67a135eea8988c089fb000e47f006f0c"
+    }
+  },
+  "rules": "spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /shop/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7/D8",
+  "summary": {
+    "total": 182,
+    "active": 170,
+    "retired": 12,
+    "activeByType": {
+      "home": 1,
+      "pages": 13,
+      "products": 146,
+      "collections": 8,
+      "collections-index": 2
+    }
+  },
+  "entries": [
+    {
+      "type": "home",
+      "slug": "home",
+      "status": "active",
+      "path": "/",
+      "ledger": "L1",
+      "baseline_url": "https://metalpartition.com/"
+    },
+    {
+      "type": "pages",
+      "slug": "contact",
+      "status": "retired",
+      "ledger": "X1",
+      "reason": "301 -> /inquiry/ (spec 08 F6)",
+      "baseline_url": "https://metalpartition.com/pages/contact"
+    },
+    {
+      "type": "pages",
+      "slug": "faqs",
+      "status": "active",
+      "path": "/pages/faqs",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/faqs"
+    },
+    {
+      "type": "pages",
+      "slug": "laser-cut-geometric-metal-screens",
+      "status": "active",
+      "path": "/pages/laser-cut-geometric-metal-screens",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/laser-cut-geometric-metal-screens"
+    },
+    {
+      "type": "pages",
+      "slug": "glass-hybrid-screens",
+      "status": "active",
+      "path": "/pages/glass-hybrid-screens",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/glass-hybrid-screens"
+    },
+    {
+      "type": "pages",
+      "slug": "outdoor-privacy-landscape-screens",
+      "status": "active",
+      "path": "/pages/outdoor-privacy-landscape-screens",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/outdoor-privacy-landscape-screens"
+    },
+    {
+      "type": "pages",
+      "slug": "chinese-style-artistic-screens",
+      "status": "active",
+      "path": "/pages/chinese-style-artistic-screens",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/chinese-style-artistic-screens"
+    },
+    {
+      "type": "pages",
+      "slug": "stainless-steel-screens",
+      "status": "active",
+      "path": "/pages/stainless-steel-screens",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/stainless-steel-screens"
+    },
+    {
+      "type": "pages",
+      "slug": "manufacturing-process",
+      "status": "active",
+      "path": "/pages/manufacturing-process",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/manufacturing-process"
+    },
+    {
+      "type": "pages",
+      "slug": "laser-cut-panels",
+      "status": "active",
+      "path": "/pages/laser-cut-panels",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/laser-cut-panels"
+    },
+    {
+      "type": "pages",
+      "slug": "perforated-panels",
+      "status": "active",
+      "path": "/pages/perforated-panels",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/perforated-panels"
+    },
+    {
+      "type": "pages",
+      "slug": "expanded-metal-panels",
+      "status": "active",
+      "path": "/pages/expanded-metal-panels",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/expanded-metal-panels"
+    },
+    {
+      "type": "pages",
+      "slug": "project-gallery",
+      "status": "active",
+      "path": "/pages/project-gallery",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/project-gallery"
+    },
+    {
+      "type": "pages",
+      "slug": "about-us",
+      "status": "active",
+      "path": "/pages/about-us",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/about-us"
+    },
+    {
+      "type": "pages",
+      "slug": "gdpr",
+      "status": "retired",
+      "ledger": "X4/D7",
+      "reason": "Consentmo compliance page, 301 -> /privacy/ (spec 08 D7)",
+      "baseline_url": "https://metalpartition.com/pages/gdpr"
+    },
+    {
+      "type": "pages",
+      "slug": "appi",
+      "status": "retired",
+      "ledger": "X4/D7",
+      "reason": "Consentmo compliance page, 301 -> /privacy/ (spec 08 D7)",
+      "baseline_url": "https://metalpartition.com/pages/appi"
+    },
+    {
+      "type": "pages",
+      "slug": "canadian-laws-compliance",
+      "status": "retired",
+      "ledger": "X4/D7",
+      "reason": "Consentmo compliance page, 301 -> /privacy/ (spec 08 D7)",
+      "baseline_url": "https://metalpartition.com/pages/canadian-laws-compliance"
+    },
+    {
+      "type": "pages",
+      "slug": "us-laws-compliance",
+      "status": "retired",
+      "ledger": "X4/D7",
+      "reason": "Consentmo compliance page, 301 -> /privacy/ (spec 08 D7)",
+      "baseline_url": "https://metalpartition.com/pages/us-laws-compliance"
+    },
+    {
+      "type": "pages",
+      "slug": "apa-nzpa",
+      "status": "retired",
+      "ledger": "X4/D7",
+      "reason": "Consentmo compliance page, 301 -> /privacy/ (spec 08 D7)",
+      "baseline_url": "https://metalpartition.com/pages/apa-nzpa"
+    },
+    {
+      "type": "pages",
+      "slug": "pdpa",
+      "status": "retired",
+      "ledger": "X4/D7",
+      "reason": "Consentmo compliance page, 301 -> /privacy/ (spec 08 D7)",
+      "baseline_url": "https://metalpartition.com/pages/pdpa"
+    },
+    {
+      "type": "pages",
+      "slug": "popia",
+      "status": "retired",
+      "ledger": "X4/D7",
+      "reason": "Consentmo compliance page, 301 -> /privacy/ (spec 08 D7)",
+      "baseline_url": "https://metalpartition.com/pages/popia"
+    },
+    {
+      "type": "pages",
+      "slug": "lgpd",
+      "status": "retired",
+      "ledger": "X4/D7",
+      "reason": "Consentmo compliance page, 301 -> /privacy/ (spec 08 D7)",
+      "baseline_url": "https://metalpartition.com/pages/lgpd"
+    },
+    {
+      "type": "pages",
+      "slug": "metal-divider",
+      "status": "retired",
+      "ledger": "X3",
+      "reason": "old landing, 301 -> / (spec 08 F5 R6)",
+      "baseline_url": "https://metalpartition.com/pages/metal-divider"
+    },
+    {
+      "type": "pages",
+      "slug": "custom-metal-divider-screens",
+      "status": "active",
+      "path": "/pages/custom-metal-divider-screens",
+      "ledger": "L5-L17",
+      "baseline_url": "https://metalpartition.com/pages/custom-metal-divider-screens"
+    },
+    {
+      "type": "pages",
+      "slug": "custom-metal-divider-screens-thank-you",
+      "status": "retired",
+      "ledger": "X2",
+      "reason": "301 -> /inquiry/thank-you/ (spec 08 F6)",
+      "baseline_url": "https://metalpartition.com/pages/custom-metal-divider-screens-thank-you"
+    },
+    {
+      "type": "products",
+      "slug": "apiary-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/apiary-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/apiary-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "akira-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/akira-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/akira-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "alhambra-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/alhambra-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/alhambra-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "athelstan-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/athelstan-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/athelstan-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "atherton-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/atherton-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/atherton-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "autumn-leaves-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/autumn-leaves-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/autumn-leaves-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "aztec-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/aztec-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/aztec-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "baleine-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/baleine-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/baleine-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "bamboo-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/bamboo-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/bamboo-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "birds-nest-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/birds-nest-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/birds-nest-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "breeze-block-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/breeze-block-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/breeze-block-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "chase-blossom-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/chase-blossom-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/chase-blossom-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "coconut-dreaming-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/coconut-dreaming-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/coconut-dreaming-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "davinci-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/davinci-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/davinci-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "floral-geo-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/floral-geo-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/floral-geo-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "forrest-perforated-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/forrest-perforated-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/forrest-perforated-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "funk-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/funk-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/funk-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "geo-criss-cross-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/geo-criss-cross-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/geo-criss-cross-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "herringbone-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/herringbone-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/herringbone-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "hiroko-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/hiroko-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/hiroko-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "indian-nights-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/indian-nights-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/indian-nights-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "kirra-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/kirra-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/kirra-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "kyoto-dynasty-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/kyoto-dynasty-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/kyoto-dynasty-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "la-pente-gradient-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/la-pente-gradient-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/la-pente-gradient-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "lace-circles-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/lace-circles-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/lace-circles-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "leaf-skeleton-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/leaf-skeleton-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/leaf-skeleton-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "leaf-vines-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/leaf-vines-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/leaf-vines-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "licorice-fern-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/licorice-fern-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/licorice-fern-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "lime-leaves-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/lime-leaves-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/lime-leaves-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "lombok-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/lombok-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/lombok-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "long-island-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/long-island-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/long-island-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "lots-of-bubbles-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/lots-of-bubbles-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/lots-of-bubbles-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "moroccan-love-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/moroccan-love-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/moroccan-love-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "nara-gradient-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/nara-gradient-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/nara-gradient-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "naughts-x-plus-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/naughts-x-plus-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/naughts-x-plus-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "noodle-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/noodle-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/noodle-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "agave-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/agave-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/agave-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "allure-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/allure-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/allure-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "anderson-ranch-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/anderson-ranch-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/anderson-ranch-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "antwerp-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/antwerp-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/antwerp-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "arboreal-i-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/arboreal-i-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/arboreal-i-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "arboreal-ii-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/arboreal-ii-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/arboreal-ii-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "aronnax-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/aronnax-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/aronnax-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "bb-leaves-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/bb-leaves-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/bb-leaves-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "birdblindc-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/birdblindc-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/birdblindc-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "bluestemc-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/bluestemc-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/bluestemc-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "boulder-flower-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/boulder-flower-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/boulder-flower-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "bronx-blue-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/bronx-blue-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/bronx-blue-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "canyon-road-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/canyon-road-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/canyon-road-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "casablanca-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/casablanca-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/casablanca-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "cellular-flow-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/cellular-flow-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/cellular-flow-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "constella-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/constella-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/constella-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "continental-flower-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/continental-flower-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/continental-flower-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "cranbrook-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/cranbrook-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/cranbrook-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "creative-moment-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/creative-moment-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/creative-moment-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "damascusc-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/damascusc-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/damascusc-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "dan-di-lion-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/dan-di-lion-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/dan-di-lion-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "dawn-grillec-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/dawn-grillec-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/dawn-grillec-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "deco-stream-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/deco-stream-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/deco-stream-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "diane-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/diane-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/diane-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "dorac-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/dorac-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/dorac-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "drift-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/drift-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/drift-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "eagle-lake-agate-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/eagle-lake-agate-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/eagle-lake-agate-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "eckleburg-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/eckleburg-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/eckleburg-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "evanston-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/evanston-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/evanston-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "falling-petals-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/falling-petals-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/falling-petals-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "fathomsc-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/fathomsc-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/fathomsc-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "flanigan-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/flanigan-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/flanigan-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "fleurs-rose-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/fleurs-rose-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/fleurs-rose-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "flight-path-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/flight-path-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/flight-path-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "floral-flow-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/floral-flow-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/floral-flow-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "painted-daisy-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/painted-daisy-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/painted-daisy-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "papyrus-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/papyrus-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/papyrus-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "pebble-creek-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/pebble-creek-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/pebble-creek-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "poseidon-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/poseidon-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/poseidon-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "quill-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/quill-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/quill-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "ripples-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/ripples-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/ripples-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "skyfall-gradient-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/skyfall-gradient-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/skyfall-gradient-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "square-rage-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/square-rage-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/square-rage-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "sunfire-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/sunfire-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/sunfire-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "the-vlahos-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/the-vlahos-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/the-vlahos-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "tiger-lily-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/tiger-lily-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/tiger-lily-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "tree-of-life-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/tree-of-life-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/tree-of-life-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "trees-by-the-lake-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/trees-by-the-lake-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/trees-by-the-lake-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "vines-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/vines-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/vines-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "winderoo-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/winderoo-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/winderoo-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "fractal-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/fractal-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/fractal-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "freestyle-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/freestyle-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/freestyle-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "geode-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/geode-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/geode-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "gingko-spread-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/gingko-spread-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/gingko-spread-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "gothamc-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/gothamc-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/gothamc-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "herrington-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/herrington-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/herrington-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "hivec-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/hivec-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/hivec-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "horus-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/horus-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/horus-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "jaali-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/jaali-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/jaali-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "jaipur-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/jaipur-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/jaipur-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "kenyan-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/kenyan-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/kenyan-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "las-palmas-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/las-palmas-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/las-palmas-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "lemon-drop-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/lemon-drop-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/lemon-drop-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "magnolia-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/magnolia-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/magnolia-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "mako-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/mako-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/mako-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "mandala-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/mandala-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/mandala-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "mariposa-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/mariposa-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/mariposa-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "marlinc-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/marlinc-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/marlinc-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "meadow-flux-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/meadow-flux-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/meadow-flux-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "metamorph-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/metamorph-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/metamorph-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "metropolis-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/metropolis-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/metropolis-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "migration-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/migration-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/migration-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "minoan-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/minoan-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/minoan-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "mission-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/mission-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/mission-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "morphosis-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/morphosis-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/morphosis-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "moulin-casse-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/moulin-casse-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/moulin-casse-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "night-life-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/night-life-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/night-life-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "nukubalavu-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/nukubalavu-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/nukubalavu-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "onion-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/onion-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/onion-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "orchid-lattice-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/orchid-lattice-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/orchid-lattice-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "passion-fruit-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/passion-fruit-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/passion-fruit-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "polypore-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/polypore-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/polypore-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "preston-iron-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/preston-iron-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/preston-iron-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "pulsar-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/pulsar-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/pulsar-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "quiet-wood-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/quiet-wood-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/quiet-wood-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "regents-parkc-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/regents-parkc-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/regents-parkc-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "rez-spine-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/rez-spine-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/rez-spine-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "rubicon-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/rubicon-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/rubicon-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "sampoerna-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/sampoerna-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/sampoerna-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "serpentine-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/serpentine-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/serpentine-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "sevillec-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/sevillec-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/sevillec-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "shattered-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/shattered-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/shattered-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "shrinerc-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/shrinerc-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/shrinerc-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "sierpinksi-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/sierpinksi-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/sierpinksi-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "spinnaker-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/spinnaker-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/spinnaker-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "sun-moon-kiva-steps-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/sun-moon-kiva-steps-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/sun-moon-kiva-steps-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "sundew-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/sundew-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/sundew-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "tafoni-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/tafoni-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/tafoni-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "taiga-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/taiga-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/taiga-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "talavera-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/talavera-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/talavera-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "tapestry-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/tapestry-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/tapestry-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "tesseractc-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/tesseractc-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/tesseractc-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "the-intercontinental-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/the-intercontinental-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/the-intercontinental-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "timothys-vine-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/timothys-vine-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/timothys-vine-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "v-maze-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/v-maze-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/v-maze-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "white-rhino-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/white-rhino-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/white-rhino-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "white-sands-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/white-sands-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/white-sands-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "wild-spinach-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/wild-spinach-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/wild-spinach-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "winter-branches-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/winter-branches-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/winter-branches-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "products",
+      "slug": "zelda-architectural-metal-screen-pattern",
+      "status": "active",
+      "path": "/pattern/zelda-architectural-metal-screen-pattern",
+      "ledger": "L2",
+      "baseline_url": "https://metalpartition.com/products/zelda-architectural-metal-screen-pattern"
+    },
+    {
+      "type": "collections",
+      "slug": "pattern-abstract",
+      "status": "active",
+      "path": "/collections/pattern-abstract",
+      "ledger": "L3",
+      "baseline_url": "https://metalpartition.com/collections/pattern-abstract"
+    },
+    {
+      "type": "collections",
+      "slug": "pattern-asian",
+      "status": "active",
+      "path": "/collections/pattern-asian",
+      "ledger": "L3",
+      "baseline_url": "https://metalpartition.com/collections/pattern-asian"
+    },
+    {
+      "type": "collections",
+      "slug": "pattern-geometric",
+      "status": "active",
+      "path": "/collections/pattern-geometric",
+      "ledger": "L3",
+      "baseline_url": "https://metalpartition.com/collections/pattern-geometric"
+    },
+    {
+      "type": "collections",
+      "slug": "pattern-gradient",
+      "status": "retired",
+      "ledger": "D8",
+      "reason": "empty collection, 301 -> /shop/ (spec 08 D8)",
+      "baseline_url": "https://metalpartition.com/collections/pattern-gradient"
+    },
+    {
+      "type": "collections",
+      "slug": "pattern-landscape",
+      "status": "active",
+      "path": "/collections/pattern-landscape",
+      "ledger": "L3",
+      "baseline_url": "https://metalpartition.com/collections/pattern-landscape"
+    },
+    {
+      "type": "collections",
+      "slug": "pattern-moroccan-arabic",
+      "status": "active",
+      "path": "/collections/pattern-moroccan-arabic",
+      "ledger": "L3",
+      "baseline_url": "https://metalpartition.com/collections/pattern-moroccan-arabic"
+    },
+    {
+      "type": "collections",
+      "slug": "pattern-organic",
+      "status": "active",
+      "path": "/collections/pattern-organic",
+      "ledger": "L3",
+      "baseline_url": "https://metalpartition.com/collections/pattern-organic"
+    },
+    {
+      "type": "collections",
+      "slug": "pattern-perforated",
+      "status": "active",
+      "path": "/collections/pattern-perforated",
+      "ledger": "L3",
+      "baseline_url": "https://metalpartition.com/collections/pattern-perforated"
+    },
+    {
+      "type": "collections",
+      "slug": "pattern-vintage-retro",
+      "status": "active",
+      "path": "/collections/pattern-vintage-retro",
+      "ledger": "L3",
+      "baseline_url": "https://metalpartition.com/collections/pattern-vintage-retro"
+    },
+    {
+      "type": "collections-index",
+      "slug": "index",
+      "status": "active",
+      "path": "/collections/",
+      "ledger": "L4",
+      "baseline_url": "https://metalpartition.com/collections/"
+    },
+    {
+      "type": "collections-index",
+      "slug": "all",
+      "status": "active",
+      "path": "/shop/",
+      "ledger": "L18 (R4)",
+      "baseline_url": "https://metalpartition.com/collections/all"
+    }
+  ]
+}

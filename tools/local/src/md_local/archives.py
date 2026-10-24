@@ -58,10 +58,11 @@ class Archive:
     sha256: str
 
 
-# What each archived plugin is: the directory the zip unpacks (its slug inside
+# What each archived package is: the directory the zip unpacks (its slug inside
 # WordPress) and the file its header sits in. yansir-md unpacks to
 # 28-wp-markdown-editor/ with the header in yansir-md.php — the install goes by
-# the real directory, not by the zip's name.
+# the real directory, not by the zip's name. picostrap5 is the base theme
+# (themes/picostrap5/), not a plugin: its header is style.css's.
 KNOWN: dict[str, tuple[str, str, str]] = {
     "livecanvas": (
         "livecanvas",
@@ -77,6 +78,11 @@ KNOWN: dict[str, tuple[str, str, str]] = {
         "28-wp-markdown-editor",
         "yansir-md.php",
         versions.YANSIR_MD_VERSION,
+    ),
+    "picostrap5": (
+        "picostrap5",
+        "style.css",
+        versions.PICOSTRAP5_VERSION,
     ),
 }
 

@@ -24,6 +24,9 @@ def plugins_of(tmp_path: Path) -> Path:
         path = plugins / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f"<?php\n/**\n * Plugin Name: X\n {line}\n */\n")
+    theme = instance.wp_content / "themes" / "picostrap5" / "style.css"
+    theme.parent.mkdir(parents=True, exist_ok=True)
+    theme.write_text(f"/*\n Version: {versions.PICOSTRAP5_VERSION}\n*/\n")
     version = instance.docroot / "wp-includes" / "version.php"
     version.parent.mkdir(parents=True)
     version.write_text(f"$wp_version = '{versions.WORDPRESS_VERSION}';\n")

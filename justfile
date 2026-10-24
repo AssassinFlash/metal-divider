@@ -2,9 +2,9 @@
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
-# Composer projects: tools/local for its local mu-plugins and router (the
-# plugins and mu-plugins of the site join this list as they land).
-php_projects := "tools/local"
+# Composer projects: the site's plugins, tools/local for its local
+# mu-plugins and router, and mu-plugins for the site's must-use plugins.
+php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
 
 # uv projects: tools/local (md-local) and tools/media (md-media). The services
 # and migrations of the repository join this list as they land.
@@ -34,9 +34,20 @@ default:
 # Lint and static analysis of every chain.
 check: php-check py-check
 
-# Unit tests of every chain. tools/local's stack tests build real instances
-# with this Mac's MySQL and WP-CLI; CI, which has none of them, skips them.
-test: py-test
+# Unit tests of every chain. The plugins' and mu-plugins' PHPUnit runs
+# everywhere; tools/local's stack tests build real instances with this Mac's
+# MySQL and WP-CLI; CI, which has none of them, skips them.
+test: php-test py-test
+
+# The must-use plugins' smoke suite against a real instance (`just up <name>`
+# first): the security headers in real responses, the closed doors, the
+# recorder's file. CI runs it in the mu-smoke job on a bare instance.
+[positional-arguments]
+mu-smoke name="dev":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{ justfile_directory() }}/mu-plugins"
+    MD_MU_WP="just wp {{ name }}" PHP={{ php }} {{ php }} vendor/bin/phpunit --testsuite integration
 
 # Create the instance if needed, then (re)start it with this checkout's plugins.
 [positional-arguments]
@@ -67,6 +78,12 @@ status:
 wp name="dev" *args:
     PHP={{ php }} {{ md_local }} wp "$@"
 
+# Install md-site's presentation files into the instance (spec 17 §4.4: the
+# WindPress volume plus the two legacy-copy guards; idempotent, safe to rerun).
+[positional-arguments]
+present name="dev": php-install
+    PHP={{ php }} {{ md_local }} wp "{{ name }}" md-site present --user=local-admin
+
 # Collect a licensed plugin into the local archives (a .zip file, or an
 # unpacked plugin directory, e.g. a snapshot's copy).
 [positional-arguments]
@@ -89,6 +106,28 @@ media-check:
 media-one *file:
     {{ md_media }} one "$@"
 
+# Pixel gate: capture the instance's pages with the baseline protocol and
+# diff them against the metalpartition.com baseline (tools/pixel-check,
+# ticket #30). Baseline = data/pixel-baseline of this checkout; extra args
+# pass through (e.g. `just pixel-check dev --filter '^home' --viewports 1440`).
+[positional-arguments]
+pixel-check name="dev" *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    registry="${MD_LOCAL_HOME:-$HOME/metal-divider-local}/instances.toml"
+    port=$(awk -v n="$name" '$0 == "[" n "]" { f=1; next } f && $1 == "port" { gsub(/[^0-9]/, "", $3); print $3; exit }' "$registry")
+    [ -n "$port" ] || { echo "pixel-check: no instance '$name' in $registry" >&2; exit 1; }
+    if [ ! -d tools/pixel-baseline/node_modules ]; then
+        echo "pixel-check: installing tools/pixel-baseline (npm ci)"
+        (cd tools/pixel-baseline && npm ci --no-fund --no-audit)
+    fi
+    if [ ! -d tools/pixel-check/node_modules ]; then
+        echo "pixel-check: installing tools/pixel-check (npm ci)"
+        (cd tools/pixel-check && npm ci --no-fund --no-audit)
+    fi
+    cd tools/pixel-check
+    exec node check.mjs --base "http://127.0.0.1:$port" "$@"
+
 [private]
 php-install:
     #!/usr/bin/env bash
@@ -104,6 +143,21 @@ php-install:
         # matches composer.json; `validate` fails, as `npm ci` and `uv --locked` do.
         {{ php }} "$composer" validate --no-check-publish
         {{ php }} "$composer" install --no-interaction --no-progress --quiet
+    done
+
+[private]
+php-test: php-install
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for project in {{ php_projects }}; do
+        cd "{{ justfile_directory() }}/$project"
+        # The unit tests run everywhere, CI included; the integration suite is
+        # `just mu-smoke`, which needs an instance. phpunit.xml.dist names the
+        # unit suite its default, and a project without one has nothing to run.
+        if [ -f phpunit.xml.dist ]; then
+            echo "== $project: PHPUnit"
+            {{ php }} vendor/bin/phpunit
+        fi
     done
 
 [private]

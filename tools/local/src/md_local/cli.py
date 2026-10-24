@@ -66,7 +66,9 @@ def up(args: argparse.Namespace) -> int:
         )
     else:
         say(f"new instance on port {instance.port}")
-        wordpress.provision(instance, php, checkout, MySQL(CREDENTIALS), say)
+        wordpress.provision(
+            instance, php, checkout, MySQL(CREDENTIALS), say, bare=args.bare
+        )
     server.start(instance, php)
     _summary(instance)
     return 0
@@ -94,7 +96,7 @@ def reset(args: argparse.Namespace) -> int:
     if instance.dir.exists():
         shutil.rmtree(instance.dir)
     say(f"redis {redis.forget(instance)}")
-    wordpress.provision(instance, php, checkout, mysql, say)
+    wordpress.provision(instance, php, checkout, mysql, say, bare=args.bare)
     server.start(instance, php)
     _summary(instance)
     return 0
@@ -176,12 +178,14 @@ def _parser() -> argparse.ArgumentParser:
         "up", up, "create the instance if it does not exist, then (re)start its server"
     )
     sub.add_argument("name")
+    _bare_argument(sub)
     sub = command("down", down, "stop the instance's server")
     sub.add_argument("name")
     sub = command(
         "reset", reset, "delete the instance's database and files, then build it again"
     )
     sub.add_argument("name")
+    _bare_argument(sub)
     sub = command("login", login, "print a one-time login link (ten minutes, one use)")
     sub.add_argument("name")
     sub.add_argument("--user", default=wordpress.ADMIN_USER)
@@ -197,6 +201,20 @@ def _parser() -> argparse.ArgumentParser:
     sub.add_argument("slug")
     sub.add_argument("source", type=Path)
     return parser
+
+
+def _bare_argument(sub: argparse.ArgumentParser) -> None:
+    """The `up`/`reset` flag that builds the instance without the plugin face.
+
+    A bare instance is the smallest WordPress the must-use plugins' smoke
+    suite needs, and it builds where the licensed archives do not exist
+    (CI; docs/specs/23-mu-plugins.md §5.4, branch research/spec-mu-plugins).
+    """
+    sub.add_argument(
+        "--bare",
+        action="store_true",
+        help="build without the plugin face and the licences: WordPress and the local stack only",
+    )
 
 
 def require_php() -> Path:

@@ -3,6 +3,8 @@ data/media-raw/
 data/media-final/
 data/shopify-admin-export/
 data/snapshots/
+data/pixel-baseline/
+data/pixel-reports/
 *.sql
 *.sql.gz
 
@@ -22,6 +24,7 @@ archives/
 .DS_Store
 node_modules/
 vendor/
+.phpunit.result.cache
 .scratch/
 .playwright*/
 __pycache__/
@@ -30,3 +33,4 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+.phpunit.result.cache

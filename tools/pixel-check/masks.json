@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "ticket": "AssassinFlash/metal-divider#30",
+  "rules": "Every mask must cite its ledger row (spec 08 §5.2, branch research/spec-content-boundary: 'no ledger line, no mask'). Classes: M1 dynamic zone (e.g. carousel frame, badge counts), M2 content-repair zone (spec 08 §3: PDP Design intent / Where-works / FAQ / Material route, fact-fix lines), M3 upgrade zone (ledger L-row named upgrade items). Masks with class M2 may carry geometry assertions (spec 08 §3.2 track (a)).",
+  "schema": {
+    "id": "string, unique",
+    "class": "one of: M1 | M2 | M3",
+    "pages": "array of globs on '<type>/<slug>', e.g. ['products/*', 'home/home', 'pages/faqs']",
+    "viewports": "optional array, subset of ['1440','390']; required for rect masks",
+    "selector": "CSS selector measured in the local DOM into document coordinates (preferred)",
+    "rect": "[x, y, w, h] in document coordinates, when no local element exists (viewport-specific)",
+    "reason": "why this region may differ",
+    "ledger": "the ledger row that authorizes this mask (spec 08 §2.2 L-row / D-decision / fact-fixes line)",
+    "geometry": "M2 only: array of block assertions, in expected block order; each entry: {selector, x:[min,max], y:[min,max], width:[min,max], height:[min,max], fontSize:[minPx,maxPx], lineHeight:[minPx,maxPx], fontFamily:'expected substring'} — every field optional, numbers inclusive"
+  },
+  "masks": []
+}

@@ -9,6 +9,11 @@ file by file); SEOPress PRO, LiveCanvas and yansir-md from the local archives
 (SHA-256 checked); Polylang NOT installed — the phase-2 slot lives in
 versions.py only. Phase 1 ships no object cache (the production host has no
 Redis), so no Redis plugin either.
+
+A bare instance (`up --bare`) skips the plugin face and the licences: it is
+the smallest WordPress the must-use plugins' smoke suite needs, buildable
+where the licensed archives do not exist — CI (docs/specs/23-mu-plugins.md
+§5.4, branch research/spec-mu-plugins).
 """
 
 from __future__ import annotations
@@ -81,9 +86,18 @@ Say = Callable[[str], None]
 
 
 def provision(
-    instance: Instance, php: Path, checkout: Checkout, mysql: MySQL, say: Say
+    instance: Instance,
+    php: Path,
+    checkout: Checkout,
+    mysql: MySQL,
+    say: Say,
+    bare: bool = False,
 ) -> None:
-    """Create the instance's database and files; the instance must not exist yet."""
+    """Create the instance's database and files; the instance must not exist yet.
+
+    With `bare`, the plugin face and the licences are skipped: WordPress, the
+    router and the local mu-plugins only.
+    """
     for directory in (
         instance.dir,
         instance.mail_dir,
@@ -134,6 +148,23 @@ def provision(
         f"url: {instance.url}/wp-admin/\nuser: {ADMIN_USER}\npassword: {admin_password}\n"
     )
 
+    if bare:
+        say("bare instance: no plugin face, no licences")
+    else:
+        _install_plugin_face(wp, say)
+        # The base theme comes from the licensed archives and the child theme
+        # activates only beside it: both are part of the face a bare instance
+        # skips (which is what lets CI, with no archives, build one).
+        _install_base_theme(instance, wp, say)
+        _link_our_themes(instance, checkout, wp, say)
+
+    _link_our_plugins(instance, checkout, wp, say)
+    wp.run("rewrite", "structure", PERMALINKS)
+    instance.provisioned_marker.write_text(datetime.now(UTC).isoformat() + "\n")
+
+
+def _install_plugin_face(wp: WpCli, say: Say) -> None:
+    """The pinned plugin face: the wp.org plugins, then the archives, then licences."""
     for slug, name, zip_url in WP_ORG_PLUGINS:
         say(name)
         wp.run("plugin", "install", str(downloads.fetch(zip_url)))
@@ -148,10 +179,6 @@ def provision(
 
     say("licences")
     licenses.apply(wp, say)
-
-    _link_our_plugins(instance, checkout, wp, say)
-    wp.run("rewrite", "structure", PERMALINKS)
-    instance.provisioned_marker.write_text(datetime.now(UTC).isoformat() + "\n")
 
 
 def refresh(instance: Instance, php: Path, checkout: Checkout, say: Say) -> None:
@@ -171,7 +198,9 @@ def refresh(instance: Instance, php: Path, checkout: Checkout, say: Say) -> None
         say(f"runs {drift}: `just reset {instance.name}` rebuilds the pinned versions")
     _install_server(instance, php, checkout)
     wp = WpCli(php, instance)
+    _install_base_theme(instance, wp, say)
     _link_our_plugins(instance, checkout, wp, say)
+    _link_our_themes(instance, checkout, wp, say)
     say("licences")
     licenses.apply(wp, say)
 
@@ -199,6 +228,9 @@ def versions_of(instance: Instance) -> dict[str, str | None]:
         "SEOPress PRO": _header(plugins / "wp-seopress-pro" / "seopress-pro.php"),
         "LiveCanvas": _header(plugins / "livecanvas" / "livecanvas-plugin-index.php"),
         "yansir-md": _header(plugins / "28-wp-markdown-editor" / "yansir-md.php"),
+        "picostrap5": _header(
+            instance.wp_content / "themes" / "picostrap5" / "style.css"
+        ),
     }
 
 
@@ -212,6 +244,7 @@ PINNED_VERSIONS: dict[str, str] = {
     "SEOPress PRO": versions.SEOPRESS_PRO_VERSION,
     "LiveCanvas": versions.LIVECANVAS_VERSION,
     "yansir-md": versions.YANSIR_MD_VERSION,
+    "picostrap5": versions.PICOSTRAP5_VERSION,
 }
 
 
@@ -226,6 +259,20 @@ def _install_server(instance: Instance, php: Path, checkout: Checkout) -> None:
             stale.unlink()
     for source in checkout.mu_plugins():
         shutil.copyfile(source, target / source.name)
+
+
+def _install_base_theme(instance: Instance, wp: WpCli, say: Say) -> None:
+    """Install the pinned picostrap5 parent theme from the local archive.
+
+    A child theme activates only beside its parent, so the base theme is in
+    place before the checkout's themes link in (spec 17 §2.1, branch
+    research/spec-theme-base).
+    """
+    if (instance.wp_content / "themes" / "picostrap5").is_dir():
+        return
+    archive = archives.verified("picostrap5")
+    say(f"picostrap5 {archive.version} (archive)")
+    wp.run("theme", "install", str(archive.path))
 
 
 def _link_our_plugins(
@@ -252,6 +299,31 @@ def _link_our_plugins(
         new = [name for name in names if name not in active]
         if new:
             wp.run("plugin", "activate", *new)
+
+
+def _link_our_themes(
+    instance: Instance, checkout: Checkout, wp: WpCli, say: Say
+) -> None:
+    """Point wp-content/themes/md-* at this checkout's themes; activate new ones."""
+    themes_dir = instance.wp_content / "themes"
+    names = [theme.name for theme in checkout.themes()]
+    for stale in themes_dir.glob("md-*"):
+        if stale.is_symlink() and stale.name not in names:
+            stale.unlink()
+    for theme in checkout.themes():
+        link = themes_dir / theme.name
+        if link.is_symlink():
+            link.unlink()
+        elif link.exists():
+            raise RuntimeError(f"{link} is a directory, not a link to a checkout")
+        link.symlink_to(theme, target_is_directory=True)
+    if names:
+        say(f"themes {', '.join(names)} -> {checkout.root}")
+        # The stylesheet option names the active theme's directory.
+        active = wp.run("option", "get", "stylesheet").strip()
+        new = [name for name in names if name != active]
+        if new:
+            wp.run("theme", "activate", *new)
 
 
 def wp_config_constants(instance: Instance) -> str:

@@ -1,0 +1,130 @@
+<?php
+/**
+ * Tests for the site guards.
+ *
+ * @package Md\Mu
+ */
+
+declare( strict_types = 1 );
+
+namespace Md\Mu\Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+
+/**
+ * The guards' header strings and interception logic, outside WordPress: the
+ * five header lines with their whole values (the CSP's whitelist pinned
+ * exactly), the predicates the two interception guards decide by, the pingback
+ * removal, and the hooks the file attaches itself with (the bootstrap's
+ * stand-ins recorded them at its load).
+ *
+ * @covers ::md_site_guards_header_lines
+ * @covers ::md_site_guards_is_author_enumeration
+ * @covers ::md_site_guards_is_users_route
+ * @covers ::md_site_guards_remove_pingback
+ */
+final class SiteGuardsTest extends TestCase {
+
+	/**
+	 * The five header lines, exactly: every header value is pinned here, and
+	 * the CSP with it — its two external faces (Turnstile, CookieYes), the
+	 * inline styles, the closed object/base/form/frame-ancestors — so a
+	 * whitelist change is a test change.
+	 */
+	public function test_the_header_lines_are_the_sites_policy(): void {
+		self::assertSame(
+			array(
+				'Strict-Transport-Security: max-age=31536000; includeSubDomains',
+				'X-Frame-Options: SAMEORIGIN',
+				'X-Content-Type-Options: nosniff',
+				'Referrer-Policy: strict-origin-when-cross-origin',
+				"Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://cdn-cookieyes.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn-cookieyes.com; font-src 'self'; connect-src 'self' https://*.cookieyes.com https://cdn-cookieyes.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+			),
+			md_site_guards_header_lines()
+		);
+	}
+
+	/**
+	 * The headers go out on `send_headers`, before anything else on that hook
+	 * can produce output; the author block likewise runs first on
+	 * `template_redirect`, ahead of WordPress's own canonical redirect that
+	 * would turn `?author=1` into the author archive's URL.
+	 */
+	public function test_the_file_attaches_itself_to_the_early_hooks(): void {
+		$hooks = $this->recorded( 'md_mu_test_hooks' );
+
+		self::assertContains( array( 'md_site_guards_headers', 1, 1 ), $hooks['send_headers'] ?? array() );
+		self::assertContains( array( 'md_site_guards_block_author_enumeration', 1, 1 ), $hooks['template_redirect'] ?? array() );
+	}
+
+	/**
+	 * XML-RPC is off through the filter WordPress documents for it, and the
+	 * RSD link (the endpoint's address in every page's head) is gone with it.
+	 */
+	public function test_xmlrpc_is_off_and_the_rsd_link_removed(): void {
+		$hooks    = $this->recorded( 'md_mu_test_hooks' );
+		$removed  = $this->recorded( 'md_mu_test_removed' );
+		$expected = array( '__return_false', 10, 1 );
+
+		self::assertContains( $expected, $hooks['xmlrpc_enabled'] ?? array() );
+		self::assertContains( array( 'rsd_link', 10 ), $removed['wp_head'] ?? array() );
+	}
+
+	/**
+	 * The pingback header is filtered out of the response, and the rest of
+	 * the headers survive the filter untouched.
+	 */
+	public function test_the_pingback_header_is_removed_and_the_rest_kept(): void {
+		$headers = array(
+			'X-Pingback'   => 'https://example.org/xmlrpc.php',
+			'Content-Type' => 'text/html; charset=UTF-8',
+		);
+
+		$kept = md_site_guards_remove_pingback( $headers );
+
+		self::assertArrayNotHasKey( 'X-Pingback', $kept );
+		self::assertSame( 'text/html; charset=UTF-8', $kept['Content-Type'] );
+	}
+
+	/**
+	 * A number in the `author` parameter is an enumeration attempt; a name,
+	 * an empty value and a missing one are not. The names are not this door's
+	 * form: WordPress answers them with a 404, not with an author archive.
+	 */
+	public function test_only_a_numeric_author_parameter_is_enumeration(): void {
+		self::assertTrue( md_site_guards_is_author_enumeration( '1' ) );
+		self::assertTrue( md_site_guards_is_author_enumeration( '42' ) );
+		self::assertTrue( md_site_guards_is_author_enumeration( '0' ) );
+
+		self::assertFalse( md_site_guards_is_author_enumeration( 'admin' ) );
+		self::assertFalse( md_site_guards_is_author_enumeration( '' ) );
+	}
+
+	/**
+	 * The users resource — the collection, one user, any casing — is the REST
+	 * door that closes; everything else, including routes that merely start
+	 * like it, is left to WordPress.
+	 */
+	public function test_the_users_route_is_recognized_and_only_it(): void {
+		self::assertTrue( md_site_guards_is_users_route( '/wp/v2/users' ) );
+		self::assertTrue( md_site_guards_is_users_route( '/wp/v2/users/1' ) );
+		self::assertTrue( md_site_guards_is_users_route( '/WP/V2/Users' ) );
+
+		self::assertFalse( md_site_guards_is_users_route( '/wp/v2/userz' ) );
+		self::assertFalse( md_site_guards_is_users_route( '/wp/v2/posts' ) );
+		self::assertFalse( md_site_guards_is_users_route( '/md/v1/users' ) );
+	}
+
+	/**
+	 * What the bootstrap's hook stand-ins recorded when the plugins loaded.
+	 *
+	 * @param string $name The global's name.
+	 *
+	 * @return array<string, array<int, array<int, int|string>>>
+	 */
+	private function recorded( string $name ): array {
+		$recorded = $GLOBALS[ $name ] ?? array();
+
+		return is_array( $recorded ) ? $recorded : array();
+	}
+}
