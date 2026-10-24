@@ -104,7 +104,9 @@ jobs:
           mysql --user=root --skip-column-names --execute 'SELECT VERSION();'
 
       - name: a bare instance (no plugin face)
-        run: just up smoke -- --bare
+        # No `--` separator: just passes a separator through to the recipe,
+        # and md-local's parser reads the bare `--` as an argument.
+        run: just up smoke --bare
 
       - name: the must-use plugins' smoke suite
         run: just mu-smoke smoke
