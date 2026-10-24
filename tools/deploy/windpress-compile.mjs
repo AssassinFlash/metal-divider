@@ -23,25 +23,40 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const { chromium } = createRequire(path.join(repo, 'plugins/md-inquiry/package.json'))('playwright');
+// Playwright resolves from the shared real-Chrome driver install (reused, per
+// the storage rules — never re-installed per tool).
+const { chromium } = createRequire('/tmp/md-share-fetch/package.json')('playwright');
 
 const [loginUrl, beforeArg] = process.argv.slice(2);
-if (!loginUrl) {
+if (!loginUrl && !process.env.MD_WP_SITE) {
 	console.error('usage: node tools/deploy/windpress-compile.mjs <one-time-login-url> [before-mtime]');
+	console.error('       or: MD_WP_SITE=https://… MD_WP_USER=… MD_WP_PASS=… node tools/deploy/windpress-compile.mjs');
 	process.exit(2);
 }
 const before = Number.parseInt(beforeArg ?? '0', 10) || 0;
 const startedAt = Date.now();
 
-const browser = await chromium.launch({ channel: 'chromium' });
+// The owner's rule (AGENTS §7): real Chrome only, never the bundled build.
+const browser = await chromium.launchPersistentContext(
+	process.env.HOME + '/metal-divider-local/md-admin-profile',
+	{ channel: 'chrome', headless: false },
+);
 try {
-	const context = await browser.newContext();
+	const context = browser;
 	const page = await context.newPage();
 
-	// The one-time login redirects into wp-admin.
-	await page.goto(loginUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-	if ( ! page.url().includes('/wp-admin/') ) {
-		throw new Error(`the login link did not reach wp-admin (at ${page.url()})`);
+	if (loginUrl) {
+		// The one-time login redirects into wp-admin.
+		await page.goto(loginUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+		if ( ! page.url().includes('/wp-admin/') ) {
+			throw new Error(`the login link did not reach wp-admin (at ${page.url()})`);
+		}
+	} else {
+		await page.goto(process.env.MD_WP_SITE.replace(/\/$/, '') + '/wp-login.php', { waitUntil: 'domcontentloaded', timeout: 60_000 });
+		await page.locator('#user_login').fill(process.env.MD_WP_USER);
+		await page.locator('#user_pass').fill(process.env.MD_WP_PASS);
+		await page.locator('#wp-submit').click();
+		await page.waitForURL(/wp-admin/, { timeout: 30_000 });
 	}
 	const origin = new URL(page.url()).origin;
 	await page.goto(`${origin}/wp-admin/admin.php?page=windpress`, { waitUntil: 'domcontentloaded', timeout: 60_000 });
