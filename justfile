@@ -12,7 +12,7 @@ php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
 
 # uv projects: tools/local (md-local). The services and migrations of the
 # repository join this list as they land.
-py_projects := "tools/local tools/template-convert tools/local tools/media tools/deploy"
+py_projects := "tools/local tools/template-convert tools/media tools/deploy"
 # uv projects: tools/local (md-local), tools/media (md-media) and
 # tools/deploy (md-deploy). The services and migrations of the repository
 # join this list as they land.
