@@ -1,0 +1,82 @@
+[
+ {
+  "id": 470506012925,
+  "path": "/pages/about-us",
+  "target": "/pages/about"
+ },
+ {
+  "id": 471701094653,
+  "path": "/collections/pattern-1",
+  "target": "/collections/arabesque-patterns"
+ },
+ {
+  "id": 471701455101,
+  "path": "/collections/test-pattern-collection",
+  "target": "/collections/modern-patterns"
+ },
+ {
+  "id": 471701487869,
+  "path": "/collections/other-example-products",
+  "target": "/collections/nature-patterns"
+ },
+ {
+  "id": 471701553405,
+  "path": "/collections/frontpage",
+  "target": "/collections/islamic-patterns"
+ },
+ {
+  "id": 471794811133,
+  "path": "/pages/railing-fence-infill-panels",
+  "target": "/pages/glass-hybrid-screens"
+ },
+ {
+  "id": 471795007741,
+  "path": "/pages/balcony-terrace-privacy-screens",
+  "target": "/pages/laser-cut-geometric-metal-screens"
+ },
+ {
+  "id": 471795106045,
+  "path": "/pages/gate-decorative-inserts",
+  "target": "/pages/outdoor-privacy-landscape-screens"
+ },
+ {
+  "id": 471795171581,
+  "path": "/pages/wall-cladding-accent-panels",
+  "target": "/pages/chinese-style-artistic-screens"
+ },
+ {
+  "id": 484193173757,
+  "path": "/pages/mashrabiya-facade-screening",
+  "target": "/pages/laser-cut-geometric-metal-screens"
+ },
+ {
+  "id": 484193206525,
+  "path": "/pages/interior-room-partitions",
+  "target": "/pages/glass-hybrid-screens"
+ },
+ {
+  "id": 485639979261,
+  "path": "/pages/mashrabiya-facade-screening-archived",
+  "target": "/pages/laser-cut-geometric-metal-screens"
+ },
+ {
+  "id": 485640012029,
+  "path": "/pages/interior-room-partitions-archived",
+  "target": "/pages/glass-hybrid-screens"
+ },
+ {
+  "id": 486444040445,
+  "path": "/pages/custom-metal-divider",
+  "target": "/pages/custom-metal-divider-screens"
+ },
+ {
+  "id": 486444073213,
+  "path": "/pages/metal-divider",
+  "target": "/pages/custom-metal-divider-screens"
+ },
+ {
+  "id": 486466552061,
+  "path": "/pages/custom-metal-divider-screens-quote",
+  "target": "/pages/custom-metal-divider-screens"
+ }
+]
