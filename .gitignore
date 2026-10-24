@@ -8,8 +8,14 @@ data/snapshots/
 # 密钥与环境
 .env
 .env.*
+*.env
 *.pem
 *license*.txt
+
+# 本地栈:付费件档案与下载,永不进仓库(AGENTS.md §4;数据根在
+# ~/metal-divider-local/,本条只是兜底,防止有人把 zip 拖进检出)
+archives/
+*.zip
 
 # 系统与工具噪声
 .DS_Store

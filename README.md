@@ -4,7 +4,7 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站。从 
 
 ## 一句话架构
 
-WordPress + WooCommerce(图案目录,无结账)+ ACF Pro(产品规格字段)+ Polylang(9 语种)+ LiveCanvas/WindPress(页面与样式)+ SEOPress Pro(SEO)+ yansir-md(Markdown 博客)+ 自研询盘插件(图案清单 + 表单 + WhatsApp,无账户)。
+WordPress + WooCommerce(图案目录,无结账)+ ACF 免费版(产品规格字段)+ LiveCanvas/WindPress(页面与样式)+ SEOPress + SEOPress Pro(SEO)+ yansir-md(Markdown 博客)+ 自研询盘插件(PDP 直接询盘:表单 + WhatsApp,无账户)。Polylang(多语言)是二期插槽,首期不装。
 
 ## 工作规则
 
@@ -17,6 +17,43 @@ WordPress + WooCommerce(图案目录,无结账)+ ACF Pro(产品规格字段)+ Po
 | `plugins/` | 自研插件(询盘链、i18n 管线等) |
 | `mu-plugins/` | 生产 must-use 插件(安全层、错误记录等) |
 | `themes/` | 子主题(LiveCanvas/WindPress 承接呈现) |
-| `tools/` | 本地栈、迁移、媒体终稿管线等 just 模块与脚本 |
+| `tools/local/` | 本地 WordPress 实例栈(uv 项目 `md-local`) |
+| `tools/php/` | 各 PHP 项目共享的 PHPCS/PHPStan 规则(PHP 8.3 锁 platform) |
+| `tools/` | 其余 just 模块与脚本(迁移、媒体终稿管线等,随建设生长) |
 | `docs/` | 规格、研究证据、验收记录 |
 | `data/` | 导出与媒体原始数据(不入库的部分在 `.gitignore`) |
+
+## 工具链(2026-10-24 本机实测,CI 钉同版)
+
+| 工具 | 版本 | 说明 |
+|---|---|---|
+| PHP | php@8.3 8.3.35 | 实例与 WP-CLI 全在 8.3 上(`brew install php@8.3`) |
+| WP-CLI | 2.12.0 | `brew install wp-cli && brew pin wp-cli` |
+| MySQL | 26.10.0 | Homebrew,socket 免密 root 管理 |
+| just | 1.59.0 | `brew install just` |
+| uv | 0.13.4 | `brew install uv` |
+| Composer | 2.10.3 | `brew install composer` |
+
+## 本地栈
+
+一个实例 `dev`,端口从 9890 起;数据根 `~/metal-divider-local/`(实例、wp.org 下载缓存、付费件档案),永不进仓库。规格见 `research/spec-local-stack` 分支 `docs/specs/14-local-stack.md`。
+
+```sh
+just up        # 建实例(首次)或刷新并(重)启动:WP 7.1.3 + Woo 11.2.1 + 插件面 + 许可注入
+just login     # 一次性登录链接(10 分钟一用,默认用户 local-admin)
+just status    # 列实例
+just wp dev plugin list   # 对实例跑 WP-CLI
+just down      # 停服务器(数据保留)
+just reset     # 删库删目录,原样重建
+just check && just test   # 静态检查与单元测试(CI 跑同一组)
+```
+
+首次使用前需要两样本机资产(都不进仓库):
+
+1. **付费件档案**——LiveCanvas、SEOPress PRO、yansir-md 的 zip 收进 `~/metal-divider-local/archives/`,SHA-256 记在 `archives.toml`。业主既有许可的收档命令(`de-linker` 数据根下的档案或快照目录作源):
+   ```sh
+   just archive livecanvas ~/de-linker-data/livecanvas-4.9.5
+   just archive wp-seopress-pro ~/de-linker-data/20261022-2309/plugins/wp-seopress-pro
+   just archive yansir-md ~/Downloads/yansir-md-1.0.1.zip
+   ```
+2. **许可键**——`~/.config/metal-divider/livecanvas.env`(`LIVECANVAS_LICENSE_KEY=…`)与 `seopress.env`(`SEOPRESS_LICENSE_KEY=…`),600 权限;缺失时 `up` 照常完成,但后台会留各自的激活提示。
