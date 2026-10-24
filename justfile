@@ -12,8 +12,15 @@ php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
 
 # uv projects: tools/local (md-local). The services and migrations of the
 # repository join this list as they land.
-py_projects := "tools/local tools/template-convert"
-
+py_projects := "tools/local tools/template-convert tools/local tools/media tools/deploy"
+# uv projects: tools/local (md-local), tools/media (md-media) and
+# tools/deploy (md-deploy). The services and migrations of the repository
+# join this list as they land.
+# `just deploy …` is the deployment pipeline: dev/staging/prod targets, the
+# rename-atomic file deploy with rollback, the snapshot every deploy carries,
+# present and the media plane (tools/deploy/deploy.just,
+# docs/specs/20-staging-deploy.md, branch research/spec-deploy).
+mod deploy "tools/deploy/deploy.just"
 # The PHP tools run on PHP 8.3, the stack's pinned version and the version
 # contract the production host must meet (docs/specs/14-local-stack.md §2.3,
 # branch research/spec-local-stack): Homebrew's php@8.3 when it is installed,
@@ -26,9 +33,14 @@ php := env("PHP", if path_exists("/opt/homebrew/opt/php@8.3/bin/php") == "true" 
 # `dev`: one instance, reused by every ticket.
 md_local := "uv run --locked --project tools/local md-local"
 
+# The final media pipeline (docs/specs/15-media-pipeline.md, branch
+# research/spec-media-pipeline). The corpus lives in data/ on this Mac and is
+# never in the repository; media-build/media-check therefore run locally only.
+md_media := "uv run --locked --project tools/media md-media"
+
 # List the recipes.
 default:
-    @just --list
+    @just --list --list-submodules
 
 # Lint and static analysis of every chain.
 check: php-check py-check
@@ -47,6 +59,16 @@ mu-smoke name="dev":
     set -euo pipefail
     cd "{{ justfile_directory() }}/mu-plugins"
     MD_MU_WP="just wp {{ name }}" PHP={{ php }} {{ php }} vendor/bin/phpunit --testsuite integration
+
+# The inquiry chain's smoke suite against a real instance (`just up <name>`
+# first): the form, the 303, the record, the queue's routing, the one test
+# mail, and the rate window — one mail per whole run, per the discipline.
+[positional-arguments]
+inquiry-smoke name="dev":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{ justfile_directory() }}/plugins/md-inquiry"
+    MD_INQUIRY_WP="just wp {{ name }}" PHP={{ php }} {{ php }} vendor/bin/phpunit --testsuite integration
 
 # Create the instance if needed, then (re)start it with this checkout's plugins.
 [positional-arguments]
@@ -107,7 +129,19 @@ templates raw=".scratch/32/raw" theme-assets="" media-state="":
 # (spec 19 §2.2 R1): brand, addresses and tokens mapped, markup intact.
 blog-fork source:
     cd tools/template-convert && uv run --locked md-template-convert --blog-source {{ source }} --plugin "{{ justfile_directory() }}/plugins/md-site"
-
+# Build the full final media set: data/media-raw -> data/media-final
+# (variants, sidecars, checkpoint state). Full corpus run, minutes.
+media-build:
+    {{ md_media }} build
+# Verify the final set: coverage, sha256, sizes, formats, gallery rules,
+# lossless pixel identity, budget. Non-zero exit = FAIL.
+media-check:
+    {{ md_media }} check
+# Produce the final single file for an owner upload, e.g.
+# `just media-one ~/Desktop/foo.jpg` (no tier ladder, spec §8.3).
+[positional-arguments]
+media-one *file:
+    {{ md_media }} one "$@"
 # Pixel gate: capture the instance's pages with the baseline protocol and
 # diff them against the metalpartition.com baseline (tools/pixel-check,
 # ticket #30). Baseline = data/pixel-baseline of this checkout; extra args

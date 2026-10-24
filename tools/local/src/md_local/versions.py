@@ -26,6 +26,12 @@ WOOCOMMERCE_VERSION = "11.2.1"
 ACF_VERSION = "6.8.10"  # ACF free (owner ruling 2026-10-24; ACF Pro is out)
 WINDPRESS_VERSION = "3.2.92"
 SEOPRESS_VERSION = "10.3"  # the free base SEOPress PRO builds on
+# The page-cache plugin of the production host (LiteSpeed Web Server runs the
+# whole Hostinger fleet, docs/specs/20-staging-deploy.md §4.1). The host is
+# the first place it does anything — the local `php -S` has no LiteSpeed
+# module, so locally it is installed and active but inert: the plugin face
+# stays identical, the behaviour differs by environment (spec 20 §2.2).
+LITESPEED_CACHE_VERSION = "7.9.2"
 
 # The paid and off-wp.org plugins, installed from the local archives
 # (~/metal-divider-local/archives/, provenance and SHA-256 in archives.toml).

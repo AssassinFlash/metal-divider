@@ -18,6 +18,7 @@ WordPress + WooCommerce(图案目录,无结账)+ ACF 免费版(产品规格字�
 | `mu-plugins/` | 生产 must-use 插件(安全层、错误记录等) |
 | `themes/` | 子主题(LiveCanvas/WindPress 承接呈现) |
 | `tools/local/` | 本地 WordPress 实例栈(uv 项目 `md-local`) |
+| `tools/deploy/` | 部署管线(uv 项目 `md-deploy` + `deploy.just`):dev/staging/prod 三 target,rename 原子切换 + rollback + DB 快照 + present + 媒体分块推送(#35);部署时人工核对表在 `docs/deploy/checklist.md` |
 | `tools/pixel-baseline/` | 旧站像素门基准采集脚本与采集清单(#21;截图本体在 `data/pixel-baseline/`,不入库) |
 | `tools/pixel-check/` | 像素门比对工具:实例截图 vs 基准逐页型 diff + 掩膜清单(#30) |
 | `tools/template-convert/` | 旧站渲染 HTML → LiveCanvas 模板与 WindPress 卷的转换管线(uv 项目 `md-template-convert`,#32;`just templates` / `just blog-fork`) |
@@ -62,3 +63,17 @@ just pixel-check dev      # 像素门:实例按基准口径截图,逐页型 diff
    just archive picostrap5 ~/de-linker-data/20261022-2309/themes/picostrap5
    ```
 2. **许可键**——`~/.config/metal-divider/livecanvas.env`(`LIVECANVAS_LICENSE_KEY=…`)与 `seopress.env`(`SEOPRESS_LICENSE_KEY=…`),600 权限;缺失时 `up` 照常完成,但后台会留各自的激活提示。
+
+## 部署管线
+
+`just deploy …`(配方与三 target 见 `tools/deploy/deploy.just`;规格 `research/spec-deploy` 分支 `docs/specs/20-staging-deploy.md`;人工核对表 `docs/deploy/checklist.md`):
+
+```sh
+just deploy drill --instance dev   # 本地实例排练:部署→回滚→再部署(每个窗口的前置)
+just deploy prod                   # 干跑;--write 才真部署(快照→构建→原子切换→present→verify)
+just deploy staging --write        # 评审站(带评审站专属 mu 件;verify 需 MD_DEPLOY_STAGING_AUTH)
+just deploy rollback --target prod --write   # rename 回上一版,零写库
+just deploy media --target staging --write --source <终稿目录>   # 媒体分块推送(前置完整备份)
+```
+
+远端 target 依赖主机侧建站票交付的 ssh 别名 `hostinger-metal-divider`(参照 de-linker 连接;凭据不入仓库)。

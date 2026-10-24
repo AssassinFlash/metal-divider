@@ -1,5 +1,6 @@
 # 数据与原始导出:体积大、含商业敏感候选,本地保留,不入库
 data/media-raw/
+data/media-final/
 data/shopify-admin-export/
 data/snapshots/
 data/pixel-baseline/

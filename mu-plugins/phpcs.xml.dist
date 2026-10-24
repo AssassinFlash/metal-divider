@@ -2,8 +2,10 @@
 <ruleset name="MD mu-plugins">
 	<description>The production must-use plugins: the shared plugin rules (tools/php/phpcs.xml) with this project's prefixes.</description>
 
+	<file>md-deploy-reset.php</file>
 	<file>md-error-recorder.php</file>
 	<file>md-site-guards.php</file>
+	<file>md-staging-guards.php</file>
 	<file>tests</file>
 
 	<rule ref="../tools/php/phpcs.xml"/>
@@ -13,7 +15,9 @@
 		after its purpose, not after the class in it.
 	-->
 	<rule ref="WordPress.Files.FileName.InvalidClassFileName">
+		<exclude-pattern>md-deploy-reset.php</exclude-pattern>
 		<exclude-pattern>md-error-recorder.php</exclude-pattern>
+		<exclude-pattern>md-staging-guards.php</exclude-pattern>
 	</rule>
 
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
