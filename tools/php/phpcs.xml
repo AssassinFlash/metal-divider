@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<ruleset name="MD PHP">
+	<description>Shared PHPCS rules of the metal-divider PHP projects (the plugins and tools/local): WordPress Coding Standards 3, WooCommerce sniffs and PHPCompatibilityWP.</description>
+
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="sp"/>
+
+	<!-- The whole stack runs PHP 8.3 (docs/specs/14-local-stack.md §2.3, branch
+	     research/spec-local-stack: the version contract the production host must
+	     meet) and WordPress 7.1. -->
+	<config name="testVersion" value="8.3-"/>
+	<config name="minimum_wp_version" value="7.1"/>
+
+	<!-- WooCommerce-Core = WordPress (WPCS 3) + WooCommerce sniffs + PHPCompatibilityWP. -->
+	<rule ref="WooCommerce-Core"/>
+
+	<!-- Classes follow PSR-4 (one class per file, named after the class). -->
+	<rule ref="WordPress.Files.FileName">
+		<exclude-pattern>includes/*</exclude-pattern>
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+</ruleset>

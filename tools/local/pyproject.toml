@@ -1,0 +1,34 @@
+[project]
+name = "md-local"
+version = "0.1.0"
+description = "Local WordPress instances of metal-divider.com on this Mac (docs/specs/14-local-stack.md, branch research/spec-local-stack)."
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+md-local = "md_local.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[build-system]
+# Range written by `uv init --package` with uv 0.13.4.
+requires = ["uv_build>=0.13.4,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.ruff.lint]
+# Ruff's defaults (E4, E7, E9, F) plus import sorting, bugbug and pyupgrade,
+# as in the de-linker blueprint this stack was cut from.
+select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
+
+[tool.mypy]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# A deprecation is fixed when it appears, not when the API is removed.
+filterwarnings = ["error"]

@@ -1,0 +1,55 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # Named, so the runner does not move when ubuntu-latest does.
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        # The stack's version contract (docs/specs/14-local-stack.md §2.3,
+        # branch research/spec-local-stack): PHP 8.3, Python 3.12, one point —
+        # a multi-version matrix would contradict "the pins are the contract".
+        php: ["8.3"]
+        python: ["3.12"]
+    # Zero secrets: no step reads secrets.*; the licensed plugin archives and
+    # licence files exist only on the owner's Mac, and the tests that would use
+    # them skip themselves here. Each action is pinned to the commit of its
+    # latest release on 2026-10-24 (`gh api repos/<owner>/<repo>/commits/<tag>`).
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          # The composer.lock files are Composer 2 locks.
+          tools: composer:v2
+          coverage: none
+
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          # The uv that wrote the uv.lock files (this Mac's, README.md).
+          version: "0.13.4"
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+          cache-dependency-glob: |
+            tools/*/uv.lock
+
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          # The just the justfile is written for.
+          tool: just@1.59.0
+
+      - name: just check
+        run: just check
+
+      - name: just test
+        run: just test

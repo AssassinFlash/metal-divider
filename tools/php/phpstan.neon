@@ -1,0 +1,10 @@
+# Shared PHPStan settings of the metal-divider PHP projects (the plugins and
+# tools/local). %rootDir% is the vendor/phpstan/phpstan of the project being
+# analysed, so each project reads the stubs from its own vendor/. The PHP
+# version (8.3) comes from that project's composer.json config.platform.php.
+includes:
+	- %rootDir%/../../szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+	# Level 8 for all code (WooCommerce core runs level 8).
+	level: 8
