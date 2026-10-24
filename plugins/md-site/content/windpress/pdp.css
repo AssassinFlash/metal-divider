@@ -2,6 +2,14 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
+/* The PDP face's breadcrumb opt-out (ticket #47): the shared default in
+ * breadcrumb.css is --display-mobile: block; this face's nav hides it on
+ * mobile (the class md-breadcrumb-hidden-mobile is on that nav). The
+ * two-class selector wins the shared single-class rule wherever the two
+ * volumes land in the import order. Placed before the carried rules —
+ * see chrome.css for the reason.
+ */
+.breadcrumb.md-breadcrumb-hidden-mobile { --display-mobile: none; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic {
 --cp-bg: #0a0a0a;
 --cp-bg-alt: #141414;

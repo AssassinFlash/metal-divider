@@ -2,6 +2,28 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
+/* The chrome partials' inline styles, moved to the volume (ticket #47,
+ * spec 19 §4.2 T2: same declarations, same elements, zero style=
+ * attributes in the templates). Placed before the carried rules: the
+ * carried block below is brace-unbalanced (the #44 extraction debt,
+ * ticket #47 comment) and would swallow rules appended after it.
+ * Selectors are the markup's own classes; the ratio utilities carry
+ * the md- prefix per the spec's naming rule.
+ */
+span.xo-menu-horizontal-v1__label { font-size: 15px; --color: rgb(0, 0, 0); color: rgb(0, 0, 0); }
+h3.xo-menu-horizontal-v1__label { font-size: 13px; }
+.xo-loader-3 { --size: 10; --color: rgb(var(--color-foreground)); --duration: 1000; }
+.xo-modal-content { --width: 50rem; --height: 80vh; --header-height: 7rem; --footer-height: 7rem; }
+.xo-modal-content__body { --width: ; --scrollbar-thumb-padding: 0rem; }
+.xo-predictive-search__left { --lg: 3; }
+.xo-predictive-search__center { --xs: 12; --lg: 9; }
+.md-ratio-100 { --xo-ratio-percent: 1.0; }
+.md-ratio-87-5 { --xo-ratio-percent: 0.875; }
+.md-ratio-177-7 { --xo-ratio-percent: 1.7772511848341233; }
+.footer-v21__grid { --xs: 12; --sm: 12; --md: 6; --lg: 3; }
+.footer-v21__block-logo-image { max-width: min(100%, 140px); }
+.footer-v21__copyright { --xs: 12; --md: 6; --lg: 6; }
+.footer-v21__copyright-payment { --xs: 12; --md: 6; --lg: 6; }
 .header-v9-top { display: none;
 background-color: var(--background-menu);
 padding: 1rem 0; }

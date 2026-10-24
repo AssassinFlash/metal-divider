@@ -2,6 +2,16 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
+/* The breadcrumb's inline styles, moved to the volume (ticket #47,
+ * spec 19 §4.2 T2): the xo-breadcrumb faces all carry these custom
+ * properties on the same elements; the PDP face opts out of the
+ * mobile default in pdp.css (its nav carries md-breadcrumb-hidden-mobile).
+ * Placed before the carried rules — see chrome.css for the reason.
+ */
+.breadcrumb { --display-mobile: block; }
+.breadcrumb__list { --justify: flex-start; }
+.breadcrumb__item--current { --display: block; }
+.breadcrumb--current { --display: block; }
 .section + .section { margin-top: var(--spacing-sections-mobile); }
 @media (min-width: 768px) {
 .section + .section { margin-top: var(--spacing-sections-desktop); }
