@@ -452,6 +452,19 @@ def deploy(
             flush=True,
         )
         actions.append("wp " + " ".join(plan.PRESENT) + " --user=1")
+        # The SEO configuration rides the same DB plane (spec 22 §9: the
+        # runbook's config surface reaches staging and production through
+        # the deploy, not by hand): templates, noindex faces, sitemap,
+        # robots.txt, schema builder posts. Its report notes the pages
+        # that are still pending; that is a report, not a failure.
+        print("deploy: seo (SEOPress configuration)", flush=True)
+        started_seo = time.monotonic()
+        target.wp(*plan.SEO, "--user=1")
+        print(
+            f"deploy: seo done in {time.monotonic() - started_seo:.1f}s",
+            flush=True,
+        )
+        actions.append("wp " + " ".join(plan.SEO) + " --user=1")
     else:
         actions.append(
             "present skipped: md-site has not landed yet (its ticket ships the "

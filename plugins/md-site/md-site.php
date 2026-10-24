@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       MetalDivider Site
- * Description:       The presentation layer of metal-divider.com: the LiveCanvas templates, the WindPress volume, present, and the pattern data shortcodes.
- * Version:           0.1.0
+ * Description:       The presentation layer of metal-divider.com: the LiveCanvas templates, the WindPress volume, present, the pattern data shortcodes, and the SEO configuration plane.
+ * Version:           0.2.0
  * Requires at least: 7.1
  * Requires PHP:      8.3
  * Author:            MetalDivider
@@ -25,5 +25,6 @@ require_once __DIR__ . '/includes/Presentation/template-functions.php';
 
 ( new Plugin(
 	new Fields\FieldGroups(),
-	new Presentation\Shortcodes()
+	new Presentation\Shortcodes(),
+	new Seo\SchemaFilters()
 ) )->register();

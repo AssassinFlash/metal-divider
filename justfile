@@ -107,6 +107,14 @@ wp name="dev" *args:
 present name="dev": php-install
     PHP={{ php }} {{ md_local }} wp "{{ name }}" md-site present --user=local-admin
 
+# Install the SEOPress configuration plane into the instance (spec 22,
+# ticket #34: title/description templates, noindex faces, sitemap, robots.txt,
+# knowledge graph, schema builder posts, /pages redirect, page metas). With
+# --check, the read-only drift report instead. Idempotent, safe to rerun.
+[positional-arguments]
+seo name="dev" *args: php-install
+    PHP={{ php }} {{ md_local }} wp "{{ name }}" md-site seo --user=local-admin {{ args }}
+
 # Collect a licensed plugin into the local archives (a .zip file, or an
 # unpacked plugin directory, e.g. a snapshot's copy).
 [positional-arguments]
