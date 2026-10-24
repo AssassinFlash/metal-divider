@@ -95,6 +95,8 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 
 ## 7. 研究与核实
 
+- **浏览器铁律(业主 2026-10-25)**:一切浏览器自动化只用**本机真 Chrome**(Playwright `channel:'chrome'` + 持久 profile `~/metal-divider-local/hpanel-profile`);禁止 Playwright 自带 Chromium、Chrome for Testing、无头替代或其他浏览器。性能评估(LiteSpeed 配置调优、加载测量、任何 Web 指标)必须真 Chrome 实测,其他浏览器的性能数据一律无效。
+
 外部事实只走一手来源(官方文档、实测数据);每个数字与阈值必须有来源注释。能看、能试、能查的先做再说;只问业主只有业主知道的事。代码、注释、文档里的数字都不是事实,追到业主裁定、一手证据或平台原生能力三者之一为止。
 
 **Apify 优先(业主 2026-10-24)**:凡需要搜索、外部信息验证、竞品研究、行业规则确认或资料获取,一律先用 Apify。令牌经环境变量使用,存于 `~/.config/metal-divider/apify.env`(`APIFY_TOKEN` 主用,`APIFY_TOKEN_SPARE1/2` 备用),永不写入仓库与日志;令牌按月轮换,业主每月提供新的。Apify 坏了就修——排查 Token、Actor 选择、参数、Dataset、请求格式、输出解析、timeout、rate limit——修到能用,不绕开;目标站限制某种抓取方式时,组合 Apify Actors 与其他手段(网站自身 API、sitemap、feed、页面源码、structured data、Crawl4AI/Firecrawl 等)。不允许因第一次失败就降级搜索深度或接受"找不到";换关键词、换页面、换数据源、换 Actor、换技术路径,充分调查之后仍不存在才许下"不存在"的结论。
