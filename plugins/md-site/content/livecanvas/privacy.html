@@ -1,0 +1,103 @@
+<!-- The privacy face (spec 08 §7, spec 19 §2.2 R3): the one policy
+     page that replaces the old site's eight Consentmo shells (none of
+     that generated text is carried over — the owner's ruling). Copy is
+     the outline's first draft, marked for the T1 adversarial review
+     (spec 08 §4.1); facts with an owner placeholder (data-center
+     location, retention years) render the spec's defaults until the
+     owner fills them (O3). Styles: privacy.css. -->
+<section class="md-privacy" id="md-privacy">
+  <div class="container-narrow">
+    <header class="privacy-head">
+      <p class="privacy-eyebrow">Privacy</p>
+      <h1>Privacy Policy</h1>
+      <p class="privacy-lede">Metal Divider is an inquiry-based B2B site: no accounts, no checkout, no payment. This page explains what personal data the inquiry chain touches and what we do with it — nothing more.</p>
+    </header>
+
+    <nav class="privacy-toc" aria-label="On this page">
+      <a href="#md-privacy-scope">Who we are and scope</a>
+      <a href="#md-privacy-what">What we collect</a>
+      <a href="#md-privacy-why">Why and legal basis</a>
+      <a href="#md-privacy-cookies">Cookies and local storage</a>
+      <a href="#md-privacy-sharing">Sharing and processors</a>
+      <a href="#md-privacy-retention">Retention</a>
+      <a href="#md-privacy-transfers">Cross-border transfers</a>
+      <a href="#md-privacy-rights">Your rights</a>
+      <a href="#md-privacy-contact">Children, security, changes, contact</a>
+    </nav>
+
+    <section id="md-privacy-scope">
+      <h2>1. Who we are and what this page covers</h2>
+      <p>Metal Divider (info@metal-divider.com) operates metal-divider.com, an inquiry-based B2B site for architectural metal screen patterns. We offer no accounts, no checkout, and no payment. The only personal data we process is what the inquiry chain needs: the inquiry form, the messages you send us, and the technical records a hosted website keeps.</p>
+    </section>
+
+    <section id="md-privacy-what">
+      <h2>2. What we collect</h2>
+      <ul>
+        <li><strong>Inquiry form</strong> — name, email, company (optional), your message, and any pattern-list entries attached at submit.</li>
+        <li><strong>Pattern list</strong> — the list you build while browsing stays in your browser's local storage; it never leaves your device except when the form submits it as part of your inquiry.</li>
+        <li><strong>Server logs</strong> — standard hosting records (IP address, timestamps, requested pages) kept for security and operation.</li>
+        <li><strong>Consent records</strong> — if the cookie banner asks for a choice, the record of that choice.</li>
+        <li><strong>WhatsApp</strong> — a conversation you start on WhatsApp happens on WhatsApp, under WhatsApp's own policies.</li>
+      </ul>
+    </section>
+
+    <section id="md-privacy-why">
+      <h2>3. Why we process it, and the legal basis</h2>
+      <p>We process inquiry data to answer your inquiry and prepare quotes — steps preceding a possible contract (GDPR Art. 6(1)(b)). Server logs run on our legitimate interest in operating a secure site (Art. 6(1)(f)). Where a choice is genuinely yours (non-essential cookies), we ask for consent (Art. 6(1)(a)). Equivalent bases apply in the other jurisdictions listed in section 8.</p>
+    </section>
+
+    <section id="md-privacy-cookies">
+      <h2>4. Cookies and local storage</h2>
+      <p>At launch the site sets only strictly necessary cookies and storage:</p>
+      <table class="privacy-table">
+        <thead><tr><th>Name</th><th>Purpose</th><th>Category</th><th>Lifetime</th></tr></thead>
+        <tbody>
+          <tr><td>Cloudflare Turnstile</td><td>Spam protection on the inquiry form</td><td>Strictly necessary</td><td>Session / short-lived</td></tr>
+          <tr><td>Session cookie</td><td>Maintains your browsing session</td><td>Strictly necessary</td><td>Session</td></tr>
+          <tr><td>Pattern list (local storage)</td><td>Keeps your pattern list between visits; never leaves your browser except with your inquiry</td><td>Strictly necessary</td><td>Until you clear it</td></tr>
+          <tr><td>CookieYes consent record</td><td>Remembers your cookie choice</td><td>Strictly necessary</td><td>Up to 12 months</td></tr>
+        </tbody>
+      </table>
+      <p>There are no analytics or advertising cookies on this site.</p>
+    </section>
+
+    <section id="md-privacy-sharing">
+      <h2>5. Sharing and processors</h2>
+      <p>We do not sell data and run no tracking pixels. Three processors see what they need to keep the site working: our hosting provider (Hostinger), our CDN/WAF (Cloudflare), and the mail infrastructure that delivers inquiry notifications. Nothing else is shared with anyone.</p>
+    </section>
+
+    <section id="md-privacy-retention">
+      <h2>6. Retention</h2>
+      <p>Inquiry records are kept for 5 years — the tracking cycle of a B2B project — then deleted or anonymized. Server logs rotate on the host's standard schedule. The pattern list in your browser stays until you clear it.</p>
+    </section>
+
+    <section id="md-privacy-transfers">
+      <h2>7. Cross-border transfers</h2>
+      <p>Our processors operate data centers outside the EEA; transfers rely on the European Commission's standard contractual clauses, supplemented where processors hold equivalent certifications. <!-- O3: data-center region to be confirmed by the owner. --></p>
+    </section>
+
+    <section id="md-privacy-rights">
+      <h2>8. Your rights</h2>
+      <p>Depending on where you are, you can access, correct, or delete your personal data, restrict or object to processing, and complain to your supervisory authority:</p>
+      <table class="privacy-table">
+        <thead><tr><th>Jurisdiction</th><th>Law</th><th>Access</th><th>Correction</th><th>Deletion</th><th>Complaint</th></tr></thead>
+        <tbody>
+          <tr><td>EU / UK</td><td>GDPR / UK GDPR</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Your DPA / the ICO</td></tr>
+          <tr><td>Brazil</td><td>LGPD</td><td>Yes</td><td>Yes</td><td>Yes</td><td>ANPD</td></tr>
+          <tr><td>South Africa</td><td>POPIA</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Information Regulator</td></tr>
+          <tr><td>Singapore / Thailand</td><td>PDPA</td><td>Yes</td><td>Yes</td><td>Yes</td><td>PDPC / PDPC Thailand</td></tr>
+          <tr><td>Japan</td><td>APPI</td><td>Yes</td><td>Yes</td><td>Yes</td><td>PPC</td></tr>
+          <tr><td>Australia / New Zealand</td><td>Privacy Act 1988 / Privacy Act 1993</td><td>Yes</td><td>Yes</td><td>Yes</td><td>OAIC / OPC</td></tr>
+          <tr><td>Canada</td><td>PIPEDA / Quebec Law 25</td><td>Yes</td><td>Yes</td><td>Yes</td><td>OPC / CAI</td></tr>
+          <tr><td>United States</td><td>CCPA-level state laws</td><td>Yes</td><td>Yes</td><td>Yes</td><td>State AG</td></tr>
+        </tbody>
+      </table>
+      <p>To exercise any right, write to <a href="mailto:info@metal-divider.com">info@metal-divider.com</a>.</p>
+    </section>
+
+    <section id="md-privacy-contact">
+      <h2>9. Children, security, changes, contact</h2>
+      <p>The site addresses professional adults; it is not directed at children. Data moves over TLS and is stored on processors' hardened infrastructure; access to inquiry records is limited to the team answering them. When this policy changes, the change appears on this page. Questions: <a href="mailto:info@metal-divider.com">info@metal-divider.com</a>.</p>
+    </section>
+  </div>
+</section>

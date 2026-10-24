@@ -1,0 +1,94 @@
+/* md-site volume: inquiry-thank-you.css — the 303 target face (spec 07
+ * D5, spec 19 §2.2 R2), same family as inquiry.css. */
+
+.md-inquiry-ty {
+  background: linear-gradient(180deg, var(--md-bg) 0%, var(--md-bg-deep) 100%);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--md-font-sans);
+  padding: 64px 0 104px;
+}
+.md-inquiry-ty .container-narrow {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+@media (min-width: 750px) {
+  .md-inquiry-ty .container-narrow { padding: 0 40px; }
+}
+.md-inquiry-ty .ty { max-width: 720px; }
+.md-inquiry-ty .check {
+  align-items: center;
+  background: rgba(37, 211, 102, 0.12);
+  border: 1px solid var(--md-whatsapp);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 56px;
+  justify-content: center;
+  margin-bottom: 24px;
+  width: 56px;
+}
+.md-inquiry-ty .check svg {
+  height: 26px;
+  stroke: var(--md-whatsapp);
+  width: 26px;
+}
+.md-inquiry-ty h1 {
+  color: #fff;
+  font-family: var(--md-font-display);
+  font-size: clamp(30px, 5vw, 44px);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.md-inquiry-ty .ty-lede {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 32px;
+}
+.md-inquiry-ty .ty-cards {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  margin-bottom: 28px;
+}
+@media (min-width: 750px) {
+  .md-inquiry-ty .ty-cards { grid-template-columns: 1fr 1fr; }
+}
+.md-inquiry-ty .ty-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 24px;
+}
+.md-inquiry-ty .ty-card h2 {
+  color: #fff;
+  font-family: var(--md-font-display);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.md-inquiry-ty .ty-card p,
+.md-inquiry-ty .ty-card li {
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.65;
+  margin: 0 0 8px;
+}
+.md-inquiry-ty .ty-card ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.md-inquiry-ty .inquiry-wa {
+  color: var(--md-whatsapp);
+  font-weight: 600;
+  text-decoration: none;
+}
+.md-inquiry-ty .inquiry-mail {
+  color: var(--md-gold);
+  font-weight: 600;
+  text-decoration: none;
+}
+.md-inquiry-ty .ty-back a {
+  color: var(--md-gold);
+  text-decoration: none;
+}
+.md-inquiry-ty .ty-back a:hover { text-decoration: underline; }

@@ -1,0 +1,51 @@
+/* md-site volume: family-perforated-panels.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+.border-2 { border-width:2px }
+.cursor-ew-resize { cursor:ew-resize }
+.h-44 { height:11rem }
+.min-h-0 { min-height:0 }
+.opacity-100 { opacity:1 }
+.pb-16 { padding-bottom:4rem }
+.w-1 { width:.25rem }
+.w-1\.5 { width:.375rem }
+#perforated-projects-template--21844034814205__perforated-projects .pp-showcase-heading {
+text-wrap: balance;
+}
+#perforated-projects-template--21844034814205__perforated-projects .pp-showcase-subheading,
+#perforated-projects-template--21844034814205__perforated-projects .pp-showcase-proof-item,
+#perforated-projects-template--21844034814205__perforated-projects .pp-showcase-testimonial {
+text-wrap: pretty;
+#perforated-projects-template--21844034814205__perforated-projects .pp-showcase-track {
+scrollbar-width: none;
+-ms-overflow-style: none;
+#perforated-projects-template--21844034814205__perforated-projects .pp-showcase-track::-webkit-scrollbar {
+display: none;
+#perforated-process-template--21844034814205__perforated_process {
+padding-top: 60px;
+padding-bottom: 60px;
+@media (min-width: 750px) {
+padding-top: 80px;
+padding-bottom: 80px;
+#perforated-process-template--21844034814205__perforated_process-lightbox { display: none; }
+#perforated-process-template--21844034814205__perforated_process-lightbox.is-open { display: flex; }
+.md-tfb6e8023 { --pt: 50;--pb: 50 }
+.md-ta566d458 { min-height: 82vh;margin: 0;padding: 0 }
+.md-t7a2e528f { background: linear-gradient(to right, rgba(20,20,20,0.88) 0%, rgba(20,20,20,0.55) 45%, rgba(20,20,20,0.15) 70%, rgba(20,20,20,0) 100%) }
+.md-tc0555a3a { background: linear-gradient(to bottom, rgba(20,20,20,0.35) 0%, rgba(20,20,20,0.55) 40%, rgba(20,20,20,0.78) 100%) }
+.md-t722f84cd { text-wrap: balance }
+.md-te73a22bd { width: 50% }
+.md-tda39a3ee {  }
+.md-t66682c10 { left: 50% }
+.md-t5e79aea9 { background-image: radial-gradient(circle, #c9a962 1px, transparent 1px);background-size: 24px 24px }
+.md-t3f9c748b { padding-top: 80px;padding-bottom: 88px }
+.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-t78970fa2 { text-wrap: pretty }
+.md-tba09eb61 { background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%) }
+.md-te05c0d99 { background-image: radial-gradient(circle at center, rgba(201,169,98,.16) 0%, transparent 68%) }
+.md-t819516cc { aspect-ratio:3/2 }
+.md-tecede96f { background-color: #141414 }
+.md-t16705960 { aspect-ratio:9/14;background-color:#0a0a0a }
+.md-t156d2b52 { --pt:0;--pb:0;--bg-color:#141414 }
+.md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }

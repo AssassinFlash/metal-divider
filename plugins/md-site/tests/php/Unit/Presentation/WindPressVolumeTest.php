@@ -69,10 +69,21 @@ final class WindPressVolumeTest extends TestCase {
 	}
 
 	/**
-	 * The exported stylesheets exist and name the tokens volume.
+	 * The exported stylesheets exist, name the tokens volume, and are
+	 * the spec's 36: tokens, chrome, the nine component volumes and the
+	 * twenty-five template volumes (spec 19 §7).
 	 */
 	public function test_files_are_the_exported_stylesheets(): void {
-		$this->assertSame( array( WindPressVolume::path() . '/tokens.css' ), WindPressVolume::files(), 'the volume export today is the design tokens alone' );
+		$files = WindPressVolume::files();
+		$this->assertContains( WindPressVolume::path() . '/tokens.css', $files, 'the tokens volume is there' );
+		$this->assertCount( 36, $files, 'spec 19 §7: 36 volumes — tokens, chrome, nine components, twenty-five templates' );
+		$volumes = glob( WindPressVolume::path() . '/*.css' );
+		$this->assertIsArray( $volumes, 'the volume directory is readable' );
+		foreach ( $volumes as $volume ) {
+			$this->assertContains( $volume, $files, basename( $volume ) . ' is exported' );
+			// CHECK-7's sibling: no version-family naming in the volumes.
+			$this->assertDoesNotMatchRegularExpression( '/-v\d+\./', basename( $volume ) );
+		}
 	}
 
 	/**

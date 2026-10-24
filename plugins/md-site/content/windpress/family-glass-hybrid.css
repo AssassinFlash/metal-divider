@@ -1,0 +1,139 @@
+/* md-site volume: family-glass-hybrid.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions {
+padding-top: 72px;
+padding-bottom: 72px;
+}
+@media (min-width: 750px) {
+padding-top: 96px;
+padding-bottom: 96px;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions [x-cloak] {
+display: none !important;
+/* Panel gallery */
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery-stack {
+position: relative;
+height: 520px;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery {
+position: absolute;
+inset: 0;
+display: flex;
+gap: 12px;
+height: 100%;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel {
+flex: 1;
+min-width: 0;
+border-radius: 12px;
+overflow: hidden;
+cursor: pointer;
+transition: flex 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+border: 1px solid rgba(255, 255, 255, 0.08);
+background: #141414;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active {
+flex: 2.5;
+border-color: rgba(201, 169, 98, 0.4);
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-img {
+width: 100%;
+object-fit: cover;
+opacity: 0.5;
+transition: opacity 0.6s ease, transform 0.6s ease;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-img {
+opacity: 1;
+transform: scale(1.02);
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-placeholder {
+align-items: center;
+justify-content: center;
+background: rgba(255,255,255,0.03);
+color: rgba(255,255,255,0.4);
+font-size: 13px;
+/* Top-left label */
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-label {
+top: 16px;
+left: 16px;
+display: inline-flex;
+gap: 6px;
+padding: 5px 10px;
+background: rgba(0, 0, 0, 0.6);
+backdrop-filter: blur(4px);
+border: 1px solid rgba(255,255,255,0.1);
+border-radius: 4px;
+font-weight: 700;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+color: #fff;
+z-index: 2;
+opacity: 0;
+transform: translateY(-8px);
+transition: all 0.4s ease 0.1s;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-label {
+transform: translateY(0);
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-label-dot {
+width: 6px;
+height: 6px;
+border-radius: 50%;
+background: #c9a962;
+/* Bottom overlay — always visible, expands on active */
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-overlay {
+bottom: 0;
+left: 0;
+right: 0;
+padding: 20px;
+background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+transition: padding 0.5s ease;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-overlay {
+padding: 24px;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-title {
+font-family: 'Playfair Display', serif;
+font-size: 16px;
+font-weight: 500;
+margin: 0;
+color: rgba(255,255,255,0.9);
+transition: all 0.4s ease;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-title {
+font-size: 20px;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-desc {
+line-height: 1.5;
+color: rgba(255,255,255,0.75);
+margin: 6px 0 0;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-desc {
+color: rgba(255,255,255,0.85);
+font-size: 14px;
+/* Mobile: horizontal scroll */
+@media (max-width: 749px) {
+height: 380px;
+overflow-x: auto;
+scroll-snap-type: x mandatory;
+-webkit-overflow-scrolling: touch;
+scrollbar-width: none;
+padding-bottom: 8px;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery::-webkit-scrollbar {
+display: none;
+flex: 0 0 78%;
+scroll-snap-align: center;
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-img { opacity: 1; }
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-label { opacity: 1; transform: none; }
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-overlay { opacity: 1; transform: none; }
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-desc { opacity: 1; height: auto; }
+#glass-hybrid-textures-template--21873710530813__glass_hybrid_textures .ght-cards-track::-webkit-scrollbar {
+@media (min-width: 768px) {
+#glass-hybrid-textures-template--21873710530813__glass_hybrid_textures .ght-cards-track {
+overflow-x: visible;
+.md-t09274b5a { --pt: 20;--pb: 20 }
+.md-t5225868c { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%);padding-top: 96px;padding-bottom: 80px }
+.md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }
+.md-tc6aa624c { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%);padding-top: 80px;padding-bottom: 80px }
+.md-t722f84cd { text-wrap: balance }
+.md-t78970fa2 { text-wrap: pretty }
+.md-taf3fcd44 { scrollbar-width: none;-ms-overflow-style: none }
+.md-t3f9c748b { padding-top: 80px;padding-bottom: 88px }
+.md-t4d66bb95 { background-color: #141414;padding-top: 80px;padding-bottom: 80px }
+.md-t80e98d4a { mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);-webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent) }
+.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-t131d2146 { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%);padding-top: 96px;padding-bottom: 96px }
+.md-t42d1ef2e { font-variant-numeric: tabular-nums }
+.md-t5790ffba { display: none }
+.md-tecede96f { background-color: #141414 }
+.md-t312247e4 { scrollbar-width: none }
+.md-t156d2b52 { --pt:0;--pb:0;--bg-color:#141414 }
+.md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }

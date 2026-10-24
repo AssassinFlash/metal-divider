@@ -1,0 +1,445 @@
+/* md-site volume: faq.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+.border-white\/\[0\.1\] { border-color:hsla(0,0%,100%,.1) }
+.bg-white\/\[0\.10\],.bg-white\/\[0\.1\] { background-color:hsla(0,0%,100%,.1) }
+.leading-\[1\.1\] { line-height:1.1 }
+.hover\:shadow-\[0_8px_32px_rgba\(201\,169\,98\,0\.1\)\]:hover { --tw-shadow:0 8px 32px rgba(201,169,98,.1);--tw-shadow-colored:0 8px 32px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.group:hover .group-hover\:shadow-\[0_8px_32px_rgba\(201\,169\,98\,0\.1\)\] { --tw-shadow:0 8px 32px rgba(201,169,98,.1);--tw-shadow-colored:0 8px 32px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.bg-\[radial-gradient\(circle_at_20\%_20\%\,rgba\(201\,169\,98\,0\.2\)_0\%\,rgba\(16\,16\,16\,0\.78\)_56\%\,rgba\(16\,16\,16\,0\.95\)_100\%\)\] { background-image:radial-gradient(circle at 20% 20%,rgba(201,169,98,.2) 0,hsla(0,0%,6%,.78) 56%,hsla(0,0%,6%,.95) 100%) }
+.bg-\[radial-gradient\(circle_at_20\%_20\%\,rgba\(201\,169\,98\,0\.2\)_0\%\,rgba\(20\,20\,20\,0\.78\)_56\%\,rgba\(20\,20\,20\,0\.95\)_100\%\)\] { background-image:radial-gradient(circle at 20% 20%,rgba(201,169,98,.2) 0,hsla(0,0%,8%,.78) 56%,hsla(0,0%,8%,.95) 100%) }
+.from-\[rgba\(0\,0\,0\,0\.2\)\] { --tw-gradient-from:rgba(0,0,0,.2) var(--tw-gradient-from-position);--tw-gradient-to:transparent var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to) }
+.leading-\[1\.2\] { line-height:1.2 }
+.shadow-\[0_4px_16px_rgba\(201\,169\,98\,0\.2\)\] { --tw-shadow:0 4px 16px rgba(201,169,98,.2);--tw-shadow-colored:0 4px 16px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.leading-\[1\.3\] { line-height:1.3 }
+.shadow-\[0_16px_40px_rgba\(0\,0\,0\,0\.3\)\] { --tw-shadow:0 16px 40px rgba(0,0,0,.3);--tw-shadow-colored:0 16px 40px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.shadow-\[0_4px_16px_rgba\(201\,169\,98\,0\.30\)\],.shadow-\[0_4px_16px_rgba\(201\,169\,98\,0\.3\)\] { --tw-shadow:0 4px 16px rgba(201,169,98,.3);--tw-shadow-colored:0 4px 16px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.shadow-\[0_4px_24px_rgba\(201\,169\,98\,0\.3\)\] { --tw-shadow:0 4px 24px rgba(201,169,98,.3);--tw-shadow-colored:0 4px 24px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.hover\:shadow-\[0_4px_16px_rgba\(201\,169\,98\,0\.3\)\]:hover { --tw-shadow:0 4px 16px rgba(201,169,98,.3);--tw-shadow-colored:0 4px 16px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.hover\:shadow-\[0_4px_16px_rgba\(37\,211\,102\,0\.3\)\]:hover { --tw-shadow:0 4px 16px rgba(37,211,102,.3);--tw-shadow-colored:0 4px 16px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.hover\:shadow-\[0_8px_24px_rgba\(201\,169\,98\,0\.3\)\]:hover { --tw-shadow:0 8px 24px rgba(201,169,98,.3);--tw-shadow-colored:0 8px 24px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.group:hover .group-hover\:shadow-\[0_0_16px_rgba\(201\,169\,98\,0\.3\)\] { --tw-shadow:0 0 16px rgba(201,169,98,.3);--tw-shadow-colored:0 0 16px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.leading-\[1\.4\] { line-height:1.4 }
+.shadow-\[0_16px_40px_rgba\(0\,0\,0\,0\.4\)\] { --tw-shadow:0 16px 40px rgba(0,0,0,.4);--tw-shadow-colored:0 16px 40px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.hover\:shadow-\[0_4px_12px_rgba\(212\,175\,55\,0\.4\)\]:hover { --tw-shadow:0 4px 12px rgba(212,175,55,.4);--tw-shadow-colored:0 4px 12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.hover\:shadow-\[0_6px_24px_rgba\(201\,169\,98\,0\.4\)\]:hover { --tw-shadow:0 6px 24px rgba(201,169,98,.4);--tw-shadow-colored:0 6px 24px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.hover\:shadow-\[0_8px_32px_rgba\(201\,169\,98\,0\.4\)\]:hover { --tw-shadow:0 8px 32px rgba(201,169,98,.4);--tw-shadow-colored:0 8px 32px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.bottom-2\.5 { bottom:.625rem }
+.right-2\.5 { right:.625rem }
+.top-1\.5 { top:.375rem }
+.mb-0\.5 { margin-bottom:.125rem }
+.mb-1\.5 { margin-bottom:.375rem }
+.mb-2\.5 { margin-bottom:.625rem }
+.mt-0\.5 { margin-top:.125rem }
+.mt-1\.5 { margin-top:.375rem }
+.h-0\.5 { height:.125rem }
+.h-1\.5 { height:.375rem }
+.h-2\.5 { height:.625rem }
+.h-3\.5 { height:.875rem }
+.w-1\.5 { width:.375rem }
+.w-2\.5 { width:.625rem }
+.w-3\.5 { width:.875rem }
+.gap-1\.5 { gap:.375rem }
+.gap-2\.5 { gap:.625rem }
+.space-y-2\.5>:not([hidden])~:not([hidden]) { --tw-space-y-reverse:0;margin-top:calc(.625rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.625rem*var(--tw-space-y-reverse)) }
+.space-y-3\.5>:not([hidden])~:not([hidden]) { --tw-space-y-reverse:0;margin-top:calc(.875rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.875rem*var(--tw-space-y-reverse)) }
+.p-1\.5 { padding:.375rem }
+.p-3\.5 { padding:.875rem }
+.px-2\.5 { padding-left:.625rem;padding-right:.625rem }
+.px-3\.5 { padding-left:.875rem;padding-right:.875rem }
+.py-1\.5 { padding-top:.375rem;padding-bottom:.375rem }
+.py-2\.5 { padding-top:.625rem;padding-bottom:.625rem }
+.py-3\.5 { padding-top:.875rem;padding-bottom:.875rem }
+.pb-0\.5 { padding-bottom:.125rem }
+.pb-1\.5 { padding-bottom:.375rem }
+.pt-3\.5 { padding-top:.875rem }
+.leading-\[1\.5\] { line-height:1.5 }
+.shadow-\[0_0_24px_rgba\(201\,169\,98\,0\.5\)\] { --tw-shadow:0 0 24px rgba(201,169,98,.5);--tw-shadow-colored:0 0 24px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.shadow-\[0_0_8px_rgba\(201\,169\,98\,0\.5\)\] { --tw-shadow:0 0 8px rgba(201,169,98,.5);--tw-shadow-colored:0 0 8px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.shadow-\[0_32px_64px_rgba\(0\,0\,0\,0\.5\)\] { --tw-shadow:0 32px 64px rgba(0,0,0,.5);--tw-shadow-colored:0 32px 64px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.shadow-\[0_8px_30px_rgb\(0\,0\,0\,0\.5\)\] { --tw-shadow:0 8px 30px rgb(0,0,0,0.5);--tw-shadow-colored:0 8px 30px var(--tw-shadow-color) }
+.shadow-\[0_8px_30px_rgb\(0\,0\,0\,0\.5\)\],.shadow-inner { box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.hover\:-translate-y-0\.5:hover { --tw-translate-y:-0.125rem }
+.hover\:-translate-y-0\.5:hover,.hover\:-translate-y-1:hover { transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.hover\:gap-2\.5:hover { gap:.625rem }
+.group:hover .group-hover\:translate-x-1,.group:hover .group-hover\:translate-y-0\.5 { transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.group:hover .group-hover\:translate-y-0\.5 { --tw-translate-y:0.125rem }
+.\[\&_li\]\:before\:mt-0\.5 li:before { content:var(--tw-content);margin-top:.125rem }
+.gap-1\.5 { gap: .375rem }
+.p-1\.5 { padding: .375rem }
+.py-2\.5 { padding-top: .625rem;
+padding-bottom: .625rem }
+.py-3\.5 { padding-top: .875rem;
+padding-bottom: .875rem }
+.mb-1\.5 { margin-bottom: .375rem }
+.mt-0\.5 { margin-top: .125rem }
+.w-2\.5 { width: .625rem }
+.w-3\.5 { width: .875rem }
+.h-0\.5 { height: .125rem }
+.h-2\.5 { height: .625rem }
+.h-3\.5 { height: .875rem }
+.shadow-\[0_8px_30px_rgb\(0\,0\,0\,0\.5\)\] { box-shadow: 0 8px 30px rgb(0, 0, 0, 0.5) }
+.hover\:-translate-y-0\.5:hover { transform: translateY(-.125rem) }
+.leading-\[1\.6\] { line-height:1.6 }
+.shadow-\[0_15px_30px_rgba\(0\,0\,0\,0\.6\)\] { --tw-shadow:0 15px 30px rgba(0,0,0,.6);--tw-shadow-colored:0 15px 30px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.shadow-\[0_20px_60px_rgba\(0\,0\,0\,0\.6\)\] { --tw-shadow:0 20px 60px rgba(0,0,0,.6);--tw-shadow-colored:0 20px 60px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.leading-\[1\.7\] { line-height:1.7 }
+.bg-\[linear-gradient\(135deg\,rgba\(201\,169\,98\,0\.24\)\,rgba\(20\,20\,20\,0\.8\)\)\] { background-image:linear-gradient(135deg,rgba(201,169,98,.24),hsla(0,0%,8%,.8)) }
+@media (min-width:768px) {
+.md\:leading-\[1\.8\] { line-height:1.8 }
+}
+@media screen and (max-width: 749px) {
+.active .product__xr-button:not([data-shopify-xr-hidden]) { display: block; }
+.bg-current { background-color:currentColor }
+.border-b,.border-y { border-bottom-width:1px }
+.border-b { border-bottom-width: 1px }
+.border-y { border-top-width:1px }
+.divide-y>:not([hidden])~:not([hidden]) { --tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse)) }
+.flex-shrink-0 { flex-shrink:0 }
+.flex-shrink-0 { flex-shrink: 0 }
+.flex-wrap { flex-wrap:wrap }
+.flex-wrap { flex-wrap: wrap }
+.gap-10 { gap: 1rem; }
+.gap-10 { gap:2.5rem }
+.gap-10 { gap: 2.5rem }
+.gap-12 { gap:3rem }
+.gap-12 { gap: 3rem }
+.gap-px { gap:1px }
+.grid-cols-2 { grid-template-columns:repeat(2,minmax(0,1fr)) }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+.group:hover .group-hover\:w-full { width:100% }
+.group:hover .group-hover\:-translate-y-1 { --tw-translate-y:-0.25rem }
+.group:hover .group-hover\:-translate-y-1,.group:hover .group-hover\:translate-x-0 { transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.group:hover .group-hover\:translate-x-0 { --tw-translate-x:0px }
+.group:hover .group-hover\:translate-x-1 { --tw-translate-x:0.25rem }
+.group:hover .group-hover\:scale-105 { --tw-scale-x:1.05;--tw-scale-y:1.05 }
+.group:hover .group-hover\:scale-105,.group:hover .group-hover\:scale-110 { transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.group:hover .group-hover\:scale-110 { --tw-scale-x:1.1;--tw-scale-y:1.1 }
+.group:hover .group-hover\:scale-\[1\.02\] { --tw-scale-x:1.02;--tw-scale-y:1.02 }
+.group:hover .group-hover\:scale-\[1\.02\],.group:hover .group-hover\:scale-\[1\.03\] { transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.group:hover .group-hover\:scale-\[1\.03\] { --tw-scale-x:1.03;--tw-scale-y:1.03 }
+.group:hover .group-hover\:scale-\[1\.04\] { --tw-scale-x:1.04;--tw-scale-y:1.04 }
+.group:hover .group-hover\:scale-\[1\.04\],.group:hover .group-hover\:scale-\[1\.05\] { transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.group:hover .group-hover\:scale-\[1\.05\] { --tw-scale-x:1.05;--tw-scale-y:1.05 }
+.group:hover .group-hover\:scale-\[1\.06\] { --tw-scale-x:1.06;--tw-scale-y:1.06;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.group:hover .group-hover\:border-\[\#c9a962\] { --tw-border-opacity:1;border-color:rgb(201 169 98/var(--tw-border-opacity,1)) }
+.group:hover .group-hover\:border-\[\#c9a962\]\/30 { border-color:rgba(201,169,98,.3) }
+.group:hover .group-hover\:border-\[\#c9a962\]\/50 { border-color:rgba(201,169,98,.5) }
+.group:hover .group-hover\:border-\[\#c9a962\]\/60 { border-color:rgba(201,169,98,.6) }
+.group:hover .group-hover\:border-gold-accent { --tw-border-opacity:1;border-color:rgb(212 175 55/var(--tw-border-opacity,1)) }
+.group:hover .group-hover\:border-gold\/20 { border-color:rgba(201,169,98,.2) }
+.group:hover .group-hover\:bg-\[\#d4b878\] { --tw-bg-opacity:1;background-color:rgb(212 184 120/var(--tw-bg-opacity,1)) }
+.group:hover .group-hover\:bg-black\/20 { background-color:rgba(0,0,0,.2) }
+.group:hover .group-hover\:bg-white\/5 { background-color:hsla(0,0%,100%,.05) }
+.group:hover .group-hover\:text-\[\#c9a962\] { --tw-text-opacity:1;color:rgb(201 169 98/var(--tw-text-opacity,1)) }
+.group:hover .group-hover\:text-\[\#d4af37\] { --tw-text-opacity:1;color:rgb(212 175 55/var(--tw-text-opacity,1)) }
+.group:hover .group-hover\:text-white { --tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1)) }
+.group:hover .group-hover\:text-white\/80 { color:hsla(0,0%,100%,.8) }
+.group:hover .group-hover\:opacity-100 { opacity:1 }
+.group:hover .group-hover\:shadow-2xl { --tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.group:hover .group-hover\:shadow-\[0_10px_30px_rgba\(0\,0\,0\,0\.28\)\] { --tw-shadow:0 10px 30px rgba(0,0,0,.28);--tw-shadow-colored:0 10px 30px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.group:hover .group-hover\:shadow-\[0_20px_40px_rgba\(0\,0\,0\,0\.35\)\] { --tw-shadow:0 20px 40px rgba(0,0,0,.35);--tw-shadow-colored:0 20px 40px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+.group:hover .md\:group-hover\:-translate-y-1 { --tw-translate-y:-0.25rem }
+.group:hover .md\:group-hover\:-translate-y-1,.group:hover .md\:group-hover\:scale-100 { transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.group:hover .md\:group-hover\:scale-100 { --tw-scale-x:1;--tw-scale-y:1 }
+.group:hover .md\:group-hover\:scale-\[1\.04\] { --tw-scale-x:1.04;--tw-scale-y:1.04;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.group:hover .md\:group-hover\:border-\[\#c9a962\]\/30 { border-color:rgba(201,169,98,.3) }
+.group:hover .md\:group-hover\:opacity-100 { opacity:1 }
+.group:hover .md\:group-hover\:shadow-\[0_24px_50px_rgba\(15\,23\,42\,0\.14\)\] { --tw-shadow:0 24px 50px rgba(15,23,42,.14);--tw-shadow-colored:0 24px 50px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow) }
+@media (min-width:1024px) {
+.group:hover .lg\:group-hover\:translate-y-0 { --tw-translate-y:0px;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) }
+.group:hover .lg\:group-hover\:opacity-100 { opacity:1 }
+.group:hover .group-hover\:text-\[\#d4af37\] { color: #d4af37 }
+.group:hover .group-hover\:text-white { color: #fff }
+.h-7 { height:1.75rem }
+.h-auto { height:auto }
+.h-auto { height: auto }
+.h-px { height:1px }
+.h-px { height: 1px }
+.items-end { align-items:flex-end }
+.items-end { align-items: flex-end }
+.justify-between { justify-content:space-between }
+.justify-between { justify-content: space-between }
+.justify-end { justify-content:flex-end }
+.justify-end { justify-content: flex-end }
+.leading-snug { line-height:1.375 }
+.leading-tight { line-height:1.25 }
+.leading-tight { line-height: 1.25 }
+.left-5 { left:1.25rem }
+.max-w-2xl { max-width:42rem }
+.max-w-2xl { max-width: 42rem }
+.max-w-none { max-width:none }
+.mb-14 { margin-bottom:3.5rem }
+.mt-12 { margin-top:3rem }
+.mt-2 { margin-top:.5rem }
+.mt-2 { margin-top: .5rem }
+.overflow-x-auto { overflow-x:auto }
+.overflow-x-auto { overflow-x: auto }
+.p-4 { padding:1rem }
+.p-4 { padding: 1rem }
+.p-7 { padding:1.75rem }
+.pb-10 { padding-bottom:2.5rem }
+.pb-5 { padding-bottom:1.25rem }
+.pb-8 { padding-bottom:2rem }
+.pl-14 { padding-left:3.5rem }
+.pr-4 { padding-right:1rem }
+.pr-5 { padding-right:1.25rem }
+.pr-7 { padding-right:1.75rem }
+.pt-6 { padding-top:1.5rem }
+.px-12 { padding-left:3rem;padding-right:3rem }
+.px-7 { padding-left:1.75rem;padding-right:1.75rem }
+.py-20 { padding-top:5rem;padding-bottom:5rem }
+.py-20 { padding-top: 5rem;
+padding-bottom: 5rem }
+.py-24 { padding-top:6rem;padding-bottom:6rem }
+.py-24 { padding-top: 6rem;
+padding-bottom: 6rem }
+.py-5 { padding-top:1.25rem;padding-bottom:1.25rem }
+.py-5 { padding-top: 1.25rem;
+padding-bottom: 1.25rem }
+.py-6 { padding-top:1.5rem;padding-bottom:1.5rem }
+.py-9 { padding-top:2.25rem;padding-bottom:2.25rem }
+.text-4xl { font-size:36px }
+.text-4xl { font-size: 2.25rem;
+line-height: 2.5rem }
+.text-left { text-align:left }
+.text-left { text-align: left }
+.tracking-tight { letter-spacing:-.025em }
+.transition-transform { transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s }
+.transition-transform { transition-property: transform;
+transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+transition-duration: .15s }
+.w-7 { width:1.75rem }
+#home-faq-template--21844031930621__faq_v1_wQVCUV { padding-top: 72px; padding-bottom: 72px; }
+@media (min-width: 750px) { #home-faq-template--21844031930621__faq_v1_wQVCUV { padding-top: 96px; padding-bottom: 96px; } }
+#home-faq-template--21844031930621__faq_v1_wQVCUV [x-cloak] { display: none !important; }
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer p { margin-bottom: 12px; }
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer strong { color: rgba(255,255,255,0.95); }
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer p:has(> strong:only-child) {
+margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.05em;
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer li > strong:first-child {
+font-size: 0.95em;
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer ul, #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer li { margin-bottom: 8px; line-height: 1.6; }
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer th { text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); vertical-align: top; }
+@media (max-width: 749px) { #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; } }
+#laser-cut-faq-template--21873710563581__laser_cut_faq {
+padding-top: 60px;
+padding-bottom: 60px;
+@media (min-width: 750px) {
+padding-top: 80px;
+padding-bottom: 80px;
+#laser-cut-faq-template--21873710563581__laser_cut_faq [x-cloak] { display: none !important; }
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer p { margin-bottom: 12px; }
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer strong { color: rgba(255,255,255,0.95); }
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer p:has(> strong:only-child) {
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer li > strong:first-child {
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer em { color: rgba(255,255,255,0.80); font-style: italic; }
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer ul,
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer th {
+text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04);
+border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9);
+font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer td {
+padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+color: rgba(255,255,255,0.85); vertical-align: top;
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer tr:last-child td { border-bottom: none; }
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer a { color: #c9a962; text-decoration: underline; text-underline-offset: 2px; }
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer a:hover { color: #fff; }
+@media (max-width: 749px) {
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer table {
+display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+#laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer table::-webkit-scrollbar { display: none; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq {
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq [x-cloak] { display: none !important; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer p { margin-bottom: 12px; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer strong { color: rgba(255,255,255,0.95); }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer p:has(> strong:only-child) {
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer li > strong:first-child {
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer em { color: rgba(255,255,255,0.75); font-style: italic; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer ul,
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer th {
+border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer td {
+color: rgba(255,255,255,0.8); vertical-align: top;
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer tr:last-child td { border-bottom: none; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer a { color: #c9a962; text-decoration: underline; text-underline-offset: 2px; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer a:hover { color: #fff; }
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer table {
+#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer table::-webkit-scrollbar { display: none; }
+#outdoor-faq-template--21873710596349__outdoor_faq {
+#outdoor-faq-template--21873710596349__outdoor_faq [x-cloak] { display: none !important; }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer p { margin-bottom: 12px; }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer strong { color: rgba(255,255,255,0.95); }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer p:has(> strong:only-child) {
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer li > strong:first-child {
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer em { color: rgba(255,255,255,0.80); font-style: italic; }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer ul,
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer li { margin-bottom: 8px; line-height: 1.6; }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer th {
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer td {
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer tr:last-child td { border-bottom: none; }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer a { color: #c9a962; text-decoration: underline; text-underline-offset: 2px; }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer a:hover { color: #fff; }
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer table {
+#outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer table::-webkit-scrollbar { display: none; }
+#chinese-faq-template--21873710498045__chinese_faq {
+padding-top: 72px;
+padding-bottom: 72px;
+padding-top: 96px;
+padding-bottom: 96px;
+#chinese-faq-template--21873710498045__chinese_faq [x-cloak] { display: none !important; }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer p { margin-bottom: 12px; }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer strong { color: rgba(255,255,255,0.95); }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer p:has(> strong:only-child) {
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer li > strong:first-child {
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer em { color: rgba(255,255,255,0.80); font-style: italic; }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer ul,
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer th {
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer td {
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer tr:last-child td { border-bottom: none; }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer a { color: #c9a962; text-decoration: underline; text-underline-offset: 2px; }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer a:hover { color: #fff; }
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer table {
+#chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer table::-webkit-scrollbar { display: none; }
+#stainless-faq-template--21844035043581__stainless-faq {
+#stainless-faq-template--21844035043581__stainless-faq [x-cloak] { display: none !important; }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer p { margin-bottom: 12px; }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer strong { color: rgba(255,255,255,0.95); }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer p:has(> strong:only-child) {
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer li > strong:first-child {
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer em { color: rgba(255,255,255,0.80); font-style: italic; }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer ul,
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer th {
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer td {
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer tr:last-child td { border-bottom: none; }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer a { color: #c9a962; text-decoration: underline; text-underline-offset: 2px; }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer a:hover { color: #fff; }
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer table {
+#stainless-faq-template--21844035043581__stainless-faq .sfaq-answer table::-webkit-scrollbar { display: none; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq {
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer { max-height: 0; overflow: hidden; transition: max-height 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 250ms ease, padding 350ms ease; opacity: 0; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .question.is-open + .answer { opacity: 1; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .question.is-open .toggle-ic { transform: rotate(45deg); border-color: #c9a962; color: #c9a962; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .question .toggle-ic { transition: transform 300ms ease, border-color 300ms ease, color 300ms ease; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .group-header.is-collapsed + .group-body { display: none; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .group-header .chev { transition: transform 300ms ease; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .group-header.is-collapsed .chev { transform: rotate(-90deg); }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .cat-tab { color: rgba(255,255,255,0.85); }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .cat-tab:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .cat-tab.active { background: linear-gradient(to right, #c9a962, #d4b878); color: #1a1a1a; border-color: transparent; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer p { margin: 0 0 1rem; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer p:last-child { margin-bottom: 0; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer strong { color: #fff; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer p:has(> strong:only-child) {
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer ul,
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer ol { margin: 0.75rem 0 1rem; padding-left: 1.25rem; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer li { margin-bottom: 0.5rem; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer li > strong:first-child { font-size: 0.95em; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer table {
+display: block; width: 100%; overflow-x: auto; border-collapse: collapse;
+margin: 1.25rem 0; font-size: inherit; scrollbar-width: none;
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer table::-webkit-scrollbar { display: none; }
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer th,
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer td {
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+padding: 0.85rem 1rem; text-align: left; white-space: nowrap;
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer th {
+color: #c9a962; font-weight: 700;
+#perforated-faq-template--21844034814205__perforated_faq {
+#perforated-faq-template--21844034814205__perforated_faq [x-cloak] { display: none !important; }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer p { margin-bottom: 12px; }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer strong { color: rgba(255,255,255,0.95); }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer p:has(> strong:only-child) {
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer li > strong:first-child {
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer em { color: rgba(255,255,255,0.80); font-style: italic; }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer ul,
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer li { margin-bottom: 8px; line-height: 1.6; }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer th {
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer td {
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer tr:last-child td { border-bottom: none; }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer a { color: #c9a962; text-decoration: underline; text-underline-offset: 2px; }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer a:hover { color: #fff; }
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer table {
+#perforated-faq-template--21844034814205__perforated_faq .ofaq-answer table::-webkit-scrollbar { display: none; }
+#expanded-faq-template--22084675240189__expanded-faq {
+#expanded-faq-template--22084675240189__expanded-faq [x-cloak] { display: none !important; }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer p { margin-bottom: 12px; }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer strong { color: rgba(255,255,255,0.95); }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer p:has(> strong:only-child) {
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer li > strong:first-child {
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer em { color: rgba(255,255,255,0.80); font-style: italic; }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer ul,
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer th {
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer td {
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer tr:last-child td { border-bottom: none; }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer a { color: #c9a962; text-decoration: underline; text-underline-offset: 2px; }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer a:hover { color: #fff; }
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer table {
+#expanded-faq-template--22084675240189__expanded-faq .emfaq-answer table::-webkit-scrollbar { display: none; }
+#mfg-faq-template--21844034879741__manufacturing_faq { padding-top: 60px; padding-bottom: 60px; }
+@media (min-width: 750px) { #mfg-faq-template--21844034879741__manufacturing_faq { padding-top: 80px; padding-bottom: 80px; } }
+#mfg-faq-template--21844034879741__manufacturing_faq [x-cloak] { display: none !important; }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer p { margin-bottom: 12px; }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer strong { color: rgba(255,255,255,0.95); }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer p:has(> strong:only-child) {
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer li > strong:first-child {
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer em { color: rgba(255,255,255,0.80); font-style: italic; }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer ul, #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer li { margin-bottom: 8px; line-height: 1.6; }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer th { text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); vertical-align: top; }
+@media (max-width: 749px) { #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; } }
+#faqs-download-template--21844278411517__faqs_download [x-cloak] { display: none !important; }
+#faqs-download-template--21844278411517__faqs_download .fd-answer p { margin: 0 0 1rem; }
+#faqs-download-template--21844278411517__faqs_download .fd-answer p:last-child { margin-bottom: 0; }
+#faqs-download-template--21844278411517__faqs_download .fd-answer strong { color: #fff; }
+/* Sub-headings: <p><strong>...</strong></p> */
+#faqs-download-template--21844278411517__faqs_download .fd-answer p:has(> strong:only-child) {
+margin-top: 1.5rem;
+margin-bottom: 0.75rem;
+font-size: 1.05em;
+#faqs-download-template--21844278411517__faqs_download .fd-answer ul,
+#faqs-download-template--21844278411517__faqs_download .fd-answer ol { margin: 0.75rem 0 1rem; padding-left: 1.25rem; }
+#faqs-download-template--21844278411517__faqs_download .fd-answer li { margin-bottom: 0.5rem; }
+#faqs-download-template--21844278411517__faqs_download .fd-answer li > strong:first-child {
+#faqs-download-template--21844278411517__faqs_download .fd-answer table {
+display: block;
+width: 100%;
+overflow-x: auto;
+border-collapse: collapse;
+margin: 1.25rem 0;
+font-size: inherit;
+scrollbar-width: none;
+#faqs-download-template--21844278411517__faqs_download .fd-answer table::-webkit-scrollbar { display: none; }
+#faqs-download-template--21844278411517__faqs_download .fd-answer th,
+#faqs-download-template--21844278411517__faqs_download .fd-answer td {
+padding: 0.85rem 1rem;
+text-align: left;
+white-space: nowrap;
+#faqs-download-template--21844278411517__faqs_download .fd-answer th {
+color: #c9a962;
+font-weight: 700;

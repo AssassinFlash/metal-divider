@@ -1,0 +1,4 @@
+
+        <div class="pdp-faq-item">
+          <button class="pdp-faq-q" type="button" @click="activeFaq = activeFaq === 0 ? -1 : 0" :aria-expanded="activeFaq === 0">Can this pattern be adjusted to fit my opening? <span x-text="activeFaq === 0 ? '−' : '+'"></span></button>
+          <div class="pdp-faq-a" x-show="activeFaq === 0" x-collapse><p>Yes. Scale, repeat, orientation, and open area can be adjusted before cutting so the final panel fits the project drawing.</p>
