@@ -13,7 +13,7 @@
 
 ## 1. 这是什么
 
-metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPress + WooCommerce。图案(pattern)以"产品"承载,共 146 个;客户是建筑师、承包商、经销商。链路只有一条:图案浏览 → 图案清单 → 询盘/WhatsApp,之后全部线下。**无账户、无结账、无支付**;价格为展示态($0),不提供交易。
+metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPress + WooCommerce。图案(pattern)以"产品"承载,共 146 个;客户是建筑师、承包商、经销商。链路只有一条:图案浏览 → **PDP 直接发起询盘**(表单或 WhatsApp,单图案上下文)→ 之后全部线下。**无图案清单、无汇总、无购物车语义**——询盘就是询盘(业主 2026-10-24 晨推翻清单机制)。**无账户、无结账、无支付**;价格为展示态($0),不提供交易。
 
 站点双域名:canonical 是 **metal-divider.com**,metalpartition.com 全站 301 并入。旧 Shopify 站在切换前内容冻结。
 
