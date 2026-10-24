@@ -48,6 +48,10 @@ SEOPRESS_ZIP = (
     "https://downloads.wordpress.org/plugin/"
     f"wp-seopress.{versions.SEOPRESS_VERSION}.zip"
 )
+LITESPEED_CACHE_ZIP = (
+    "https://downloads.wordpress.org/plugin/"
+    f"litespeed-cache.{versions.LITESPEED_CACHE_VERSION}.zip"
+)
 
 # The wp.org plugins in install order: (slug, the say() line's name, zip).
 WP_ORG_PLUGINS: tuple[tuple[str, str, str], ...] = (
@@ -55,6 +59,11 @@ WP_ORG_PLUGINS: tuple[tuple[str, str, str], ...] = (
     ("advanced-custom-fields", f"ACF {versions.ACF_VERSION}", ACF_ZIP),
     ("windpress", f"WindPress {versions.WINDPRESS_VERSION}", WINDPRESS_ZIP),
     ("wp-seopress", f"SEOPress {versions.SEOPRESS_VERSION}", SEOPRESS_ZIP),
+    (
+        "litespeed-cache",
+        f"LiteSpeed Cache {versions.LITESPEED_CACHE_VERSION}",
+        LITESPEED_CACHE_ZIP,
+    ),
 )
 
 # The archived plugins in install order: (archive slug, activation slug).
@@ -231,6 +240,7 @@ def versions_of(instance: Instance) -> dict[str, str | None]:
         "picostrap5": _header(
             instance.wp_content / "themes" / "picostrap5" / "style.css"
         ),
+        "LiteSpeed Cache": _header(plugins / "litespeed-cache" / "litespeed-cache.php"),
     }
 
 
@@ -245,6 +255,8 @@ PINNED_VERSIONS: dict[str, str] = {
     "LiveCanvas": versions.LIVECANVAS_VERSION,
     "yansir-md": versions.YANSIR_MD_VERSION,
     "picostrap5": versions.PICOSTRAP5_VERSION,
+    "LiteSpeed Cache": versions.LITESPEED_CACHE_VERSION,
+
 }
 
 
