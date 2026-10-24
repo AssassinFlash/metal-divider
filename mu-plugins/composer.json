@@ -1,0 +1,32 @@
+{
+	"name": "md/mu-plugins",
+	"description": "The production must-use plugins of metal-divider.com (deployed to wp-content/mu-plugins, docs/specs/23-mu-plugins.md).",
+	"type": "project",
+	"license": "proprietary",
+	"require": {
+		"php": ">=8.3"
+	},
+	"require-dev": {
+		"php-stubs/wordpress-stubs": "~7.1.0",
+		"phpcompatibility/phpcompatibility-wp": "^2.1",
+		"phpstan/phpstan": "^2.1",
+		"phpunit/phpunit": "^9.6",
+		"szepeviktor/phpstan-wordpress": "^2.0",
+		"woocommerce/woocommerce-sniffs": "^2.0",
+		"wp-coding-standards/wpcs": "^3.4"
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Md\\Mu\\Tests\\": "tests/php/"
+		}
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"platform": {
+			"php": "8.3"
+		},
+		"sort-packages": true
+	}
+}

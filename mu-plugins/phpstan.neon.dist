@@ -1,0 +1,14 @@
+# The shared settings (level, stubs) live in tools/php/phpstan.neon.
+includes:
+	- ../tools/php/phpstan.neon
+
+parameters:
+	paths:
+		- md-error-recorder.php
+		- md-site-guards.php
+		- tests/php
+	excludePaths:
+		# The bootstrap defines WordPress's own hook functions for the tests;
+		# PHPStan already knows them from the WordPress stubs, and a second
+		# declaration is a clash.
+		- tests/php/bootstrap.php

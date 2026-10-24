@@ -21,6 +21,7 @@ archives/
 .DS_Store
 node_modules/
 vendor/
+.phpunit.result.cache
 .scratch/
 .playwright*/
 __pycache__/

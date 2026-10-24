@@ -239,3 +239,24 @@ def test_the_whole_stack(stack: Stack) -> None:
         assert stack.wp("option", "get", "seopress_pro_license_status") == "valid"
         assert stack.wp("option", "get", "lc_apikey") != ""
     assert request(instance.port, "/").headers["X-Robots-Tag"] == "noindex, nofollow"
+
+
+def test_a_bare_instance_is_wordpress_without_the_plugin_face(stack: Stack) -> None:
+    """`up --bare`: the mu-smoke CI job's instance (docs/specs/23-mu-plugins.md
+    §5.4, branch research/spec-mu-plugins).
+
+    No plugin face, no licence state, and the build never reaches the licensed
+    archives — which is what lets CI, where they do not exist, build it too.
+    What stays is the rest of the stack: WordPress, the router, the local
+    mu-plugins, and a site that answers.
+    """
+    stack.cli("up", NAME, "--bare")
+    instance = stack.instance()
+
+    home = request(instance.port, "/")
+    assert home.status == 200
+    assert home.headers["X-Robots-Tag"] == "noindex, nofollow"
+
+    plugins = stack.wp("plugin", "list", "--field=name").splitlines()
+    assert "woocommerce" not in plugins
+    assert not (instance.wp_content / "plugins" / "wp-seopress-pro").exists()

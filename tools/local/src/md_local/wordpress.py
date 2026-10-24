@@ -9,6 +9,11 @@ file by file); SEOPress PRO, LiveCanvas and yansir-md from the local archives
 (SHA-256 checked); Polylang NOT installed — the phase-2 slot lives in
 versions.py only. Phase 1 ships no object cache (the production host has no
 Redis), so no Redis plugin either.
+
+A bare instance (`up --bare`) skips the plugin face and the licences: it is
+the smallest WordPress the must-use plugins' smoke suite needs, buildable
+where the licensed archives do not exist — CI (docs/specs/23-mu-plugins.md
+§5.4, branch research/spec-mu-plugins).
 """
 
 from __future__ import annotations
@@ -81,9 +86,18 @@ Say = Callable[[str], None]
 
 
 def provision(
-    instance: Instance, php: Path, checkout: Checkout, mysql: MySQL, say: Say
+    instance: Instance,
+    php: Path,
+    checkout: Checkout,
+    mysql: MySQL,
+    say: Say,
+    bare: bool = False,
 ) -> None:
-    """Create the instance's database and files; the instance must not exist yet."""
+    """Create the instance's database and files; the instance must not exist yet.
+
+    With `bare`, the plugin face and the licences are skipped: WordPress, the
+    router and the local mu-plugins only.
+    """
     for directory in (
         instance.dir,
         instance.mail_dir,
@@ -134,6 +148,18 @@ def provision(
         f"url: {instance.url}/wp-admin/\nuser: {ADMIN_USER}\npassword: {admin_password}\n"
     )
 
+    if bare:
+        say("bare instance: no plugin face, no licences")
+    else:
+        _install_plugin_face(wp, say)
+
+    _link_our_plugins(instance, checkout, wp, say)
+    wp.run("rewrite", "structure", PERMALINKS)
+    instance.provisioned_marker.write_text(datetime.now(UTC).isoformat() + "\n")
+
+
+def _install_plugin_face(wp: WpCli, say: Say) -> None:
+    """The pinned plugin face: the wp.org plugins, then the archives, then licences."""
     for slug, name, zip_url in WP_ORG_PLUGINS:
         say(name)
         wp.run("plugin", "install", str(downloads.fetch(zip_url)))
@@ -148,10 +174,6 @@ def provision(
 
     say("licences")
     licenses.apply(wp, say)
-
-    _link_our_plugins(instance, checkout, wp, say)
-    wp.run("rewrite", "structure", PERMALINKS)
-    instance.provisioned_marker.write_text(datetime.now(UTC).isoformat() + "\n")
 
 
 def refresh(instance: Instance, php: Path, checkout: Checkout, say: Say) -> None:
