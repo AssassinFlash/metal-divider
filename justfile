@@ -6,17 +6,21 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # mu-plugins and router, and mu-plugins for the site's must-use plugins.
 php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
 
+# The conversion pipeline joins both chains: ruff/mypy under check,
+# pytest under test (its fixtures are in-repo; the raw old-site pages
+# are the ticket's local evidence under .scratch, not shipped).
+
+# uv projects: tools/local (md-local). The services and migrations of the
+# repository join this list as they land.
+py_projects := "tools/local tools/template-convert tools/media tools/deploy"
 # uv projects: tools/local (md-local), tools/media (md-media) and
 # tools/deploy (md-deploy). The services and migrations of the repository
 # join this list as they land.
-py_projects := "tools/local tools/media tools/deploy"
-
 # `just deploy …` is the deployment pipeline: dev/staging/prod targets, the
 # rename-atomic file deploy with rollback, the snapshot every deploy carries,
 # present and the media plane (tools/deploy/deploy.just,
 # docs/specs/20-staging-deploy.md, branch research/spec-deploy).
 mod deploy "tools/deploy/deploy.just"
-
 # The PHP tools run on PHP 8.3, the stack's pinned version and the version
 # contract the production host must meet (docs/specs/14-local-stack.md §2.3,
 # branch research/spec-local-stack): Homebrew's php@8.3 when it is installed,
@@ -107,22 +111,37 @@ present name="dev": php-install
 archive slug source:
     {{ md_local }} archive "$@"
 
+# Rebuild the replica LiveCanvas templates and WindPress volumes from the
+# old-site captures (ticket #32's conversion pipeline, spec 19 §4). The raw
+# pages and the theme-assets directory are the ticket's local evidence
+# (.scratch/<ticket>/raw, the old theme checkout); the media state is the
+# media pipeline's source→final map when it has run (ticket #29).
+templates raw=".scratch/32/raw" theme-assets="" media-state="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    args=""
+    if [ -n "{{ theme-assets }}" ]; then args="$args --theme-assets {{ theme-assets }}"; fi
+    if [ -n "{{ media-state }}" ]; then args="$args --media-state {{ media-state }}"; fi
+    cd tools/template-convert
+    uv run --locked md-template-convert --raw "{{ justfile_directory() }}/{{ raw }}" $args --plugin "{{ justfile_directory() }}/plugins/md-site" --scratch "{{ justfile_directory() }}/.scratch/32"
+
+# Fork the approved journal (blog) faces from the de-linker checkout
+# (spec 19 §2.2 R1): brand, addresses and tokens mapped, markup intact.
+blog-fork source:
+    cd tools/template-convert && uv run --locked md-template-convert --blog-source {{ source }} --plugin "{{ justfile_directory() }}/plugins/md-site"
 # Build the full final media set: data/media-raw -> data/media-final
 # (variants, sidecars, checkpoint state). Full corpus run, minutes.
 media-build:
     {{ md_media }} build
-
 # Verify the final set: coverage, sha256, sizes, formats, gallery rules,
 # lossless pixel identity, budget. Non-zero exit = FAIL.
 media-check:
     {{ md_media }} check
-
 # Produce the final single file for an owner upload, e.g.
 # `just media-one ~/Desktop/foo.jpg` (no tier ladder, spec §8.3).
 [positional-arguments]
 media-one *file:
     {{ md_media }} one "$@"
-
 # Pixel gate: capture the instance's pages with the baseline protocol and
 # diff them against the metalpartition.com baseline (tools/pixel-check,
 # ticket #30). Baseline = data/pixel-baseline of this checkout; extra args

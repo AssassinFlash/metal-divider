@@ -21,6 +21,7 @@ WordPress + WooCommerce(图案目录,无结账)+ ACF 免费版(产品规格字�
 | `tools/deploy/` | 部署管线(uv 项目 `md-deploy` + `deploy.just`):dev/staging/prod 三 target,rename 原子切换 + rollback + DB 快照 + present + 媒体分块推送(#35);部署时人工核对表在 `docs/deploy/checklist.md` |
 | `tools/pixel-baseline/` | 旧站像素门基准采集脚本与采集清单(#21;截图本体在 `data/pixel-baseline/`,不入库) |
 | `tools/pixel-check/` | 像素门比对工具:实例截图 vs 基准逐页型 diff + 掩膜清单(#30) |
+| `tools/template-convert/` | 旧站渲染 HTML → LiveCanvas 模板与 WindPress 卷的转换管线(uv 项目 `md-template-convert`,#32;`just templates` / `just blog-fork`) |
 | `tools/php/` | 各 PHP 项目共享的 PHPCS/PHPStan 规则(PHP 8.3 锁 platform) |
 | `tools/` | 其余 just 模块与脚本(迁移、媒体终稿管线等,随建设生长) |
 | `docs/` | 规格、研究证据、验收记录 |

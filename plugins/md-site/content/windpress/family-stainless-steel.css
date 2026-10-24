@@ -1,0 +1,45 @@
+/* md-site volume: family-stainless-steel.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+/* Honeypot — visually + accessibility hidden, bots see + fill */
+#stainless-contact-template--21844035043581__stainless-contact .ssc-honeypot {
+position: absolute;
+left: -9999px;
+top: -9999px;
+width: 1px;
+height: 1px;
+opacity: 0;
+pointer-events: none;
+}
+/* Validation error states */
+#stainless-contact-template--21844035043581__stainless-contact .ssc-input.ssc-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+#stainless-contact-template--21844035043581__stainless-contact .ssc-checkbox-label.ssc-invalid {
+/* Remove error state on focus */
+#stainless-contact-template--21844035043581__stainless-contact .ssc-input:focus {
+border-color: rgba(201, 169, 98, 0.6) !important;
+background: rgba(255, 255, 255, 0.05) !important;
+#stainless-contact-template--21844035043581__stainless-contact select option {
+color: #1a1a1a;
+background: #ffffff;
+.md-t09274b5a { --pt: 20;--pb: 20 }
+.md-tb2def572 { min-height: 86vh;background: #141414;margin: 0;padding: 0 }
+.md-t109dbe73 { background: linear-gradient(to top, rgba(10,10,10,0.90) 0%, rgba(10,10,10,0.60) 50%, rgba(10,10,10,0.20) 100%) }
+.md-t950d138f { background: linear-gradient(to right, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.50) 50%, rgba(10,10,10,0.15) 100%) }
+.md-t722f84cd { text-wrap: balance }
+.md-t86d5a629 { width: 60% }
+.md-t9e2b4e90 { width: 80% }
+.md-t3ec96985 { width: 40% }
+.md-t16000cc0 { width: 100% }
+.md-td07599b9 { width: 90% }
+.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-t78970fa2 { text-wrap: pretty }
+.md-t4d66bb95 { background-color: #141414;padding-top: 80px;padding-bottom: 80px }
+.md-taf3fcd44 { scrollbar-width: none;-ms-overflow-style: none }
+.md-t80e98d4a { mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);-webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent) }
+.md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }
+.md-tecede96f { background-color: #141414 }
+.md-t156d2b52 { --pt:0;--pb:0;--bg-color:#141414 }
+.md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }

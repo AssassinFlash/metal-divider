@@ -1,0 +1,12 @@
+/* md-site volume: about.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+.-mt-8 { margin-top:-2rem }
+.mb-16 { margin-bottom:4rem }
+.snap-start { scroll-snap-align:start }
+.space-y-16>:not([hidden])~:not([hidden]) { --tw-space-y-reverse:0;margin-top:calc(4rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(4rem*var(--tw-space-y-reverse)) }
+.w-0 { width:0 }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.md-t09274b5a { --pt: 20;--pb: 20 }
+.md-td7f9427b { -webkit-overflow-scrolling: touch;scrollbar-width: none }

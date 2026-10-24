@@ -1,0 +1,194 @@
+/* md-site volume: family-laser-cut-panels.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+.aspect-video { aspect-ratio:16/9 }
+.aspect-video { aspect-ratio: 16/9 }
+.bg-black { --tw-bg-opacity:1;background-color:rgb(0 0 0/var(--tw-bg-opacity,1)) }
+.bg-black\/20 { background-color:rgba(0,0,0,.2) }
+.bg-black\/30 { background-color:rgba(0,0,0,.3) }
+.bg-black\/35 { background-color:rgba(0,0,0,.35) }
+.bg-black\/40 { background-color:rgba(0,0,0,.4) }
+.bg-black\/45 { background-color:rgba(0,0,0,.45) }
+.bg-black\/50 { background-color:rgba(0,0,0,.5) }
+.bg-black\/55 { background-color:rgba(0,0,0,.55) }
+.bg-black\/60 { background-color:rgba(0,0,0,.6) }
+.bg-black\/70 { background-color:rgba(0,0,0,.7) }
+.bg-black\/85 { background-color:rgba(0,0,0,.85) }
+.bg-black\/90 { background-color:rgba(0,0,0,.9) }
+.bg-black\/95 { background-color:rgba(0,0,0,.95) }
+.bg-black { background-color: #000 }
+.bg-black\/20 { background-color: rgb(0 0 0/.2) }
+.bg-black\/30 { background-color: rgb(0 0 0/.3) }
+.bg-black\/40 { background-color: rgb(0 0 0/.4) }
+.bg-black\/60 { background-color: rgb(0 0 0/.6) }
+.bg-black\/80 { background-color: rgb(0 0 0/.8) }
+.bg-green-500 { --tw-bg-opacity:1;background-color:rgb(34 197 94/var(--tw-bg-opacity,1)) }
+.bg-green-500\/10 { background-color:rgba(34,197,94,.1) }
+.bg-green-500\/20 { background-color: rgb(34 197 94/.2) }
+.bottom-4 { bottom:1rem }
+.items-baseline { align-items:baseline }
+.left-10 { left:2.5rem }
+.my-6 { margin-top:1.5rem;margin-bottom:1.5rem }
+.p-2 { padding:.5rem }
+.p-2 { padding: .5rem }
+.pl-16 { padding-left:4rem }
+.pl-5 { padding-left:1.25rem }
+.ring-2,.ring-4 { box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000) }
+.ring-4 { --tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color) }
+.tabular-nums { --tw-numeric-spacing:tabular-nums;font-variant-numeric:var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction) }
+.text-5xl { font-size:42px }
+.top-6 { top:1.5rem }
+.w-px { width:1px }
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install {
+padding-top: 60px;
+padding-bottom: 60px;
+}
+@media (min-width: 750px) {
+padding-top: 80px;
+padding-bottom: 80px;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install [x-cloak] {
+display: none !important;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-slider-shell {
+padding-top: 6px;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-track {
+position: absolute;
+inset-inline: 0;
+top: 50%;
+transform: translateY(-50%);
+display: grid;
+grid-template-columns: repeat(3, minmax(0, 1fr));
+height: 16px;
+overflow: hidden;
+border-radius: 999px;
+border: 1px solid rgba(255, 255, 255, 0.08);
+background: rgba(255, 255, 255, 0.04);
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-segment {
+position: relative;
+height: 100%;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-segment--dense {
+background:
+linear-gradient(180deg, rgba(201, 169, 98, 0.28), rgba(201, 169, 98, 0.12)),
+repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 9px, rgba(255, 255, 255, 0.04) 9px 10px);
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-segment--filtered {
+linear-gradient(180deg, rgba(201, 169, 98, 0.2), rgba(201, 169, 98, 0.08)),
+radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 14px);
+background-size: auto, 18px 18px;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-segment--open {
+linear-gradient(180deg, rgba(201, 169, 98, 0.12), rgba(201, 169, 98, 0.04)),
+linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px),
+linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px);
+background-size: auto, 32px 32px, 32px 32px;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-stop {
+width: 6px;
+height: 6px;
+transform: translate(-50%, -50%);
+background: rgba(255, 255, 255, 0.85);
+z-index: 1;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-stop--left { left: 2px; }
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-stop--center { left: 50%; }
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-stop--right { left: calc(100% - 2px); }
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range {
+z-index: 2;
+width: 100%;
+height: 28px;
+margin: 0;
+appearance: none;
+-webkit-appearance: none;
+background: transparent;
+cursor: pointer;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range:focus-visible {
+outline: 2px solid #c9a962;
+outline-offset: 10px;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range::-webkit-slider-runnable-track {
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range::-webkit-slider-thumb {
+width: 32px;
+height: 32px;
+margin-top: -8px;
+border: 3px solid #141414;
+background: #c9a962;
+box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range::-moz-range-track {
+border: none;
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range::-moz-range-thumb {
+@media (prefers-reduced-motion: reduce) {
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-choice,
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install a,
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install [x-transition\:enter],
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install [x-transition\:leave] {
+transition: none !important;
+#laser-cut-panels-process-template--21844033995005__laser-cut-panels-process {
+#laser-cut-panels-process-template--21844033995005__laser-cut-panels-process-lightbox { display: none; }
+#laser-cut-panels-process-template--21844033995005__laser-cut-panels-process-lightbox.is-open { display: flex; }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison {
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel { display: none; opacity: 0; transform: translateY(8px); transition: opacity 350ms ease, transform 350ms ease; }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel.active { display: block; opacity: 1; transform: translateY(0); }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .bar-fill { width: 0; transition: width 900ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel.active .bar-fill { width: var(--w); }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel.active .bar-row:nth-child(1) .bar-fill { transition-delay: 0ms; }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel.active .bar-row:nth-child(2) .bar-fill { transition-delay: 100ms; }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel.active .bar-row:nth-child(3) .bar-fill { transition-delay: 200ms; }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel.active .bar-row:nth-child(4) .bar-fill { transition-delay: 300ms; }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .pct-fade { opacity: 0; transition: opacity 600ms ease 600ms; }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel.active .pct-fade { opacity: 1; }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .tab-btn { color: rgba(255,255,255,0.85); }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .tab-btn:hover { color: #fff; }
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .tab-btn.active { background: linear-gradient(to right, #c9a962, #d4b878); color: #1a1a1a; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc {
+padding-top: 72px;
+padding-bottom: 72px;
+padding-top: 96px;
+padding-bottom: 96px;
+@keyframes pulseRing-template--21844033995005__laser-cut-panels-qc {
+0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+70% { box-shadow: 0 0 0 12px rgba(34,197,94,0); }
+100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .pulse-dot { animation: pulseRing-template--21844033995005__laser-cut-panels-qc 2s infinite; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card { transition: transform 350ms ease, border-color 350ms ease; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card:hover { transform: translateY(-4px); border-color: rgba(201,169,98,0.3); }
+/* Chart reveal animations */
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .chart-arc {
+stroke-dasharray: var(--len);
+stroke-dashoffset: var(--len);
+transition: stroke-dashoffset 1500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-arc {
+stroke-dashoffset: var(--off, 0);
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .chart-line {
+stroke-dasharray: 400;
+stroke-dashoffset: 400;
+transition: stroke-dashoffset 1800ms cubic-bezier(0.2, 0.8, 0.2, 1) 200ms;
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-line {
+stroke-dashoffset: 0;
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .chart-area { opacity: 0; transition: opacity 700ms ease 1200ms; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-area { opacity: 1; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .chart-dot { opacity: 0; transition: opacity 400ms ease; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-dot { opacity: 1; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-dot:nth-child(1) { transition-delay: 800ms; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-dot:nth-child(2) { transition-delay: 1000ms; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-dot:nth-child(3) { transition-delay: 1200ms; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-dot:nth-child(4) { transition-delay: 1400ms; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-dot:nth-child(5) { transition-delay: 1600ms; }
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-dot:nth-child(6) { transition-delay: 1800ms; }
+.md-t09274b5a { --pt: 20;--pb: 20 }
+.md-te21ba3d9 { min-height: 82vh;background: #141414;margin: 0;padding: 0 }
+.md-t7a2e528f { background: linear-gradient(to right, rgba(20,20,20,0.88) 0%, rgba(20,20,20,0.55) 45%, rgba(20,20,20,0.15) 70%, rgba(20,20,20,0) 100%) }
+.md-tc0555a3a { background: linear-gradient(to bottom, rgba(20,20,20,0.35) 0%, rgba(20,20,20,0.55) 40%, rgba(20,20,20,0.78) 100%) }
+.md-t722f84cd { text-wrap: balance }
+.md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }
+.md-t78970fa2 { text-wrap: pretty }
+.md-tba09eb61 { background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%) }
+.md-te05c0d99 { background-image: radial-gradient(circle at center, rgba(201,169,98,.16) 0%, transparent 68%) }
+.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-t3f9c748b { padding-top: 80px;padding-bottom: 88px }
+.md-t9fbfe303 { --w: 95% }
+.md-t021fffc3 { --w: 90% }
+.md-t230d1bd7 { --w: 85% }
+.md-t6f7f3a7e { --w: 70% }
+.md-t3f8188ab { --w: 40% }
+.md-t06dcde47 { --w: 75% }
+.md-t50b8ab56 { --w: 50% }
+.md-t179b243c { --w: 100% }
+.md-td4af0f6b { --len: 365;--off: 0 }
+.md-t58129e41 { --len: 100;--off: 8 }
+.md-t28c04a94 { --len: 80;--off: 0 }
+.md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }

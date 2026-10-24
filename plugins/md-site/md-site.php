@@ -21,6 +21,7 @@ namespace MetalDivider\Site;
 defined( 'ABSPATH' ) || exit;
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/includes/Presentation/template-functions.php';
 
 ( new Plugin(
 	new Fields\FieldGroups(),

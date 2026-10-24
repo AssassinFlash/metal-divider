@@ -1,0 +1,275 @@
+/* md-site volume: pattern-grid.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+.border-t-2 { border-top-width:2px }
+.inline-block { display:inline-block }
+.inline-block { display: inline-block }
+.italic { font-style:italic }
+.line-clamp-2 { overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2 }
+.rounded-sm { border-radius:.125rem }
+.rounded-t-lg { border-top-left-radius:.5rem;border-top-right-radius:.5rem }
+.self-start { align-self:flex-start }
+#pattern-catalog-template--21844031570173__pattern-catalog-main {
+background:
+radial-gradient(circle at 84% 0%, rgba(201, 169, 98, 0.08), transparent 32%),
+linear-gradient(180deg, #141414 0%, #0a0a0a 100%);
+color: #ffffff;
+font-family: Inter, sans-serif;
+padding: 54px 20px 96px;
+}
+#pattern-catalog-template--21844031570173__pattern-catalog-main a {
+color: inherit;
+text-decoration: none;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__anchor {
+display: block;
+height: 0;
+scroll-margin-top: 96px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__container {
+width: min(100%, 1400px);
+margin: 0 auto;
+display: grid;
+gap: 32px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sidebar {
+background: rgba(255, 255, 255, 0.035);
+border: 1px solid rgba(255, 255, 255, 0.12);
+border-radius: 16px;
+height: fit-content;
+overflow: hidden;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sidebar-intro {
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+padding: 22px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__label {
+color: #c9a962;
+font-size: 14px;
+font-weight: 700;
+letter-spacing: 0.16em;
+line-height: 1.2;
+margin: 0 0 10px;
+text-transform: uppercase;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sidebar-copy {
+color: rgba(255, 255, 255, 0.82);
+line-height: 1.6;
+margin: 0;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__nav {
+gap: 1px;
+padding: 10px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__nav-link {
+align-items: center;
+border: 1px solid transparent;
+border-radius: 12px;
+color: rgba(255, 255, 255, 0.84);
+gap: 12px;
+grid-template-columns: minmax(0, 1fr) auto;
+line-height: 1.35;
+padding: 13px 14px;
+transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__nav-link:hover,
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__nav-link:focus-visible {
+background: rgba(201, 169, 98, 0.11);
+border-color: rgba(201, 169, 98, 0.38);
+outline: none;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__nav-link.is-active {
+background: linear-gradient(135deg, rgba(201, 169, 98, 0.22), rgba(201, 169, 98, 0.08));
+border-color: rgba(201, 169, 98, 0.56);
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__count {
+font-size: 13px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sidebar-cta {
+border-top: 1px solid rgba(255, 255, 255, 0.1);
+padding: 18px 22px 22px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__quote-link {
+background: linear-gradient(90deg, #c9a962 0%, #d4b878 100%);
+color: #1a1a1a;
+display: flex;
+font-weight: 800;
+justify-content: center;
+min-height: 46px;
+padding: 12px 16px;
+text-align: center;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__content {
+min-width: 0;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__toolbar {
+align-items: end;
+border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+gap: 24px;
+margin-bottom: 24px;
+padding-bottom: 24px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__title {
+font-family: "Playfair Display", serif;
+font-size: clamp(34px, 4vw, 56px);
+letter-spacing: 0;
+line-height: 1.05;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__intro {
+color: rgba(255, 255, 255, 0.86);
+font-size: 16px;
+line-height: 1.7;
+margin: 14px 0 0;
+max-width: 720px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__tools {
+gap: 16px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__search {
+background: rgba(255, 255, 255, 0.045);
+border: 1px solid rgba(255, 255, 255, 0.14);
+border-radius: 14px;
+gap: 10px;
+min-height: 52px;
+padding: 6px 6px 6px 16px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__search input {
+background: transparent;
+border: 0;
+font: inherit;
+font-size: 15px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__search input::placeholder {
+color: rgba(255, 255, 255, 0.76);
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__search:focus-within {
+border-color: rgba(201, 169, 98, 0.64);
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__search-button {
+background: #c9a962;
+border-radius: 10px;
+cursor: pointer;
+height: 40px;
+width: 44px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__search-button svg {
+height: 18px;
+width: 18px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sort {
+gap: 8px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sort-label {
+line-height: 1.25;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__select-wrap {
+position: relative;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sort select {
+appearance: none;
+padding: 0 44px 0 16px;
+width: 100%;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sort select:focus {
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__select-wrap::after {
+border-bottom: 2px solid #c9a962;
+border-right: 2px solid #c9a962;
+content: "";
+height: 8px;
+pointer-events: none;
+position: absolute;
+right: 18px;
+top: calc(50% - 2px);
+transform: rotate(45deg);
+width: 8px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__results-bar {
+color: rgba(255, 255, 255, 0.8);
+flex-wrap: wrap;
+justify-content: space-between;
+margin-bottom: 22px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__results-bar strong {
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__search-status {
+color: rgba(255, 255, 255, 0.68);
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__products {
+gap: 18px;
+grid-template-columns: minmax(0, min(100%, 340px));
+justify-content: start;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card {
+transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card:hover,
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card:focus-within {
+background: rgba(255, 255, 255, 0.055);
+border-color: rgba(201, 169, 98, 0.44);
+transform: translateY(-2px);
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__link {
+min-height: 100%;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__media {
+aspect-ratio: 1 / 1;
+linear-gradient(135deg, rgba(201, 169, 98, 0.12), transparent 34%),
+#141414;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__media img {
+height: 100%;
+object-fit: cover;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__body {
+gap: 14px;
+padding: 14px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__specs {
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__row {
+gap: 0;
+grid-template-columns: 74px minmax(0, 1fr);
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__row + .pattern-card__row {
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__key,
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__value {
+font-size: 12px;
+line-height: 1.45;
+padding: 9px 10px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__key {
+background: rgba(201, 169, 98, 0.08);
+letter-spacing: 0.08em;
+color: rgba(255, 255, 255, 0.88);
+font-weight: 650;
+overflow-wrap: anywhere;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__value--title {
+line-height: 1.42;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__action {
+display: inline-flex;
+padding-top: 14px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__action svg {
+height: 16px;
+width: 16px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__pagination {
+margin-top: 42px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__pagination a,
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__pagination span {
+border: 1px solid rgba(255, 255, 255, 0.16);
+border-radius: 11px;
+min-height: 42px;
+min-width: 42px;
+padding: 0 14px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__pagination a:hover,
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__pagination a:focus-visible {
+border-color: rgba(201, 169, 98, 0.5);
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__pagination .is-current {
+border-color: #c9a962;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__empty {
+padding: 44px 24px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__empty h3 {
+font-size: 30px;
+margin: 0 0 12px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__empty p {
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__products .pattern-catalog__empty {
+grid-column: 1 / -1;
+width: min(100%, 680px);
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__cluster {
+margin-top: 40px;
+border-top: 1px solid rgba(255, 255, 255, 0.12);
+padding-top: 28px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__cluster-title {
+font-size: clamp(24px, 3vw, 34px);
+line-height: 1.12;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__cluster-copy {
+line-height: 1.65;
+max-width: 760px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__cluster-links {
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__cluster-link {
+border: 1px solid rgba(201, 169, 98, 0.34);
+border-radius: 999px;
+color: rgba(255, 255, 255, 0.9);
+min-height: 44px;
+padding: 0 16px;
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__cluster-link:hover,
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__cluster-link:focus-visible {
+border-color: rgba(201, 169, 98, 0.52);
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__empty[hidden] {
+display: none;
+@media (min-width: 750px) {
+padding: 72px 40px 112px;
+grid-template-columns: 280px minmax(0, 1fr);
+position: sticky;
+top: 24px;
+grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 340px));
+@media (max-width: 749px) {
+padding: 44px 20px 76px;
+overflow-x: auto;
+padding: 12px;
+scroll-snap-type: x proximity;
+flex: 0 0 min(78vw, 260px);
+scroll-snap-align: start;
+padding: 15px;
+grid-template-columns: 78px minmax(0, 1fr);
+@media (min-width: 560px) and (max-width: 749px) {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+grid-template-columns: 70px minmax(0, 1fr);

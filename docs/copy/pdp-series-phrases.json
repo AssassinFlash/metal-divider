@@ -1,0 +1,46 @@
+{
+  "schema": "md-site/pdp-series-phrases@1",
+  "status": "draft — T1 adversarial review pending (spec 08 §4.1 T2: the phrase groups pass one review, then attribute slots are data, not prose)",
+  "slots": {
+    "code": "the pattern code (Woo SKU)",
+    "open_area": "the open-area percentage, or \"On request\" for the sixteen patterns with no sourced value",
+    "visual_density": "Open / Balanced / Dense / Custom",
+    "repeat": "repeating or flowing",
+    "best_fit": "Architectural screening or Decorative screening"
+  },
+  "hero": "Built for light behavior, privacy, and surface impact in {best_fit}.",
+  "series": {
+    "abstract": {
+      "lead": "{code} is built from abstract field logic rather than a picture: rhythm, density and shadow carry the read, so the screen works at facade scale and in close view alike.",
+      "supplemental": "Open area {open_area} · {repeat} repeat"
+    },
+    "geometric": {
+      "lead": "{code} runs a geometric grid: fixed modules, predictable repeats, and clean lines that align across panel joints — the geometry does the coordinating, not the installer.",
+      "supplemental": "Open area {open_area} · {repeat} repeat"
+    },
+    "moroccan-arabic": {
+      "lead": "{code} draws on mashrabiya lattice tradition: interlaced geometry that filters light into patterned shade while keeping the privacy the form was made for.",
+      "supplemental": "Open area {open_area} · {repeat} repeat"
+    },
+    "organic": {
+      "lead": "{code} works with organic flow: leaf, wave and branch curves that soften a metal surface without losing the discipline of a cut pattern.",
+      "supplemental": "Open area {open_area} · {repeat} repeat"
+    },
+    "perforated": {
+      "lead": "{code} is a perforated field: engineered hole arrays where open area, pitch and pattern work as one specification, not three.",
+      "supplemental": "Open area {open_area} · {repeat} repeat"
+    },
+    "landscape": {
+      "lead": "{code} carries a landscape scene — ridgelines, water, treeline — cut so the image survives distance and reads as texture up close.",
+      "supplemental": "Open area {open_area} · {repeat} repeat"
+    },
+    "asian": {
+      "lead": "{code} works from Asian lattice and screen tradition: structured frames, balanced motifs, and the calm repetition a room divider wants.",
+      "supplemental": "Open area {open_area} · {repeat} repeat"
+    },
+    "vintage-retro": {
+      "lead": "{code} reissues a classic motif — breeze block, period tile, mid-century rhythm — in stainless steel, where the pattern's age is the point.",
+      "supplemental": "Open area {open_area} · {repeat} repeat"
+    }
+  }
+}

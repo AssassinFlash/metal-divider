@@ -1,0 +1,7 @@
+/* md-site volume: project-gallery.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+.md-tfb6e8023 { --pt: 50;--pb: 50 }
+.md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
+.md-t8ed1802a { background: #d1a63b;color: #ffffff }

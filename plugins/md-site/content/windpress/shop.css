@@ -1,0 +1,313 @@
+/* md-site volume: shop.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+#pattern-application-guide-template--21844031570173__pattern-application-guide {
+background: #141414;
+color: #ffffff;
+font-family: Inter, sans-serif;
+padding: 88px 20px 88px;
+}
+#pattern-application-guide-template--21844031570173__pattern-application-guide a {
+color: inherit;
+text-decoration: none;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__container {
+margin: 0 auto;
+max-width: 1400px;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__header {
+align-items: end;
+display: grid;
+gap: 28px;
+margin-bottom: 42px;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__eyebrow {
+align-items: center;
+color: #c9a962;
+display: inline-flex;
+font-size: 13px;
+font-weight: 800;
+gap: 12px;
+letter-spacing: 0.16em;
+line-height: 1.2;
+margin-bottom: 16px;
+text-transform: uppercase;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__eyebrow::before {
+background: #c9a962;
+content: "";
+height: 2px;
+width: 34px;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__title {
+font-family: "Playfair Display", serif;
+font-size: clamp(34px, 4.6vw, 62px);
+font-weight: 700;
+letter-spacing: 0;
+line-height: 1.05;
+margin: 0;
+max-width: 860px;
+text-wrap: balance;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__intro {
+color: rgba(255, 255, 255, 0.82);
+font-size: 17px;
+line-height: 1.72;
+max-width: 600px;
+text-wrap: pretty;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tabs {
+border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+display: flex;
+margin-bottom: 24px;
+overflow-x: auto;
+padding-bottom: 10px;
+scrollbar-width: none;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tabs::-webkit-scrollbar {
+display: none;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tab {
+background: transparent;
+border: 1px solid rgba(255, 255, 255, 0.14);
+border-radius: 12px 12px 0 0;
+cursor: pointer;
+flex: 0 0 auto;
+font: inherit;
+font-size: 15px;
+min-height: 48px;
+padding: 0 20px;
+transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tab:hover,
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tab:focus-visible,
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tab.is-active {
+background: rgba(255, 255, 255, 0.04);
+border-color: rgba(201, 169, 98, 0.54);
+outline: none;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__panel {
+background: rgba(255, 255, 255, 0.035);
+border: 1px solid rgba(255, 255, 255, 0.10);
+border-radius: 20px;
+overflow: hidden;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__panel[hidden] {
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual {
+background:
+radial-gradient(circle at 24% 20%, rgba(201, 169, 98, 0.14), transparent 34%),
+#0a0a0a;
+min-height: 340px;
+position: relative;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual img {
+display: block;
+height: 100%;
+object-fit: cover;
+position: absolute;
+width: 100%;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual::after {
+background: linear-gradient(0deg, rgba(10, 10, 10, 0.72), rgba(10, 10, 10, 0.06));
+inset: 0;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual-fallback {
+color: rgba(255, 255, 255, 0.84);
+font-size: clamp(34px, 5vw, 58px);
+justify-content: center;
+padding: 28px;
+text-align: center;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual-copy {
+bottom: 0;
+left: 0;
+padding: 26px;
+right: 0;
+z-index: 2;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__badge {
+border-radius: 6px;
+color: #1a1a1a;
+font-weight: 900;
+letter-spacing: 0.11em;
+line-height: 1;
+padding: 9px 11px;
+width: fit-content;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__case-title {
+font-size: clamp(26px, 3.2vw, 42px);
+line-height: 1.08;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__location {
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__body {
+radial-gradient(circle at 100% 0%, rgba(201, 169, 98, 0.08), transparent 34%),
+#141414;
+gap: 24px;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__recommend-title {
+font-size: clamp(23px, 2.45vw, 32px);
+line-height: 1.16;
+margin: 0 0 14px;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__recommend-copy {
+line-height: 1.68;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__details {
+border-radius: 16px;
+gap: 0;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__details-label {
+background: rgba(201, 169, 98, 0.08);
+color: rgba(255, 255, 255, 0.76);
+letter-spacing: 0.12em;
+padding: 14px 16px;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__routes {
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route {
+grid-template-columns: 38px minmax(0, 1fr) auto;
+min-height: 58px;
+padding: 0 16px;
+transition: background 180ms ease, color 180ms ease;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route + .pag__route {
+border-top: 1px solid rgba(255, 255, 255, 0.10);
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route:hover,
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route:focus-visible {
+background: rgba(201, 169, 98, 0.10);
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route-index {
+font-size: 12px;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route-name {
+color: rgba(255, 255, 255, 0.90);
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route-arrow {
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__cta {
+border: 1px solid rgba(201, 169, 98, 0.50);
+border-radius: 12px;
+gap: 10px;
+min-height: 46px;
+padding: 0 22px;
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__cta:hover,
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__cta:focus-visible {
+background: linear-gradient(90deg, #c9a962 0%, #d4b878 100%);
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__pull {
+font-style: italic;
+line-height: 1.6;
+margin: 28px auto 0;
+max-width: 640px;
+@media (min-width: 760px) {
+padding-left: 40px;
+padding-right: 40px;
+grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.55fr);
+grid-template-columns: minmax(0, 0.9fr) minmax(380px, 0.62fr);
+min-height: 520px;
+border-left: 1px solid rgba(255, 255, 255, 0.1);
+align-content: center;
+padding: 44px;
+@media (max-width: 759px) {
+padding-bottom: 63px;
+padding-top: 63px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof {
+background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+padding: 88px 20px 96px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof a {
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__container {
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__header {
+margin: 0 auto 38px;
+max-width: 1120px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__eyebrow {
+letter-spacing: 0.18em;
+margin: 0 0 16px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__title {
+font-size: clamp(34px, 4.8vw, 66px);
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__intro {
+margin: 20px auto 0;
+max-width: 920px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__divider {
+background: linear-gradient(90deg, transparent, #c9a962, transparent);
+margin: 26px auto 0;
+width: 84px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__nav {
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__track {
+gap: 22px;
+padding: 4px 0 18px;
+scroll-snap-type: x mandatory;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__track::-webkit-scrollbar {
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__card {
+flex: 0 0 min(92vw, 1040px);
+scroll-snap-align: center;
+transition: border-color 220ms ease, transform 220ms ease;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__card:hover,
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__card:focus-within {
+border-color: rgba(201, 169, 98, 0.44);
+transform: translateY(-3px);
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__card-inner {
+min-height: 470px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__media {
+radial-gradient(circle at 18% 20%, rgba(201, 169, 98, 0.16), transparent 34%),
+min-height: 370px;
+padding: 24px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__media img {
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__media::after {
+background: linear-gradient(0deg, rgba(10, 10, 10, 0.78), rgba(10, 10, 10, 0.10));
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__media-fallback {
+font-size: clamp(32px, 5vw, 58px);
+min-height: 320px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__media-copy {
+gap: 14px;
+inset: auto 24px 24px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__badges {
+flex-wrap: wrap;
+gap: 8px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__badge {
+border-radius: 999px;
+letter-spacing: 0.10em;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__badge--ghost {
+background: rgba(26, 26, 26, 0.64);
+border: 1px solid rgba(255, 255, 255, 0.20);
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__case-title {
+font-size: clamp(28px, 3.6vw, 48px);
+line-height: 1.06;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__location {
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__body {
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__label {
+margin-bottom: 12px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__proofs {
+list-style: none;
+padding: 0;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__proofs li {
+align-items: start;
+font-size: 14px;
+line-height: 1.58;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__proofs li::before {
+height: 6px;
+margin-top: 8px;
+width: 6px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__quote {
+font-size: 16px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__client {
+border-top: 1px solid rgba(255, 255, 255, 0.12);
+padding-top: 20px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__client-name {
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__client-role {
+font-weight: 750;
+letter-spacing: 0.08em;
+margin-top: 4px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__cta {
+margin-top: 18px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__mobile-note {
+margin: 16px 0 0;
+justify-content: flex-end;
+margin-bottom: 18px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__nav-button {
+border: 1px solid rgba(255, 255, 255, 0.18);
+height: 46px;
+transition: border-color 180ms ease, color 180ms ease;
+width: 46px;
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__nav-button:hover,
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__nav-button:focus-visible {
+grid-template-columns: minmax(0, 0.96fr) minmax(380px, 0.56fr);
+padding: 38px;
+padding-bottom: 69px;
+@media (prefers-reduced-motion: reduce) {
+#pattern-project-proof-template--21844031570173__pattern-project-proof .ppp__card,
+transition: none !important;
+transform: none !important;
+/* Honeypot — visually + accessibility hidden, bots see + fill */
+#pattern-contact-template--21844031570173__pattern-contact .pcf-honeypot {
+left: -9999px;
+top: -9999px;
+width: 1px;
+height: 1px;
+opacity: 0;
+pointer-events: none;
+/* Validation error states */
+#pattern-contact-template--21844031570173__pattern-contact .pcf-input.pcf-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+#pattern-contact-template--21844031570173__pattern-contact .pcf-checkbox-label.pcf-invalid {
+/* Remove error state on focus */
+#pattern-contact-template--21844031570173__pattern-contact .pcf-input:focus {
+border-color: rgba(201, 169, 98, 0.6) !important;
+background: rgba(255, 255, 255, 0.05) !important;
+#pattern-contact-template--21844031570173__pattern-contact select option {
+background: #ffffff;
+.md-tfb6e8023 { --pt: 50;--pb: 50 }
+.md-t156d2b52 { --pt:0;--pb:0;--bg-color:#141414 }
+.md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
+.md-t722f84cd { text-wrap: balance }
+.md-t78970fa2 { text-wrap: pretty }
