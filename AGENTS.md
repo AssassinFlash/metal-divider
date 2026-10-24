@@ -20,7 +20,7 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 ## 2. 业主裁定(事实,按日期)
 
 - 2026-10-25(切换执行模式):**cutover 全程由代理代操,业主零点击**——hPanel、DNS、Cloudflare、GSC、Shopify 后台一律代理经浏览器自动化/API 完成(业主明示"不可能解约shopify(自己操作),不可能搞DNS(自己操作)",即面板操作全部归代理);hPanel 凭据在 ~/Downloads/wp-admin.txt(仅代理读取使用,永不入库入日志)。
-- 2026-10-25(终版裁定,推翻 runbook 后半):**Shopify 永不解约**——订阅永续,旧站 metalpartition.com 原样继续跑:DNS 不动、域名不迁出、不做旧域 301。新站独立上线于 metal-divider.com,DNS 全程在 hPanel 内(域名与主机同家,零 NS 迁移);Cloudflare 仅承担 Turnstile(不做 DNS 托管/CDN);GSC 只建新属性,无地址变更。runbook 的 T2(旧域 301 矩阵)/T3(地址变更)/T4(转出)/T5(解约)全部作废;执行序列简化为 T0(照旧,去掉 CF/NS 项)→ T1'(hPanel DNS+SSL+邮箱)→ 生产 verify+询盘实走 → 上线。
+- 2026-10-25(终版裁定,推翻 runbook 后半):**Shopify 侧为绝对禁区,永不触碰**——metalpartition.com 的域名、DNS、商店、订阅一概不动、不解约、不迁移、不做旧域 301,旧站原样继续跑。**metal-divider.com 完全自主**:域名在 Hostinger 属业主,NS 迁 Cloudflare、CDN/WAF/Turnstile/DNS 托管全套照原计划执行。新站独立上线,GSC 只建新属性,无地址变更。runbook 的 §4(T2)/§5(T3)/§6(T4)/§7(T5)作废;§3(T1)中仅旧域别名行(#4/#5)作废,Cloudflare 各行全部恢复;执行序列:T0(照旧,CF 项恢复)→ T1(CF 全套+新域 DNS)→ 生产 verify+询盘实走 → 上线。
 - 2026-10-24(晨间修订 4):**16 品镂空率维持 "On request"**(业主拍板;#25 七路搜寻证实 DSD 不公示,无源值可用,不编造)。#6 的最后一项 OPEN 收口。
 - 2026-10-24(晨间修订 5):**URL 基座改 /pattern/——用 pattern 概念覆盖 product**。PDP 地址 /pattern/<slug>(WooCommerce Product base 设置,零代码);旧站 /products/* 一律 301 到 /pattern/*(slug 本身原样保留);客户可见面(文案、规格条、面包屑、CTA、alt)一律用 pattern 词,不出现 product;Woo 内部机制与后台不露脸、不改名。/collections/ 维持(系列归档)。
 - 2026-10-24(晨间修订 3,#24 实测):**ACF 用免费版(wp.org,当前 6.8.10),ACF Pro 出栈**——一次性实例实测 #6 全部字段组在免费版注册/双路写入/无损读回/REST 可控,Pro-only 能力零使用。#14 本地栈与 #17 的插件面随之改为 ACF 免费版(自动更新,无许可管理)。
