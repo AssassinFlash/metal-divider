@@ -96,6 +96,7 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 ## 7. 研究与核实
 
 - **浏览器铁律(业主 2026-10-25)**:一切浏览器自动化只用**本机真 Chrome**(Playwright `channel:'chrome'` + 持久 profile `~/metal-divider-local/hpanel-profile`);禁止 Playwright 自带 Chromium、Chrome for Testing、无头替代或其他浏览器。性能评估(LiteSpeed 配置调优、加载测量、任何 Web 指标)必须真 Chrome 实测,其他浏览器的性能数据一律无效。
+- **性能优化开放裁定(业主 2026-10-25,推翻此前的 DNS 保守版)**:性能优化**可以激进**——转 Cloudflare、调 LiteSpeed、任何方案均开放接受;前提:①业主零操作,全部代理执行;②方法参考 de-linker(含安全与站点防护那套:guards、限流、IP 封禁、WAF 如上 CF);③**一切结论由实测与搜索驱动**(真 Chrome 性能数据 + Apify 一手来源),禁止未经证实的汇报——业主原话"绝不允许再虚假汇报"。方案选型先测基线再对比,拿数据说话。
 
 外部事实只走一手来源(官方文档、实测数据);每个数字与阈值必须有来源注释。能看、能试、能查的先做再说;只问业主只有业主知道的事。代码、注释、文档里的数字都不是事实,追到业主裁定、一手证据或平台原生能力三者之一为止。
 
