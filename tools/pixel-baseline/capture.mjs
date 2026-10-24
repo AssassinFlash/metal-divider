@@ -8,6 +8,9 @@
  * 1.5s backstop). Cookie-consent banner is dismissed by click; if a banner
  * remains visible it is recorded as a known mask in the manifest.
  *
+ * The capture protocol itself lives in ./lib.mjs, shared with the pixel
+ * checker (tools/pixel-check) so baseline and check cannot drift apart.
+ *
  * Usage:
  *   node capture.mjs --out /path/to/data/pixel-baseline \
  *                    --data /path/to/data/shopify-public
@@ -24,46 +27,22 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
+import {
+  UA,
+  ALL_VIEWPORTS,
+  KILL_CSS,
+  COOKIE_ACCEPT_SELECTORS,
+  BANNER_DETECTORS,
+  contextOptions,
+  captureOne,
+  warmup,
+} from './lib.mjs';
 
 const BASE = 'https://metalpartition.com';
-const UA =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-const ALL_VIEWPORTS = [
-  { name: '1440', width: 1440, height: 900 },
-  { name: '390', width: 390, height: 844 },
-];
 const WORKERS = 2;
 const GAP_MS = 1500;
 const MAX_CONSECUTIVE_FAILURES = 5;
 const PER_CAPTURE_BUDGET_MS = 120_000;
-
-// Freeze motion: honored reduced-motion + paused animations + dead transitions.
-// Entrance reveals are triggered by the lazy-load scroll pass instead.
-const KILL_CSS = `*, *::before, *::after {
-  animation-play-state: paused !important;
-  transition: none !important;
-  scroll-behavior: auto !important;
-}`;
-
-const COOKIE_ACCEPT_SELECTORS = [
-  '#cookie_action_close_header',
-  '.cky-btn-accept',
-  '#cky-btn-accept',
-  'button.cky-banner-element.cky-btn-accept',
-  '.cookieyes-btn-accept',
-  '#onetrust-accept-btn-handler',
-  '#cookiescript_accept',
-];
-const BANNER_DETECTORS = [
-  '#cky-consent',
-  '.cky-consent',
-  '.cky-consent-bar',
-  '#cookie-law-info-bar',
-  '.cookieyes-consent-container',
-  '#cookiescript_injected',
-  '#onetrust-consent-sdk',
-];
 
 function parseArgs(argv) {
   const a = { viewports: ALL_VIEWPORTS.map((v) => v.name) };
@@ -104,114 +83,6 @@ function buildTargets(dataDir) {
   return targets;
 }
 
-function sha256(file) {
-  const h = crypto.createHash('sha256');
-  h.update(fs.readFileSync(file));
-  return h.digest('hex');
-}
-
-async function dismissCookieBanner(page) {
-  for (const sel of COOKIE_ACCEPT_SELECTORS) {
-    try {
-      const el = page.locator(sel).first();
-      if ((await el.count()) > 0 && (await el.isVisible({ timeout: 1000 }))) {
-        await el.click({ timeout: 3000, force: true }).catch(() => null);
-        await page.waitForTimeout(500);
-        return sel;
-      }
-    } catch {
-      /* selector not present */
-    }
-  }
-  return null;
-}
-
-async function detectResidualBanner(page) {
-  for (const sel of BANNER_DETECTORS) {
-    try {
-      const el = page.locator(sel).first();
-      if ((await el.count()) > 0 && (await el.isVisible({ timeout: 500 }))) return sel;
-    } catch {
-      /* not present */
-    }
-  }
-  return null;
-}
-
-async function lazyLoadPass(page) {
-  await page.evaluate(async () => {
-    await new Promise((resolve) => {
-      let y = 0;
-      let steps = 0;
-      const step = Math.max(400, Math.round(window.innerHeight * 0.9));
-      const timer = setInterval(() => {
-        y += step;
-        steps += 1;
-        window.scrollTo(0, y);
-        if (y >= document.body.scrollHeight || steps > 80) {
-          clearInterval(timer);
-          window.scrollTo(0, 0);
-          resolve();
-        }
-      }, 120);
-    });
-  }).catch(() => null);
-  await page.waitForTimeout(800);
-}
-
-async function captureOne(context, t, vp, outDir) {
-  const page = await context.newPage();
-  const started = Date.now();
-  try {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    const resp = await page.goto(t.url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-    await page.addStyleTag({ content: KILL_CSS }).catch(() => null);
-    await page.evaluate(() => document.fonts.ready).catch(() => null);
-    const bannerClicked = await dismissCookieBanner(page);
-    await lazyLoadPass(page);
-    // Deterministic settle gate: every <img> finished loading (or errored).
-    // networkidle is NOT used: this site's analytics keep sockets open forever.
-    await page
-      .waitForFunction(() => Array.from(document.images).every((i) => i.complete), { timeout: 15_000 })
-      .catch(() => null);
-    await page.waitForTimeout(1500);
-    const residualBanner = await detectResidualBanner(page);
-    const file = path.join(outDir, t.type, `${t.slug}-${vp.name}.png`);
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    await page.screenshot({ path: file, fullPage: true, timeout: 60_000 });
-    return {
-      ok: true,
-      file: path.relative(outDir, file),
-      bytes: fs.statSync(file).size,
-      sha256: sha256(file),
-      httpStatus: resp ? resp.status() : null,
-      finalUrl: page.url(),
-      bannerClicked,
-      residualBanner,
-      ms: Date.now() - started,
-    };
-  } finally {
-    await page.close().catch(() => null);
-  }
-}
-
-async function warmup(context) {
-  // Visit home once per context so cookie consent is stored before any saved
-  // capture — the banner never appears inside a baseline screenshot.
-  const page = await context.newPage();
-  try {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-    await page.evaluate(() => document.fonts.ready).catch(() => null);
-    await dismissCookieBanner(page);
-    await page.waitForTimeout(800);
-  } catch (e) {
-    console.warn(`[warmup] ${e.message}`);
-  } finally {
-    await page.close().catch(() => null);
-  }
-}
-
 async function main() {
   const args = parseArgs(process.argv);
   const outDir = path.resolve(args.out);
@@ -248,14 +119,8 @@ async function main() {
   const total = targets.length * args.viewportList.length;
 
   async function worker(queue, viewport) {
-    const context = await browser.newContext({
-      viewport: { width: viewport.width, height: viewport.height },
-      deviceScaleFactor: 1,
-      locale: 'en-US',
-      timezoneId: 'UTC',
-      userAgent: UA,
-    });
-    await warmup(context);
+    const context = await browser.newContext(contextOptions(viewport));
+    await warmup(context, `${BASE}/`);
     while (queue.length > 0 && consecutiveFails < MAX_CONSECUTIVE_FAILURES) {
       const t = queue.shift();
       if (!t) break;
@@ -324,6 +189,8 @@ async function main() {
         fullPage: true,
         reducedMotion: 'reduce',
         killCss: KILL_CSS,
+        cookieAcceptSelectors: COOKIE_ACCEPT_SELECTORS,
+        bannerDetectors: BANNER_DETECTORS,
         workers: WORKERS,
         gapMs: GAP_MS,
         retriesPerCapture: 1,
