@@ -6,9 +6,10 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # mu-plugins and router, and mu-plugins for the site's must-use plugins.
 php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
 
-# uv projects: tools/local (md-local) and tools/media (md-media). The services
-# and migrations of the repository join this list as they land.
-py_projects := "tools/local tools/media"
+# uv projects: tools/local (md-local), tools/media (md-media) and
+# tools/migrate (md-migrate). The services of the repository join this list
+# as they land.
+py_projects := "tools/local tools/media tools/migrate"
 
 # The PHP tools run on PHP 8.3, the stack's pinned version and the version
 # contract the production host must meet (docs/specs/14-local-stack.md §2.3,
@@ -106,6 +107,15 @@ media-check:
 media-one *file:
     {{ md_media }} one "$@"
 
+# The Shopify -> WordPress migration (docs/specs/18-migrator.md, branch
+# research/spec-migrator): plan, the five apply stages and the reconcile,
+# e.g. `just migrate plan`, `just migrate apply --stage products --write`,
+# `just migrate reconcile`. The corpus lives on this Mac, so these run
+# locally only, against the dev instance by default.
+[positional-arguments]
+migrate *args:
+    uv run --locked --project tools/migrate tools/migrate/18-migrate.py "$@"
+
 # Pixel gate: capture the instance's pages with the baseline protocol and
 # diff them against the metalpartition.com baseline (tools/pixel-check,
 # ticket #30). Baseline = data/pixel-baseline of this checkout; extra args
@@ -171,6 +181,11 @@ php-check: php-install
         # PHP's default 128 MB is too small once the WordPress stubs load.
         {{ php }} vendor/bin/phpstan analyse --no-progress --memory-limit=-1
     done
+    # The migrator's WordPress side is not a Composer project: its minimum
+    # line is the syntax check (docs/specs/18-migrator.md §6, branch
+    # research/spec-migrator).
+    echo "== tools/migrate: php -l"
+    {{ php }} -l "{{ justfile_directory() }}/tools/migrate/18-wordpress.php" > /dev/null
 
 [private]
 py-check:
