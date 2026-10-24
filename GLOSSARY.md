@@ -6,7 +6,7 @@
 - **图案系列 Pattern Series**:按风格划分的图案分组(abstract、geometric、moroccan-arabic、organic、perforated、gradient、landscape、asian、vintage-retro),共 9 个。承自旧站的 pattern collections。
 - **产品族页 Product Family Page**:按工艺或应用组织的营销落地页(激光切割几何、玻璃混合、中式艺术、户外隐私与景观、激光切割板、穿孔板、拉伸金属板),及不锈钢屏风枢纽页。
 - **镂空率 Open area**:图案开孔面积占比,产品核心规格之一。
-- **材质路线 Material route**:图案可选的材质方案(304 / 316 不锈钢等)。
+- **材质路线 Material route**:304 / 316 不锈钢,本站唯一材质;其他金属不做(业主裁定,任何客户可见面不出现其他材质词)。
 - **直接询盘 Direct Inquiry**:PDP 上直接发起的询盘(表单或 WhatsApp),单图案上下文自动附带;不汇总、不攒单(业主 2026-10-24 推翻原"图案清单"设计)。
 - **询盘 Inquiry**:客户发起的报价请求;本站唯一转化动作。不用「订单」。
 - **复刻页 Replicated page**:以旧站视觉为基准逐像素重建的页面。
