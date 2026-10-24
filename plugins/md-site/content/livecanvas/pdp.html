@@ -1,0 +1,245 @@
+<!-- md-section: breadcrumb -->
+<div 
+
+
+
+class="xo-section xo-section--template--22148302078205__breadcrumb color-background-1 md-t0512b322"
+>
+  
+
+
+
+
+<div
+  class='xo-section-bg-image   '
+  style=''
+>
+  
+    <xo-parallax xo-lerp-ease='0.4' class='xo-section-bg-image__item'>
+      <xo-parallax-scroll
+        xo-keyframes="
+          {
+            '0%': { backgroundPositionY: '200px' },
+            '100%': { backgroundPositionY: '-200px' },
+          }
+        "
+        class='xo-section-bg-image__url xo-background-lazyload'
+      >
+      </xo-parallax-scroll>
+    </xo-parallax>
+  
+</div>
+
+  <xo-animate xo-type='fade-down' xo-strength='5'>
+    <xo-container 
+
+
+
+class="xo-container--box"
+>
+      
+
+
+<nav class='breadcrumb' style='--display-mobile:none' role='navigation' aria-label='breadcrumb'>
+    <ol class='breadcrumb__list' style='--justify:flex-start'>
+      <li class='breadcrumb__item'>
+        <a class='breadcrumb__link' href='/'>Home</a>
+        <span class='breadcrumb__separator'>
+          
+
+<svg xmlns='http://www.w3.org/2000/svg' height='8' viewBox='0 0 320 512'>
+  <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z" fill="currentColor"/>
+</svg>
+
+
+        </span>
+      </li><li class='breadcrumb__item breadcrumb__item--current' style='--display:block'>
+            <a
+              class='breadcrumb__link breadcrumb--current breadcrumb--normal'
+              href='[lc_the_permalink]'
+              aria-current='page'
+            >[lc_the_title]</a>
+          </li></ol>
+  </nav>
+    </xo-container>
+  </xo-animate>
+</div>
+
+
+
+<!-- md-section: pattern_product_cinematic -->
+
+
+
+
+<section id="cinematic-pdp-template--22148302078205__pattern_product_cinematic" class="cinematic-pdp" x-data="{ activeFaq: 0 }">
+
+  
+  <header class="pdp-hero" id="hero">
+    <div class="pdp-hero-bg" aria-hidden="true">
+      
+<img
+          src="[md_pdp_image slot="hero-bg"]"
+          alt=""
+          loading="eager"
+          fetchpriority="high"
+         width="2400" height="1351">
+        <span class="pdp-hero-scrim"></span>
+      
+    </div>
+
+    <div class="pdp-container pdp-hero-inner">
+      <div class="pdp-hero-grid-cols">
+        <div class="pdp-hero-text gs-reveal">
+          <span class="pdp-eyebrow">[lc_wp_func func="md_pdp_style"] pattern</span>
+          <h1>
+            [lc_wc_product get="sku"]
+            <span class="pdp-h1-sub">Architectural Metal Screen Pattern</span>
+          </h1>
+          <p class="pdp-hero-desc">[md_pdp_design_intent slot="hero"]</p>
+          <div class="pdp-hero-actions">
+            <a
+              href="#open-quote"
+              class="pdp-btn-primary"
+              data-quote-source="pattern_pdp_hero"
+              data-source-page="pattern-pdp"
+              data-source-module="hero"
+              data-source-button="primary_cta"
+            >Request Quote</a>
+            <a href="#specify" class="pdp-btn-ghost">Specify This Pattern</a>
+          </div>
+          <p class="pdp-hero-alt">Prefer email? <a href="/inquiry/?source_page=pattern-pdp&source_module=hero&source_button=request_quote">Send files through the contact form</a></p>
+        </div>
+
+        
+          <div class="pdp-hero-plate gs-reveal"><img
+              src="[md_pdp_image slot="plate"]"
+              alt="[lc_the_title] pattern detail reference"
+              loading="lazy"
+             width="1000" height="1998">
+          </div>
+        
+      </div>
+
+      <dl class="pdp-spec-strip gs-reveal">
+        <div><dt>Pattern code</dt><dd>[lc_wc_product get="sku"]</dd></div>
+        <div><dt>Style</dt><dd>[lc_wp_func func="md_pdp_style"]</dd></div>
+        <div><dt>Open area</dt><dd>[md_pdp_open_area]</dd></div>
+        <div><dt>Material route</dt><dd>[md_pdp_material]</dd></div>
+        <div class="pdp-spec-wide"><dt>Best fit</dt><dd>[md_pdp_best_fit]</dd></div>
+      </dl>
+    </div>
+  </header>
+
+  
+  <section class="pdp-panel pdp-panel-alt" id="identity">
+    <div class="pdp-container">
+      <div class="pdp-split">
+        <div class="gs-reveal">
+          <span class="pdp-eyebrow">Design intent</span>
+          <h2>Visual rhythm and light behavior</h2>
+          <p class="pdp-body">[md_pdp_design_intent slot="lead"]</p>
+          <p class="pdp-body">[md_pdp_design_intent slot="supplemental"]</p>
+          
+        </div>
+        
+          <figure class="pdp-square gs-reveal"><img
+              src="[md_pdp_image slot="square"]"
+              alt="[lc_the_title] official installation scene 3"
+              loading="lazy"
+             width="1200" height="680">
+          </figure>
+        
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="pdp-panel" id="applications">
+    <div class="pdp-container">
+      <div class="pdp-apps">
+        <div class="pdp-apps-lead gs-reveal">
+          <h2>Where this pattern works</h2>
+          <p class="pdp-body">One cut pattern covers four families of use. Open area decides how it behaves in each.</p>
+          <div class="pdp-open-figure" aria-label="Open area">
+            <span class="pdp-open-value">[md_pdp_open_area]</span>
+            <span class="pdp-open-label">open area</span>
+          </div>
+        </div>
+        <div class="pdp-apps-rows">[lc_get_partial slug="md-where-works"]</div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="pdp-panel pdp-panel-alt pdp-specify" id="specify">
+    <span class="pdp-blueprint" aria-hidden="true"></span>
+    <div class="pdp-container">
+      <div class="pdp-split">
+        <div class="gs-reveal">
+          <h2>Specify this pattern</h2>
+          <p class="pdp-body">Scale, repeat, orientation, open area, and finish adjust before fabrication, so the panel fits the drawing instead of forcing the drawing around a fixed panel.</p>
+          <p class="pdp-body">Send enough project context and the material route, finish, and panel logic get checked before the quote is prepared.</p>
+          <a href="/inquiry/?source_page=pattern-pdp&source_module=specify&source_button=send_project_context" class="pdp-btn-ghost">Send Project Context</a>
+        </div>
+        <div class="pdp-steps gs-reveal">
+          <div class="pdp-step"><h3>Dimensions and quantities</h3><p>Overall width, height, panel count, and any pattern alignment requirement across panels.</p></div>
+          <div class="pdp-step"><h3>Drawings and site context</h3><p>CAD, PDF elevations, site photos, or sketches showing the opening and adjacent materials.</p></div>
+          <div class="pdp-step"><h3>Finish selection</h3><p>Target finish family, reference image, lighting condition, and whether samples are needed first.</p></div>
+          <div class="pdp-step"><h3>Mounting condition</h3><p>Frame, bracket, rail, post, recessed opening, or edge detail that affects fabrication.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  
+    <section class="pdp-panel" id="related">
+      <div class="pdp-container">
+        <div class="pdp-related-head gs-reveal">
+          <h2>Adjacent patterns in this family</h2>
+          <a href="/collections/all" class="pdp-textlink">View the full catalog</a>
+        </div>
+        <div class="pdp-related-grid">[md_pdp_related]</div>
+    </section>
+  
+
+  
+  <section class="pdp-panel pdp-panel-alt" id="faq">
+    <div class="pdp-container">
+      <h2 class="gs-reveal">Technical FAQ</h2>
+      <div class="pdp-faq-list gs-reveal">[lc_get_partial slug="md-pdp-faq"]</div>
+        </div>
+        <div class="pdp-faq-item">
+          <button class="pdp-faq-q" type="button" @click="activeFaq = activeFaq === 1 ? -1 : 1" :aria-expanded="activeFaq === 1">Can I request a physical sample? <span x-text="activeFaq === 1 ? '−' : '+'"></span></button>
+          <div class="pdp-faq-a" x-show="activeFaq === 1" x-collapse><p>Yes. Samples confirm pattern scale, finish direction, reflection, and edge quality before full production.</p></div>
+        </div>
+        <div class="pdp-faq-item">
+          <button class="pdp-faq-q" type="button" @click="activeFaq = activeFaq === 2 ? -1 : 2" :aria-expanded="activeFaq === 2">Which files make quoting faster? <span x-text="activeFaq === 2 ? '−' : '+'"></span></button>
+          <div class="pdp-faq-a" x-show="activeFaq === 2" x-collapse><p>CAD, PDF elevations, rough dimensions, quantity, finish direction, and site photos give the fastest path to a useful quote.</p></div>
+        </div>
+      </div>
+
+      <div class="pdp-cta gs-reveal">
+        <h2>Discuss your project</h2>
+        <p class="pdp-body">Send the opening, finish direction, and drawing references. The team reviews material route and panel logic, then returns the next quote step.</p>
+        <div class="pdp-cta-actions">
+          <a
+            href="#open-quote"
+            class="pdp-btn-primary"
+            data-quote-source="pattern_pdp_faq"
+            data-source-page="pattern-pdp"
+            data-source-module="faq"
+            data-source-button="primary_cta"
+          >Request Quote</a>
+          <a href="/inquiry/?source_page=pattern-pdp&source_module=faq&source_button=request_quote" class="pdp-textlink">or send files through the contact form</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+
+
+
+
+

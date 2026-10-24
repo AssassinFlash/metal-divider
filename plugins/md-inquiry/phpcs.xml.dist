@@ -7,6 +7,13 @@
 	<file>tests</file>
 	<file>../../tools/php/bootstrap.php</file>
 
+	<!-- The WP-named class stand-ins are WordPress's own names, defined for
+	     the tests' runtime only (a test bootstrap stands in for WordPress
+	     itself); the naming and one-class-per-file rules are not theirs to
+	     answer. -->
+	<exclude-pattern>tests/php/Support/wp-standins.php</exclude-pattern>
+	<exclude-pattern>tests/php/Doubles/*</exclude-pattern>
+
 	<rule ref="../../tools/php/phpcs.xml"/>
 
 	<rule ref="WordPress.WP.I18n">

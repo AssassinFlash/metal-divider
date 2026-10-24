@@ -17,6 +17,12 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		public $post_content = '';
 		/** @var string */
 		public $post_type = '';
+		/** @var string */
+		public $post_name = '';
+		/** @var string */
+		public $post_title = '';
+		/** @var string */
+		public $post_status = '';
 	}
 }
 

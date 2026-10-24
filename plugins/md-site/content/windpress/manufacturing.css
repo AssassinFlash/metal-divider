@@ -1,0 +1,128 @@
+/* md-site volume: manufacturing.css — carried from the old site's
+ * markup and stylesheets by the conversion pipeline (ticket
+ * #32, spec 19 §4.2 T2). Rules keep their source order.
+ */
+.mt-9 { margin-top:2.25rem }
+@keyframes mfg-tech-bg-enter-template--21844034879741__manufacturing_techniques {
+from { transform: translateY(100%); }
+to   { transform: translateY(0); }
+}
+@keyframes mfg-tech-bg-prev-template--21844034879741__manufacturing_techniques {
+from { transform: translateY(0); }
+to   { transform: translateY(-11rem); }
+@keyframes mfg-tech-bg-enter-rev-template--21844034879741__manufacturing_techniques {
+from { transform: translateY(-100%); }
+@keyframes mfg-tech-bg-prev-rev-template--21844034879741__manufacturing_techniques {
+to   { transform: translateY(11rem); }
+#mfg-tech-stage-template--21844034879741__manufacturing_techniques {
+border-radius: 0;
+width: 100%;
+height: 100vh;
+margin: 0;
+position: sticky;
+top: 0;
+overflow: hidden;
+background: #141414;
+.mfg-tech-bg-template--21844034879741__manufacturing_techniques {
+position: absolute;
+inset: 0;
+visibility: hidden;
+pointer-events: none;
+.mfg-tech-bg-template--21844034879741__manufacturing_techniques img {
+height: 100%;
+object-fit: cover;
+.mfg-tech-bg-template--21844034879741__manufacturing_techniques.mfg-tech-bg-active {
+visibility: visible;
+z-index: 2;
+animation: 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both mfg-tech-bg-enter-template--21844034879741__manufacturing_techniques;
+.mfg-tech-bg-template--21844034879741__manufacturing_techniques.mfg-tech-bg-prev {
+z-index: 1;
+animation: 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both mfg-tech-bg-prev-template--21844034879741__manufacturing_techniques;
+#mfg-tech-outer-template--21844034879741__manufacturing_techniques.mfg-tech-rev .mfg-tech-bg-template--21844034879741__manufacturing_techniques.mfg-tech-bg-active {
+animation-name: mfg-tech-bg-enter-rev-template--21844034879741__manufacturing_techniques;
+#mfg-tech-outer-template--21844034879741__manufacturing_techniques.mfg-tech-rev .mfg-tech-bg-template--21844034879741__manufacturing_techniques.mfg-tech-bg-prev {
+animation-name: mfg-tech-bg-prev-rev-template--21844034879741__manufacturing_techniques;
+.mfg-tech-content-slot-template--21844034879741__manufacturing_techniques {
+top: 0; bottom: 0; left: clamp(2.5rem, 4.5vw, 5.5rem);
+width: min(48vw, 48rem);
+max-width: calc(100% - 34rem);
+z-index: 3;
+.mfg-tech-content-template--21844034879741__manufacturing_techniques {
+top: 44%; left: 0;
+width: 100%; max-width: 44rem;
+opacity: 0; pointer-events: none;
+transform: translateY(calc(1.5rem - 50%));
+transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+.mfg-tech-content-template--21844034879741__manufacturing_techniques.mfg-tech-active {
+opacity: 1; pointer-events: auto;
+transform: translateY(-50%);
+transition-delay: 60ms;
+.mfg-tech-nav-template--21844034879741__manufacturing_techniques {
+top: 50%; right: 4rem;
+z-index: 5;
+display: flex; flex-direction: column; gap: 0.75rem;
+list-style: none; margin: 0; padding: 0;
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques {
+display: flex; align-items: center; justify-content: flex-end; gap: 1rem;
+padding: 0 0 0 1rem;
+font-size: 15px; color: rgba(255,255,255,0.5);
+background: transparent; border: none;
+border-left: 2px solid transparent;
+cursor: pointer; white-space: nowrap;
+transition: color 0.3s, border-color 0.3s;
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active {
+color: #fff;
+border-left-color: #c9a962;
+.mfg-tech-nav-label-template--21844034879741__manufacturing_techniques { font-size: 15px; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques h2 { font-size: 64px; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques p  { font-size: 21px; }
+@media (max-width: 991px) {
+.mfg-tech-content-slot-template--21844034879741__manufacturing_techniques { left: 2rem; right: 2rem; width: auto; max-width: none; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques { max-width: 55%; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques.mfg-tech-active { top: 10rem; transform: none; }
+top: 6rem; left: 2rem; right: auto; transform: none;
+flex-direction: row; gap: 1.25rem;
+border-bottom: 1px solid rgba(255,255,255,0.35); padding-bottom: 0.5rem;
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques { flex-direction: row-reverse; padding: 0; border-left: none; font-size: 15px; }
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active { color: #c9a962; }
+.mfg-tech-nav-label-template--21844034879741__manufacturing_techniques {
+opacity: 0; max-width: 0; overflow: hidden; font-size: 13px;
+transition: max-width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s;
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active .mfg-tech-nav-label-template--21844034879741__manufacturing_techniques { opacity: 1; max-width: 12rem; }
+#mfg-tech-stage-template--21844034879741__manufacturing_techniques { border-radius: 0; width: 100%; margin: 0; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques h2 { font-size: 38px; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques p  { font-size: 16px; }
+@media (max-width: 767px) {
+top: var(--header-height, 80px);
+height: calc(100dvh - var(--header-height, 80px));
+.mfg-tech-content-slot-template--21844034879741__manufacturing_techniques { left: 1.5rem; right: 1.5rem; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques { max-width: 85%; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques.mfg-tech-active { top: 9rem; }
+.mfg-tech-nav-template--21844034879741__manufacturing_techniques { top: 5.5rem; left: 1.5rem; gap: 0.875rem; }
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques { font-size: 14px; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques h2 { font-size: 30px; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques p  { font-size: 15px; }
+.md-t09274b5a { --pt: 20;--pb: 20 }
+.md-t672357ea { min-height: 90vh }
+.md-t722f84cd { text-wrap: balance }
+.md-t78970fa2 { text-wrap: pretty }
+.md-te1816706 { height: 600vh;position: relative;color: #fff }
+.md-tf636bf81 { position: absolute;inset: 0;overflow: hidden;z-index: 1 }
+.md-t214c5857 { position: absolute;inset: 0;background: linear-gradient(90deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.38) 45%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0.42) 100%);pointer-events: none }
+.md-t56105794 { position: absolute;top: 3.5rem;left: 0;font-size: 13px;font-weight: 700;letter-spacing: 0.2em;color: #c9a962;text-transform: uppercase;z-index: 1;pointer-events: none }
+.md-t40acbc9b { font-family: 'Playfair Display', Georgia, serif;font-weight: 700;color: #fff;line-height: 1.06;margin: 0 0 1.1rem }
+.md-tedc0445e { line-height: 1.52;color: rgba(255,255,255,0.88);margin: 0 0 1.75rem;max-width: 40rem }
+.md-t0bc6c7c6 { display: flex;flex-wrap: wrap;gap: 0.625rem;margin-bottom: 1.75rem }
+.md-t795ccdf1 { background: rgba(201,169,98,0.14);border: 1px solid rgba(201,169,98,0.3);border-radius: 999px;padding: 0.35rem 1rem;font-size: 13px;font-weight: 700;color: #c9a962;letter-spacing: 0.04em }
+.md-t3e8812f2 { background: rgba(255,255,255,0.07);border: 1px solid rgba(255,255,255,0.14);border-radius: 999px;padding: 0.35rem 1rem;font-size: 13px;font-weight: 600;color: rgba(255,255,255,0.80);letter-spacing: 0.03em }
+.md-td3457274 { display: inline-flex;align-items: center;gap: 0.6rem;padding: 0.9rem 1.75rem;background: rgba(201,169,98,0.12);border: 1px solid rgba(201,169,98,0.35);border-radius: 0.5rem;color: #c9a962;font-size: 16px;font-weight: 700;text-decoration: none;transition: background 0.2s }
+.md-tc593ad00 { text-align: right;flex: 1 }
+.md-td8ee4148 { font-variant-numeric: tabular-nums;font-weight: 600;font-size: 14px;color: #c9a962;min-width: 22px;text-align: right }
+.md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }
+.md-t2abb772b { width: 380px;height: 520px }
+.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-t9edacfd5 { background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);padding-top: 96px;padding-bottom: 96px }
+.md-t5790ffba { display: none }
+.md-tecede96f { background-color: #141414 }
+.md-t16705960 { aspect-ratio:9/14;background-color:#0a0a0a }

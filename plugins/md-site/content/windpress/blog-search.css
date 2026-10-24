@@ -1,0 +1,11 @@
+/* md-site volume: blog-search.css — the journal face forked from the
+ * approved design source (AGENTS.md 2026-10-24; spec 19 §2.2 R1),
+ * with this site's tokens (the mapping lives in the fork command
+ * of tools/template-convert, ticket #32).
+ */
+/* The face's own rules. Search reuses journal.css and the native query loop.
+ * The escaped query is allowed to wrap; no fixed heading width can clip it.
+ */
+#md-blog-search .journal-feed { margin-top: 0; }
+#md-blog-search .journal-intro h1 { overflow-wrap: anywhere; }
+

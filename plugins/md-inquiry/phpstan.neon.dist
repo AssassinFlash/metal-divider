@@ -15,3 +15,12 @@ parameters:
 		- vendor/10up/wp_mock/php/WP_Mock/Action.php
 		- vendor/10up/wp_mock/php/WP_Mock/Filter.php
 		- vendor/10up/wp_mock/php/WP_Mock/HookedCallback.php
+		# wp-cli (the commands call WP_CLI and its formatter); the runtime
+		# guard answers where the real WP_CLI exists.
+		- tests/php/Doubles/wp-cli-stubs.php
+	excludePaths:
+		# The WP-named class stand-ins exist only at the tests' runtime;
+		# PHPStan knows these names from the WordPress stubs. The wp-cli
+		# stubs above are read, not analysed.
+		- tests/php/Support/wp-standins.php
+		- tests/php/Doubles

@@ -1,0 +1,52 @@
+
+/* The md-inquiry-cta piece (spec 19 §5.2, the T5 replacement): the
+ * single-source CTA band every converted inquiry form becomes. New
+ * markup, not carried old-site CSS — tokens only. This appendix is a
+ * static asset of the pipeline (assets/*.append.css); the converter
+ * appends it to its volume after every write, so a rerun keeps it. */
+.md-inquiry-cta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.md-inquiry-cta__primary {
+  align-items: center;
+  background: var(--md-gold);
+  border: 1px solid var(--md-gold);
+  border-radius: 10px;
+  color: var(--md-bg-darkest);
+  display: inline-flex;
+  font-weight: 600;
+  font-size: 15px;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  text-decoration: none;
+}
+.md-inquiry-cta__primary:hover {
+  background: var(--md-gold-light);
+}
+.md-inquiry-cta__whatsapp {
+  align-items: center;
+  border: 1px solid var(--md-whatsapp);
+  border-radius: 10px;
+  color: var(--md-whatsapp);
+  display: inline-flex;
+  font-weight: 600;
+  font-size: 15px;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  text-decoration: none;
+}
+.md-inquiry-cta__whatsapp:hover {
+  background: rgba(37, 211, 102, 0.1);
+}
+.md-inquiry-cta__note {
+  color: rgba(255, 255, 255, 0.55);
+  flex-basis: 100%;
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin: 4px 0 0;
+}

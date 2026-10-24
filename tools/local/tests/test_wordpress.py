@@ -19,6 +19,7 @@ def plugins_of(tmp_path: Path) -> Path:
         "wp-seopress-pro/seopress-pro.php": "* Version: 10.2.1",
         "livecanvas/livecanvas-plugin-index.php": "Version: 4.9.5",
         "28-wp-markdown-editor/yansir-md.php": "Version: 1.0.1",
+        "litespeed-cache/litespeed-cache.php": "Version: 7.9.2",
     }
     for relative, line in headers.items():
         path = plugins / relative

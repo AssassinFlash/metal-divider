@@ -1,0 +1,94 @@
+/* md-site volume: privacy.css — the one policy face (spec 08 §7, spec
+ * 19 §2.2 R3), the site's tokens and reading measure. */
+
+.md-privacy {
+  background: var(--md-bg);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--md-font-sans);
+  padding: 56px 0 96px;
+}
+.md-privacy .container-narrow {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+@media (min-width: 750px) {
+  .md-privacy .container-narrow { padding: 0 40px; }
+}
+.privacy-head { margin-bottom: 36px; }
+.privacy-eyebrow {
+  color: var(--md-gold);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.md-privacy h1 {
+  color: #fff;
+  font-family: var(--md-font-display);
+  font-size: clamp(30px, 5vw, 44px);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.privacy-lede {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+}
+.privacy-toc {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-bottom: 40px;
+  padding: 14px 18px;
+}
+.privacy-toc a {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13.5px;
+  text-decoration: none;
+}
+.privacy-toc a:hover { color: var(--md-gold); }
+.md-privacy section { margin-bottom: 36px; }
+.md-privacy h2 {
+  color: #fff;
+  font-family: var(--md-font-display);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.md-privacy p,
+.md-privacy li {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0 0 12px;
+}
+.md-privacy ul { margin: 0 0 12px; padding-left: 22px; }
+.md-privacy a { color: var(--md-gold); text-decoration: none; }
+.md-privacy a:hover { text-decoration: underline; }
+.privacy-table {
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 16px 0 20px;
+  width: 100%;
+}
+.privacy-table th,
+.privacy-table td {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.privacy-table th {
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+@media (max-width: 749px) {
+  .privacy-table { display: block; overflow-x: auto; }
+}

@@ -9,8 +9,20 @@ php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
 # uv projects: tools/local (md-local), tools/media (md-media) and
 # tools/migrate (md-migrate). The services of the repository join this list
 # as they land.
-py_projects := "tools/local tools/media tools/migrate"
-
+py_projects := "tools/local tools/media tools/migrate tools/local tools/template-convert tools/media tools/deploy"
+# The conversion pipeline joins both chains: ruff/mypy under check,
+# pytest under test (its fixtures are in-repo; the raw old-site pages
+# are the ticket's local evidence under .scratch, not shipped).
+# uv projects: tools/local (md-local). The services and migrations of the
+# repository join this list as they land.
+# uv projects: tools/local (md-local), tools/media (md-media) and
+# tools/deploy (md-deploy). The services and migrations of the repository
+# join this list as they land.
+# `just deploy …` is the deployment pipeline: dev/staging/prod targets, the
+# rename-atomic file deploy with rollback, the snapshot every deploy carries,
+# present and the media plane (tools/deploy/deploy.just,
+# docs/specs/20-staging-deploy.md, branch research/spec-deploy).
+mod deploy "tools/deploy/deploy.just"
 # The PHP tools run on PHP 8.3, the stack's pinned version and the version
 # contract the production host must meet (docs/specs/14-local-stack.md §2.3,
 # branch research/spec-local-stack): Homebrew's php@8.3 when it is installed,
@@ -30,7 +42,7 @@ md_media := "uv run --locked --project tools/media md-media"
 
 # List the recipes.
 default:
-    @just --list
+    @just --list --list-submodules
 
 # Lint and static analysis of every chain.
 check: php-check py-check
@@ -49,6 +61,16 @@ mu-smoke name="dev":
     set -euo pipefail
     cd "{{ justfile_directory() }}/mu-plugins"
     MD_MU_WP="just wp {{ name }}" PHP={{ php }} {{ php }} vendor/bin/phpunit --testsuite integration
+
+# The inquiry chain's smoke suite against a real instance (`just up <name>`
+# first): the form, the 303, the record, the queue's routing, the one test
+# mail, and the rate window — one mail per whole run, per the discipline.
+[positional-arguments]
+inquiry-smoke name="dev":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{ justfile_directory() }}/plugins/md-inquiry"
+    MD_INQUIRY_WP="just wp {{ name }}" PHP={{ php }} {{ php }} vendor/bin/phpunit --testsuite integration
 
 # Create the instance if needed, then (re)start it with this checkout's plugins.
 [positional-arguments]
@@ -91,16 +113,32 @@ present name="dev": php-install
 archive slug source:
     {{ md_local }} archive "$@"
 
+# Rebuild the replica LiveCanvas templates and WindPress volumes from the
+# old-site captures (ticket #32's conversion pipeline, spec 19 §4). The raw
+# pages and the theme-assets directory are the ticket's local evidence
+# (.scratch/<ticket>/raw, the old theme checkout); the media state is the
+# media pipeline's source→final map when it has run (ticket #29).
+templates raw=".scratch/32/raw" theme-assets="" media-state="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    args=""
+    if [ -n "{{ theme-assets }}" ]; then args="$args --theme-assets {{ theme-assets }}"; fi
+    if [ -n "{{ media-state }}" ]; then args="$args --media-state {{ media-state }}"; fi
+    cd tools/template-convert
+    uv run --locked md-template-convert --raw "{{ justfile_directory() }}/{{ raw }}" $args --plugin "{{ justfile_directory() }}/plugins/md-site" --scratch "{{ justfile_directory() }}/.scratch/32"
+
+# Fork the approved journal (blog) faces from the de-linker checkout
+# (spec 19 §2.2 R1): brand, addresses and tokens mapped, markup intact.
+blog-fork source:
+    cd tools/template-convert && uv run --locked md-template-convert --blog-source {{ source }} --plugin "{{ justfile_directory() }}/plugins/md-site"
 # Build the full final media set: data/media-raw -> data/media-final
 # (variants, sidecars, checkpoint state). Full corpus run, minutes.
 media-build:
     {{ md_media }} build
-
 # Verify the final set: coverage, sha256, sizes, formats, gallery rules,
 # lossless pixel identity, budget. Non-zero exit = FAIL.
 media-check:
     {{ md_media }} check
-
 # Produce the final single file for an owner upload, e.g.
 # `just media-one ~/Desktop/foo.jpg` (no tier ladder, spec §8.3).
 [positional-arguments]

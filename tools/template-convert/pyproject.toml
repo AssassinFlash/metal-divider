@@ -1,0 +1,39 @@
+[project]
+name = "md-template-convert"
+version = "0.1.0"
+description = "The old-site HTML to LiveCanvas template conversion pipeline of ticket #32 (spec 19, docs/specs/19-page-templates.md): verbatim move plus the mechanical transforms T1-T7, two-stage (incorporate first, upgrades as separate commits)."
+requires-python = ">=3.12"
+dependencies = ["tinycss2>=1.3.0"]
+
+[project.scripts]
+md-template-convert = "md_template_convert.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[build-system]
+# Range written by `uv init --package` with uv 0.13.4.
+requires = ["uv_build>=0.13.4,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.ruff.lint]
+# Ruff's defaults (E4, E7, E9, F) plus import sorting, bugbug and pyupgrade,
+# as in the rest of this repository's Python.
+select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
+
+[tool.mypy]
+strict = true
+
+# tinycss2 ships no py.typed marker (checked 2026-10-24); its API surface
+# is wrapped behind csslib's own typed helpers.
+[[tool.mypy.overrides]]
+module = "tinycss2.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error"]
