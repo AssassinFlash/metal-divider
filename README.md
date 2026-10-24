@@ -18,6 +18,8 @@ WordPress + WooCommerce(图案目录,无结账)+ ACF 免费版(产品规格字�
 | `mu-plugins/` | 生产 must-use 插件(安全层、错误记录等) |
 | `themes/` | 子主题(LiveCanvas/WindPress 承接呈现) |
 | `tools/local/` | 本地 WordPress 实例栈(uv 项目 `md-local`) |
+| `tools/pixel-baseline/` | 旧站像素门基准采集脚本与采集清单(#21;截图本体在 `data/pixel-baseline/`,不入库) |
+| `tools/pixel-check/` | 像素门比对工具:实例截图 vs 基准逐页型 diff + 掩膜清单(#30) |
 | `tools/php/` | 各 PHP 项目共享的 PHPCS/PHPStan 规则(PHP 8.3 锁 platform) |
 | `tools/` | 其余 just 模块与脚本(迁移、媒体终稿管线等,随建设生长) |
 | `docs/` | 规格、研究证据、验收记录 |
@@ -46,6 +48,7 @@ just wp dev plugin list   # 对实例跑 WP-CLI
 just down      # 停服务器(数据保留)
 just reset     # 删库删目录,原样重建
 just check && just test   # 静态检查与单元测试(CI 跑同一组)
+just pixel-check dev      # 像素门:实例按基准口径截图,逐页型 diff(掩膜外差异>0 则非零退出)
 ```
 
 首次使用前需要两样本机资产(都不进仓库):
