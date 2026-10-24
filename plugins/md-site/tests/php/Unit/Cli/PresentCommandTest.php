@@ -232,5 +232,12 @@ final class PresentCommandTest extends TestCase {
 		WP_Mock::userFunction( 'update_post_meta' )->zeroOrMoreTimes()->andReturn( true );
 		WP_Mock::userFunction( 'wp_update_post' )->zeroOrMoreTimes()->andReturn( true );
 		WP_Mock::userFunction( 'is_wp_error' )->zeroOrMoreTimes()->andReturn( false );
+		WP_Mock::userFunction( 'get_option' )->zeroOrMoreTimes()->with( 'lc_settings', array() )->andReturn(
+			array(
+				'enable-dynamic-templating' => '1',
+				'header'                    => '1',
+				'footerV2'                  => '1',
+			)
+		);
 	}
 }

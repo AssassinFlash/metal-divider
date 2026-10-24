@@ -9,6 +9,7 @@ declare( strict_types = 1 );
 
 namespace MetalDivider\Site\Cli;
 
+use MetalDivider\Site\Presentation\LiveCanvasOptions;
 use MetalDivider\Site\Presentation\Templates;
 use MetalDivider\Site\Presentation\Tokens;
 use MetalDivider\Site\Presentation\WindPressVolume;
@@ -56,6 +57,9 @@ final class PresentCommand {
 
 		( new WindPressVolume() )->install();
 		WP_CLI::log( 'windpress volume: ' . implode( ', ', array_map( 'basename', WindPressVolume::files() ) ) );
+
+		$enabled = ( new LiveCanvasOptions() )->enable();
+		WP_CLI::log( $enabled ? 'livecanvas: dynamic templating + chrome partials enabled' : 'livecanvas: already enabled' );
 
 		$report = ( new Templates() )->sync();
 		WP_CLI::log(
