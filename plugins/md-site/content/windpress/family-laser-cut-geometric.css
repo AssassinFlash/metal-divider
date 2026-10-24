@@ -7,20 +7,26 @@ padding-top: 72px;
 padding-bottom: 72px;
 }
 @media (min-width: 750px) {
+#laser-cut-solutions-template--21873710563581__laser_cut_solutions {
 padding-top: 96px;
 padding-bottom: 96px;
+}
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions [x-cloak] {
 display: none !important;
+}
 /* Panel gallery */
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-gallery-stack {
 position: relative;
 height: 520px;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-gallery {
 position: absolute;
 inset: 0;
 display: flex;
 gap: 12px;
 height: 100%;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel {
 flex: 1;
 min-width: 0;
@@ -28,29 +34,39 @@ border-radius: 12px;
 overflow: hidden;
 cursor: pointer;
 transition: flex 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+position: relative;
 border: 1px solid rgba(255, 255, 255, 0.08);
 background: #141414;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel--active {
 flex: 2.5;
 border-color: rgba(201, 169, 98, 0.4);
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel-img {
 width: 100%;
+height: 100%;
 object-fit: cover;
 opacity: 0.5;
 transition: opacity 0.6s ease, transform 0.6s ease;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel--active .lcs-panel-img {
 opacity: 1;
 transform: scale(1.02);
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-placeholder {
+display: flex;
 align-items: center;
 justify-content: center;
 background: rgba(255,255,255,0.03);
 color: rgba(255,255,255,0.2);
 font-size: 13px;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel-label {
+position: absolute;
 top: 16px;
 left: 16px;
 display: inline-flex;
+align-items: center;
 gap: 6px;
 padding: 5px 10px;
 background: rgba(0, 0, 0, 0.6);
@@ -66,22 +82,30 @@ z-index: 2;
 opacity: 0;
 transform: translateY(-8px);
 transition: all 0.4s ease 0.1s;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel--active .lcs-panel-label {
+opacity: 1;
 transform: translateY(0);
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-label-dot {
 width: 6px;
 height: 6px;
 border-radius: 50%;
 background: #c9a962;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel-overlay {
+position: absolute;
 bottom: 0;
 left: 0;
 right: 0;
 padding: 20px;
 background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+z-index: 2;
 transition: padding 0.5s ease;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel--active .lcs-panel-overlay {
 padding: 24px;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel-title {
 font-family: 'Playfair Display', serif;
 font-size: 16px;
@@ -89,31 +113,50 @@ font-weight: 500;
 margin: 0;
 color: rgba(255,255,255,0.9);
 transition: all 0.4s ease;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel--active .lcs-panel-title {
 font-size: 20px;
+color: #fff;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel-desc {
+font-size: 13px;
 line-height: 1.5;
 color: rgba(255,255,255,0.7);
 margin: 6px 0 0;
+transition: all 0.4s ease;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel--active .lcs-panel-desc {
 color: rgba(255,255,255,0.85);
 font-size: 14px;
+}
 /* Mobile: horizontal scroll */
 @media (max-width: 749px) {
+#laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-gallery-stack {
 height: 380px;
+}
+#laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-gallery {
+height: 100%;
 overflow-x: auto;
 scroll-snap-type: x mandatory;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: none;
 padding-bottom: 8px;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-gallery::-webkit-scrollbar {
 display: none;
+}
+#laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel {
 flex: 0 0 78%;
 scroll-snap-align: center;
+}
+#laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel--active {
+flex: 0 0 78%;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel-img { opacity: 1; }
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel-label { opacity: 1; transform: none; }
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel-overlay { opacity: 1; transform: none; }
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions .lcs-panel-desc { opacity: 1; height: auto; }
+}
 .md-t09274b5a { --pt: 20;--pb: 20 }
 .md-tf5a0a06d { min-height: 85vh;background: #141414;margin: 0;padding: 0 }
 .md-t569b5b49 { background: radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, #141414 70%) }

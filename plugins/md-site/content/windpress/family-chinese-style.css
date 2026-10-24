@@ -10,19 +10,25 @@ padding-top: 72px;
 padding-bottom: 72px;
 }
 @media (min-width: 750px) {
+#chinese-space-applications-template--21873710498045__chinese_space_applications {
 padding-top: 96px;
 padding-bottom: 96px;
+}
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications [x-cloak] {
 display: none !important;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery-stack {
 position: relative;
 height: 520px;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery {
 position: absolute;
 inset: 0;
 display: flex;
 gap: 12px;
 height: 100%;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel {
 flex: 1;
 min-width: 0;
@@ -30,29 +36,39 @@ border-radius: 12px;
 overflow: hidden;
 cursor: pointer;
 transition: flex 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+position: relative;
 border: 1px solid rgba(255, 255, 255, 0.08);
 background: #0a0a0a;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel--active {
 flex: 2.5;
 border-color: rgba(201, 169, 98, 0.4);
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-img {
 width: 100%;
+height: 100%;
 object-fit: cover;
 opacity: 0.5;
 transition: opacity 0.6s ease, transform 0.6s ease;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel--active .csa-panel-img {
 opacity: 1;
 transform: scale(1.02);
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-placeholder {
+display: flex;
 align-items: center;
 justify-content: center;
 background: rgba(255,255,255,0.03);
 color: rgba(255,255,255,0.5);
 font-size: 13px;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-label {
+position: absolute;
 top: 16px;
 left: 16px;
 display: inline-flex;
+align-items: center;
 gap: 6px;
 padding: 5px 10px;
 background: rgba(0, 0, 0, 0.6);
@@ -68,22 +84,30 @@ z-index: 2;
 opacity: 0;
 transform: translateY(-8px);
 transition: all 0.4s ease 0.1s;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel--active .csa-panel-label {
+opacity: 1;
 transform: translateY(0);
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-label-dot {
 width: 6px;
 height: 6px;
 border-radius: 50%;
 background: #c9a962;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-overlay {
+position: absolute;
 bottom: 0;
 left: 0;
 right: 0;
 padding: 20px;
 background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+z-index: 2;
 transition: padding 0.5s ease;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel--active .csa-panel-overlay {
 padding: 24px;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-title {
 font-family: 'Playfair Display', serif;
 font-size: 16px;
@@ -91,87 +115,164 @@ font-weight: 500;
 margin: 0;
 color: rgba(255,255,255,0.9);
 transition: all 0.4s ease;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel--active .csa-panel-title {
 font-size: 20px;
+color: #fff;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-desc {
+font-size: 13px;
 line-height: 1.5;
 color: rgba(255,255,255,0.8);
 margin: 6px 0 0;
+transition: all 0.4s ease;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel--active .csa-panel-desc {
+color: rgba(255,255,255,0.9);
 font-size: 14px;
+}
 @media (max-width: 749px) {
+#chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery-stack {
 height: 380px;
+}
+#chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery {
+height: 100%;
 overflow-x: auto;
 scroll-snap-type: x mandatory;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: none;
 padding-bottom: 8px;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery::-webkit-scrollbar {
 display: none;
+}
+#chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel {
 flex: 0 0 78%;
 scroll-snap-align: center;
+}
+#chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel--active {
+flex: 0 0 78%;
+}
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-img { opacity: 1; }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-label { opacity: 1; transform: none; }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-overlay { opacity: 1; transform: none; }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-desc { opacity: 1; height: auto; }
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing {
+padding-top: 72px;
+padding-bottom: 72px;
+}
+@media (min-width: 750px) {
+#chinese-material-pairing-template--21873710498045__chinese_material_pairing {
+padding-top: 96px;
+padding-bottom: 96px;
+}
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing [x-cloak] {
+display: none !important;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-slider-shell {
 padding-top: 6px;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-track {
+position: absolute;
 inset-inline: 0;
 top: 50%;
 transform: translateY(-50%);
 display: grid;
 grid-template-columns: repeat(3, minmax(0, 1fr));
 height: 16px;
+overflow: hidden;
 border-radius: 999px;
+border: 1px solid rgba(255, 255, 255, 0.08);
 background: rgba(255, 255, 255, 0.04);
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-segment {
+position: relative;
+height: 100%;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-segment--dense {
 background:
 linear-gradient(180deg, rgba(201, 169, 98, 0.28), rgba(201, 169, 98, 0.12)),
 repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 9px, rgba(255, 255, 255, 0.04) 9px 10px);
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-segment--filtered {
+background:
 linear-gradient(180deg, rgba(201, 169, 98, 0.2), rgba(201, 169, 98, 0.08)),
 radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 14px);
 background-size: auto, 18px 18px;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-segment--open {
+background:
 linear-gradient(180deg, rgba(201, 169, 98, 0.12), rgba(201, 169, 98, 0.04)),
 linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px),
 linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px);
 background-size: auto, 32px 32px, 32px 32px;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-stop {
+position: absolute;
+top: 50%;
+width: 6px;
+height: 6px;
+border-radius: 999px;
 transform: translate(-50%, -50%);
 background: rgba(255, 255, 255, 0.65);
 z-index: 1;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-stop--left { left: 2px; }
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-stop--center { left: 50%; }
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-stop--right { left: calc(100% - 2px); }
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-range {
+position: relative;
+z-index: 2;
+width: 100%;
 height: 28px;
+margin: 0;
 appearance: none;
 -webkit-appearance: none;
 background: transparent;
+cursor: pointer;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-range:focus-visible {
 outline: 2px solid #c9a962;
 outline-offset: 10px;
+border-radius: 999px;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-range::-webkit-slider-runnable-track {
+height: 16px;
+background: transparent;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-range::-webkit-slider-thumb {
+-webkit-appearance: none;
 width: 32px;
 height: 32px;
 margin-top: -8px;
+border-radius: 999px;
 border: 3px solid #141414;
+background: #c9a962;
 box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-range::-moz-range-track {
+height: 16px;
+background: transparent;
 border: none;
+}
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-range::-moz-range-thumb {
+width: 32px;
+height: 32px;
+border-radius: 999px;
+border: 3px solid #141414;
+background: #c9a962;
+box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+}
 @media (prefers-reduced-motion: reduce) {
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-choice,
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing a,
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing [x-transition\:enter],
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing [x-transition\:leave] {
 transition: none !important;
+}
+}
 .md-t09274b5a { --pt: 20;--pb: 20 }
 .md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }
 .md-t3f9c748b { padding-top: 80px;padding-bottom: 88px }

@@ -27,6 +27,28 @@ import tinycss2.serializer
 STYLE_BLOCK = re.compile(r"[ \t]*<style([^>]*)>(.*?)</style>\n?", re.DOTALL)
 INLINE_STYLE = re.compile(r'\sstyle="([^"]*)"')
 
+
+def collapse_duplicated_openers(css: str) -> str:
+    """A block-open line immediately repeated collapses to one.
+
+    The old site's own ``<style>`` blocks carry one such wart (the
+    lightbox block on custom-screens: ``@media (max-width: 1023px) {``
+    written twice, balanced only by the stylesheet ending — the browser
+    EOF-recovered it into one wrapper). WindPress has no such recovery:
+    it is fatal on the first unbalanced brace, so the carried text gets
+    the single opener the browser computed. Strictly adjacent lines only;
+    a deliberately balanced nested pair would collapse to a stray closer,
+    which the volume syntax gate (ticket #49) then fails loudly.
+    """
+    out: list[str] = []
+    for line in css.split("\n"):
+        stripped = line.strip()
+        if out and stripped and stripped == out[-1].strip() and stripped.endswith("{"):
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+
 #: At-rules carried whole — their body is not selector-matched.
 _WHOLE = frozenset({"font-face", "property"})
 

@@ -16,14 +16,20 @@ pointer-events: none;
 #stainless-contact-template--21844035043581__stainless-contact .ssc-input.ssc-invalid {
 border-color: rgba(239, 68, 68, 0.5) !important;
 background: rgba(239, 68, 68, 0.05) !important;
+}
 #stainless-contact-template--21844035043581__stainless-contact .ssc-checkbox-label.ssc-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 /* Remove error state on focus */
 #stainless-contact-template--21844035043581__stainless-contact .ssc-input:focus {
 border-color: rgba(201, 169, 98, 0.6) !important;
 background: rgba(255, 255, 255, 0.05) !important;
+}
 #stainless-contact-template--21844035043581__stainless-contact select option {
 color: #1a1a1a;
 background: #ffffff;
+}
 .md-t09274b5a { --pt: 20;--pb: 20 }
 .md-tb2def572 { min-height: 86vh;background: #141414;margin: 0;padding: 0 }
 .md-t109dbe73 { background: linear-gradient(to top, rgba(10,10,10,0.90) 0%, rgba(10,10,10,0.60) 50%, rgba(10,10,10,0.20) 100%) }

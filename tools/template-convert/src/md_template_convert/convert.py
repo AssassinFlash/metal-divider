@@ -26,7 +26,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from . import pageplan
-from .csslib import Minter, Stylesheet, collect_classes
+from .csslib import Minter, Stylesheet, collapse_duplicated_openers, collect_classes
 from .sections import section_html, sections
 from .transform import map_assets, root_relative, strip_scaffolding, strip_scripts
 
@@ -90,10 +90,19 @@ class Converter:
     # -- volume plumbing ------------------------------------------------
 
     def add_rules(self, volume: str, css: str) -> None:
-        """CSS rules into a volume, deduplicated across pages."""
+        """CSS rules into a volume, deduplicated across pages.
+
+        The dedup unit is the whole rule (a multi-line rule is one unit),
+        so a repeated rule drops as one piece and a rule's inner lines —
+        the closing brace, a declaration another rule already carried —
+        always travel with it. The line-per-unit form this replaces
+        (#49: 24 of the 36 volumes were brace-unbalanced, WindPress
+        fatal on the first missing brace) deduplicated bare ``}`` lines
+        and repeated declaration lines away mid-rule.
+        """
         seen = self._volume_seen.setdefault(volume, set())
         rules = self.volume_rules.setdefault(volume, [])
-        for rule in (piece.strip() for piece in css.split("\n") if piece.strip()):
+        for rule in _rule_units(css):
             if rule not in seen:
                 seen.add(rule)
                 rules.append(rule)
@@ -118,7 +127,10 @@ class Converter:
         body, _ = strip_scaffolding(body)
         scripts = len(re.findall(r"<script\b", body))
         inline = len(INLINE_STYLE.findall(body))
-        blocks = [css.strip() for css in STYLE_BLOCK.findall(body)]
+        blocks = [
+            collapse_duplicated_openers(css.strip())
+            for css in STYLE_BLOCK.findall(body)
+        ]
         body, _ = strip_scripts(body)
         body = STYLE_BLOCK.sub("", body)
         body = _fold_inline(body, minter)
@@ -280,6 +292,31 @@ class Converter:
             path.write_text(header + "\n".join(rules) + "\n", encoding="utf-8")
             out[volume] = path
         return out
+
+
+def _rule_units(css: str) -> list[str]:
+    """A css body's top-level rule units: stripped lines, grouped so a
+    unit opens at brace depth 0 and runs until the depth returns to 0.
+
+    A multi-line rule — a ``@media`` wrapper, a hand-formatted block from
+    the old pages' ``<style>`` elements — is therefore one unit, and its
+    closing brace cannot be deduplicated away from the declarations it
+    closes. The brace count is per stripped line and string-blind; a
+    brace inside a quoted value can only merge two adjacent units into
+    one, which keeps more text than strictly necessary and never drops
+    a line the way the per-line split did.
+    """
+    units: list[list[str]] = []
+    depth = 0
+    for line in css.split("\n"):
+        piece = line.strip()
+        if not piece:
+            continue
+        if depth == 0:
+            units.append([])
+        units[-1].append(piece)
+        depth = max(0, depth + piece.count("{") - piece.count("}"))
+    return ["\n".join(unit) for unit in units]
 
 
 def _fold_inline(body: str, minter: Minter) -> str:

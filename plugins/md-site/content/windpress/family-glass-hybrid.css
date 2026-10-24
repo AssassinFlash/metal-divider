@@ -7,20 +7,26 @@ padding-top: 72px;
 padding-bottom: 72px;
 }
 @media (min-width: 750px) {
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions {
 padding-top: 96px;
 padding-bottom: 96px;
+}
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions [x-cloak] {
 display: none !important;
+}
 /* Panel gallery */
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery-stack {
 position: relative;
 height: 520px;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery {
 position: absolute;
 inset: 0;
 display: flex;
 gap: 12px;
 height: 100%;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel {
 flex: 1;
 min-width: 0;
@@ -28,36 +34,47 @@ border-radius: 12px;
 overflow: hidden;
 cursor: pointer;
 transition: flex 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+position: relative;
 border: 1px solid rgba(255, 255, 255, 0.08);
 background: #141414;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active {
 flex: 2.5;
 border-color: rgba(201, 169, 98, 0.4);
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-img {
 width: 100%;
+height: 100%;
 object-fit: cover;
 opacity: 0.5;
 transition: opacity 0.6s ease, transform 0.6s ease;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-img {
 opacity: 1;
 transform: scale(1.02);
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-placeholder {
+display: flex;
 align-items: center;
 justify-content: center;
 background: rgba(255,255,255,0.03);
 color: rgba(255,255,255,0.4);
 font-size: 13px;
+}
 /* Top-left label */
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-label {
+position: absolute;
 top: 16px;
 left: 16px;
 display: inline-flex;
+align-items: center;
 gap: 6px;
 padding: 5px 10px;
 background: rgba(0, 0, 0, 0.6);
 backdrop-filter: blur(4px);
 border: 1px solid rgba(255,255,255,0.1);
 border-radius: 4px;
+font-size: 13px;
 font-weight: 700;
 letter-spacing: 0.1em;
 text-transform: uppercase;
@@ -66,23 +83,31 @@ z-index: 2;
 opacity: 0;
 transform: translateY(-8px);
 transition: all 0.4s ease 0.1s;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-label {
+opacity: 1;
 transform: translateY(0);
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-label-dot {
 width: 6px;
 height: 6px;
 border-radius: 50%;
 background: #c9a962;
+}
 /* Bottom overlay — always visible, expands on active */
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-overlay {
+position: absolute;
 bottom: 0;
 left: 0;
 right: 0;
 padding: 20px;
 background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+z-index: 2;
 transition: padding 0.5s ease;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-overlay {
 padding: 24px;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-title {
 font-family: 'Playfair Display', serif;
 font-size: 16px;
@@ -90,35 +115,58 @@ font-weight: 500;
 margin: 0;
 color: rgba(255,255,255,0.9);
 transition: all 0.4s ease;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-title {
 font-size: 20px;
+color: #fff;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-desc {
+font-size: 13px;
 line-height: 1.5;
 color: rgba(255,255,255,0.75);
 margin: 6px 0 0;
+transition: all 0.4s ease;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active .ghs-panel-desc {
 color: rgba(255,255,255,0.85);
 font-size: 14px;
+}
 /* Mobile: horizontal scroll */
 @media (max-width: 749px) {
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery-stack {
 height: 380px;
+}
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery {
+height: 100%;
 overflow-x: auto;
 scroll-snap-type: x mandatory;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: none;
 padding-bottom: 8px;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery::-webkit-scrollbar {
 display: none;
+}
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel {
 flex: 0 0 78%;
 scroll-snap-align: center;
+}
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel--active {
+flex: 0 0 78%;
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-img { opacity: 1; }
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-label { opacity: 1; transform: none; }
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-overlay { opacity: 1; transform: none; }
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-desc { opacity: 1; height: auto; }
+}
 #glass-hybrid-textures-template--21873710530813__glass_hybrid_textures .ght-cards-track::-webkit-scrollbar {
+display: none;
+}
 @media (min-width: 768px) {
 #glass-hybrid-textures-template--21873710530813__glass_hybrid_textures .ght-cards-track {
 overflow-x: visible;
+}
+}
 .md-t09274b5a { --pt: 20;--pb: 20 }
 .md-t5225868c { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%);padding-top: 96px;padding-bottom: 80px }
 .md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }

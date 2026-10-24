@@ -17,17 +17,24 @@ text-wrap: balance;
 #perforated-projects-template--21844034814205__perforated-projects .pp-showcase-proof-item,
 #perforated-projects-template--21844034814205__perforated-projects .pp-showcase-testimonial {
 text-wrap: pretty;
+}
 #perforated-projects-template--21844034814205__perforated-projects .pp-showcase-track {
 scrollbar-width: none;
 -ms-overflow-style: none;
+}
 #perforated-projects-template--21844034814205__perforated-projects .pp-showcase-track::-webkit-scrollbar {
 display: none;
+}
 #perforated-process-template--21844034814205__perforated_process {
 padding-top: 60px;
 padding-bottom: 60px;
+}
 @media (min-width: 750px) {
+#perforated-process-template--21844034814205__perforated_process {
 padding-top: 80px;
 padding-bottom: 80px;
+}
+}
 #perforated-process-template--21844034814205__perforated_process-lightbox { display: none; }
 #perforated-process-template--21844034814205__perforated_process-lightbox.is-open { display: flex; }
 .md-tfb6e8023 { --pt: 50;--pb: 50 }
