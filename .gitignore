@@ -3,6 +3,7 @@ data/media-raw/
 data/shopify-admin-export/
 data/snapshots/
 data/pixel-baseline/
+data/pixel-reports/
 *.sql
 *.sql.gz
 
