@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<ruleset name="MD migrate">
+	<description>The migrator's WordPress side: the shared rules (tools/php/phpcs.xml) with this tool's prefixes. The driver file is named after the migration it performs (spec 18), not after a class.</description>
+
+	<file>18-wordpress.php</file>
+	<file>tests</file>
+
+	<rule ref="../php/phpcs.xml"/>
+
+	<rule ref="WordPress.Files.FileName.InvalidClassFileName">
+		<exclude-pattern>18-wordpress.php</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="Md\Migrate"/>
+				<element value="md_migrate"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- The unit tests run without WordPress: WordPress's runtime
+	     alternatives, its globals and output escaping do not apply there
+	     (the runner throws raw messages and builds throwaway trees with
+	     PHP itself); the doubles ignore the arguments they stand in for,
+	     and the fake wpdb hands out rows no real database sees. -->
+	<rule ref="WordPress.WP.AlternativeFunctions">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.Security.EscapeOutput">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.GlobalVariablesOverride">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
+		<exclude-pattern>tests/php/Support/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.DB.SlowDBQuery">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+</ruleset>

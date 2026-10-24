@@ -68,22 +68,22 @@ defined( 'ABSPATH' ) || exit;
 		$terms = wp_get_object_terms( $product->get_id(), 'product_cat', array( 'fields' => 'slugs' ) );
 
 		return array(
-			'id'                  => $product->get_id(),
-			'title'               => $product->get_name(),
-			'slug'                => $product->get_slug(),
-			'status'              => $product->get_status(),
-			'content'             => $product->get_description(),
-			'excerpt'             => $product->get_short_description(),
-			'series'              => is_array( $terms ) && $terms ? (string) $terms[0] : null,
-			'virtual'             => $product->get_virtual(),
-			'stock_status'        => $product->get_stock_status(),
-			'manage_stock'        => $product->get_manage_stock(),
-			'regular_price'       => $product->get_regular_price(),
-			'catalog_visibility'  => $product->get_catalog_visibility(),
-			'tax_status'          => $product->get_tax_status(),
-			'reviews_allowed'     => $product->get_reviews_allowed(),
-			'acf'                 => $acf,
-			'seo'                 => array(
+			'id'                 => $product->get_id(),
+			'title'              => $product->get_name(),
+			'slug'               => $product->get_slug(),
+			'status'             => $product->get_status(),
+			'content'            => $product->get_description(),
+			'excerpt'            => $product->get_short_description(),
+			'series'             => is_array( $terms ) && $terms ? (string) $terms[0] : null,
+			'virtual'            => $product->get_virtual(),
+			'stock_status'       => $product->get_stock_status(),
+			'manage_stock'       => $product->get_manage_stock(),
+			'regular_price'      => $product->get_regular_price(),
+			'catalog_visibility' => $product->get_catalog_visibility(),
+			'tax_status'         => $product->get_tax_status(),
+			'reviews_allowed'    => $product->get_reviews_allowed(),
+			'acf'                => $acf,
+			'seo'                => array(
 				'title'       => (string) get_post_meta( $product->get_id(), '_seopress_titles_title', true ),
 				'description' => (string) get_post_meta( $product->get_id(), '_seopress_titles_desc', true ),
 			),
@@ -112,7 +112,7 @@ defined( 'ABSPATH' ) || exit;
 		}
 		// Every row of this key is one of ours: read them all once, then
 		// keep the asked-about ones (the API has no batch form).
-		$rows = $wpdb->get_results(
+		$rows    = $wpdb->get_results(
 			"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_md_source_url'",
 			ARRAY_A
 		);
@@ -130,26 +130,94 @@ defined( 'ABSPATH' ) || exit;
 	/** One media entry placed into the media library: the top tier is the
 	 * attachment file, the other tiers ride along as sibling files (spec 15
 	 * §3.2/§7: no subsize generation, no -scaled copy, one upload per
-	 * source). */
+	 * source).
+	 *
+	 * Two binding modes: with attach_uploads (remote mode — the plan was
+	 * built with --wp) the file already stands in this instance's uploads,
+	 * placed there by the deployer that mirrors the dev library: no copy,
+	 * the entry binds that file, and the variants bind by attach_uploads_
+	 * variants — the names the dev import recorded, not the sidecar's
+	 * (a later media rebuild renamed the sidecar tiers after the dev
+	 * import) — each checked for presence, a missing one named and refused.
+	 * Without attach_uploads (local mode) the entry's attach is a local
+	 * media-final path that gets copied in under the upload dir of this
+	 * request, its siblings named as the sidecar says. */
 	$import_media = static function ( array $entry, string $source_url ) use ( $fail ): int {
-		$path = (string) $entry['attach'];
-		if ( ! is_file( $path ) ) {
-			$fail( "missing final: {$path}" );
+		$upload   = wp_upload_dir();
+		$remote   = ! empty( $entry['attach_uploads'] );
+		$variants = array();
+		if ( $remote ) {
+			$relative = (string) $entry['attach_uploads'];
+			$file     = $upload['basedir'] . '/' . ltrim( $relative, '/' );
+			if ( ! is_file( $file ) ) {
+				$fail( "missing on target: {$relative} ({$source_url})" );
+			}
+			// wp_insert_attachment records _wp_attached_file as the
+			// uploads-relative path of $file itself — exactly the dev value
+			// the map was exported from.
+			$dir = dirname( $file );
+			$top = wp_basename( $file );
+			foreach ( (array) ( $entry['attach_uploads_variants'] ?? array() ) as $tier ) {
+				$tier_name = (string) $tier['f'];
+				if ( $tier_name === $top ) {
+					$variants[] = array(
+						'w' => (int) $tier['w'],
+						'f' => $top,
+					);
+					continue;
+				}
+				$sibling = $dir . '/' . $tier_name;
+				if ( ! is_file( $sibling ) ) {
+					$fail( "missing variant on target: {$tier_name} (w=" . (int) $tier['w'] . ") of {$source_url}" );
+				}
+				$variants[] = array(
+					'w' => (int) $tier['w'],
+					'f' => $tier_name,
+				);
+			}
+		} else {
+			$path = (string) $entry['attach'];
+			if ( ! is_file( $path ) ) {
+				$fail( "missing final: {$path}" );
+			}
+			$dir = $upload['path'];
+			if ( ! wp_mkdir_p( $dir ) ) {
+				$fail( "cannot create {$dir}" );
+			}
+			$name     = sanitize_file_name( wp_basename( $path ) );
+			$filename = wp_unique_filename( $dir, $name );
+			$file     = $dir . '/' . $filename;
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_copy -- the finals are this pipeline's own local files, not uploads from a request.
+			if ( ! copy( $path, $file ) ) {
+				$fail( "cannot copy {$path} to {$file}" );
+			}
+			// The sibling tiers: plain files beside the attachment, never
+			// attachments themselves, named as the sidecar says (uniquified
+			// only on a real collision).
+			$top = wp_basename( $path );
+			foreach ( (array) ( $entry['variants'] ?? array() ) as $tier ) {
+				if ( (string) $tier['file'] === $top ) {
+					$variants[] = array(
+						'w' => (int) $tier['w'],
+						'f' => $filename,
+					);
+					continue;
+				}
+				$tier_name = sanitize_file_name( wp_basename( (string) $tier['path'] ) );
+				$sibling   = $dir . '/' . wp_unique_filename( $dir, $tier_name );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_copy -- same as above.
+				if ( ! copy( (string) $tier['path'], $sibling ) ) {
+					$fail( "cannot copy tier {$tier['path']}" );
+				}
+				$variants[] = array(
+					'w' => (int) $tier['w'],
+					'f' => wp_basename( $sibling ),
+				);
+			}
 		}
-		$upload = wp_upload_dir();
-		$dir    = $upload['path'];
-		if ( ! wp_mkdir_p( $dir ) ) {
-			$fail( "cannot create {$dir}" );
-		}
-		$name     = sanitize_file_name( wp_basename( $path ) );
-		$filename = wp_unique_filename( $dir, $name );
-		$file     = $dir . '/' . $filename;
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_copy -- the finals are this pipeline's own local files, not uploads from a request.
-		if ( ! copy( $path, $file ) ) {
-			$fail( "cannot copy {$path} to {$file}" );
-		}
-		$check = wp_check_filetype( $filename );
-		$post_id = wp_insert_attachment(
+		$filename = wp_basename( $file );
+		$check    = wp_check_filetype( $filename );
+		$post_id  = wp_insert_attachment(
 			array(
 				'post_mime_type' => $check['type'] ? $check['type'] : 'application/octet-stream',
 				'post_title'     => pathinfo( $filename, PATHINFO_FILENAME ),
@@ -161,29 +229,10 @@ defined( 'ABSPATH' ) || exit;
 			true
 		);
 		if ( is_wp_error( $post_id ) ) {
-			$fail( "wp_insert_attachment: " . $post_id->get_error_message() );
+			$fail( 'wp_insert_attachment: ' . $post_id->get_error_message() );
 		}
 		$metadata = wp_generate_attachment_metadata( $post_id, $file );
 		wp_update_attachment_metadata( $post_id, $metadata );
-
-		// The sibling tiers: plain files beside the attachment, never
-		// attachments themselves, named as the sidecar says (uniquified
-		// only on a real collision).
-		$variants = array();
-		$top      = wp_basename( $path );
-		foreach ( (array) ( $entry['variants'] ?? array() ) as $tier ) {
-			if ( (string) $tier['file'] === $top ) {
-				$variants[] = array( 'w' => (int) $tier['w'], 'f' => $filename );
-				continue;
-			}
-			$tier_name = sanitize_file_name( wp_basename( (string) $tier['path'] ) );
-			$sibling   = $dir . '/' . wp_unique_filename( $dir, $tier_name );
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_copy -- same as above.
-			if ( ! copy( (string) $tier['path'], $sibling ) ) {
-				$fail( "cannot copy tier {$tier['path']}" );
-			}
-			$variants[] = array( 'w' => (int) $tier['w'], 'f' => wp_basename( $sibling ) );
-		}
 		update_post_meta( $post_id, '_md_source_url', wp_slash( $source_url ) );
 		update_post_meta( $post_id, '_md_role', wp_slash( (string) ( $entry['role'] ?? 'unknown' ) ) );
 		update_post_meta( $post_id, '_md_sha256', wp_slash( (string) $entry['sha256'] ) );
@@ -219,15 +268,15 @@ defined( 'ABSPATH' ) || exit;
 		}
 
 		return array(
-			'plugins'       => (object) array(
-				'woocommerce'           => is_plugin_active( 'woocommerce/woocommerce.php' ),
+			'plugins'      => (object) array(
+				'woocommerce'            => is_plugin_active( 'woocommerce/woocommerce.php' ),
 				'advanced-custom-fields' => is_plugin_active( 'advanced-custom-fields/acf.php' ),
-				'wp-seopress'           => is_plugin_active( 'wp-seopress/seopress.php' ),
-				'wp-seopress-pro'       => is_plugin_active( 'wp-seopress-pro/seopress-pro.php' ),
-				'md-site'               => is_plugin_active( 'md-site/md-site.php' ),
+				'wp-seopress'            => is_plugin_active( 'wp-seopress/seopress.php' ),
+				'wp-seopress-pro'        => is_plugin_active( 'wp-seopress-pro/seopress-pro.php' ),
+				'md-site'                => is_plugin_active( 'md-site/md-site.php' ),
 			),
-			'acf_fields'    => (object) $acf,
-			'seopress_404'  => post_type_exists( 'seopress_404' ),
+			'acf_fields'   => (object) $acf,
+			'seopress_404' => post_type_exists( 'seopress_404' ),
 		);
 	};
 
@@ -249,21 +298,29 @@ defined( 'ABSPATH' ) || exit;
 				$value         = get_term_meta( $term->term_id, $name, true );
 				$meta[ $name ] = is_string( $value ) ? $value : (string) $value;
 			}
-			$terms[ $slug ] = array( 'name' => $term->name, 'meta' => $meta );
+			$terms[ $slug ] = array(
+				'name' => $term->name,
+				'meta' => $meta,
+			);
 		}
 		$default = get_term_by( 'slug', 'uncategorized', 'product_cat' );
 		$member  = array();
 		$all     = array();
-		foreach ( (array) get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => false ) ) as $term ) {
-			$all[]                = $term->slug;
+		foreach ( (array) get_terms(
+			array(
+				'taxonomy'   => 'product_cat',
+				'hide_empty' => false,
+			)
+		) as $term ) {
+			$all[]                 = $term->slug;
 			$member[ $term->slug ] = (int) $term->count;
 		}
 
 		return array(
-			'terms'          => (object) $terms,
-			'all_slugs'      => $all,
-			'member_counts'  => (object) $member,
-			'default_term'   => $default ? array( 'count' => (int) $default->count ) : null,
+			'terms'         => (object) $terms,
+			'all_slugs'     => $all,
+			'member_counts' => (object) $member,
+			'default_term'  => $default ? array( 'count' => (int) $default->count ) : null,
 		);
 	};
 
@@ -282,13 +339,19 @@ defined( 'ABSPATH' ) || exit;
 					if ( is_wp_error( $made ) ) {
 						$fail( "wp_insert_term {$slug}: " . $made->get_error_message() );
 					}
-					$term            = get_term( (int) $made['term_id'], 'product_cat' );
+					$term             = get_term( (int) $made['term_id'], 'product_cat' );
 					$results[ $slug ] = 'created';
 				} elseif ( ! empty( $item['name_changed'] ) ) {
+					if ( ! $term ) {
+						$fail( "no term {$slug} to update" );
+					}
 					$done = wp_update_term( $term->term_id, 'product_cat', array( 'name' => (string) $item['name'] ) );
 					if ( is_wp_error( $done ) ) {
 						$fail( "wp_update_term {$slug}: " . $done->get_error_message() );
 					}
+				}
+				if ( ! $term instanceof WP_Term ) {
+					$fail( "no term {$slug} to write meta to" );
 				}
 				foreach ( (array) ( $item['meta_set'] ?? array() ) as $name => $value ) {
 					update_field( $name, $value, 'product_cat_' . $term->term_id );
@@ -313,17 +376,17 @@ defined( 'ABSPATH' ) || exit;
 		}
 
 		return array(
-			'results'               => (object) $results,
-			'errors'                => (object) $errors,
-			'default_term_removed'  => $removed,
+			'results'              => (object) $results,
+			'errors'               => (object) $errors,
+			'default_term_removed' => $removed,
 		);
 	};
 
 	$products_read = static function () use ( $request, $product_read ): array {
 		$products = array();
 		foreach ( (array) $request['skus'] as $sku ) {
-			$id      = (int) wc_get_product_id_by_sku( (string) $sku );
-			$product = $id ? wc_get_product( $id ) : null;
+			$id               = (int) wc_get_product_id_by_sku( (string) $sku );
+			$product          = $id ? wc_get_product( $id ) : null;
 			$products[ $sku ] = $product ? $product_read( $product ) : null;
 		}
 		// Products are not hierarchical: the path is the slug.
@@ -345,7 +408,7 @@ defined( 'ABSPATH' ) || exit;
 	$settings_read = static function () use ( $request, $fail ): array {
 		$settings   = $request['settings'];
 		$permalinks = get_option( 'woocommerce_permalinks', array() );
-		$remove = array();
+		$remove     = array();
 		// Only Woo's own untouched shells go. The store options name the
 		// pages Woo itself installed, and their install content carries no
 		// prose of the site's own — block markup, shortcodes and at most a
@@ -359,15 +422,15 @@ defined( 'ABSPATH' ) || exit;
 			'my-account' => 'woocommerce_myaccount_page_id',
 		);
 		foreach ( (array) $settings['remove_page_slugs'] as $slug ) {
-			$page = get_page_by_path( (string) $slug, OBJECT, 'page' );
+			$page  = get_page_by_path( (string) $slug, OBJECT, 'page' );
 			$shell = false;
 			if ( $page && (int) get_option( (string) $woo_pages[ $slug ] ) === (int) $page->ID ) {
-				$text = preg_replace(
+				$text  = preg_replace(
 					'#<!--.*?-->|\[woocommerce_[a-z_]+\]#s',
 					'',
 					(string) $page->post_content
 				);
-				$text = trim( (string) preg_replace( '/\s+/u', ' ', wp_strip_all_tags( (string) $text ) ) );
+				$text  = trim( (string) preg_replace( '/\s+/u', ' ', wp_strip_all_tags( (string) $text ) ) );
 				$shell = '' === $text || strlen( $text ) <= 40;
 			}
 			if ( $page && $shell ) {
@@ -394,9 +457,9 @@ defined( 'ABSPATH' ) || exit;
 	};
 
 	$settings_write = static function () use ( $request ): array {
-		$settings   = $request['settings'];
-		$permalinks = get_option( 'woocommerce_permalinks', array() );
-		$permalinks = is_array( $permalinks ) ? $permalinks : array();
+		$settings                    = $request['settings'];
+		$permalinks                  = get_option( 'woocommerce_permalinks', array() );
+		$permalinks                  = is_array( $permalinks ) ? $permalinks : array();
 		$permalinks['product_base']  = (string) $settings['product_base'];
 		$permalinks['category_base'] = (string) $settings['category_base'];
 		update_option( 'woocommerce_permalinks', $permalinks );
@@ -509,17 +572,20 @@ defined( 'ABSPATH' ) || exit;
 			}
 		}
 
-		return array( 'results' => (object) $results, 'errors' => (object) $errors );
+		return array(
+			'results' => (object) $results,
+			'errors'  => (object) $errors,
+		);
 	};
 
-	$media_read = static function () use ( $request, $attachments_by_source, $fail ): array {
+	$media_read = static function () use ( $request, $attachments_by_source ): array {
 		$sources = array();
 		foreach ( (array) $request['products'] as $asked ) {
 			foreach ( (array) $asked['master_srcs'] as $source ) {
 				$sources[] = (string) $source;
 			}
 		}
-		$known = $attachments_by_source( $sources );
+		$known     = $attachments_by_source( $sources );
 		$src_of_id = array();
 		foreach ( $known as $source => $row ) {
 			$src_of_id[ (int) $row['id'] ] = (string) $source;
@@ -533,9 +599,9 @@ defined( 'ABSPATH' ) || exit;
 				$out[ $asked['handle'] ] = null;
 				continue;
 			}
-			$thumbnail = (int) get_post_meta( $id, '_thumbnail_id', true );
-			$gallery   = array_map( 'intval', array_filter( explode( ',', (string) get_post_meta( $id, '_product_image_gallery', true ) ) ) );
-			$src_of    = static function ( int $attachment ) use ( $src_of_id ): ?string {
+			$thumbnail               = (int) get_post_meta( $id, '_thumbnail_id', true );
+			$gallery                 = array_map( 'intval', array_filter( explode( ',', (string) get_post_meta( $id, '_product_image_gallery', true ) ) ) );
+			$src_of                  = static function ( int $attachment ) use ( $src_of_id ): ?string {
 				return $src_of_id[ $attachment ] ?? null;
 			};
 			$out[ $asked['handle'] ] = array(
@@ -581,6 +647,9 @@ defined( 'ABSPATH' ) || exit;
 				}
 			}
 			$product = wc_get_product( $id );
+			if ( ! $product instanceof WC_Product ) {
+				$fail( "no product with SKU {$change['sku']}" );
+			}
 			$bind    = (array) ( $change['bind'] ?? array() );
 			$touched = false;
 			if ( isset( $bind['thumbnail'] ) ) {
@@ -600,9 +669,16 @@ defined( 'ABSPATH' ) || exit;
 			}
 			$status = $imported ? 'created' : ( ( $change['fill'] || $bind ) ? 'updated' : 'identical' );
 
-			return array( 'status' => $status, 'imported' => $imported );
+			return array(
+				'status'   => $status,
+				'imported' => $imported,
+			);
 		} catch ( Throwable $e ) {
-			return array( 'status' => 'error', 'error' => $e->getMessage(), 'imported' => 0 );
+			return array(
+				'status'   => 'error',
+				'error'    => $e->getMessage(),
+				'imported' => 0,
+			);
 		}
 	};
 
@@ -649,7 +725,10 @@ defined( 'ABSPATH' ) || exit;
 			}
 		}
 
-		return array( 'results' => (object) $results, 'errors' => (object) $errors );
+		return array(
+			'results' => (object) $results,
+			'errors'  => (object) $errors,
+		);
 	};
 
 	$pages_read = static function () use ( $request, $attachment_row ): array {
@@ -674,7 +753,7 @@ defined( 'ABSPATH' ) || exit;
 					: null,
 			);
 		}
-		$parent = get_page_by_path( (string) $request['parent'], OBJECT, 'page' );
+		$parent      = get_page_by_path( (string) $request['parent'], OBJECT, 'page' );
 		$attachments = array();
 		$by_sha      = array();
 		global $wpdb;
@@ -715,10 +794,10 @@ defined( 'ABSPATH' ) || exit;
 		if ( ! empty( $request['parent'] ) ) {
 			$made = wp_insert_post(
 				array(
-					'post_type'   => 'page',
-					'post_name'   => (string) $request['parent']['slug'],
-					'post_title'  => (string) $request['parent']['title'],
-					'post_status' => (string) $request['parent']['status'],
+					'post_type'    => 'page',
+					'post_name'    => (string) $request['parent']['slug'],
+					'post_title'   => (string) $request['parent']['title'],
+					'post_status'  => (string) $request['parent']['status'],
 					'post_content' => (string) $request['parent']['content'],
 				),
 				true
@@ -728,7 +807,7 @@ defined( 'ABSPATH' ) || exit;
 			}
 			$parent = (int) $made;
 		} else {
-			$shell = get_page_by_path( 'pages', OBJECT, 'page' );
+			$shell  = get_page_by_path( 'pages', OBJECT, 'page' );
 			$parent = $shell ? (int) $shell->ID : $fail( 'no parent pages shell' );
 		}
 		foreach ( (array) $request['items'] as $change ) {
@@ -773,7 +852,10 @@ defined( 'ABSPATH' ) || exit;
 			}
 		}
 
-		return array( 'results' => (object) $results, 'errors' => (object) $errors );
+		return array(
+			'results' => (object) $results,
+			'errors'  => (object) $errors,
+		);
 	};
 
 	$redirects_read = static function () use ( $request ): array {
@@ -785,7 +867,7 @@ defined( 'ABSPATH' ) || exit;
 				'posts_per_page' => -1,
 			)
 		);
-		$map = array();
+		$map    = array();
 		foreach ( $posts as $post ) {
 			if ( ! isset( $wanted[ $post->post_title ] ) ) {
 				continue;
@@ -839,10 +921,10 @@ defined( 'ABSPATH' ) || exit;
 					if ( is_wp_error( $made ) ) {
 						$fail( "redirect {$source}: " . $made->get_error_message() );
 					}
-					$post_id          = (int) $made;
+					$post_id            = (int) $made;
 					$results[ $source ] = 'created';
 				} elseif ( $post ) {
-					$post_id          = (int) $post->ID;
+					$post_id            = (int) $post->ID;
 					$results[ $source ] = 'updated';
 				} else {
 					$fail( "no redirect {$source} to update" );
@@ -856,7 +938,10 @@ defined( 'ABSPATH' ) || exit;
 			}
 		}
 
-		return array( 'results' => (object) $results, 'errors' => (object) $errors );
+		return array(
+			'results' => (object) $results,
+			'errors'  => (object) $errors,
+		);
 	};
 
 	$reconcile_dropped = static function () use ( $request ): array {
@@ -884,7 +969,10 @@ defined( 'ABSPATH' ) || exit;
 			}
 		}
 
-		return array( 'hits' => count( $rows ), 'rows' => $rows );
+		return array(
+			'hits' => count( $rows ),
+			'rows' => $rows,
+		);
 	};
 
 	$reconcile_purchasable = static function () use ( $request ): array {
@@ -901,7 +989,10 @@ defined( 'ABSPATH' ) || exit;
 			$prices[ $sku ]  = (string) get_post_meta( $id, '_regular_price', true );
 		}
 
-		return array( 'results' => (object) $results, 'prices' => (object) $prices );
+		return array(
+			'results' => (object) $results,
+			'prices'  => (object) $prices,
+		);
 	};
 
 	$reconcile_cdn = static function () use ( $request ): array {
@@ -930,7 +1021,11 @@ defined( 'ABSPATH' ) || exit;
 			)
 		);
 
-		return array( 'posts' => $posts, 'postmeta' => $postmeta, 'examples' => $examples );
+		return array(
+			'posts'    => $posts,
+			'postmeta' => $postmeta,
+			'examples' => $examples,
+		);
 	};
 
 	$answer = match ( $request['stage'] . '/' . $request['action'] ) {

@@ -4,7 +4,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 # Composer projects: the site's plugins, tools/local for its local
 # mu-plugins and router, and mu-plugins for the site's must-use plugins.
-php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
+php_projects := "plugins/md-site plugins/md-inquiry tools/local tools/migrate mu-plugins"
 
 # uv projects: tools/local (md-local), tools/media (md-media) and
 # tools/migrate (md-migrate). The services of the repository join this list
@@ -172,6 +172,26 @@ media-one *file:
 migrate *args:
     uv run --locked --project tools/migrate tools/migrate/18-migrate.py "$@"
 
+# Export the dev instance's attachment map (_md_source_url -> the
+# uploads-relative _wp_attached_file plus the _md_variants the import
+# recorded) into tools/migrate/data/dev-attachment-map.json: the remote-mode
+# media binding authority (branch imp/54-remote-media). The variant names
+# matter as much as the file: the sidecar tier names postdate the dev import
+# (renamed by a later media rebuild), so the target's real sibling names are
+# the ones dev recorded at import time. A remote plan (--wp) binds the
+# already-deployed uploads through this map instead of copying from this
+# Mac's media-final paths. Regenerate after any dev media write, then
+# re-plan.
+[positional-arguments]
+attachment-map name="dev":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{ justfile_directory() }}"
+    just wp {{ name }} db query "SELECT s.meta_value AS src, f.meta_value AS file, v.meta_value AS variants FROM wp_postmeta s JOIN wp_postmeta f ON f.post_id = s.post_id AND f.meta_key = '_wp_attached_file' LEFT JOIN wp_postmeta v ON v.post_id = s.post_id AND v.meta_key = '_md_variants' WHERE s.meta_key = '_md_source_url'" \
+        | python3 -c 'import csv, json, sys; rows = list(csv.DictReader(sys.stdin, delimiter="\t")); print(json.dumps({"schema": "md-migrate/attachment-map@1", "map": {r["src"]: {"file": r["file"], "variants": [{"w": int(t["w"]), "f": t["f"]} for t in (json.loads(r["variants"]) if r["variants"] else [])]} for r in rows}}, ensure_ascii=False, indent=1, sort_keys=True))' \
+        > tools/migrate/data/dev-attachment-map.json
+    python3 -c 'import json; d = json.load(open("tools/migrate/data/dev-attachment-map.json"))["map"]; print("attachment map:", len(d), "entries,", sum(len(v["variants"]) for v in d.values()), "variant tiers")'
+
 # Pixel gate: capture the instance's pages with the baseline protocol and
 # diff them against the metalpartition.com baseline (tools/pixel-check,
 # ticket #30). Baseline = data/pixel-baseline of this checkout; extra args
@@ -237,11 +257,6 @@ php-check: php-install
         # PHP's default 128 MB is too small once the WordPress stubs load.
         {{ php }} vendor/bin/phpstan analyse --no-progress --memory-limit=-1
     done
-    # The migrator's WordPress side is not a Composer project: its minimum
-    # line is the syntax check (docs/specs/18-migrator.md §6, branch
-    # research/spec-migrator).
-    echo "== tools/migrate: php -l"
-    {{ php }} -l "{{ justfile_directory() }}/tools/migrate/18-wordpress.php" > /dev/null
 
 [private]
 py-check:

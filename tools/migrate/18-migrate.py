@@ -43,15 +43,20 @@ stays green.
 
 The instance is the local `dev` of tools/local (read from
 ~/metal-divider-local/instances.toml); `--wp "<command>"` runs the same
-driver against any other WP-CLI (a staging host over SSH). Plans, ledgers
-and reports live under ~/metal-divider-local/migrate/, outside the public
-repository. The WordPress side is 18-wordpress.php, which `wp eval-file -`
-evaluates with the request (JSON, base64) in place of its payload
-placeholder.
+driver against any other WP-CLI (a staging host over SSH) — remote mode:
+the target cannot see this Mac's media-final paths, so the plan binds each
+media entry's attach_uploads through the dev attachment map (data/
+dev-attachment-map.json, `just attachment-map`) and the WordPress side
+registers the file the deployer already placed in the target's uploads
+instead of copying. Plans, ledgers and reports live under
+~/metal-divider-local/migrate/, outside the public repository. The
+WordPress side is 18-wordpress.php, which `wp eval-file -` evaluates with
+the request (JSON, base64) in place of its payload placeholder.
 
 The corpus (data/shopify-admin-export, data/media-final, …) lives on this
-Mac and is never in the repository; only the redirect map is vendored
-(tools/migrate/data/redirect-map.csv, the closed ticket #4 authority), it is
+Mac and is never in the repository; two files are vendored: the redirect
+map (tools/migrate/data/redirect-map.csv, the closed ticket #4 authority)
+and the dev attachment map (tools/migrate/data/dev-attachment-map.json) —
 public URL data with no secrets.
 """
 
@@ -74,6 +79,8 @@ from typing import Any
 HERE = Path(__file__).resolve().parent
 PHP = HERE / "18-wordpress.php"
 REDIRECT_MAP = HERE / "data" / "redirect-map.csv"
+ATTACHMENT_MAP = HERE / "data" / "dev-attachment-map.json"
+ATTACHMENT_MAP_SCHEMA = "md-migrate/attachment-map@1"
 PHP_PAYLOAD = "'md-migrate-payload'"
 MARKER = "@@md-migrate@@"
 LOCAL_HOME = Path(
@@ -227,6 +234,36 @@ def write_json(path: Path, payload: Any) -> None:
 
 def stamp() -> str:
     return time.strftime("%Y%m%d-%H%M%S")
+
+
+def load_attachment_map() -> dict[str, dict[str, Any]]:
+    """The dev instance's source_url binding (the committed
+    data/dev-attachment-map.json, `just attachment-map`): the uploads-relative
+    _wp_attached_file plus the _md_variants the dev import recorded. The
+    variant names matter as much as the file — the sidecar tier names were
+    renamed by a later media rebuild, so the target's real sibling names are
+    dev's recorded ones. Remote mode binds through this map: the local
+    attach paths are meaningless on the target host."""
+    payload = read_json(ATTACHMENT_MAP)
+    if payload.get("schema") != ATTACHMENT_MAP_SCHEMA:
+        raise MigrationError(
+            f"{ATTACHMENT_MAP.name}: schema {payload.get('schema')!r}, expected "
+            f"{ATTACHMENT_MAP_SCHEMA!r}"
+        )
+    mapping = payload.get("map")
+    if not isinstance(mapping, dict) or not mapping:
+        raise MigrationError(f"{ATTACHMENT_MAP.name} holds no map")
+    for source, bound in mapping.items():
+        if (
+            not isinstance(bound, dict)
+            or not isinstance(bound.get("file"), str)
+            or not isinstance(bound.get("variants"), list)
+        ):
+            raise MigrationError(
+                f"{ATTACHMENT_MAP.name}: entry {source!r} is not a "
+                "{file, variants} binding"
+            )
+    return dict(mapping)
 
 
 def metafields(product: dict[str, Any]) -> dict[str, str]:
@@ -407,13 +444,21 @@ def media_entry(
     }
 
 
-def build_media_plan(export: dict[str, Any], staging_dir: Path) -> dict[str, Any]:
+def build_media_plan(
+    export: dict[str, Any],
+    staging_dir: Path,
+    attachment_map: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """One attachment per pattern image, keyed by _md_source_url = the
-    sidecar's master_src."""
+    sidecar's master_src. In remote mode (attachment_map given, --wp) every
+    entry also carries attach_uploads and attach_uploads_variants: the dev
+    map's uploads-relative file and recorded variants, which the WordPress
+    side binds on the target without copying."""
     if not staging_dir.is_dir():
         raise MigrationError(f"staging dir {staging_dir} does not exist")
     products: list[dict[str, Any]] = []
     seen_sources: set[str] = set()
+    unmapped: list[str] = []
     for product in export["products"]:
         manifest_path = staging_dir / "products" / product["handle"] / "manifest.json"
         if not manifest_path.is_file():
@@ -428,7 +473,15 @@ def build_media_plan(export: dict[str, Any], staging_dir: Path) -> dict[str, Any
             if master_src in seen_sources:
                 raise MigrationError(f"duplicate master_src {master_src}")
             seen_sources.add(master_src)
-            media.append(media_entry(entry, manifest_dir, staging_dir))
+            item = media_entry(entry, manifest_dir, staging_dir)
+            if attachment_map is not None:
+                bound = attachment_map.get(master_src)
+                if bound is None:
+                    unmapped.append(f"{product['handle']}: {master_src}")
+                else:
+                    item["attach_uploads"] = bound["file"]
+                    item["attach_uploads_variants"] = bound["variants"]
+            media.append(item)
         if not media or sum(1 for e in media if e["seq"] == 1) != 1:
             raise MigrationError(
                 f"{product['handle']}: sidecar must have exactly one seq-1 media"
@@ -440,21 +493,38 @@ def build_media_plan(export: dict[str, Any], staging_dir: Path) -> dict[str, Any
                 "media": media,
             }
         )
+    if unmapped:
+        # A remote entry without attach_uploads is a defect: its attach is a
+        # this-Mac path the target host can never see.
+        raise MigrationError(
+            f"{len(unmapped)} media entries have no row in "
+            f"{ATTACHMENT_MAP.name} (remote mode needs one per entry); "
+            f"re-run `just attachment-map`: {'; '.join(unmapped[:5])}"
+            + (" …" if len(unmapped) > 5 else "")
+        )
     return {
         "schema": "md-migrate/media@1",
         "staging_dir": str(staging_dir),
+        "remote": attachment_map is not None,
         "products": products,
     }
 
 
 def build_pages_plan(
-    export: dict[str, Any], staging_dir: Path, product_sha256: set[str]
+    export: dict[str, Any],
+    staging_dir: Path,
+    product_sha256: set[str],
+    attachment_map: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """The 13 content pages under /pages/ (a parent 'pages' shell carries the
     URL prefix), their source bodies, and their media from the site sidecar.
     A page image whose bytes a product already owns (the site sidecar cites
     it into the products/ tree) reuses that attachment instead of importing a
-    second copy (spec 18 §2: one import per sha256)."""
+    second copy (spec 18 §2: one import per sha256). In remote mode the dev
+    map binds what it holds; an entry the map does not hold is only lawful
+    when the target's reuse path can resolve it — its sha256 already owned,
+    in this same order, by a product or a mapped page entry (exactly what
+    media/write-page-media does on the WordPress side)."""
     published = {
         page["handle"]: page for page in export["pages"] if page["published_at"]
     }
@@ -474,7 +544,10 @@ def build_pages_plan(
     pages: list[dict[str, Any]] = []
     media: list[dict[str, Any]] = []
     seen_media: set[str] = set()
-    shared_with_products = 0
+    unmapped: list[str] = []
+    # What the target can resolve by sha256 at the point an entry is written:
+    # the products' media first, then every page entry bound before it.
+    owned_sha256 = set(product_sha256)
     for slug in content_slugs:
         page = published[slug]
         pages.append(
@@ -493,30 +566,44 @@ def build_pages_plan(
                 continue  # one attachment per source, however many pages cite it
             seen_media.add(source_url)
             if entry.get("passthrough"):
-                media.append(
-                    {
-                        "page": slug,
-                        "source_url": source_url,
-                        "sha256": entry["sha256"],
-                        "role": entry.get("role") or "unknown",
-                        "alt": entry.get("alt") or "",
-                        "attach": str(staging_dir / entry["file"]),
-                        "variants": [],
-                    }
-                )
-                continue
-            item = media_entry(entry, staging_dir, staging_dir)
-            item.pop("seq")
-            item.pop("master_src")
-            item["page"] = slug
-            item["source_url"] = source_url
+                item = {
+                    "page": slug,
+                    "source_url": source_url,
+                    "sha256": entry["sha256"],
+                    "role": entry.get("role") or "unknown",
+                    "alt": entry.get("alt") or "",
+                    "attach": str(staging_dir / entry["file"]),
+                    "variants": [],
+                }
+            else:
+                item = media_entry(entry, staging_dir, staging_dir)
+                item.pop("seq")
+                item.pop("master_src")
+                item["page"] = slug
+                item["source_url"] = source_url
+            if attachment_map is not None:
+                bound = attachment_map.get(source_url)
+                if bound is not None:
+                    item["attach_uploads"] = bound["file"]
+                    item["attach_uploads_variants"] = bound["variants"]
+                elif item["sha256"] not in owned_sha256:
+                    unmapped.append(f"{slug}: {source_url}")
+            owned_sha256.add(item["sha256"])
             media.append(item)
+    if unmapped:
+        raise MigrationError(
+            f"{len(unmapped)} page media entries resolve neither through "
+            f"{ATTACHMENT_MAP.name} nor the sha256 reuse path (remote mode); "
+            f"re-run `just attachment-map`: {'; '.join(unmapped[:5])}"
+            + (" …" if len(unmapped) > 5 else "")
+        )
     shared_with_products = sum(
         1 for entry in media if entry["variants"] and entry["sha256"] in product_sha256
     )
     return {
         "schema": "md-migrate/pages@1",
         "staging_dir": str(staging_dir),
+        "remote": attachment_map is not None,
         "parent": {
             "slug": "pages",
             "title": "Pages",
@@ -694,9 +781,14 @@ def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_all_plans(data_dir: Path, staging_dir: Path) -> dict[str, dict[str, Any]]:
+def build_all_plans(
+    data_dir: Path,
+    staging_dir: Path,
+    attachment_map: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Loads the exports, builds the five stage plans and checks the
-    measured counts of spec 18 §2 stage 0."""
+    measured counts of spec 18 §2 stage 0. attachment_map (remote mode,
+    --wp) threads the dev attachment map into the media and pages plans."""
     export_dir = data_dir / "shopify-admin-export"
     export = {
         "products": read_json(export_dir / "products.json")["products"],
@@ -736,7 +828,7 @@ def build_all_plans(data_dir: Path, staging_dir: Path) -> dict[str, dict[str, An
     plans = {
         "terms": build_terms_plan(export),
         "products": build_products_plan(export),
-        "media": build_media_plan(export, staging_dir),
+        "media": build_media_plan(export, staging_dir, attachment_map),
         "redirects": build_redirects_plan(export),
     }
     plans["pages"] = build_pages_plan(
@@ -747,6 +839,7 @@ def build_all_plans(data_dir: Path, staging_dir: Path) -> dict[str, dict[str, An
             for product in plans["media"]["products"]
             for entry in product["media"]
         },
+        attachment_map,
     )
     total_media = sum(len(product["media"]) for product in plans["media"]["products"])
     if total_media != EXPECTED_COUNTS["product_media"]:
@@ -767,6 +860,9 @@ def plan_inputs(data_dir: Path, staging_dir: Path) -> dict[str, str]:
         data_dir / "shopify-public" / "media-manifest.json"
     )
     inputs["redirect-map.csv"] = sha256_file(REDIRECT_MAP)
+    # The remote binding authority: fingerprinted in both modes so a plan is
+    # never applied against a dev library it was not mapped from.
+    inputs["dev-attachment-map.json"] = sha256_file(ATTACHMENT_MAP)
     for manifest_path in sorted((staging_dir / "products").glob("*/manifest.json")):
         inputs[f"sidecars/{manifest_path.parent.name}/manifest.json"] = sha256_file(
             manifest_path
@@ -1979,15 +2075,21 @@ def describe_plan(stage: str, plan: dict[str, Any]) -> str:
     if stage == "products":
         return f"{len(plan['products'])} products, settings {plan['settings']}"
     if stage == "media":
-        return (
+        detail = (
             f"{len(plan['products'])} products, "
             f"{sum(len(p['media']) for p in plan['products'])} images"
         )
+        if plan.get("remote"):
+            detail += ", remote binding via attach_uploads"
+        return detail
     if stage == "pages":
-        return (
+        detail = (
             f"{len(plan['pages'])} pages + parent, {len(plan['media'])} page media, "
             f"{len(plan['retired'])} retired"
         )
+        if plan.get("remote"):
+            detail += ", remote binding via attach_uploads"
+        return detail
     return (
         f"{len(plan['entries'])} entries + /products/* rule, {len(plan['held'])} held"
     )
@@ -2028,7 +2130,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "plan":
         wp = Wp(args.instance, args.wp)
-        plans = build_all_plans(args.data_dir, staging_dir)
+        # --wp is remote mode: the target host cannot see this Mac's
+        # media-final paths, so every media entry binds through the dev
+        # attachment map instead (data/dev-attachment-map.json).
+        attachment_map = load_attachment_map() if args.wp else None
+        plans = build_all_plans(args.data_dir, staging_dir, attachment_map)
         inputs = plan_inputs(args.data_dir, staging_dir)
         problems = preflight(wp, plans)
         for stage, plan in plans.items():
