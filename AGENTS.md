@@ -20,7 +20,8 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 ## 2. 业主裁定(事实,按日期)
 
 - 2026-10-24(深夜补充 3):**146 个图案全部已获授权**(含 96 个 parasoleil 源图案)——业主明示"没有任何风险",迁移原样平迁,不做授权处置(票 #16 即此闭)。
-- 2026-10-24(深夜补充 4,#20 的栈修正):共享主机无 Redis(LSMCD 仅 Business+),**首期零对象缓存**——原「LiteSpeed+Redis」草图作废;评审站将建在新独立 Hostinger Premium v3 订阅(staging.metal-divider.com,与 de-linker 全隔离),订阅采购在实现期执行、用前向业主报价格。
+- 2026-10-24(深夜补充 4,#20 的栈修正):共享主机无 Redis(LSMCD 仅 Business+),**首期零对象缓存**——原「LiteSpeed+Redis」草图作废。
+- 2026-10-24(晨间修订,业主问"为什么不能像 de-linker 一样共享托管"):**评审站与生产都不购新订阅**,全部挂现有 Hostinger 订阅(de-linker 同款)作附加站点(staging.metal-divider.com 子域 + 主域);评审站零真信,发信配额共享的顾虑不成立(#20 修订已评论在票上)。
 - 2026-10-24(深夜补充 2,基础设施与联系方式事实):metal-divider.com 是业主在**自己的 Hostinger 账号**买的(SSH 参照 de-linker 的 hostinger 连接;hPanel 浏览器登录凭据备用在 ~/Downloads/wp-admin.txt,仅 SSH 不可用时用);**metalpartition.com 域名在 Shopify**——解约前必须先把域名迁出,这是上线 runbook 的硬前置。**对客 WhatsApp = +85264731687 单号**(旧站双号不迁移);**内部通知收件人 = sales@sunriverinverter.com(主)/ info@metal-divider.com(备)**;对客 mailto 用 info@metal-divider.com。**询盘通知原生实现**(wp_mail + 出站队列 + 重试,de-linker 的 Hostinger mail() 模式),不引入 form-data 类中转。**博客设计复用 de-linker 的四个博客 LiveCanvas 模板面**(blog_index / blog_single / category_archive / search,含对应 WindPress 卷,路径见 de-linker 仓库 content/livecanvas/),按本站 5 分类 IA 适配。
 - 2026-10-24(深夜补充):**多语言推迟到二期,先做完整英语站**。Polylang Business Pack 的选型结论(#3)留作二期依据,不进首期插件面;二期由业主自购翻译资源后另行启动。**二期引擎倾向 WPML**(业主 2026-10-24:拟淘宝购;协调者意见:官方 €99/年≈$9/月本在预算内,破解 zip 是 WP 生态后门高发区,商业询盘站不裸装,采购前验渠道)。**Grilling 类票由执行会话按自己的推荐定稿**(业主明示:一般不会偏离建议),业主保留否决;例外是只有业主知道的事实(注册商、邮箱托管等)。原型票(视觉方向)仍归业主。
 - 2026-10-24:目的地与技术栈定版,见 wayfinder map。技术栈:WordPress + WooCommerce(目录)+ ACF Pro 6.3.1 + Polylang(版本由选型票定)+ LiveCanvas + WindPress + SEOPress Pro + yansir-md + Cloudflare(免费档)+ Turnstile + CookieYes + LiteSpeed/Redis + DeepSeek 翻译 API。明确不用:Elementor 等第二构建器、WP Rocket、Wordfence、备份插件、reCAPTCHA、Complianz。
