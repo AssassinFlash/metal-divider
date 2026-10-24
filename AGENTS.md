@@ -19,6 +19,7 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 
 ## 2. 业主裁定(事实,按日期)
 
+- 2026-10-25(切换执行模式):**cutover 全程由代理代操,业主零点击**——hPanel、DNS、Cloudflare、GSC、Shopify 后台一律代理经浏览器自动化/API 完成(业主明示"不可能解约shopify(自己操作),不可能搞DNS(自己操作)",即面板操作全部归代理);hPanel 凭据在 ~/Downloads/wp-admin.txt(仅代理读取使用,永不入库入日志)。唯一保留:解约 Shopify 前代理向业主要一句明示确认。
 - 2026-10-24(晨间修订 4):**16 品镂空率维持 "On request"**(业主拍板;#25 七路搜寻证实 DSD 不公示,无源值可用,不编造)。#6 的最后一项 OPEN 收口。
 - 2026-10-24(晨间修订 5):**URL 基座改 /pattern/——用 pattern 概念覆盖 product**。PDP 地址 /pattern/<slug>(WooCommerce Product base 设置,零代码);旧站 /products/* 一律 301 到 /pattern/*(slug 本身原样保留);客户可见面(文案、规格条、面包屑、CTA、alt)一律用 pattern 词,不出现 product;Woo 内部机制与后台不露脸、不改名。/collections/ 维持(系列归档)。
 - 2026-10-24(晨间修订 3,#24 实测):**ACF 用免费版(wp.org,当前 6.8.10),ACF Pro 出栈**——一次性实例实测 #6 全部字段组在免费版注册/双路写入/无损读回/REST 可控,Pro-only 能力零使用。#14 本地栈与 #17 的插件面随之改为 ACF 免费版(自动更新,无许可管理)。
