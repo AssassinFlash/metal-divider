@@ -1,5 +1,7 @@
 # 切换 Runbook:metal-divider.com 上线与 Shopify 退役(#36 / IMP-11)
 
+> **⚠️ 2026-10-25 业主终版裁定,本文后半作废**:Shopify **永不解约**,旧站 metalpartition.com 原样继续跑(DNS 不动、不迁出、无旧域 301)。**§4(T2)、§5(T3)、§6(T4)、§7(T5)整节作废**;§3(T1)中 Cloudflare NS 迁移、旧域别名/A 记录、Shopify DNS 各行作废,仅保留 metal-divider.com 在 hPanel 内的 DNS/SSL/邮箱。执行序列简化:**T0(照旧,去 CF/NS 项)→ T1'(hPanel DNS+SSL+邮箱)→ 生产 verify + 询盘实走 → 上线**。GSC 只建新属性(https://metal-divider.com),无地址变更。Cloudflare 仅承担 Turnstile 挂件(无 DNS 托管)。下文保留原始内容作历史依据,以本段为准。
+
 状态:**剧本,落库时尚未执行任何一步**。每一步开工前业主过目;T5(解约 Shopify)仅凭业主明示。AGENTS.md §5「先证后删」是全文硬门:**T2(301 矩阵全绿)实证通过之前,禁止域名转出、禁止解约、禁止 GSC 地址变更**。执行时在 `docs/deploy/cutover-log.md`(执行开始时创建)逐步落证据,本文每节的「验收」列即该步的日志条目要求。
 
 | 输入 | 权威内容 | 本文用法 |
