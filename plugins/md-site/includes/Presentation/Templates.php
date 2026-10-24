@@ -116,6 +116,7 @@ final class Templates {
 		'partials/footer.html'         => array( 'footer', 'Site footer', 'is_footer' ),
 		'partials/md-where-works.html' => array( 'md-where-works', 'Where this pattern works', null ),
 		'partials/md-pdp-faq.html'     => array( 'md-pdp-faq', 'Pattern technical FAQ', null ),
+		'partials/md-inquiry-cta.html' => array( 'md-inquiry-cta', 'Inquiry CTA band', null ),
 	);
 
 	/**

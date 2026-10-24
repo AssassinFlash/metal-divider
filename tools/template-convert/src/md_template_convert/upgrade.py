@@ -18,7 +18,7 @@ import re
 #: (search and sort forms post elsewhere and stay — their rework is the
 #: U1 upgrade item, a batch of its own).
 FORM_DATA_FORM = re.compile(
-    r'<form\b[^>]*action="https://api\.form-data\.com/[^"]*"[^>]*>.*?</form>',
+    r'<form\b[^>]*action=(?:"https://api\.form-data\.com/[^"]*"|\'https://api\.form-data\.com/[^\']*\')[^>]*>.*?</form>',
     re.DOTALL,
 )
 

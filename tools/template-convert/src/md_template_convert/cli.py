@@ -117,6 +117,23 @@ def _asset_map(media_state: Path) -> dict[str, str]:
     return mapping
 
 
+def _append_static_volumes(volumes_dir: Path) -> None:
+    """The static volume appendices (assets/*.append.css): new-writing
+    component styles the converter does not carry from the old site —
+    each lands at the bottom of its volume, so a pipeline rerun keeps
+    it (the volumes are pipeline output; the appendix is a pipeline
+    asset, not a hand edit)."""
+    assets = Path(__file__).parent.parent.parent / "assets"
+    for appendix in sorted(assets.glob("*.append.css")):
+        volume = volumes_dir / appendix.name.replace(".append", "")
+        if not volume.is_file():
+            continue
+        text = volume.read_text(encoding="utf-8")
+        piece = appendix.read_text(encoding="utf-8").rstrip("\n")
+        if piece not in text:
+            volume.write_text(text.rstrip("\n") + "\n" + piece + "\n", encoding="utf-8")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="md-template-convert")
     parser.add_argument("--raw", type=Path, default=None)
@@ -193,8 +210,18 @@ def main(argv: list[str] | None = None) -> int:
     # files each stylesheet rule into its single volume.
     converter.distribute()
     volumes = converter.write()
+    _append_static_volumes(args.plugin / "content" / "windpress")
     if args.scratch:
         args.scratch.mkdir(parents=True, exist_ok=True)
+        (args.scratch / "upgrade-ledger.json").write_text(
+            json.dumps(
+                {str(r["template"]): r.get("upgrades", {}) for r in reports},
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
         (args.scratch / "debt-ledger.json").write_text(
             json.dumps(converter.debt, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",

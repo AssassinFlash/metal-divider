@@ -46,7 +46,7 @@ final class TemplatesTest extends TestCase {
 		}
 		$this->assertCount( 7, $reflection->getConstant( 'FILES' ) );
 		$this->assertCount( 18, $reflection->getConstant( 'PAGES' ) );
-		$this->assertCount( 4, $reflection->getConstant( 'PARTIALS' ) );
+		$this->assertCount( 5, $reflection->getConstant( 'PARTIALS' ) );
 	}
 
 	/**

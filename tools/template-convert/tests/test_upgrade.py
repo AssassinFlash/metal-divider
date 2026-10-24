@@ -23,7 +23,11 @@ def test_search_and_sort_forms_stay() -> None:
 
 
 def test_contact_links_move_to_inquiry_keeping_source_params() -> None:
-    html = '<a href="/pages/contact?source_page=pattern-pdp&source_module=hero">Send</a>'
+    html = (
+        '<a href="/pages/contact?source_page=pattern-pdp&source_module=hero">Send</a>'
+    )
     out, ledger = upgrade(html)
-    assert out == '<a href="/inquiry/?source_page=pattern-pdp&source_module=hero">Send</a>'
+    assert (
+        out == '<a href="/inquiry/?source_page=pattern-pdp&source_module=hero">Send</a>'
+    )
     assert ledger["contact_links"] == 1

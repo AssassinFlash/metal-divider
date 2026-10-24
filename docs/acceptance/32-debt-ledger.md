@@ -39,7 +39,7 @@
 | DEBT-3 | 脚本堆叠 + 第三方 UI 包 | **65 个 `<script>` 全数出模板**(T3 收编期动作);xo-webcomponents 自定义元素保留原 DOM(T6,分批) | CHECK-4 待渲染层复核(LC 运行时白名单);CHECK-5 构建图无 xo 依赖(仓库无该包) |
 | DEBT-4 | 多条样式管线并存 | **单 WindPress 管线**:36 卷全部经 `content/windpress/` 编译进同一缓存;零第二条构建 | CHECK-6 仓库无第二条 Tailwind 构建(静态可判) |
 | DEBT-5 | 模板版本堆叠 | 模板/卷命名无 `-vN`(WindPressVolumeTest 断言) | CHECK-7 绿 |
-| DEBT-6 | 表单复制粘贴 | **升级段已做**:15 张面的 api.form-data.com 询盘表单全部替换为 `[lc_get_partial slug="md-inquiry-cta"]` 单源件;`/pages/contact` 链接全部改指 `/inquiry/`(source 参数保留) | CHECK-8 部分绿:series/shop 的搜索/排序 GET 表单保留(U1 筛选/分页重实现,分批);/inquiry/ 表单本体归 #33 |
+| DEBT-6 | 表单复制粘贴 | **升级段已做**:16 个 api.form-data.com 询盘表单(15 张面)全部替换为 `[lc_get_partial slug="md-inquiry-cta"]` 单源件;`/pages/contact` 链接全部改指 `/inquiry/`(source 参数保留) | CHECK-8 部分绿:series/shop 的搜索/排序 GET 表单保留(U1 筛选/分页重实现,分批);/inquiry/ 表单本体归 #33 |
 | DEBT-7 | 图标重复内联 | 未处置(U4 升级项,分批:91 个内联 SVG 的单源化在像素门调试期做) | 待 U4 |
 | DEBT-8 | 渲染体积 | 收编模板 DOM 体量 = 旧站渲染 HTML 去脚本/样式块后的原文;最终度量在 #31 导入后的渲染层 | 观测指标,导入后度量 |
 
