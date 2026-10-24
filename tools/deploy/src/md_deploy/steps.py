@@ -88,14 +88,27 @@ def stage_plugin(repository: Path, slug: str, staging: Path) -> Path:
     source = Path(repository) / plan.REPO / slug
     if not (source / f"{slug}.php").is_file():
         raise DeployError(f"{source} does not look like the {slug} plugin")
-    destination = Path(staging) / slug
-    stamp = Path(staging) / ".stage" / f"{slug}.sha256"
+    return stage_tree(source, staging, composer=True)
+
+
+def stage_tree(source: Path, staging: Path, *, composer: bool) -> Path:
+    """Stage one shippable tree: the source with the deploy excludes applied.
+
+    `staging` is the workspace; the staged tree lands under it named after
+    the source. Nothing is staged from the source directly: a file the
+    excludes should keep out would then ship, and a plugin's vendor tree is
+    rebuilt here rather than copied. The fingerprint cache keeps an
+    unchanged tree from being rebuilt every deploy.
+    """
+    destination = Path(staging) / source.name
+    stamp = Path(staging) / ".stage" / f"{source.name}.sha256"
     fingerprint = _stage_fingerprint(source)
     if (
         stamp.is_file()
         and stamp.read_text(encoding="utf-8").strip() == fingerprint
         and (
-            not (destination / "composer.json").is_file()
+            not composer
+            or not (destination / "composer.json").is_file()
             or (destination / "vendor").is_dir()
         )
     ):
@@ -115,34 +128,39 @@ def stage_plugin(repository: Path, slug: str, staging: Path) -> Path:
         text=True,
     )
     if completed.returncode != 0:
-        raise DeployError(f"staging {slug}: {completed.stderr.strip()}")
-    if (destination / "composer.json").is_file():
-        composer = shutil.which("composer")
-        if composer is None:
-            raise DeployError("composer is not installed (README.md)")
-        installed = subprocess.run(
-            [
-                composer,
-                "install",
-                "--no-dev",
-                "--no-interaction",
-                "--no-progress",
-                "--optimize-autoloader",
-                "--quiet",
-            ],
-            cwd=destination,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        if installed.returncode != 0:
-            raise DeployError(
-                f"composer install --no-dev in {destination}: "
-                + (installed.stderr or installed.stdout).strip()
-            )
+        raise DeployError(f"staging {source.name}: {completed.stderr.strip()}")
+    if composer and (destination / "composer.json").is_file():
+        _composer_install(destination)
     stamp.parent.mkdir(parents=True, exist_ok=True)
     stamp.write_text(fingerprint + "\n", encoding="utf-8")
     return destination
+
+
+def _composer_install(destination: Path) -> None:
+    """Install the runtime dependencies of the staged tree."""
+    composer = shutil.which("composer")
+    if composer is None:
+        raise DeployError("composer is not installed (README.md)")
+    installed = subprocess.run(
+        [
+            composer,
+            "install",
+            "--no-dev",
+            "--no-interaction",
+            "--no-progress",
+            "--optimize-autoloader",
+            "--quiet",
+        ],
+        cwd=destination,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if installed.returncode != 0:
+        raise DeployError(
+            f"composer install --no-dev in {destination}: "
+            + (installed.stderr or installed.stdout).strip()
+        )
 
 
 def _stage_fingerprint(source: Path) -> str:
@@ -188,6 +206,12 @@ def deployment_artifacts(repository: Path, target: Target) -> list[atomic.Artifa
     mu-plugin ships to the staging target alone; production and the local dev
     instance filter it out (the dev instance's isolation mu-plugin already
     does everything it does).
+
+    The child theme ships as one tree, not file by file: on a dev instance
+    the theme is a symlink into this checkout, and a file-by-file switch
+    would write its backup siblings THROUGH the link, into the repository.
+    A whole tree renames past the link (the link itself is moved aside),
+    which is also exactly what production's real directory needs.
     """
     repository = Path(repository)
     mu = repository / plan.MU_PLUGINS_REPO
@@ -201,17 +225,36 @@ def deployment_artifacts(repository: Path, target: Target) -> list[atomic.Artifa
     ]
     theme = repository / plan.THEMES_REPO / plan.CHILD_THEME
     if theme.is_dir():
-        artifacts += [
-            atomic.Artifact(
-                path,
-                f"{plan.THEMES_DIR}/{plan.CHILD_THEME}/{path.relative_to(theme)}",
+        strays = [item.name for item in theme.iterdir() if item.name.startswith(".")]
+        if strays:
+            raise DeployError(
+                f"{theme} carries dotfiles ({', '.join(strays)}): the theme ships "
+                "as one tree and a stray sibling would ship with it"
             )
-            for path in sorted(item for item in theme.rglob("*") if item.is_file())
-        ]
+        artifacts.append(atomic.Artifact(theme, plan.CHILD_THEME_TARGET))
     for slug in landed_plugins(repository):
         source = repository / plan.REPO / slug
         artifacts.append(atomic.Artifact(source, f"{plan.PLUGINS_DIR}/{slug}"))
     return artifacts
+
+
+def _prepared(
+    artifact: atomic.Artifact, *, repository: Path, staging: Path
+) -> atomic.Artifact:
+    """The shippable form of one artifact: staged trees for the directories.
+
+    The plugins stage with their Composer build; the child theme stages as
+    the plain tree it is. A single file ships as itself.
+    """
+    if artifact.relative.startswith(plan.PLUGINS_DIR + "/"):
+        return atomic.Artifact(
+            stage_plugin(repository, artifact.source.name, staging), artifact.relative
+        )
+    if artifact.source.is_dir():
+        return atomic.Artifact(
+            stage_tree(artifact.source, staging, composer=False), artifact.relative
+        )
+    return artifact
 
 
 def deployment_id(repository: Path) -> str:
@@ -361,16 +404,11 @@ def deploy(
     reminder = full_backup_reminder(home, now=now)
     artifacts = deployment_artifacts(repository, target)
     absent = absent_artifacts(repository)
-    # Finish every local Composer build before starting any remote upload.
+    # Finish every local build before starting any remote upload.
     print("deploy: staging and Composer builds", flush=True)
     started = time.monotonic()
     prepared = [
-        atomic.Artifact(
-            stage_plugin(repository, item.source.name, staging), item.relative
-        )
-        if item.source.is_dir() and item.relative.startswith(plan.PLUGINS_DIR + "/")
-        else item
-        for item in artifacts
+        _prepared(item, repository=repository, staging=staging) for item in artifacts
     ]
     print(f"deploy: staging done in {time.monotonic() - started:.1f}s", flush=True)
     receipt = atomic.publish(

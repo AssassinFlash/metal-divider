@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from md_deploy import plan, steps
-from md_deploy.target import Target
+from md_deploy.target import DeployError, Target
 
 
 def target(label: str, *, staging: bool = False) -> Target:
@@ -74,6 +76,44 @@ def test_absent_artifacts_name_exactly_what_has_not_landed() -> None:
         assert (f"{plan.REPO}/{slug}" in absent) != landed
     theme = repository / plan.THEMES_REPO / plan.CHILD_THEME
     assert (f"{plan.THEMES_REPO}/{plan.CHILD_THEME}" in absent) != theme.is_dir()
+
+
+def test_the_child_theme_ships_as_one_tree(tmp_path: Path) -> None:
+    """A file-by-file theme switch writes its siblings through the dev
+    instance's symlink into this repository; one tree renames past the link."""
+    repository = tmp_path
+    theme = repository / plan.THEMES_REPO / plan.CHILD_THEME
+    theme.mkdir(parents=True)
+    (theme / "functions.php").write_text("<?php\n")
+    (theme / "style.css").write_text("/* */\n")
+    (repository / plan.MU_PLUGINS_REPO).mkdir(parents=True)
+    (repository / plan.MU_PLUGINS_REPO / "md-site-guards.php").write_text("<?php\n")
+    target = Target("dev", "/site", "http://site", (), None, None)
+
+    artifacts = steps.deployment_artifacts(repository, target)
+
+    theme_entries = [
+        item for item in artifacts if item.relative == plan.CHILD_THEME_TARGET
+    ]
+    assert len(theme_entries) == 1 and theme_entries[0].source.is_dir()
+    assert not any(
+        item.relative.startswith(plan.CHILD_THEME_TARGET + "/") for item in artifacts
+    )
+
+
+def test_a_theme_directory_with_dotfiles_refuses_to_ship(tmp_path: Path) -> None:
+    """A stray sibling in the theme's source would ship inside the one tree."""
+    repository = tmp_path
+    theme = repository / plan.THEMES_REPO / plan.CHILD_THEME
+    theme.mkdir(parents=True)
+    (theme / "functions.php").write_text("<?php\n")
+    (theme / ".functions.php.prev").write_text("a deploy sibling that escaped")
+    (repository / plan.MU_PLUGINS_REPO).mkdir(parents=True)
+    (repository / plan.MU_PLUGINS_REPO / "md-site-guards.php").write_text("<?php\n")
+    target = Target("dev", "/site", "http://site", (), None, None)
+
+    with pytest.raises(DeployError, match="carries dotfiles"):
+        steps.deployment_artifacts(repository, target)
 
 
 def test_the_verify_subset_is_absolute_paths_of_this_site() -> None:

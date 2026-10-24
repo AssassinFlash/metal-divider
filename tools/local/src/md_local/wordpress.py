@@ -256,7 +256,6 @@ PINNED_VERSIONS: dict[str, str] = {
     "yansir-md": versions.YANSIR_MD_VERSION,
     "picostrap5": versions.PICOSTRAP5_VERSION,
     "LiteSpeed Cache": versions.LITESPEED_CACHE_VERSION,
-
 }
 
 

@@ -24,13 +24,16 @@ from __future__ import annotations
 # why it comes first: the inquiry chain's pages render through it.
 PLANNED_PLUGINS = ("md-site", "md-inquiry")
 
-# The child theme's files: everything under themes/md-child/ mirrors
-# wp-content/themes/md-child/. Its ticket is #27; the same not-yet-in-tree
-# rule as the plugins applies. The parent theme (picostrap5) is an
-# install-time archive piece (spec 20 §2.1 step 9), never in the deploy.
+# The repository's files inside the live theme: `themes/<slug>/<file>` mirrors
+# `wp-content/themes/<slug>/<file>`. The child theme is wholly this
+# repository's (functions.php + style.css, spec 17 §1: 子主题只有
+# functions.php,视觉零决策), so it ships as one tree; the parent theme
+# (picostrap5) is an install-time archive piece (spec 20 §2.1 step 9), never
+# in the deploy.
 THEMES_REPO = "themes"
 CHILD_THEME = "md-child"
 THEMES_DIR = "wp-content/themes"
+CHILD_THEME_TARGET = f"{THEMES_DIR}/{CHILD_THEME}"
 
 # Never pushed to the host: the checkout's own bookkeeping and the projects a
 # published plugin does not run (the vendor tree is rebuilt by the staging

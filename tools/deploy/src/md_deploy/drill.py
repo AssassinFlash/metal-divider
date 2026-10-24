@@ -46,7 +46,7 @@ class Drill:
         after_first = self.fingerprint()
 
         print("drill: rollback")
-        receipt = atomic.rollback(self.target, [item.relative for item in shipped])
+        receipt = atomic.rollback(self.target, list(shipped))
         self.steps.append(
             {
                 "step": "rollback-deploy",
@@ -109,10 +109,14 @@ class Drill:
                 for entry in self.target.tree(plan.MU_PLUGINS_DIR)
                 if not Path(entry.rsplit("  ", 1)[-1]).name.startswith(".")
             ),
+            # The child theme ships as one tree; through the dev instance's
+            # symlink and the deployed real directory alike, the content the
+            # site serves must be the same after every phase.
+            "child_theme": sorted(self.target.tree(plan.CHILD_THEME_TARGET)),
         }
 
-    def _pass(self) -> list[atomic.Artifact]:
-        """One deploy pass; returns the artifacts that were shipped."""
+    def _pass(self) -> tuple[str, ...]:
+        """One deploy pass; returns the batch's own paths from its receipt."""
         deployed = steps.deploy(
             self.target,
             repository=self.repository,
@@ -127,7 +131,10 @@ class Drill:
             }
         )
         assert deployed.publication is not None
-        return steps.deployment_artifacts(self.repository, self.target)
+        # The receipt's paths, not a recomputed inventory: the rollback must
+        # restore exactly the batch that was deployed, whatever the tree
+        # looks like by then.
+        return deployed.publication.paths
 
 
 def _difference(before: dict[str, object], after: dict[str, object]) -> str:
