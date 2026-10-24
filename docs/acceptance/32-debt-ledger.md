@@ -34,8 +34,8 @@
 
 | # | 债(#8 §5.3) | #32 处置 | CHECK 判定状态 |
 |---|---|---|---|
-| DEBT-1 | 内联样式属性 | **模板层已清零**:870 处 `style="…"` 全部铸为 `md-t<hash>` 类、规则入卷(同声明序列同哈希,重跑同名) | CHECK-1 待渲染层复核(dev 实例 present 后 curl;收编产物静态断言:模板文件 `style="` 计数=1,为 Alpine `:style` 绑定,属 T6 升级项) |
-| DEBT-2 | 每节一个 `<style>` 块 | **85 块全部归卷**(`:root` 变量块进 chrome.css,其余进所属卷) | CHECK-2 模板层已清零;CHECK-3 待渲染层复核(每页外链 CSS 恰 1 条 = WindPress 编译产物) |
+| DEBT-1 | 内联样式属性 | **模板层已清零**:870 处 `style="…"` 全部铸为 `md-t<hash>` 类、规则入卷(同声明序列同哈希,重跑同名) | CHECK-1 绿(#47 渲染层复核):#32 的静态断言与实况不符——chrome partial(header/footer 52 处)与 15 张面的面包屑/背景图共 **113 处 `style=` 未铸类**,#47 全部归卷(声明入卷、选择器挂既有类名、9 个新 `md-` 类),并加全树守卫测试(TemplatesTest)防回归;curl dev 实例各面 0 残留。Alpine `:style` 绑定(6 处,marquee)保留,属 T6 升级项 |
+| DEBT-2 | 每节一个 `<style>` 块 | **85 块全部归卷**(`:root` 变量块进 chrome.css,其余进所属卷) | CHECK-2 模板层已清零;CHECK-3 复核发现阻断(#47):归卷产物 **36 卷中 24 卷花括号不平衡**(提取丢闭合括号,custom-screens +186、gallery +101、series-archive/shop +81、chrome +53),WindPress 编译器首错即 fatal——dev 实例浏览器实测 `windpress-cached-inline-css` 为空,整站卷样式未生效。修复需从旧站原始证据重跑提取(规格允许重采集)+ 像素门,独立立项 |
 | DEBT-3 | 脚本堆叠 + 第三方 UI 包 | **65 个 `<script>` 全数出模板**(T3 收编期动作);xo-webcomponents 自定义元素保留原 DOM(T6,分批) | CHECK-4 待渲染层复核(LC 运行时白名单);CHECK-5 构建图无 xo 依赖(仓库无该包) |
 | DEBT-4 | 多条样式管线并存 | **单 WindPress 管线**:36 卷全部经 `content/windpress/` 编译进同一缓存;零第二条构建 | CHECK-6 仓库无第二条 Tailwind 构建(静态可判) |
 | DEBT-5 | 模板版本堆叠 | 模板/卷命名无 `-vN`(WindPressVolumeTest 断言) | CHECK-7 绿 |

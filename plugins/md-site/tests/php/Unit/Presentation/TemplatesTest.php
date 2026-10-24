@@ -99,4 +99,27 @@ final class TemplatesTest extends TestCase {
 			$this->assertSame( array( 'surface', 'target', 'detail' ), array_keys( $row ) );
 		}
 	}
+
+	/**
+	 * Zero inline styles in the templates (AGENTS.md §5, spec 19 §4.2 T2,
+	 * ticket #47): no style= attribute, no <style> block — composition in
+	 * the template, styles in the WindPress volume. The scan is the whole
+	 * tree, so a future face cannot reintroduce the debt unseen; the one
+	 * exception is the marquee's Alpine :style binding, a runtime
+	 * expression (interaction, not chrome), which carries no static value.
+	 */
+	public function test_the_templates_carry_no_inline_styles(): void {
+		$dir   = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
+		$this->assertGreaterThan( 20, iterator_count( $files ), 'the tree the scan walks is the template inventory' );
+		foreach ( $files as $file ) {
+			$source   = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$relative = basename( (string) $file );
+			// The attribute form — whitespace, then style= — in either quote
+			// style; the Alpine :style binding (colon-prefixed) is not one.
+			preg_match_all( '/(?<=\s)style=/', $source, $attributes );
+			$this->assertSame( array(), $attributes[0], "{$relative} carries style= attributes" );
+			$this->assertStringNotContainsString( '<style', $source, "{$relative} carries a <style> block" );
+		}
+	}
 }
