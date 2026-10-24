@@ -6,9 +6,16 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # mu-plugins and router, and mu-plugins for the site's must-use plugins.
 php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
 
-# uv projects: tools/local (md-local) and tools/media (md-media). The services
-# and migrations of the repository join this list as they land.
-py_projects := "tools/local tools/media"
+# uv projects: tools/local (md-local), tools/media (md-media) and
+# tools/deploy (md-deploy). The services and migrations of the repository
+# join this list as they land.
+py_projects := "tools/local tools/media tools/deploy"
+
+# `just deploy …` is the deployment pipeline: dev/staging/prod targets, the
+# rename-atomic file deploy with rollback, the snapshot every deploy carries,
+# present and the media plane (tools/deploy/deploy.just,
+# docs/specs/20-staging-deploy.md, branch research/spec-deploy).
+mod deploy "tools/deploy/deploy.just"
 
 # The PHP tools run on PHP 8.3, the stack's pinned version and the version
 # contract the production host must meet (docs/specs/14-local-stack.md §2.3,
@@ -29,7 +36,7 @@ md_media := "uv run --locked --project tools/media md-media"
 
 # List the recipes.
 default:
-    @just --list
+    @just --list --list-submodules
 
 # Lint and static analysis of every chain.
 check: php-check py-check

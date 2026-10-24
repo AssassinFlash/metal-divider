@@ -1,0 +1,41 @@
+[project]
+name = "md-deploy"
+version = "0.1.0"
+description = "The deployment pipeline of metal-divider.com: three targets (dev/staging/prod), the rename-atomic file deploy with rollback, the database snapshot every deploy carries, the present step and the chunked media rsync (docs/specs/20-staging-deploy.md, branch research/spec-deploy)."
+# The stack's Python (docs/specs/14-local-stack.md): one interpreter serves
+# every uv project in the repository.
+requires-python = ">=3.12"
+# md-local (tools/local): the local instance the drill runs the same steps
+# against, and the WP-CLI seam of the dev target.
+dependencies = ["md-local"]
+
+[tool.uv.sources]
+md-local = { path = "../local" }
+
+[project.scripts]
+md-deploy = "md_deploy.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[build-system]
+# Range written by `uv init --package` with uv 0.13.4, as tools/local's.
+requires = ["uv_build>=0.13.4,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.ruff.lint]
+# Ruff's defaults (E4, E7, E9, F) plus import sorting, bugbear and pyupgrade,
+# as in tools/local (the de-linker blueprint this tool was cut from).
+select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
+
+[tool.mypy]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# A deprecation is fixed when it appears, not when the API is removed.
+filterwarnings = ["error"]
