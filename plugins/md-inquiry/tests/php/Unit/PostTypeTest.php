@@ -46,5 +46,7 @@ final class PostTypeTest extends TestCase {
 		$this->assertTrue( $args['show_ui'], 'the back-office list is where inquiries are read' );
 		$this->assertFalse( $args['show_in_rest'], 'no REST surface of its own: the form writes through its own controller' );
 		$this->assertSame( array( 'title', 'date' ), $args['supports'], 'title (filled on submission) and date alone; everything else is the field groups of the chain\'s own ticket' );
+		$this->assertSame( 'page', $args['capability_type'], 'the page capabilities gate the records: editors and up, never the author role' );
+		$this->assertFalse( $args['show_in_admin_bar'], 'no new-inquiry shortcut in the admin bar' );
 	}
 }
