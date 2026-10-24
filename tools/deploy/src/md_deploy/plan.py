@@ -74,6 +74,12 @@ STAGING_MU = "md-staging-guards.php"
 # tickets add the guard when they add the templates.
 PRESENT = ("md-site", "present")
 
+# The SEO configuration plane's DB-plane step (spec 22, ticket #34): the same
+# deploy that ships md-site installs its SEOPress state, so staging and
+# production never see a deploy whose SEO surface went stale. Idempotent, and
+# it reports (never blocks on) the pages that have not landed yet.
+SEO = ("md-site", "seo")
+
 # The WindPress cache compile is browser-side only (Tailwind v4 has no
 # server-side build): the deploy prints how to run it and checks the result.
 # The anchor-class half of the assertion is the presentation plugin's own

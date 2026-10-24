@@ -21,6 +21,10 @@ parameters:
 		# in the WordPress stubs nor on Packagist. Only the surface this
 		# plugin touches is declared.
 		- tests/php/Doubles/acf-stubs.php
+		# WooCommerce supplies wc_get_product at runtime; same story. The
+		# Product schema reads one method of its return, declared as the
+		# MdWooProductGallery interface.
+		- tests/php/Doubles/woocommerce-stubs.php
 		# wp-cli (the command calls WP_CLI::error/log/success); the runtime
 		# double lives in tests/php/Doubles/wordpress.php, which stays out of
 		# analysis so real WordPress classes are not shadowed.

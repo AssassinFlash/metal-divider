@@ -100,7 +100,10 @@ final class Templates {
 		'md-faqs'                       => array( 'faqs', 'FAQs', 'faqs' ),
 		'md-custom-screens'             => array( 'custom-screens', 'Custom metal divider screens', 'custom-metal-divider-screens' ),
 		'md-inquiry'                    => array( 'inquiry', 'Inquiry', 'inquiry' ),
-		'md-inquiry-thank-you'          => array( 'inquiry-thank-you', 'Inquiry thank you', 'inquiry-thank-you' ),
+		// The page's URL is /inquiry/thank-you/ (spec 07 §6): the page is
+		// the inquiry page's child, so its post name is 'thank-you' — the
+		// first element stays the template file's own name.
+		'md-inquiry-thank-you'          => array( 'inquiry-thank-you', 'Inquiry thank you', 'thank-you' ),
 		'md-privacy'                    => array( 'privacy', 'Privacy policy', 'privacy' ),
 	);
 
