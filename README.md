@@ -53,10 +53,11 @@ just pixel-check dev      # 像素门:实例按基准口径截图,逐页型 diff
 
 首次使用前需要两样本机资产(都不进仓库):
 
-1. **付费件档案**——LiveCanvas、SEOPress PRO、yansir-md 的 zip 收进 `~/metal-divider-local/archives/`,SHA-256 记在 `archives.toml`。业主既有许可的收档命令(`de-linker` 数据根下的档案或快照目录作源):
+1. **付费件档案**——LiveCanvas、SEOPress PRO、yansir-md、picostrap5(基础主题)的 zip 收进 `~/metal-divider-local/archives/`,SHA-256 记在 `archives.toml`。业主既有许可与主题的收档命令(`de-linker` 数据根下的档案或快照目录作源):
    ```sh
    just archive livecanvas ~/de-linker-data/livecanvas-4.9.5
    just archive wp-seopress-pro ~/de-linker-data/20261022-2309/plugins/wp-seopress-pro
    just archive yansir-md ~/Downloads/yansir-md-1.0.1.zip
+   just archive picostrap5 ~/de-linker-data/20261022-2309/themes/picostrap5
    ```
 2. **许可键**——`~/.config/metal-divider/livecanvas.env`(`LIVECANVAS_LICENSE_KEY=…`)与 `seopress.env`(`SEOPRESS_LICENSE_KEY=…`),600 权限;缺失时 `up` 照常完成,但后台会留各自的激活提示。

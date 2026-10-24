@@ -185,10 +185,17 @@ def test_the_whole_stack(stack: Stack) -> None:
         "wp-seopress-pro",
         "livecanvas",
         "28-wp-markdown-editor",
+        "md-site",
+        "md-inquiry",
     ):
         assert slug in active, f"{slug} is not active (active: {active})"
     # Polylang is phase 2: the slot in versions.py, never the plugin.
     assert "polylang" not in stack.wp("plugin", "list")
+
+    # The theme face: picostrap5 from the archive, the checkout's md-child
+    # active on top of it (spec 17 §2.1, branch research/spec-theme-base).
+    assert "picostrap5" in stack.wp("theme", "list", "--field=name")
+    assert stack.wp("option", "get", "stylesheet") == "md-child"
 
     # The isolation headers, and a page that answers.
     home = request(instance.port, "/")
@@ -234,7 +241,10 @@ def test_the_whole_stack(stack: Stack) -> None:
         "wp-seopress-pro",
         "livecanvas",
         "28-wp-markdown-editor",
+        "md-site",
+        "md-inquiry",
     }
+    assert stack.wp("option", "get", "stylesheet") == "md-child"
     if licence_values():
         assert stack.wp("option", "get", "seopress_pro_license_status") == "valid"
         assert stack.wp("option", "get", "lc_apikey") != ""
