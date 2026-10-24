@@ -45,7 +45,7 @@ default:
     @just --list --list-submodules
 
 # Lint and static analysis of every chain.
-check: php-check py-check
+check: php-check py-check volume-check
 
 # Unit tests of every chain. The plugins' and mu-plugins' PHPUnit runs
 # everywhere; tools/local's stack tests build real instances with this Mac's
@@ -139,6 +139,16 @@ templates raw=".scratch/32/raw" theme-assets="" media-state="":
 # (spec 19 §2.2 R1): brand, addresses and tokens mapped, markup intact.
 blog-fork source:
     cd tools/template-convert && uv run --locked md-template-convert --blog-source {{ source }} --plugin "{{ justfile_directory() }}/plugins/md-site"
+
+# The WindPress volumes' syntax gate (ticket #49): every volume under
+# plugins/md-site/content/windpress brace-balanced (strings and comments
+# respected) and free of tinycss2 parse errors. The WindPress compiler is
+# fatal on the first unbalanced brace — #44's extraction debt shipped 24
+# such volumes and took the site's styles down unnoticed; this gate makes
+# it a check-time failure instead.
+volume-check:
+    cd tools/template-convert && uv run --locked md-volume-check "{{ justfile_directory() }}/plugins/md-site"
+
 # Build the full final media set: data/media-raw -> data/media-final
 # (variants, sidecars, checkpoint state). Full corpus run, minutes.
 media-build:

@@ -129,6 +129,7 @@ overflow-x: hidden;
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-panel { padding: 96px 0; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero { padding-top: 64px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-grid-cols { min-height: 62vh; padding: 56px 0 64px; }
+}
 @media (max-width: 989px) {
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-grid-cols,
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-split,
@@ -140,16 +141,19 @@ overflow-x: hidden;
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip { border-top: 0; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-wide { grid-column: 1 / -1; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 749px) {
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero h1 { font-size: clamp(34px, 10vw, 44px); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-actions { display: grid; width: 100%; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-btn-primary,
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-btn-ghost { width: 100%; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-cta-actions { align-items: stretch; flex-direction: column; }
+}
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic.js-motion .gs-reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic.js-motion .gs-reveal.is-visible { opacity: 1; transform: translateY(0); }
 @media (prefers-reduced-motion: reduce) {
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .gs-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-square img,
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-card img { transition: none !important; }
+}
 .md-t0512b322 { --pt: 15;--pb: 15 }

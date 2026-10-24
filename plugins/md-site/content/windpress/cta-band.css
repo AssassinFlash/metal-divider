@@ -13,6 +13,7 @@
 to {
 transform: rotate(360deg)
 }
+}
 .appearance-none { -webkit-appearance:none;-moz-appearance:none;appearance:none }
 .appearance-none { appearance: none }
 .backdrop-blur-md,.backdrop-blur-sm { -webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia) }
@@ -268,6 +269,7 @@ line-height: 1.25rem }
 .text-white\/90 { color: rgb(255 255 255/.9) }
 .text-xl { font-size:20px }
 .text-xl { font-size: 1.25rem;
+line-height: 1.75rem }
 .text-xs { font-size:13px }
 .text-xs { font-size: .75rem;
 line-height: 1rem }
@@ -284,8 +286,12 @@ transition-timing-function: cubic-bezier(.4, 0, .2, 1);
 transition-duration: .15s }
 .transition-all { transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s }
 .transition-all { transition-property: all;
+transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+transition-duration: .15s }
 .transition-colors { transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s }
 .transition-colors { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+transition-duration: .15s }
 .truncate { overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
 .truncate { overflow: hidden;
 text-overflow: ellipsis;
@@ -314,17 +320,40 @@ white-space: nowrap }
 #laser-cut-contact-template--21873710563581__laser_cut_contact .lcc-input.lcc-invalid {
 border-color: rgba(239, 68, 68, 0.5) !important;
 background: rgba(239, 68, 68, 0.05) !important;
+}
 #laser-cut-contact-template--21873710563581__laser_cut_contact .lcc-checkbox-label.lcc-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 /* Remove error state on focus */
 #laser-cut-contact-template--21873710563581__laser_cut_contact .lcc-input:focus {
 border-color: rgba(201, 169, 98, 0.6) !important;
 background: rgba(255, 255, 255, 0.05) !important;
+}
 #glass-hybrid-contact-template--21873710530813__glass_hybrid_contact .ghc-input.ghc-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 #glass-hybrid-contact-template--21873710530813__glass_hybrid_contact .ghc-checkbox-label.ghc-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 #glass-hybrid-contact-template--21873710530813__glass_hybrid_contact .ghc-input:focus {
+border-color: rgba(201, 169, 98, 0.6) !important;
+background: rgba(255, 255, 255, 0.05) !important;
+}
 #outdoor-contact-template--21873710596349__outdoor_contact .occ-input.occ-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 #outdoor-contact-template--21873710596349__outdoor_contact .occ-checkbox-label.occ-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 #outdoor-contact-template--21873710596349__outdoor_contact .occ-input:focus {
+border-color: rgba(201, 169, 98, 0.6) !important;
+background: rgba(255, 255, 255, 0.05) !important;
+}
 /* Honeypot — visually + accessibility hidden, bots see + fill */
 #chinese-contact-template--21873710498045__chinese_contact .cnc-honeypot {
 position: absolute;
@@ -334,24 +363,62 @@ width: 1px;
 height: 1px;
 opacity: 0;
 pointer-events: none;
+}
 #chinese-contact-template--21873710498045__chinese_contact .cnc-input.cnc-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 #chinese-contact-template--21873710498045__chinese_contact .cnc-checkbox-label.cnc-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 #chinese-contact-template--21873710498045__chinese_contact .cnc-input:focus {
+border-color: rgba(201, 169, 98, 0.6) !important;
+background: rgba(255, 255, 255, 0.05) !important;
+}
 #laser-cut-panels-cta-template--21844033995005__laser-cut-panels-cta {
 padding-top: 60px;
 padding-bottom: 60px;
+}
 @media (min-width: 750px) {
+#laser-cut-panels-cta-template--21844033995005__laser-cut-panels-cta {
 padding-top: 80px;
 padding-bottom: 80px;
+}
+}
 #laser-cut-panels-cta-template--21844033995005__laser-cut-panels-cta .pct-input:focus {
+border-color: rgba(201, 169, 98, 0.6) !important;
+background: rgba(255, 255, 255, 0.05) !important;
+}
 #laser-cut-panels-cta-template--21844033995005__laser-cut-panels-cta .pct-input.pct-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 #perforated-contact-template--21844034814205__perforated_contact .pcc-honeypot {
+position: absolute;
+left: -9999px;
+top: -9999px;
+width: 1px;
+height: 1px;
+opacity: 0;
+pointer-events: none;
+}
 #perforated-contact-template--21844034814205__perforated_contact .pcc-input.pcc-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 #perforated-contact-template--21844034814205__perforated_contact .pcc-checkbox-label.pcc-invalid {
+border-color: rgba(239, 68, 68, 0.5) !important;
+background: rgba(239, 68, 68, 0.05) !important;
+}
 #perforated-contact-template--21844034814205__perforated_contact .pcc-input:focus {
+border-color: rgba(201, 169, 98, 0.6) !important;
+background: rgba(255, 255, 255, 0.05) !important;
+}
 #perforated-contact-template--21844034814205__perforated_contact select option {
 color: #1a1a1a;
 background: #ffffff;
+}
 #mid-cta-template--22465876033789__mid_cta_section_4T7kBC {
 position: relative;
 /* 深黑金底色 (Deep Black) */
@@ -363,23 +430,32 @@ color: #fff;
 padding: 100px 20px;
 overflow: hidden;
 font-family: 'Inter', sans-serif;
+}
 /* 遮罩层 */
 #mid-cta-template--22465876033789__mid_cta_section_4T7kBC::after {
 content: '';
+position: absolute;
 inset: 0;
 background: radial-gradient(circle at center, transparent 0%, #0a0a0a 90%);
+pointer-events: none;
 z-index: 1;
+}
 /* 巨大的滚动背景字 */
 .scrolling-text-container {
+position: absolute;
 top: 50%;
 left: 0;
 width: 100%;
 transform: translateY(-50%) rotate(-2deg);
 opacity: 1;
+pointer-events: none;
 white-space: nowrap;
+overflow: hidden;
 z-index: 0;
+}
 .scrolling-text {
 display: inline-block;
+font-family: 'Inter', sans-serif;
 font-size: 10vw;
 font-weight: 900;
 text-transform: uppercase;
@@ -387,42 +463,52 @@ line-height: 1;
 color: transparent;
 -webkit-text-stroke: 1px rgba(255,255,255,0.15);
 animation: marquee-text 40s linear infinite;
+}
 @keyframes marquee-text {
 from { transform: translateX(0); }
 to { transform: translateX(-50%); }
+}
 /* 前景内容容器 */
 .cta-content {
+position: relative;
 z-index: 10;
 max-width: 900px;
 margin: 0 auto;
 text-align: center;
+}
 /* 装饰性小标题 (Gold) */
 .cta-eyebrow {
 color: #d4af37;
 font-size: 12px;
 font-weight: 700;
 letter-spacing: 0.2em;
+text-transform: uppercase;
 margin-bottom: 24px;
+display: inline-block;
 padding: 6px 12px;
 border: 1px solid rgba(212, 175, 55, 0.3);
 border-radius: 4px;
 background: rgba(212, 175, 55, 0.05); /* 微弱金色背景 */
+}
 /* 大标题 */
 .cta-title {
 font-family: 'Playfair Display', serif;
 font-size: clamp(42px, 5vw, 72px);
 font-weight: 600;
 line-height: 1.1;
+margin-bottom: 24px;
 background: linear-gradient(135deg, #fff 0%, #faf9f7 100%);
 -webkit-background-clip: text;
 -webkit-text-fill-color: transparent;
 text-shadow: 0 4px 20px rgba(0,0,0,0.5); /* 稍微加点阴影防止和网格混淆 */
+}
 .cta-desc {
 font-size: 18px;
 line-height: 1.6;
 color: rgba(255, 255, 255, 0.7);
 max-width: 600px;
 margin: 0 auto 48px;
+}
 /* 按钮组 */
 .cta-actions {
 display: flex;
@@ -430,30 +516,55 @@ flex-direction: column;
 justify-content: center;
 gap: 16px;
 align-items: center;
+}
 @media (min-width: 768px) {
+.cta-actions {
 flex-direction: row;
 gap: 24px;
+}
+}
 /* 主按钮 (Gold) */
 .btn-primary {
 display: inline-flex;
+align-items: center;
+justify-content: center;
 padding: 16px 40px;
 background: #d4af37;
 color: #000;
+font-weight: 600;
+text-transform: uppercase;
 letter-spacing: 0.1em;
 font-size: 13px;
+border-radius: 4px;
 transition: all 0.3s ease;
 min-width: 200px;
+}
 .btn-primary:hover {
 background: #d4b878; /* Lighter Gold */
 transform: translateY(-2px);
 box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+}
 /* 次按钮 (White Outline) */
 .btn-secondary {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+padding: 16px 40px;
 background: transparent;
 border: 1px solid rgba(255,255,255,0.3);
+color: #fff;
+font-weight: 600;
+text-transform: uppercase;
+letter-spacing: 0.1em;
+font-size: 13px;
+border-radius: 4px;
+transition: all 0.3s ease;
+min-width: 200px;
+}
 .btn-secondary:hover {
 border-color: #fff;
 background: rgba(255,255,255,0.05);
+}
 
 /* The md-inquiry-cta piece (spec 19 §5.2, the T5 replacement): the
  * single-source CTA band every converted inquiry form becomes. New

@@ -142,15 +142,18 @@ color: #c9a962;
 flex: 1;
 transition: flex 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 cursor: pointer;
+}
 .about-gallery-panel:hover,
 .about-gallery-panel.active {
 flex: 3;
+}
 /* Hero Base Styles */
 #hero-section-template--22465876033789__hero_landing_yPiYEt {
 position: relative;
 min-height: 100vh;
 background-color: #0a0a0a;
 overflow: hidden;
+}
 /* Animated pattern background */
 .hero-pattern {
 position: absolute;
@@ -161,20 +164,27 @@ linear-gradient(45deg, #c9a962 1px, transparent 1px),
 linear-gradient(-45deg, #c9a962 1px, transparent 1px);
 background-size: 60px 60px;
 animation: patternShift 20s linear infinite;
+}
 @keyframes patternShift {
 0% { background-position: 0 0, 0 0; }
 100% { background-position: 60px 60px, 60px 60px; }
+}
 /* Hero preview container */
 .hero-preview {
+position: relative;
 border-radius: 28px;
+overflow: hidden;
 background: #1a1a1a;
 border: 1px solid rgba(255,255,255,0.15);
 box-shadow: 0 50px 110px rgba(0,0,0,0.65);
+}
 /* 关键修复：图片层 */
 /* Removed obsolete ::before pseudo-element since we use real <img> tag now */
 /* 调整遮罩：中间完全透明，只在最底部加深 */
 .hero-preview::after {
 content: '';
+position: absolute;
+inset: 0;
 background: linear-gradient(to bottom,
 rgba(0,0,0,0.3) 0%,
 transparent 15%,
@@ -183,20 +193,27 @@ rgba(0,0,0,0.7) 100%
 );
 pointer-events: none;
 z-index: 2;
+}
 /* Hero content inside preview */
 .hero-preview-content {
+position: absolute;
+inset: 0;
 padding: 1.5rem;
 display: flex;
 flex-direction: column;
 justify-content: space-between;
 z-index: 10;
+}
 @media(min-width: 640px) {
 .hero-preview-content { padding: 2rem; }
+}
 /* Text Shadow for better visibility without dark overlay */
 .text-shadow-md {
 text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
 .text-shadow-sm {
 text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
 /* Hero chips */
 .hero-chip {
 display: inline-flex;
@@ -212,12 +229,17 @@ font-weight: 600;
 letter-spacing: 0.08em;
 text-transform: uppercase;
 transition: all 200ms ease;
+cursor: pointer;
+}
 .hero-chip:hover {
 background: rgba(255,255,255,0.08);
 border-color: rgba(255,255,255,0.22);
+}
 .hero-chip[aria-pressed="true"] {
 background: rgba(201,169,98,0.14);
 border-color: rgba(201,169,98,0.58);
+color: #c9a962;
+}
 .hero-chip-swatch {
 width: 14px;
 height: 14px;
@@ -227,11 +249,14 @@ background-size: cover;
 background-position: center;
 background-color: rgba(255,255,255,0.06);
 flex: 0 0 auto;
+}
 .hero-chip[aria-pressed="true"] .hero-chip-swatch {
 border-color: rgba(201,169,98,0.60);
+}
 /* Note: .gold-text and .fade-in are defined in theme.layout.liquid */
 @media (prefers-reduced-motion: reduce) {
 .hero-pattern { animation: none; }
 .fade-in { opacity: 1; transform: none; transition: none; }
+}
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

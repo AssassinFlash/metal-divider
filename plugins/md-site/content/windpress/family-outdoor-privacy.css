@@ -9,19 +9,25 @@ padding-top: 72px;
 padding-bottom: 72px;
 }
 @media (min-width: 750px) {
+#outdoor-solutions-template--21873710596349__outdoor_solutions {
 padding-top: 96px;
 padding-bottom: 96px;
+}
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions [x-cloak] {
 display: none !important;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-gallery-stack {
 position: relative;
 height: 520px;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-gallery {
 position: absolute;
 inset: 0;
 display: flex;
 gap: 12px;
 height: 100%;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel {
 flex: 1;
 min-width: 0;
@@ -29,29 +35,39 @@ border-radius: 12px;
 overflow: hidden;
 cursor: pointer;
 transition: flex 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+position: relative;
 border: 1px solid rgba(255, 255, 255, 0.08);
 background: #141414;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel--active {
 flex: 2.5;
 border-color: rgba(201, 169, 98, 0.4);
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel-img {
 width: 100%;
+height: 100%;
 object-fit: cover;
 opacity: 0.5;
 transition: opacity 0.6s ease, transform 0.6s ease;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel--active .os-panel-img {
 opacity: 1;
 transform: scale(1.02);
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-placeholder {
+display: flex;
 align-items: center;
 justify-content: center;
 background: rgba(255,255,255,0.03);
 color: rgba(255,255,255,0.2);
 font-size: 13px;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel-label {
+position: absolute;
 top: 16px;
 left: 16px;
 display: inline-flex;
+align-items: center;
 gap: 6px;
 padding: 5px 10px;
 background: rgba(0, 0, 0, 0.6);
@@ -67,22 +83,30 @@ z-index: 2;
 opacity: 0;
 transform: translateY(-8px);
 transition: all 0.4s ease 0.1s;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel--active .os-panel-label {
+opacity: 1;
 transform: translateY(0);
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-label-dot {
 width: 6px;
 height: 6px;
 border-radius: 50%;
 background: #c9a962;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel-overlay {
+position: absolute;
 bottom: 0;
 left: 0;
 right: 0;
 padding: 20px;
 background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+z-index: 2;
 transition: padding 0.5s ease;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel--active .os-panel-overlay {
 padding: 24px;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel-title {
 font-family: 'Playfair Display', serif;
 font-size: 16px;
@@ -90,91 +114,164 @@ font-weight: 500;
 margin: 0;
 color: rgba(255,255,255,0.9);
 transition: all 0.4s ease;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel--active .os-panel-title {
 font-size: 20px;
+color: #fff;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel-desc {
+font-size: 13px;
 line-height: 1.5;
 color: rgba(255,255,255,0.8);
 margin: 6px 0 0;
+transition: all 0.4s ease;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel--active .os-panel-desc {
+color: rgba(255,255,255,0.9);
 font-size: 14px;
+}
 @media (max-width: 749px) {
+#outdoor-solutions-template--21873710596349__outdoor_solutions .os-gallery-stack {
 height: 380px;
+}
+#outdoor-solutions-template--21873710596349__outdoor_solutions .os-gallery {
+height: 100%;
 overflow-x: auto;
 scroll-snap-type: x mandatory;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: none;
 padding-bottom: 8px;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-gallery::-webkit-scrollbar {
 display: none;
+}
+#outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel {
 flex: 0 0 78%;
 scroll-snap-align: center;
+}
+#outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel--active {
+flex: 0 0 78%;
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel-img { opacity: 1; }
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel-label { opacity: 1; transform: none; }
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel-overlay { opacity: 1; transform: none; }
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-panel-desc { opacity: 1; height: auto; }
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider {
 padding-top: 60px;
 padding-bottom: 60px;
+}
+@media (min-width: 750px) {
+#outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider {
 padding-top: 80px;
 padding-bottom: 80px;
+}
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider [x-cloak] {
+display: none !important;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-slider-shell {
 padding-top: 6px;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-track {
+position: absolute;
 inset-inline: 0;
 top: 50%;
 transform: translateY(-50%);
 display: grid;
 grid-template-columns: repeat(3, minmax(0, 1fr));
 height: 16px;
+overflow: hidden;
 border-radius: 999px;
+border: 1px solid rgba(255, 255, 255, 0.08);
 background: rgba(255, 255, 255, 0.04);
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-segment {
+position: relative;
+height: 100%;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-segment--dense {
 background:
 linear-gradient(180deg, rgba(201, 169, 98, 0.28), rgba(201, 169, 98, 0.12)),
 repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 9px, rgba(255, 255, 255, 0.04) 9px 10px);
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-segment--filtered {
+background:
 linear-gradient(180deg, rgba(201, 169, 98, 0.2), rgba(201, 169, 98, 0.08)),
 radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 14px);
 background-size: auto, 18px 18px;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-segment--open {
+background:
 linear-gradient(180deg, rgba(201, 169, 98, 0.12), rgba(201, 169, 98, 0.04)),
 linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px),
 linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px);
 background-size: auto, 32px 32px, 32px 32px;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-stop {
+position: absolute;
+top: 50%;
+width: 6px;
+height: 6px;
+border-radius: 999px;
 transform: translate(-50%, -50%);
 background: rgba(255, 255, 255, 0.65);
 z-index: 1;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-stop--left { left: 2px; }
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-stop--center { left: 50%; }
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-stop--right { left: calc(100% - 2px); }
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-range {
+position: relative;
+z-index: 2;
+width: 100%;
 height: 28px;
+margin: 0;
 appearance: none;
 -webkit-appearance: none;
 background: transparent;
+cursor: pointer;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-range:focus-visible {
 outline: 2px solid #c9a962;
 outline-offset: 10px;
+border-radius: 999px;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-range::-webkit-slider-runnable-track {
+height: 16px;
+background: transparent;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-range::-webkit-slider-thumb {
+-webkit-appearance: none;
 width: 32px;
 height: 32px;
 margin-top: -8px;
+border-radius: 999px;
 border: 3px solid #141414;
+background: #c9a962;
 box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-range::-moz-range-track {
+height: 16px;
+background: transparent;
 border: none;
+}
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-range::-moz-range-thumb {
+width: 32px;
+height: 32px;
+border-radius: 999px;
+border: 3px solid #141414;
+background: #c9a962;
+box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+}
 @media (prefers-reduced-motion: reduce) {
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-choice,
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider a,
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider [x-transition\:enter],
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider [x-transition\:leave] {
 transition: none !important;
+}
+}
 .md-t09274b5a { --pt: 20;--pb: 20 }
 .md-te21ba3d9 { min-height: 82vh;background: #141414;margin: 0;padding: 0 }
 .md-t7a2e528f { background: linear-gradient(to right, rgba(20,20,20,0.88) 0%, rgba(20,20,20,0.55) 45%, rgba(20,20,20,0.15) 70%, rgba(20,20,20,0) 100%) }

@@ -45,12 +45,17 @@ padding-top: 60px;
 padding-bottom: 60px;
 }
 @media (min-width: 750px) {
+#laser-cut-panels-install-template--21844033995005__laser-cut-panels-install {
 padding-top: 80px;
 padding-bottom: 80px;
+}
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install [x-cloak] {
 display: none !important;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-slider-shell {
 padding-top: 6px;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-track {
 position: absolute;
 inset-inline: 0;
@@ -63,32 +68,44 @@ overflow: hidden;
 border-radius: 999px;
 border: 1px solid rgba(255, 255, 255, 0.08);
 background: rgba(255, 255, 255, 0.04);
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-segment {
 position: relative;
 height: 100%;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-segment--dense {
 background:
 linear-gradient(180deg, rgba(201, 169, 98, 0.28), rgba(201, 169, 98, 0.12)),
 repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 9px, rgba(255, 255, 255, 0.04) 9px 10px);
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-segment--filtered {
+background:
 linear-gradient(180deg, rgba(201, 169, 98, 0.2), rgba(201, 169, 98, 0.08)),
 radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 14px);
 background-size: auto, 18px 18px;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-segment--open {
+background:
 linear-gradient(180deg, rgba(201, 169, 98, 0.12), rgba(201, 169, 98, 0.04)),
 linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px),
 linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px);
 background-size: auto, 32px 32px, 32px 32px;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-stop {
+position: absolute;
+top: 50%;
 width: 6px;
 height: 6px;
+border-radius: 999px;
 transform: translate(-50%, -50%);
 background: rgba(255, 255, 255, 0.85);
 z-index: 1;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-stop--left { left: 2px; }
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-stop--center { left: 50%; }
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-stop--right { left: calc(100% - 2px); }
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range {
+position: relative;
 z-index: 2;
 width: 100%;
 height: 28px;
@@ -97,30 +114,69 @@ appearance: none;
 -webkit-appearance: none;
 background: transparent;
 cursor: pointer;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range:focus-visible {
 outline: 2px solid #c9a962;
 outline-offset: 10px;
+border-radius: 999px;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range::-webkit-slider-runnable-track {
+height: 16px;
+background: transparent;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range::-webkit-slider-thumb {
+-webkit-appearance: none;
 width: 32px;
 height: 32px;
 margin-top: -8px;
+border-radius: 999px;
 border: 3px solid #141414;
 background: #c9a962;
 box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range::-moz-range-track {
+height: 16px;
+background: transparent;
 border: none;
+}
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-range::-moz-range-thumb {
+width: 32px;
+height: 32px;
+border-radius: 999px;
+border: 3px solid #141414;
+background: #c9a962;
+box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+}
 @media (prefers-reduced-motion: reduce) {
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install .lcpi-choice,
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install a,
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install [x-transition\:enter],
 #laser-cut-panels-install-template--21844033995005__laser-cut-panels-install [x-transition\:leave] {
 transition: none !important;
+}
+}
 #laser-cut-panels-process-template--21844033995005__laser-cut-panels-process {
+padding-top: 60px;
+padding-bottom: 60px;
+}
+@media (min-width: 750px) {
+#laser-cut-panels-process-template--21844033995005__laser-cut-panels-process {
+padding-top: 80px;
+padding-bottom: 80px;
+}
+}
 #laser-cut-panels-process-template--21844033995005__laser-cut-panels-process-lightbox { display: none; }
 #laser-cut-panels-process-template--21844033995005__laser-cut-panels-process-lightbox.is-open { display: flex; }
 #laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison {
+padding-top: 60px;
+padding-bottom: 60px;
+}
+@media (min-width: 750px) {
+#laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison {
+padding-top: 80px;
+padding-bottom: 80px;
+}
+}
 #laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel { display: none; opacity: 0; transform: translateY(8px); transition: opacity 350ms ease, transform 350ms ease; }
 #laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .panel.active { display: block; opacity: 1; transform: translateY(0); }
 #laser-cut-panels-comparison-template--21844033995005__laser-cut-panels-comparison .bar-fill { width: 0; transition: width 900ms cubic-bezier(0.2, 0.8, 0.2, 1); }
@@ -137,12 +193,18 @@ transition: none !important;
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc {
 padding-top: 72px;
 padding-bottom: 72px;
+}
+@media (min-width: 750px) {
+#laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc {
 padding-top: 96px;
 padding-bottom: 96px;
+}
+}
 @keyframes pulseRing-template--21844033995005__laser-cut-panels-qc {
 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
 70% { box-shadow: 0 0 0 12px rgba(34,197,94,0); }
 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .pulse-dot { animation: pulseRing-template--21844033995005__laser-cut-panels-qc 2s infinite; }
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card { transition: transform 350ms ease, border-color 350ms ease; }
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card:hover { transform: translateY(-4px); border-color: rgba(201,169,98,0.3); }
@@ -151,14 +213,18 @@ padding-bottom: 96px;
 stroke-dasharray: var(--len);
 stroke-dashoffset: var(--len);
 transition: stroke-dashoffset 1500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-arc {
 stroke-dashoffset: var(--off, 0);
+}
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .chart-line {
 stroke-dasharray: 400;
 stroke-dashoffset: 400;
 transition: stroke-dashoffset 1800ms cubic-bezier(0.2, 0.8, 0.2, 1) 200ms;
+}
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-line {
 stroke-dashoffset: 0;
+}
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .chart-area { opacity: 0; transition: opacity 700ms ease 1200ms; }
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .qc-card.is-revealed .chart-area { opacity: 1; }
 #laser-cut-panels-qc-template--21844033995005__laser-cut-panels-qc .chart-dot { opacity: 0; transition: opacity 400ms ease; }

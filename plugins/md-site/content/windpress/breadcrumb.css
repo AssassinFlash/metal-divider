@@ -18,18 +18,22 @@
 }
 @media (max-width: 1399px) {
 .xo-container--box { width: 100%; }
+}
 .xo-container--box:has(.footer-v12__content-top) { border-top: 0.1rem solid color-mix(in srgb, rgba(var(--color-foreground)) calc(0.15 * 100%), transparent); }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb {
 background: #faf9f7;
 padding-top: 15px;
 padding-bottom: 15px;
+}
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__shell {
 max-width: 1400px;
 margin: 0 auto;
 padding: 0 20px;
 display: flex;
 justify-content: flex-start;
+}
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__list {
+display: flex;
 align-items: center;
 gap: 8px;
 list-style: none;
@@ -39,15 +43,24 @@ font-family: Inter, sans-serif;
 font-size: 13px;
 line-height: 1.5;
 color: rgba(0, 0, 0, 0.6);
+}
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link {
+color: rgba(0, 0, 0, 0.6);
 text-decoration: none;
 transition: color 0.2s ease;
+}
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link:hover {
 color: #c9a962;
+}
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__current {
 color: rgba(0, 0, 0, 0.85);
+}
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__sep {
 color: rgba(0, 0, 0, 0.3);
 font-size: 10px;
+}
 @media (max-width: 767px) {
+#collections-list-breadcrumb-template--21844031701245__breadcrumb {
 display: block;
+}
+}
