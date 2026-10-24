@@ -6,9 +6,9 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # plugins and mu-plugins of the site join this list as they land).
 php_projects := "tools/local"
 
-# uv projects: tools/local (md-local). The services and migrations of the
-# repository join this list as they land.
-py_projects := "tools/local"
+# uv projects: tools/local (md-local) and tools/media (md-media). The services
+# and migrations of the repository join this list as they land.
+py_projects := "tools/local tools/media"
 
 # The PHP tools run on PHP 8.3, the stack's pinned version and the version
 # contract the production host must meet (docs/specs/14-local-stack.md §2.3,
@@ -21,6 +21,11 @@ php := env("PHP", if path_exists("/opt/homebrew/opt/php@8.3/bin/php") == "true" 
 # (re)starts it with this checkout's plugins. The instance name defaults to
 # `dev`: one instance, reused by every ticket.
 md_local := "uv run --locked --project tools/local md-local"
+
+# The final media pipeline (docs/specs/15-media-pipeline.md, branch
+# research/spec-media-pipeline). The corpus lives in data/ on this Mac and is
+# never in the repository; media-build/media-check therefore run locally only.
+md_media := "uv run --locked --project tools/media md-media"
 
 # List the recipes.
 default:
@@ -67,6 +72,22 @@ wp name="dev" *args:
 [positional-arguments]
 archive slug source:
     {{ md_local }} archive "$@"
+
+# Build the full final media set: data/media-raw -> data/media-final
+# (variants, sidecars, checkpoint state). Full corpus run, minutes.
+media-build:
+    {{ md_media }} build
+
+# Verify the final set: coverage, sha256, sizes, formats, gallery rules,
+# lossless pixel identity, budget. Non-zero exit = FAIL.
+media-check:
+    {{ md_media }} check
+
+# Produce the final single file for an owner upload, e.g.
+# `just media-one ~/Desktop/foo.jpg` (no tier ladder, spec §8.3).
+[positional-arguments]
+media-one *file:
+    {{ md_media }} one "$@"
 
 [private]
 php-install:
