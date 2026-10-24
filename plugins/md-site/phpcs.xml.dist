@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<ruleset name="MD Site">
+	<description>md-site: the shared plugin rules (tools/php/phpcs.xml) with this plugin's text domain and prefixes. The child theme's functions.php is linted here too: it ships as part of the same presentation layer and carries no Composer project of its own (spec 17 §2.1: the theme directory holds functions.php and nothing else).</description>
+
+	<file>md-site.php</file>
+	<file>includes</file>
+	<file>content</file>
+	<file>tests</file>
+	<file>../../themes/md-child</file>
+	<file>../../tools/php/bootstrap.php</file>
+
+	<rule ref="../../tools/php/phpcs.xml"/>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="md-site"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- The unit tests run without WordPress (WP_Mock): WordPress's runtime alternatives, its globals and output escaping do not apply there. -->
+	<rule ref="WordPress.WP.AlternativeFunctions">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.GlobalVariablesOverride">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.Security.EscapeOutput">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="MetalDivider\Site"/>
+				<element value="md_site"/>
+				<element value="MetalDivider\ChildTheme"/>
+				<element value="md_child"/>
+			</property>
+		</properties>
+	</rule>
+</ruleset>

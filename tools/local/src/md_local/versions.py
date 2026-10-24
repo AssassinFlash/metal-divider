@@ -35,6 +35,12 @@ SEOPRESS_PRO_VERSION = "10.2.1"
 LIVECANVAS_VERSION = "4.9.5"
 YANSIR_MD_VERSION = "1.0.1"
 
+# The base theme, from the local archives like the off-wp.org plugins
+# (docs/specs/14-local-stack.md §2.1: picostrap.com distributes it, wp.org
+# does not carry it). The checkout's own child theme (themes/md-child) links
+# on top of it (spec 17 §2.1, branch research/spec-theme-base).
+PICOSTRAP5_VERSION = "3.5.0"
+
 # Not installed in phase 1 (owner ruling 2026-10-24: English site first,
 # multilingual is phase 2). The slot records the version the phase-2 ticket
 # will install, so `just status` can show the contract.

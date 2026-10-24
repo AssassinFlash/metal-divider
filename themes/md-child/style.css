@@ -1,0 +1,14 @@
+/*
+ Theme Name:   MetalDivider Child
+ Description:  The metal-divider.com child theme: the theme's own document-level behaviours and nothing else (spec 17 §2.1/§6, branch research/spec-theme-base). Styles live in the WindPress volume; pages are LiveCanvas dynamic templates.
+ Author:       MetalDivider
+ Template:     picostrap5
+ Version:      0.1.0
+ Text Domain:  md-child
+ License:      GPL-2.0
+ License URI:  http://www.opensource.org/licenses/gpl-2.0.html
+*/
+
+/* This file is the header alone. The theme carries no stylesheet of its own:
+   the site's styles are the WindPress volume the presentation plugin installs
+   (AGENTS.md: one CSS channel, the compiled WindPress cache). */

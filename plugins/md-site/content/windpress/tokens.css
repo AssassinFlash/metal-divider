@@ -1,0 +1,49 @@
+@font-face{font-family:"Inter";font-style:normal;font-weight:300;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-300.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-400.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-500.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-600.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:700;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-700.woff2") format("woff2")}
+@font-face{font-family:"Playfair Display";font-style:normal;font-weight:400;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/playfair-display-400.woff2") format("woff2")}
+@font-face{font-family:"Playfair Display";font-style:normal;font-weight:500;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/playfair-display-500.woff2") format("woff2")}
+@font-face{font-family:"Playfair Display";font-style:normal;font-weight:600;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/playfair-display-600.woff2") format("woff2")}
+@font-face{font-family:"Playfair Display";font-style:normal;font-weight:700;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/playfair-display-700.woff2") format("woff2")}
+/* md-site design tokens (spec 17 §4, branch research/spec-theme-base).
+   Values: the old project's P1 authority, design-system/metaldivider/MASTER.md
+   (2026-04-16, read-only reference — never copied into this repository).
+   Consumption model (de-linker production evidence, spec 17 F7): var() lives
+   in volume rules only; the templates' Tailwind classes carry zero var()
+   references; there is no @theme here — utility classes and variables each
+   take their own path. Self-hosted fonts: the @font-face block above points
+   at this plugin's assets/fonts/; the woff2 files are placeholders until the
+   final-asset pipeline delivers them (both families are SIL OFL, so the
+   repository may redistribute them), and until then the fallback stacks in
+   the two font variables carry the rendering.
+
+   Not cast as variables, by that spec's own ruling:
+   - The white-on-dark opacity ladder (/90 body, /80 secondary, /75 the floor
+     for readable text, /50 UI-only) and the contrast rule are copy and
+     review rules, not color values: migrated CSS keeps its original
+     opacity, and the floor is enforced in content review.
+   - The type scale, spacing and component recipes stay Tailwind utility
+     classes — WindPress compiles them natively.
+   - The 750px breakpoint stays a literal in migrated @media rules (a custom
+     property cannot enter an @media condition); new styles use Tailwind's
+     default breakpoints.
+   - The old rule "no CSS variables in Tailwind classes" keeps its force for
+     a second reason: scan certainty.
+*/
+:root {
+  color-scheme: dark;
+  --md-bg: #1a1a1a;
+  --md-bg-deep: #141414;
+  --md-bg-darkest: #0a0a0a;
+  --md-gold: #c9a962;
+  --md-gold-light: #d4b878;
+  --md-gold-dark: #a88a4a;
+  --md-gold-accent: #d4af37;
+  --md-cream: #faf9f7;
+  --md-whatsapp: #25D366;
+  --md-font-display: "Playfair Display", Georgia, serif;
+  --md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --md-container: 1400px;
+}

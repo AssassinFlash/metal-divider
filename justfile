@@ -2,10 +2,9 @@
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
-# Composer projects: tools/local for its local mu-plugins and router,
-# mu-plugins for the site's must-use plugins (the site's regular plugins join
-# this list as they land).
-php_projects := "tools/local mu-plugins"
+# Composer projects: the site's plugins, tools/local for its local
+# mu-plugins and router, and mu-plugins for the site's must-use plugins.
+php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
 
 # uv projects: tools/local (md-local). The services and migrations of the
 # repository join this list as they land.
@@ -30,9 +29,9 @@ default:
 # Lint and static analysis of every chain.
 check: php-check py-check
 
-# Unit tests of every chain. mu-plugins' PHPUnit runs everywhere; tools/local's
-# stack tests build real instances with this Mac's MySQL and WP-CLI; CI, which
-# has none of them, skips them.
+# Unit tests of every chain. The plugins' and mu-plugins' PHPUnit runs
+# everywhere; tools/local's stack tests build real instances with this Mac's
+# MySQL and WP-CLI; CI, which has none of them, skips them.
 test: php-test py-test
 
 # The must-use plugins' smoke suite against a real instance (`just up <name>`
@@ -73,6 +72,12 @@ status:
 [positional-arguments]
 wp name="dev" *args:
     PHP={{ php }} {{ md_local }} wp "$@"
+
+# Install md-site's presentation files into the instance (spec 17 §4.4: the
+# WindPress volume plus the two legacy-copy guards; idempotent, safe to rerun).
+[positional-arguments]
+present name="dev": php-install
+    PHP={{ php }} {{ md_local }} wp "{{ name }}" md-site present --user=local-admin
 
 # Collect a licensed plugin into the local archives (a .zip file, or an
 # unpacked plugin directory, e.g. a snapshot's copy).
@@ -120,18 +125,6 @@ php-install:
     done
 
 [private]
-php-check: php-install
-    #!/usr/bin/env bash
-    set -euo pipefail
-    for project in {{ php_projects }}; do
-        echo "== $project: PHPCS, PHPStan"
-        cd "{{ justfile_directory() }}/$project"
-        {{ php }} vendor/bin/phpcs -q
-        # PHP's default 128 MB is too small once the WordPress stubs load.
-        {{ php }} vendor/bin/phpstan analyse --no-progress --memory-limit=-1
-    done
-
-[private]
 php-test: php-install
     #!/usr/bin/env bash
     set -euo pipefail
@@ -144,6 +137,18 @@ php-test: php-install
             echo "== $project: PHPUnit"
             {{ php }} vendor/bin/phpunit
         fi
+    done
+
+[private]
+php-check: php-install
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for project in {{ php_projects }}; do
+        echo "== $project: PHPCS, PHPStan"
+        cd "{{ justfile_directory() }}/$project"
+        {{ php }} vendor/bin/phpcs -q
+        # PHP's default 128 MB is too small once the WordPress stubs load.
+        {{ php }} vendor/bin/phpstan analyse --no-progress --memory-limit=-1
     done
 
 [private]

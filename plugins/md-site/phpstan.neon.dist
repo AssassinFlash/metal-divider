@@ -1,0 +1,32 @@
+# The shared settings (level, stubs) live in tools/php/phpstan.neon; this
+# project reads the stubs from its own vendor/ (%rootDir% is this project's
+# vendor/phpstan/phpstan).
+includes:
+	- ../../tools/php/phpstan.neon
+
+parameters:
+	paths:
+		- md-site.php
+		- includes
+		- tests/php
+		# The child theme's functions.php: part of the presentation layer,
+		# analysed beside the plugin that ships it (it has no project of its own).
+		- ../../themes/md-child
+	excludePaths:
+		# Stand-ins for WordPress, wp-cli and ACF surfaces; PHPStan reads the
+		# real ones from the stubs and the scanFiles below.
+		- tests/php/Doubles
+	scanFiles:
+		# ACF free supplies acf_add_local_field_group at runtime; it is neither
+		# in the WordPress stubs nor on Packagist. Only the surface this
+		# plugin touches is declared.
+		- tests/php/Doubles/acf-stubs.php
+		# wp-cli (the command calls WP_CLI::error/log/success); the runtime
+		# double lives in tests/php/Doubles/wordpress.php, which stays out of
+		# analysis so real WordPress classes are not shadowed.
+		- tests/php/Doubles/wp-cli-stubs.php
+		# WP_Mock declares its hook responders next to the hooks, outside the
+		# autoloader.
+		- vendor/10up/wp_mock/php/WP_Mock/Action.php
+		- vendor/10up/wp_mock/php/WP_Mock/Filter.php
+		- vendor/10up/wp_mock/php/WP_Mock/HookedCallback.php

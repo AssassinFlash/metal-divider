@@ -28,6 +28,13 @@ class Checkout:
             return []
         return sorted(path for path in directory.glob("md-*") if path.is_dir())
 
+    def themes(self) -> list[Path]:
+        """Our themes, `themes/md-*`, each symlinked into an instance."""
+        directory = self.root / "themes"
+        if not directory.is_dir():
+            return []
+        return sorted(path for path in directory.glob("md-*") if path.is_dir())
+
     def mu_plugins(self) -> list[Path]:
         """The local-only mu-plugins, copied into every instance."""
         return sorted((self.root / "tools" / "local" / "mu").glob("*.php"))
