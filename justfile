@@ -9,7 +9,7 @@ php_projects := "plugins/md-site plugins/md-inquiry tools/local mu-plugins"
 # uv projects: tools/local (md-local), tools/media (md-media) and
 # tools/migrate (md-migrate). The services of the repository join this list
 # as they land.
-py_projects := "tools/local tools/media tools/migrate tools/local tools/template-convert tools/media tools/deploy"
+py_projects := "tools/local tools/media tools/migrate tools/template-convert tools/deploy"
 # The conversion pipeline joins both chains: ruff/mypy under check,
 # pytest under test (its fixtures are in-repo; the raw old-site pages
 # are the ticket's local evidence under .scratch, not shipped).
