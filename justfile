@@ -56,6 +56,16 @@ mu-smoke name="dev":
     cd "{{ justfile_directory() }}/mu-plugins"
     MD_MU_WP="just wp {{ name }}" PHP={{ php }} {{ php }} vendor/bin/phpunit --testsuite integration
 
+# The inquiry chain's smoke suite against a real instance (`just up <name>`
+# first): the form, the 303, the record, the queue's routing, the one test
+# mail, and the rate window — one mail per whole run, per the discipline.
+[positional-arguments]
+inquiry-smoke name="dev":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{ justfile_directory() }}/plugins/md-inquiry"
+    MD_INQUIRY_WP="just wp {{ name }}" PHP={{ php }} {{ php }} vendor/bin/phpunit --testsuite integration
+
 # Create the instance if needed, then (re)start it with this checkout's plugins.
 [positional-arguments]
 up name="dev" *options: php-install

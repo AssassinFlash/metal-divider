@@ -14,8 +14,10 @@ namespace MetalDivider\Inquiry;
  * §7, branch research/spec-inquiry-chain: non-public, back-office only; the
  * mail is a notification, not the archive). Supports title and date alone —
  * the title is filled on submission ("name — company — date"), and every
- * field, the three source parts and the pattern list travel as the ACF field
- * groups of the chain's own ticket, not as post type supports.
+ * field travels as the ACF field group of the chain's own ticket, not as post
+ * type supports. The page capabilities gate the records: the back office is
+ * the owner's and the editors'; the author and contributor roles never see
+ * a customer's inquiries.
  */
 final class PostType {
 
@@ -28,7 +30,7 @@ final class PostType {
 	 * Hooks the registration into init.
 	 */
 	public function register(): void {
-		add_action( 'init', array( $this, 'register_post_type' ) );
+		\add_action( 'init', array( $this, 'register_post_type' ) );
 	}
 
 	/**
@@ -45,16 +47,18 @@ final class PostType {
 	 */
 	public static function args(): array {
 		return array(
-			'labels'       => array(
+			'labels'            => array(
 				'name'          => 'Inquiries',
 				'singular_name' => 'Inquiry',
 			),
-			'public'       => false,
-			'show_ui'      => true,
-			'show_in_menu' => true,
-			'show_in_rest' => false,
-			'menu_icon'    => 'dashicons-email-alt',
-			'supports'     => array( 'title', 'date' ),
+			'public'            => false,
+			'show_ui'           => true,
+			'show_in_menu'      => true,
+			'show_in_rest'      => false,
+			'show_in_admin_bar' => false,
+			'capability_type'   => 'page',
+			'menu_icon'         => 'dashicons-email-alt',
+			'supports'          => array( 'title', 'date' ),
 		);
 	}
 }
