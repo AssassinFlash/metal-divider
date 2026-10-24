@@ -109,11 +109,11 @@ def test_a_push_with_a_fresh_backup_pushes_every_chunk_and_reads_back(
     actions = media.push(target, _uploads(tmp_path), home=home, now=NOW)
 
     assert sorted(target.copied) == [
-        "dir:uploads/2024/03",
-        "dir:uploads/2024/11",
-        "dir:uploads/2025/01",
-        "file:uploads/2024/loose.png",
-        "file:uploads/root-level.jpg",
+        "dir:wp-content/uploads/2024/03",
+        "dir:wp-content/uploads/2024/11",
+        "dir:wp-content/uploads/2025/01",
+        "file:wp-content/uploads/2024/loose.png",
+        "file:wp-content/uploads/root-level.jpg",
     ]
     assert any("readback: 5" in action for action in actions)
 

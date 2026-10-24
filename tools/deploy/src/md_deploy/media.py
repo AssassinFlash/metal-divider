@@ -119,7 +119,7 @@ def push(
     pushed: list[str] = []
     local_count = 0
     for piece in pieces:
-        relative = str(piece.relative_to(source.parent))
+        relative = f"wp-content/uploads/{piece.relative_to(source)}"
         print(f"media: {relative}", flush=True)
         if piece.is_dir():
             target.copy_in(piece, relative)
