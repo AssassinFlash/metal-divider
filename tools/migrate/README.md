@@ -37,3 +37,20 @@ Rulings this driver carries that postdate the specs' text: the gradient
 series exists again with la-pente/nara/skyfall (issue #25), materials are
 Stainless Steel 304/316 only — the old five-material lists are dropped and
 never written (revision 6) — and the PDP base is `/pattern/` (revision 5).
+
+## Remote mode (`--wp`)
+
+`--wp "<command>"` runs against any WP-CLI — production over SSH, for
+instance — and that target cannot see this Mac's `media-final` paths, so
+the media plan binds differently there: every entry carries `attach_uploads`,
+the uploads-relative `_wp_attached_file` of the dev attachment with the same
+`_md_source_url` (the vendored `data/dev-attachment-map.json`, regenerated
+with `just attachment-map` after any dev media write). The WordPress side
+then registers the file the deployer already mirrored into the target's
+uploads — no copy — and checks every variant sibling by name, failing with
+the missing name. An entry the map does not resolve (nor the sha256 reuse
+path, for page media dev imported as a reuse) fails the plan build by name,
+never the target write. The PHPUnit suite (`tests/php/Unit`, `just test`)
+covers the branch against doubles; the local `attach` branch keeps its copy
+behaviour for dev.
+

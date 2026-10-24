@@ -1,0 +1,27 @@
+{
+	"name": "md/migrate",
+	"description": "The WordPress side of the Shopify -> WordPress migration of metal-divider.com: 18-wordpress.php driven by 18-migrate.py through WP-CLI eval-file (docs/specs/18-migrator.md).",
+	"type": "project",
+	"license": "proprietary",
+	"require": {
+		"php": ">=8.3"
+	},
+	"require-dev": {
+		"php-stubs/wordpress-stubs": "~7.1.0",
+		"phpcompatibility/phpcompatibility-wp": "^2.1",
+		"phpstan/phpstan": "^2.1",
+		"phpunit/phpunit": "^9.6",
+		"szepeviktor/phpstan-wordpress": "^2.0",
+		"woocommerce/woocommerce-sniffs": "^2.0",
+		"wp-coding-standards/wpcs": "^3.4"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"platform": {
+			"php": "8.3"
+		},
+		"sort-packages": true
+	}
+}

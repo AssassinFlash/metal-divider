@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+	PHPUnit 9.6 config of the migrator's WordPress side, the same shape as the
+	plugins' unit suites (tests/php/Unit, the bootstrap loads the doubles).
+-->
+<phpunit
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+	bootstrap="tests/php/bootstrap.php"
+	colors="true"
+	convertDeprecationsToExceptions="true"
+	failOnRisky="true"
+	failOnWarning="true"
+>
+	<testsuites>
+		<testsuite name="unit">
+			<directory>tests/php/Unit</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>
