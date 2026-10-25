@@ -115,7 +115,9 @@
 }
 
 /* The old site's rem base: 1rem = 10px (main.css:335). Restores the meaning of
-   the 856 rem values the carried volumes inherited from the old build. */
+   the 856 rem values the carried volumes inherited from the old build. The
+   preflight (border-box, block margins) is imported by the volume entry, in
+   the base layer, where the old build had it. */
 html {
   font-size: 62.5%;
 }

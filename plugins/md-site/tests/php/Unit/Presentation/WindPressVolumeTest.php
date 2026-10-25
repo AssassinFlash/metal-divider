@@ -108,6 +108,8 @@ final class WindPressVolumeTest extends TestCase {
 		$entry = (string) file_get_contents( $this->data_dir() . '/main.css' );
 		$this->assertStringContainsString( '@import "tailwindcss/utilities.css" layer(utilities);', $entry, 'the entry carries the utilities import' );
 		$this->assertStringContainsString( '@import "tailwindcss/theme.css" layer(theme) theme(static);', $entry, 'the entry carries the theme import' );
+		$this->assertStringContainsString( '@import "tailwindcss/preflight.css" layer(base);', $entry, 'the entry carries the preflight in the base layer, as the old build did (#64: border-box + block margins)' );
+		$this->assertStringNotContainsString( '/* @import "tailwindcss/preflight.css"', $entry, 'the preflight import is not left commented out' );
 		$this->assertStringContainsString( '@import "./tokens.css" layer(components);', $entry, 'the volume import is layered' );
 		$this->assertStringNotContainsString( '@import "./tokens.css";', $entry, 'no unlayered twin of the volume import remains' );
 		$this->assertLessThan( strpos( $entry, '@import "./tokens.css" layer(components);' ), strpos( $entry, '@import "tailwindcss/utilities.css"' ), 'the head precedes the volume imports' );
@@ -177,6 +179,37 @@ final class WindPressVolumeTest extends TestCase {
 		$this->assertSame( 1, substr_count( $updated, '/* md-site: old-site px type scale (#66) */' ), 'the older block is replaced, not duplicated' );
 		$this->assertStringContainsString( '--text-5xl: 42px;--text-5xl--line-height: inherit;', $updated, 'the current px scale is written' );
 		$this->assertStringNotContainsString( '--text-5xl: 48px', $updated, 'the stale value is gone' );
+		$this->assertSame( array(), $volume->drift(), 'the upgraded entry is in sync' );
+	}
+
+	/**
+	 * An entry that carries the pre-#64 head — preflight commented out — is
+	 * upgraded in place: the head is replaced whole (no second theme/utilities
+	 * import), the volume imports after it survive, and the drift goes clean.
+	 */
+	public function test_install_upgrades_an_older_head(): void {
+		$entry = $this->data_dir() . '/main.css';
+		mkdir( $this->data_dir(), 0777, true );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- a local test file, not a remote URL.
+		file_put_contents(
+			$entry,
+			"@layer theme, base, components, utilities;\n\n"
+			. "@import \"tailwindcss/theme.css\" layer(theme) theme(static);\n"
+			. "/* @import \"tailwindcss/preflight.css\" layer(base); */\n"
+			. "@import \"tailwindcss/utilities.css\" layer(utilities);\n"
+			. "@import \"./tokens.css\" layer(components);\n"
+		);
+
+		$volume = new WindPressVolume();
+		$volume->install();
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local test file, not a remote URL.
+		$updated = (string) file_get_contents( $entry );
+		$this->assertStringContainsString( '@import "tailwindcss/preflight.css" layer(base);', $updated, 'the preflight reaches the existing entry' );
+		$this->assertStringNotContainsString( '/* @import "tailwindcss/preflight.css"', $updated, 'the commented-out import is gone' );
+		$this->assertSame( 1, substr_count( $updated, '@import "tailwindcss/theme.css"' ), 'the head is replaced, not stacked' );
+		$this->assertSame( 1, substr_count( $updated, '@import "tailwindcss/utilities.css"' ), 'one utilities import' );
+		$this->assertStringContainsString( '@import "./tokens.css" layer(components);', $updated, 'the volume imports after the head survive' );
 		$this->assertSame( array(), $volume->drift(), 'the upgraded entry is in sync' );
 	}
 

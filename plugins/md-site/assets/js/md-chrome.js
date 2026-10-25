@@ -394,12 +394,306 @@
     });
   }
 
+  // The project gallery: nine projects at a time, category filters, and the
+  // lightbox. The old section shipped this as an inline <script> that the
+  // conversion dropped, so every project rendered at once and the page was
+  // twice the old height (old section 1911px, ours 4198px).
+  function setupGallery() {
+    var root = document.querySelector('section.project-gallery');
+    if (!root) {
+      return;
+    }
+    var filterBtns = [].slice.call(root.querySelectorAll('.filter-btn'));
+    var cards = [].slice.call(root.querySelectorAll('.project-card'));
+    if (!cards.length) {
+      return;
+    }
+    var emptyState = root.querySelector('[id^="emptyState"]');
+    var loadMoreWrap = root.querySelector('[id^="loadMoreWrap"]');
+    var loadMoreBtn = root.querySelector('[id^="loadMoreBtn"]');
+    var pageSize = 9;
+    var activeFilter = 'all';
+    var visibleCount = pageSize;
+
+    var matchingCards = function () {
+      return cards.filter(function (card) {
+        var cat = (card.getAttribute('data-category') || '').toLowerCase();
+        return activeFilter === 'all' || cat === activeFilter;
+      });
+    };
+
+    var applyFilterAndPaging = function () {
+      var matching = matchingCards();
+      cards.forEach(function (card) {
+        card.classList.add('is-filtered-out');
+        card.classList.add('is-paged-out');
+      });
+      matching.forEach(function (card, index) {
+        card.classList.remove('is-filtered-out');
+        if (index < visibleCount) {
+          card.classList.remove('is-paged-out');
+        } else {
+          card.classList.add('is-paged-out');
+        }
+      });
+      if (emptyState) {
+        emptyState.hidden = matching.length > 0;
+      }
+      if (loadMoreWrap) {
+        loadMoreWrap.hidden = matching.length <= visibleCount;
+      }
+      if (loadMoreBtn) {
+        loadMoreBtn.disabled = matching.length <= visibleCount;
+      }
+    };
+
+    var setActiveFilter = function (value, resetVisible) {
+      var normalized = (value || 'all').toLowerCase();
+      var target =
+        filterBtns.filter(function (btn) {
+          return (btn.getAttribute('data-filter') || '').toLowerCase() === normalized;
+        })[0] ||
+        filterBtns.filter(function (btn) {
+          return (btn.getAttribute('data-filter') || '').toLowerCase() === 'all';
+        })[0];
+      activeFilter = (target && target.getAttribute('data-filter')) || 'all';
+      activeFilter = activeFilter.toLowerCase();
+      if (resetVisible) {
+        visibleCount = pageSize;
+      }
+      filterBtns.forEach(function (btn) {
+        var on = (btn.getAttribute('data-filter') || '').toLowerCase() === activeFilter;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      applyFilterAndPaging();
+    };
+
+    filterBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setActiveFilter(btn.getAttribute('data-filter') || 'all', true);
+      });
+    });
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', function () {
+        visibleCount += pageSize;
+        applyFilterAndPaging();
+      });
+    }
+
+    var lightbox = root.querySelector('[id^="lightboxModal"]');
+    if (!lightbox) {
+      applyFilterAndPaging();
+      return;
+    }
+    var backdrop = lightbox.querySelector('.lightbox-backdrop');
+    var closeBtn = lightbox.querySelector('.lightbox-close');
+    var prevBtn = lightbox.querySelector('.lightbox-nav--prev');
+    var nextBtn = lightbox.querySelector('.lightbox-nav--next');
+    var image = lightbox.querySelector('.lightbox-image');
+    var fallback = lightbox.querySelector('.lightbox-fallback');
+    var titleEl = lightbox.querySelector('.lightbox-title');
+    var subtitleEl = lightbox.querySelector('.lightbox-subtitle');
+    var counterEl = lightbox.querySelector('.lightbox-counter');
+    var currentImages = [];
+    var currentIndex = 0;
+    var currentProject = {};
+
+    var parseImages = function (value) {
+      return (value || '')
+        .split('|')
+        .map(function (item) {
+          return item.trim();
+        })
+        .filter(Boolean);
+    };
+
+    var updateLightbox = function () {
+      if (!currentImages.length) {
+        return;
+      }
+      if (fallback) {
+        fallback.hidden = true;
+      }
+      if (image) {
+        image.hidden = false;
+      }
+      var nextSrc = currentImages[currentIndex];
+      if (image && image.getAttribute('src') !== nextSrc) {
+        image.classList.add('is-loading');
+        image.src = nextSrc;
+      }
+      if (image) {
+        image.alt = (currentProject.title || 'Project image') + ' (' + (currentIndex + 1) + ')';
+      }
+      if (titleEl) {
+        titleEl.textContent = currentProject.title || '';
+      }
+      if (subtitleEl) {
+        subtitleEl.textContent = currentProject.subtitle || '';
+      }
+      if (counterEl) {
+        counterEl.textContent = currentIndex + 1 + ' / ' + currentImages.length;
+      }
+      var showNav = currentImages.length > 1;
+      if (prevBtn) {
+        prevBtn.hidden = !showNav;
+      }
+      if (nextBtn) {
+        nextBtn.hidden = !showNav;
+      }
+    };
+
+    var openLightbox = function (images, project, startIndex) {
+      if (!images || !images.length) {
+        return;
+      }
+      currentImages = images;
+      currentProject = project || {};
+      currentIndex = Math.max(0, Math.min(startIndex || 0, currentImages.length - 1));
+      currentImages.forEach(function (src) {
+        var pre = new Image();
+        pre.src = src;
+      });
+      updateLightbox();
+      lightbox.hidden = false;
+      document.body.style.overflow = 'hidden';
+    };
+
+    var closeLightbox = function () {
+      lightbox.hidden = true;
+      document.body.style.overflow = '';
+    };
+
+    var navigate = function (direction) {
+      if (!currentImages.length) {
+        return;
+      }
+      currentIndex += direction;
+      if (currentIndex < 0) {
+        currentIndex = currentImages.length - 1;
+      }
+      if (currentIndex >= currentImages.length) {
+        currentIndex = 0;
+      }
+      updateLightbox();
+    };
+
+    if (image) {
+      image.addEventListener('load', function () {
+        image.classList.remove('is-loading');
+      });
+      image.addEventListener('error', function () {
+        image.classList.remove('is-loading');
+        if (fallback) {
+          fallback.hidden = false;
+        }
+        image.hidden = true;
+      });
+    }
+
+    var projectOf = function (card) {
+      return {
+        title: card.getAttribute('data-title') || '',
+        subtitle: card.getAttribute('data-subtitle') || '',
+        location: card.getAttribute('data-location') || ''
+      };
+    };
+
+    cards.forEach(function (card) {
+      var open = function (event) {
+        if (event) {
+          event.preventDefault();
+        }
+        if (card.classList.contains('is-filtered-out') || card.classList.contains('is-paged-out')) {
+          return;
+        }
+        openLightbox(parseImages(card.getAttribute('data-images')), projectOf(card), 0);
+      };
+      card.addEventListener('click', open);
+      var btn = card.querySelector('.view-gallery-btn');
+      if (btn) {
+        btn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          open(event);
+        });
+      }
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeLightbox);
+    }
+    if (backdrop) {
+      backdrop.addEventListener('click', closeLightbox);
+    }
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function () {
+        navigate(-1);
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function () {
+        navigate(1);
+      });
+    }
+    document.addEventListener('keydown', function (event) {
+      if (lightbox.hidden) {
+        return;
+      }
+      if (event.key === 'Escape') {
+        closeLightbox();
+      }
+      if (event.key === 'ArrowLeft') {
+        navigate(-1);
+      }
+      if (event.key === 'ArrowRight') {
+        navigate(1);
+      }
+    });
+
+    // Deep links: ?category=…, ?project=…, ?image=N — the old section's entry
+    // points from the home page and the series pages.
+    var params = new URLSearchParams(window.location.search);
+    var requestedCategory = (params.get('category') || '').toLowerCase();
+    var requestedProject = (params.get('project') || '').toLowerCase();
+    var requestedImage = Number(params.get('image') || '1');
+    var requestedStartIndex = Number.isFinite(requestedImage) ? Math.max(0, requestedImage - 1) : 0;
+
+    setActiveFilter(requestedCategory || 'all', true);
+
+    if (requestedProject) {
+      var targetCard = cards.filter(function (card) {
+        return (card.getAttribute('data-project') || '').toLowerCase() === requestedProject;
+      })[0];
+      if (targetCard) {
+        var targetCategory = (targetCard.getAttribute('data-category') || '').toLowerCase();
+        if (activeFilter !== 'all' && targetCategory !== activeFilter) {
+          setActiveFilter(targetCategory, true);
+        }
+        var matching = matchingCards();
+        var targetIndex = matching.indexOf(targetCard);
+        if (targetIndex >= 0 && targetIndex >= visibleCount) {
+          visibleCount = targetIndex + 1;
+          applyFilterAndPaging();
+        }
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        var images = parseImages(targetCard.getAttribute('data-images'));
+        if (images.length) {
+          window.setTimeout(function () {
+            openLightbox(images, projectOf(targetCard), requestedStartIndex);
+          }, 220);
+        }
+      }
+    }
+  }
+
   function start() {
     setupModals();
     setupTabs();
     setupLazyload();
     setupSticky();
     setupFloats();
+    setupGallery();
 
     // The catalog's sort select posts its form on change (the CSP blocks
     // inline handlers, so the behaviour lives here).

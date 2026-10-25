@@ -209,10 +209,12 @@ final class Catalog {
 			return;
 		}
 
-		// The old collection rendered 21 patterns per page (146 -> 7 pages);
-		// WordPress/Woo defaults to 16 (10 pages), which changes both the grid
-		// rhythm and the pager. Keep the old page size.
-		$query->set( 'posts_per_page', 21 );
+		// The old collection rendered 24 patterns per page — the live
+		// /collections/pattern-abstract shows 24 .pattern-card items and a
+		// "1 2 3 4 Next" pager, /collections/all the same (measured in real
+		// Chrome 2026-10-26). 21 put one row fewer on every page and added
+		// two pages to the series pager.
+		$query->set( 'posts_per_page', 24 );
 
 		$search = isset( $_GET['pattern_search'] ) ? \sanitize_text_field( \wp_unslash( (string) $_GET['pattern_search'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display of the query the filter already read.
 		if ( '' !== $search ) {

@@ -41,13 +41,21 @@ final class WindPressVolume {
 	/**
 	 * The head the entry must carry, verbatim from WindPress's stub entry for
 	 * Tailwind v4 (plugins/windpress/stubs/tailwindcss-v4/main.css): the layer
-	 * order, the theme variables and the on-demand utilities. Preflight stays
-	 * commented out as in the stub — the volume rules carry the old site's
-	 * resets, and a second reset would rebase the replica pages.
+	 * order, the theme variables, the on-demand utilities — and the preflight.
+	 *
+	 * The preflight is load-bearing (#64 parity): the old site compiled its
+	 * Tailwind with preflight, so every box was `border-box` and every block
+	 * element had its UA margins reset before the template utilities ran. The
+	 * first build left it commented out and only re-added the base rules it
+	 * noticed, so the whole site sized as `content-box` (a max-w-[1400px]
+	 * block with px-10 measured 1440) and every `<p>` grew a 1em UA margin.
+	 * Enabled here in the `base` layer, where the old build had it: the
+	 * volumes and base.css sit in `components`, so they still win every
+	 * collision.
 	 */
 	private const ENTRY_HEAD = '@layer theme, base, components, utilities;' . "\n\n"
 		. '@import "tailwindcss/theme.css" layer(theme) theme(static);' . "\n"
-		. '/* @import "tailwindcss/preflight.css" layer(base); */' . "\n"
+		. '@import "tailwindcss/preflight.css" layer(base);' . "\n"
 		. '@import "tailwindcss/utilities.css" layer(utilities);';
 
 	/**
@@ -167,8 +175,22 @@ final class WindPressVolume {
 		$current = is_readable( $entry ) ? (string) file_get_contents( $entry ) : '';
 		$updated = $current;
 
-		if ( ! str_contains( $updated, self::ENTRY_HEAD_MARK ) ) {
-			$updated = '' === rtrim( $updated ) ? self::ENTRY_HEAD : self::ENTRY_HEAD . "\n\n" . ltrim( $updated );
+		if ( ! str_contains( $updated, self::ENTRY_HEAD ) ) {
+			$mark_at = strpos( $updated, self::ENTRY_HEAD_MARK );
+			if ( false !== $mark_at ) {
+				// An older head (the pre-#64 one: preflight commented out): replace
+				// it whole — from the layer-order line when present, otherwise from
+				// the utilities line — so the current head reaches a site that was
+				// already installed once.
+				$start = strpos( $updated, '@layer theme, base, components, utilities;' );
+				if ( false === $start || $start > $mark_at ) {
+					$start = $mark_at;
+				}
+				$head_end = $mark_at + strlen( self::ENTRY_HEAD_MARK );
+				$updated  = substr( $updated, 0, $start ) . self::ENTRY_HEAD . substr( $updated, $head_end );
+			} else {
+				$updated = '' === rtrim( $updated ) ? self::ENTRY_HEAD : self::ENTRY_HEAD . "\n\n" . ltrim( $updated );
+			}
 		}
 
 		$missing = array();
@@ -266,6 +288,12 @@ final class WindPressVolume {
 				'surface' => 'windpress volume',
 				'target'  => self::ENTRY,
 				'detail'  => 'the entry does not carry the Tailwind v4 theme/utilities imports: no utility class compiles',
+			);
+		} elseif ( ! str_contains( $entry, self::ENTRY_HEAD ) ) {
+			$rows[] = array(
+				'surface' => 'windpress volume',
+				'target'  => self::ENTRY,
+				'detail'  => 'the entry carries an older head without the preflight: the site sizes as content-box and block elements regain their UA margins (#64)',
 			);
 		}
 		if ( ! str_contains( $entry, self::ENTRY_THEME ) ) {

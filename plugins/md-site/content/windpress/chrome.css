@@ -438,7 +438,13 @@ max-width: 80px;
 max-height: 34px;
 object-fit: contain;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn{ display: none; }
+/* The old mobile header keeps the search entry beside the quote button
+   (40x40, 20px icon); only the desktop nav and top bar drop out. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn{
+display: inline-flex;
+width: 40px;
+height: 40px;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote{
 height: 34px;
 width: 122px;
@@ -1058,17 +1064,7 @@ line-height: 1.6;
 color: rgba(255,255,255,.75);
 }
 
-/* The home hero's quote card belongs inside the hero's bottom-right corner
-   (old fold position). The card markup is the page template's; chrome.css
-   positions it without editing the page template. */
-@media (min-width: 1024px){
-section[data-section-name="home-hero"] > .relative{ position: relative; }
-section[data-section-name="home-hero"] > .relative > div:last-child > div:last-child{
-position: absolute;
-right: 40px;
-bottom: 40px;
-width: 360px;
-max-width: calc(100% - 80px);
-z-index: 3;
-}
-}
+/* The home hero's quote card is placed by the template's own grid (the last
+   row's `md:grid-cols-[1fr_auto]` + `justify-self-end`), exactly as the old
+   section places it. Do not absolutely position it here: that collapsed the
+   row to zero height and floated the card over the hero. */

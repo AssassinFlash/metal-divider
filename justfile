@@ -200,6 +200,9 @@ attachment-map name="dev":
 pixel-check name="dev" *args:
     #!/usr/bin/env bash
     set -euo pipefail
+    # [positional-arguments] passes the parameters as $1…, not as $name; the
+    # instance name stays $1 and the rest are the checker's own arguments.
+    name="$1"; shift
     registry="${MD_LOCAL_HOME:-$HOME/metal-divider-local}/instances.toml"
     port=$(awk -v n="$name" '$0 == "[" n "]" { f=1; next } f && $1 == "port" { gsub(/[^0-9]/, "", $3); print $3; exit }' "$registry")
     [ -n "$port" ] || { echo "pixel-check: no instance '$name' in $registry" >&2; exit 1; }
