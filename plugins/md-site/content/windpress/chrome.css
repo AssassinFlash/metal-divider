@@ -712,3 +712,11 @@ min-height: 44px;
 padding: .4rem 0;
 }
 .pattern-catalog__search input{ min-height: 44px; box-sizing: border-box; }
+
+/* Final touch-target pass (customer-profile audit 2026-10-25): the home
+   chips are 38px wide, the mobile logo link 27px, the catalog search
+   button and the PDP FAQ rows under 44px in one dimension. */
+[class^="emt-nav-btn"],[class*=" emt-nav-btn"]{ min-width: 44px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ min-width: 44px; }
+.pattern-catalog__search-button{ min-width: 44px; min-height: 44px; }
+.pdp-faq-q{ min-height: 44px; }
