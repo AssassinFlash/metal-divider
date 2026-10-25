@@ -2,28 +2,131 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
-/* The breadcrumb's inline styles, moved to the volume (ticket #47,
- * spec 19 §4.2 T2): the xo-breadcrumb faces all carry these custom
- * properties on the same elements; the PDP face opts out of the
- * mobile default in pdp.css (its nav carries md-breadcrumb-hidden-mobile).
- * Placed before the carried rules — see chrome.css for the reason.
- */
-.breadcrumb { --display-mobile: block; }
-.breadcrumb__list { --justify: flex-start; }
-.breadcrumb__item--current { --display: block; }
-.breadcrumb--current { --display: block; }
+/* ===== Breadcrumb parity (ticket #67; spec #65 values, old-site computed
+   2026-10-26): white band, 40px gutter, 13px Inter black, no underline;
+   124px on shop/series archives, 54px on PDPs. Every value is px so the
+   band does not move when the root font size changes. ===== */
+.xo-section[class*="__breadcrumb"]{
+display: flex;
+align-items: center;
+min-height: 60px;
+padding: 0;
+background-color: #fff;
+box-sizing: border-box;
+}
+.xo-section[class*="__breadcrumb"] > xo-animate{
+display: block;
+width: 100%;
+}
+.xo-section[class*="__breadcrumb"] xo-container,
+.xo-section[class*="__breadcrumb"] xo-container.xo-container--box{
+display: block;
+width: 100%;
+max-width: 1400px;
+margin: 0 auto;
+padding: 0 20px;
+box-sizing: border-box;
+}
+/* The converted section keeps a background-image wrapper in flow; the old
+   theme takes it out (main.css .xo-section-bg-image: absolute, z-index -2).
+   Without this the wrapper adds ~26px to every breadcrumb band. */
+.xo-section[class*="__breadcrumb"] .xo-section-bg-image{
+position: absolute;
+inset: 0;
+z-index: -2;
+overflow: hidden;
+}
+.xo-section[class*="__breadcrumb"] .xo-section-bg-image__item{
+position: absolute;
+inset: 0;
+}
+.xo-section[class*="__breadcrumb"] .xo-section-bg-image__url{
+position: relative;
+width: 100%;
+height: 100%;
+background-size: cover;
+background-position: center;
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb{ display: block; }
+@media (max-width: 767px){
+.xo-section[class*="__breadcrumb"] .breadcrumb{ display: var(--display-mobile, block); }
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb__list{
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+column-gap: 15px;
+list-style: none;
+margin: 0;
+padding: 0;
+color: #000;
+font-family: "Inter", sans-serif;
+font-size: 13px;
+font-weight: 400;
+line-height: 24px;
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb__item{
+display: flex;
+align-items: center;
+gap: 15px;
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb__item a,
+.xo-section[class*="__breadcrumb"] .breadcrumb__link{
+color: #000;
+font-family: "Inter", sans-serif;
+font-size: 13px;
+font-weight: 400;
+line-height: 24px;
+text-decoration: none;
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb__item:last-child a,
+.xo-section[class*="__breadcrumb"] .breadcrumb--current{
+color: #000;
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb__item a:hover{
+color: #000;
+text-decoration: none;
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb__separator{
+color: #000;
+line-height: 0;
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb__separator svg{
+display: block;
+height: 8px;
+width: auto;
+color: #000;
+fill: currentColor;
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb__item:last-child .breadcrumb__separator{ display: none; }
+/* Heights measured on the old site: shop + series archive 124 (50px of
+   band above and below a 24px row), gallery/perforated 120, PDP 54,
+   every other breadcrumb face 60. */
+@media (max-width: 767px){
+.xo-section[class*="__breadcrumb"]{ min-height: 50px; }
+.xo-section[class*="__breadcrumb"][class*="21844031570173__breadcrumb"]{ min-height: 98px; }
+.xo-section[class*="__breadcrumb"][class*="21844034846973__breadcrumb"],
+.xo-section[class*="__breadcrumb"][class*="21844034814205__breadcrumb"]{ min-height: 95px; }
+.xo-section[class*="__breadcrumb"][class*="22148302078205__breadcrumb"]{ min-height: 23px; }
+}
+@media (min-width: 768px){
+.xo-section[class*="__breadcrumb"]{ min-height: 60px; }
+.xo-section[class*="__breadcrumb"][class*="21844031570173__breadcrumb"]{ min-height: 124px; }
+.xo-section[class*="__breadcrumb"][class*="21844034846973__breadcrumb"],
+.xo-section[class*="__breadcrumb"][class*="21844034814205__breadcrumb"]{ min-height: 120px; }
+.xo-section[class*="__breadcrumb"][class*="22148302078205__breadcrumb"]{ min-height: 54px; }
+}
+/* The hub's two `.section` blocks keep their old sibling spacing. */
 .section + .section { margin-top: var(--spacing-sections-mobile); }
 @media (min-width: 768px) {
 .section + .section { margin-top: var(--spacing-sections-desktop); }
 }
-@media (max-width: 1399px) {
-.xo-container--box { width: 100%; }
-}
-.xo-container--box:has(.footer-v12__content-top) { border-top: 0.1rem solid color-mix(in srgb, rgba(var(--color-foreground)) calc(0.15 * 100%), transparent); }
+/* The series hub's inline breadcrumb is a different face: old computed
+   20px high, transparent, 13px black, 40px gutter. */
 #collections-list-breadcrumb-template--21844031701245__breadcrumb {
-background: #faf9f7;
-padding-top: 15px;
-padding-bottom: 15px;
+background: transparent;
+padding-top: 0;
+padding-bottom: 0;
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__shell {
 max-width: 1400px;
@@ -39,24 +142,24 @@ gap: 8px;
 list-style: none;
 margin: 0;
 padding: 0;
-font-family: Inter, sans-serif;
+font-family: "Inter", sans-serif;
 font-size: 13px;
-line-height: 1.5;
-color: rgba(0, 0, 0, 0.6);
+line-height: 20px;
+color: #000;
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link {
-color: rgba(0, 0, 0, 0.6);
+color: #000;
 text-decoration: none;
 transition: color 0.2s ease;
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link:hover {
-color: #c9a962;
+color: #000;
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__current {
-color: rgba(0, 0, 0, 0.85);
+color: #000;
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__sep {
-color: rgba(0, 0, 0, 0.3);
+color: #000;
 font-size: 10px;
 }
 @media (max-width: 767px) {

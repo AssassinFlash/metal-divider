@@ -10,11 +10,12 @@
  * Selectors are the markup's own classes; the ratio utilities carry
  * the md- prefix per the spec's naming rule.
  */
-span.xo-menu-horizontal-v1__label { font-size: 15px; --color: rgb(0, 0, 0); color: rgb(0, 0, 0); }
-h3.xo-menu-horizontal-v1__label { font-size: 13px; }
+/* The nav label's size/family/case is set once in the header block below
+   (ticket #67); the old inline-span 15px and h3 13px pair are gone so the
+   deploy-time overlay definition cannot win again. */
 .xo-loader-3 { --size: 10; --color: rgb(var(--color-foreground)); --duration: 1000; }
-.xo-modal-content { --width: 50rem; --height: 80vh; --header-height: 7rem; --footer-height: 7rem; }
-.xo-modal-content__body { --width: ; --scrollbar-thumb-padding: 0rem; }
+.xo-modal-content { --width: 500px; --height: 80vh; --header-height: 70px; --footer-height: 70px; }
+.xo-modal-content__body { --width: 0; --scrollbar-thumb-padding: 0px; }
 .xo-predictive-search__left { --lg: 3; }
 .xo-predictive-search__center { --xs: 12; --lg: 9; }
 .md-ratio-100 { --xo-ratio-percent: 1.0; }
@@ -30,21 +31,22 @@ h3.xo-menu-horizontal-v1__label { font-size: 13px; }
 .footer-v21__copyright { --xs: 12; --md: 6; --lg: 6; }
 .footer-v21__copyright-payment { --xs: 12; --md: 6; --lg: 6; }
 .header-v9-top { display: none;
-background-color: var(--background-menu);
-padding: 1rem 0; }
+background-color: #fff;
+padding: 0; }
 @media (min-width: 1200px) {
 .header-v9-top { display: block; }
 }
 .header-v9-top__notification { display: flex;
 align-items: center;
-gap: 0.3rem;
+gap: 3px;
 justify-content: center;
-font-size: 1.2rem;
+height: 37px;
+font-size: 12px;
 text-transform: uppercase;
 font-weight: 500;
-line-height: calc(1 + 1.1 / var(--font-heading-scale));
-letter-spacing: calc(var(--font-heading-scale) * 0.032rem);
-color: var(--text-menu); }
+line-height: 1;
+letter-spacing: 0.32px;
+color: #000; }
 .header-v9-top__notification span { font-weight: 800; }
 .hover-style__link { transition: all 0.8s; }
 .hover-style:hover .hover-style__link { color: rgb(var(--color-accent)); }
@@ -53,16 +55,16 @@ color: var(--text-menu); }
 .hover-style__link { display: unset; }
 }
 @media (max-width: 1399px) {
-.menu-header-v2-grid { --col-width: 20rem !important; }
+.menu-header-v2-grid { --col-width: 200px !important; }
 }
 .menu-header-v2__img { transition: box-shadow 0.2s ease-out;
-box-shadow: 0.3rem 0.4rem 1.8rem rgba(var(--color-foreground), 0.05);
+box-shadow: 3px 4px 18px rgba(var(--color-foreground), 0.05);
 transition-duration: 0.3s;
 transition-property: transform;
 display: block;
-margin: 0.5rem !important;
-line-height: calc(1 + 0.6 / var(--font-heading-scale));
-height: 21.5rem;
+margin: 5px !important;
+line-height: 1.6;
+height: 215px;
 overflow: hidden;
 position: relative; }
 .menu-header-v2__img:hover img { -o-object-position: bottom;
@@ -75,11 +77,11 @@ height: 100%;
 object-position: top; }
 .menu-header-v2__img .xo-image { height: 100%; }
 .menu-header-v2__link { display: inline-block;
-font-size: calc(var(--font-body-scale) * 1.6rem);
+font-size: 16px;
 color: rgb(var(--color-foreground));
-padding-bottom: 1rem;
-margin-bottom: 1.4rem;
-margin-top: 1.5rem;
+padding-bottom: 10px;
+margin-bottom: 14px;
+margin-top: 15px;
 position: relative;
 transition: 0.3s ease; }
 .menu-header-v2__link::after { content: "";
@@ -87,19 +89,19 @@ position: absolute;
 width: 50%;
 bottom: 0;
 left: 0;
-border-bottom: 0.1rem solid rgb(var(--color-foreground), 0.15); }
+border-bottom: 1px solid rgb(var(--color-foreground), 0.15); }
 .menu-header-v2__link:hover { color: rgb(var(--color-foreground), 0.6); }
-.xo-container--wide { padding-left: 1.5rem;
-padding-right: 1.5rem;
+.xo-container--wide { padding-left: 15px;
+padding-right: 15px;
 width: 100%; }
 @media (min-width: 1400px) {
 .xo-container--wide { max-width: unset;
-padding-left: 14rem;
-padding-right: 14rem; }
+padding-left: 140px;
+padding-right: 140px; }
 }
 .xo-container--wide:has(.new20__title) { max-width: unset; }
 @media (min-width: 1400px) {
-.xo-container--wide:has(.new20__title) { padding: 0 14rem; }
+.xo-container--wide:has(.new20__title) { padding: 0 140px; }
 }
 .xo-header-v9 { position: relative;
 z-index: 100; }
@@ -170,121 +172,160 @@ letter-spacing: .02em;
 color: #fff;
 white-space: nowrap;
 }
-/* ===== Jobs-ish: clean + strict layout ===== */
+/* ===== Header parity (ticket #67; spec #65 values, old-site computed
+   2026-10-26 at 1440x900 and 390x844). Every value is px on purpose:
+   the chrome must not move when the root font size changes. ===== */
 #HeaderV9-sections--21844031144189__header_v1_main{
 position: relative;
 z-index: 100;
+background: #fff;
 }
-/* Topbar */
+/* The old header is 113px: a 37px top strip plus the 76px grid. The
+   converted top strip is empty but its height is part of the band. */
+#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top{
+display: none;
+height: 37px;
+padding: 0;
+background: #fff;
+}
+@media (min-width: 1200px){
+#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top{ display: block; }
+}
 #HeaderV9-sections--21844031144189__header_v1_main .header-v9-top__notification{
-text-align:center;
-padding: 8px 0;
+height: 37px;
+padding: 0;
 font-size: 12px;
-letter-spacing: .02em;
+letter-spacing: .32px;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top__text{ margin:0; display:inline; }
-#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top__sub{ margin-left:10px; opacity:.75; }
-/* Wrapper backgrounds */
+/* The merged class now really carries xo-section (the duplicate attribute
+   used to drop it); the section's 50px rhythm must not pad the header. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-v9__inner{
+background: #fff;
+padding: 0;
+}
+#HeaderV9-sections--21844031144189__header_v1_main xo-sticky{
+display: block;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-v9__wrapper{
-background: #ffffff;
-border-bottom: 1px solid rgba(0,0,0,.06);
-transition: background .25s ease, box-shadow .25s ease;
-}
-#HeaderV9-sections--21844031144189__header_v1_main.xo-header-v9--trans .xo-header-v9__wrapper{
-background: transparent;
-border-bottom-color: rgba(255,255,255,.14);
+background: #fff;
+border: 0;
 }
 #HeaderV9-sections--21844031144189__header_v1_main xo-sticky[xo-is-sticky] .xo-header-v9__wrapper{
-background: #ffffff !important;
+background: #fff !important;
 box-shadow: 0 10px 30px rgba(0,0,0,.06);
-border-bottom-color: rgba(0,0,0,.06);
+border: 0;
 }
-/* Grid: logo | menu | actions */
+/* 1400px container with 20px side padding: at 1440 the content starts at
+   x=40 and the CTA's right edge is x=1400, the old gutter. */
+#HeaderV9-sections--21844031144189__header_v1_main xo-container{
+display: block;
+width: 100%;
+max-width: 1400px;
+margin: 0 auto;
+padding: 0 20px;
+box-sizing: border-box;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
-min-height: 64px;
+min-height: 76px;
 display: grid;
 grid-template-columns: auto 1fr auto;
 align-items: center;
 gap: 28px;
 padding: 0;
 }
-/* Logo: never overflow, always centered inside slot */
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo{ display:flex; align-items:center; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo{
+display: flex;
+align-items: center;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{
-display:flex;
-align-items:center;
-height: 56px;               /* 控制 logo 占位高度 */
-max-width: 220px;           /* 防止超宽 */
+display: flex;
+align-items: center;
+justify-content: flex-start;
+height: 56px;
+min-width: 44px;
+max-width: 140px;
+color: #000;
+text-decoration: none;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img{
-max-height: 44px;           /* ✅ 关键：再大图也不会撑爆 header */
-width: auto;
-height: auto;
+display: block;
+width: 100px;
+height: 44px;
+max-height: 44px;
 object-fit: contain;
-display:block;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{ display:none; }
-/* Menu */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{ display: none; }
+/* Nav */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-nav{
 justify-self: center;
-position: static !important; /* mega menu full width */
+position: static !important;
 }
-/* Actions */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions{
-display:flex;
-align-items:center;
+display: flex;
+align-items: center;
 gap: 14px;
 justify-self: end;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn{
-width: 40px;
-height: 40px;
-display:inline-flex;
-align-items:center;
-justify-content:center;
-border-radius: 999px;
-transition: background .2s ease, transform .2s ease;
-}
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn:hover{
-background: rgba(0,0,0,.06);
-transform: translateY(-1px);
-}
-/* Quote button: subtle premium pill */
-#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote{
-background: #141414;
-color: #fff;
+width: 44px;
+height: 44px;
 display: inline-flex;
 align-items: center;
 justify-content: center;
-min-height: 44px;
-padding: 10px 18px;
 border-radius: 999px;
+color: #000;
+transition: background .2s ease;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn svg{
+display: block;
+width: 20px;
+height: 20px;
+color: #000;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn svg path{ fill: #000; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn:hover{ background: rgba(0,0,0,.06); }
+/* The 40px pill keeps a 44px hit area without changing its visual box. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote{
+position: relative;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+height: 40px;
+width: 142px;
+padding: 0 10px;
+border-radius: 999px;
+box-sizing: border-box;
+background: #141414;
+color: #fff;
+font-family: "Inter", sans-serif;
 font-size: 13px;
 font-weight: 700;
 letter-spacing: .02em;
-text-decoration:none;
+line-height: 1;
+text-decoration: none;
 white-space: nowrap;
 transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
 }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote::after{
+content: "";
+position: absolute;
+left: 0;
+right: 0;
+top: -2px;
+bottom: -2px;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote:hover{
 transform: translateY(-1px);
-background:#000;
+background: #000;
 box-shadow: 0 10px 24px rgba(0,0,0,.14);
 }
-/* Desktop navigation. The converted menu markup carries the old theme's
-   xo-menu-horizontal-v1 classes; these rules are the dropdown behaviour the
-   old theme shipped in main.css and the WindPress volumes never carried
-   (evidence: the old theme's main.css and the production page before the
-   out-of-repo md-volumes.css crutch was removed). Values are this site's
-   black-on-white header, not the old theme's CSS variables. */
+/* Desktop navigation: 15px Inter links; 13px Playfair uppercase labels;
+   20px item spacing; hover is the old 50% black, not gold. */
 #HeaderV9-sections--21844031144189__header_v1_main{
 --color-foreground: 0, 0, 0;
 --color-background: 255, 255, 255;
 --color-accent: 201, 169, 98;
---font-body-scale: 1;
---font-heading-scale: 1;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-nav{ position: static; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1{
 display: flex;
 align-items: center;
@@ -297,25 +338,32 @@ list-style: none;
 display: flex;
 align-items: center;
 justify-content: space-between;
-gap: .4rem;
-padding: 0 2rem;
+gap: 4px;
+padding: 0 20px 0 0;
 color: #000;
-font-size: 1.5rem;
+font-family: "Inter", sans-serif;
+font-size: 15px;
 font-weight: 500;
+line-height: 16px;
 text-decoration: none;
-transition: color .2s ease;
+transition: color .3s ease;
 }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item:first-child > .xo-menu-horizontal-v1__link{ padding-left: 0; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__label{
-font-size: 1.4rem;
-font-weight: 500;
-color: #000;
 margin: 0;
-padding: .8rem 0;
-transition: color .2s ease;
+padding: 0;
+color: #000;
+font-family: "Playfair Display", serif;
+font-size: 13px;
+font-weight: 500;
+line-height: 15.79px;
+text-transform: uppercase;
+white-space: nowrap;
+transition: color .3s ease;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link:hover .xo-menu-horizontal-v1__label,
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:hover > .xo-menu-horizontal-v1__link,
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:hover > .xo-menu-horizontal-v1__link .xo-menu-horizontal-v1__label{
-color: #a88a4a;
+color: rgba(0,0,0,.5);
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__arrow{ line-height: 0; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__arrow--hide{ display: none; }
@@ -324,18 +372,17 @@ position: absolute;
 top: 100%;
 left: 0;
 z-index: 60;
-display: block;
-min-width: 26rem;
+width: 200px;
 margin: 0;
-padding: 1rem 0;
+padding: 15px 0;
 list-style: none;
 background: #fff;
-box-shadow: 0 12px 32px rgba(0, 0, 0, .12);
-border-top: 2px solid #c9a962;
+box-shadow: 0 5px 15px rgba(0,0,0,.07);
+border-radius: 5px;
 opacity: 0;
 pointer-events: none;
-transform: translateY(6px);
-transition: opacity .2s ease, transform .2s ease;
+transform: translateY(10px);
+transition: .3s;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:hover > .xo-menu-horizontal-v1__sub-menu,
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:focus-within > .xo-menu-horizontal-v1__sub-menu{
@@ -344,37 +391,61 @@ pointer-events: auto;
 transform: none;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub{
-padding: .7rem 1.8rem;
-font-size: 1.4rem;
+padding: 0 15px;
+font-family: "Playfair Display", serif;
+font-size: 15px;
+font-weight: 500;
+color: #000;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub .xo-menu-horizontal-v1__label{
-padding: 0;
-font-size: 1.4rem;
-font-weight: 400;
-color: rgba(0, 0, 0, .78);
+padding: 5px 0;
+font-family: "Playfair Display", serif;
+font-size: 15px;
+font-weight: 500;
+line-height: 19px;
+text-transform: none;
+white-space: normal;
+color: #000;
+transition: transform .3s ease, color .3s ease;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub:hover .xo-menu-horizontal-v1__label{ color: #000; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub:hover .xo-menu-horizontal-v1__label{
+transform: translateX(5px);
+color: #000;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__mega-menu:empty{ display: none; }
-/* The converted header's xo-mega-menu placeholders are empty: the real
-   submenus are the lists above, so the empty placeholders stay hidden. */
-/* Responsive */
-#HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display:none; }
-#HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display:block; }
+/* Responsive: 73px white band, icon logo, no search, 34px CTA,
+   44x44 hamburger hit area. */
+#HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display: none; }
+#HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display: block; }
 @media (max-width: 990px){
-#HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display:none !important; }
-#HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display:block; }
+#HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display: none !important; }
+#HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display: block; }
+#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top{ display: none; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
 grid-template-columns: auto 1fr auto;
-gap: 12px;
-min-height: 64px;
-padding: 8px 0;
+gap: 14px;
+min-height: 73px;
+padding: 0;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--desktop{ display:none; }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{ display:block; max-height: 34px; }
+#HeaderV9-sections--21844031144189__header_v1_main xo-container{ padding: 0 20px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ height: 56px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--desktop{ display: none; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{
+display: block;
+width: auto;
+height: auto;
+max-width: 80px;
+max-height: 34px;
+object-fit: contain;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn{ display: none; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote{
-padding: 8px 12px;
+height: 34px;
+width: 122px;
+padding: 0 8px;
 font-size: 12px;
 }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote::after{ top: -5px; bottom: -5px; }
 }
 /* =========================
 Desktop：一屏显示（不滚动）
@@ -382,6 +453,14 @@ Desktop：一屏显示（不滚动）
 - 少于6个：自动居中，不会靠左留大空白
 - 图片统一比例 + 统一卡片
 ========================= */
+/* The mega-menu templates sit after </header>, so they do not inherit the
+   header's scheme variables; give both panels their own black-on-white set. */
+[data-id^="sections--21844031144189__mega_menu_v2_"]{
+--color-foreground: 0, 0, 0;
+--color-background: 255, 255, 255;
+--color-accent: 201, 169, 98;
+background: #fff;
+}
 [data-id="sections--21844031144189__mega_menu_v2_HEAtbw"]{
 --mm-gap: 18px;
 --mm-radius: 18px;
@@ -626,23 +705,149 @@ border: none !important;
 transition: none !important;
 }
 }
-.footer-v21__block-heading {
-font-size: 1.4rem !important;
-font-weight: 600 !important;
-letter-spacing: 0.05em !important;
-text-transform: uppercase !important;
+/* ===== Footer parity (ticket #67; spec #65 values, old-site computed
+   2026-10-26 at 1440x900 and 390x844): #1d1d1d, 4 columns, 629px
+   desktop / 1226px mobile. ===== */
+footer.xo-section{
+background-color: #1d1d1d;
+color: rgba(255,255,255,.75);
+font-family: "Inter", sans-serif;
+font-size: 16px;
+line-height: 24px;
+padding: 0;
 }
-/* The migrated footer markup carries bare anchors; without this they render
-   in the UA's default blue + underline on the dark panel. */
-.footer-v21__block-list a,
-.footer-v21__block-info a {
-color: inherit;
+footer .footer-v21__content-top{
+padding: 30px 0;
+border-bottom: 1px solid rgba(255,255,255,.15);
+}
+footer xo-animate{ display: block; }
+footer .footer-v21__content-top xo-container,
+footer .xo-container--wide{
+display: block;
+width: 100%;
+margin: 0 auto;
+padding: 0 15px;
+box-sizing: border-box;
+}
+@media (min-width: 1400px){
+footer .footer-v21__content-top xo-container,
+footer .xo-container--wide{ padding: 0 140px; }
+}
+footer .footer-v21__content-top xo-grid,
+footer .footer-v21__bottom{
+display: grid;
+grid-template-columns: repeat(12, minmax(0, 1fr));
+gap: 15px;
+align-items: stretch;
+}
+@media (min-width: 768px){
+footer .footer-v21__content-top xo-grid,
+footer .footer-v21__bottom{ gap: 30px; }
+}
+footer .footer-v21__grid{ grid-column: span 12; min-width: 0; }
+@media (min-width: 768px){
+footer .footer-v21__grid{ grid-column: span 6; }
+}
+@media (min-width: 1200px){
+footer .footer-v21__grid{ grid-column: span 3; }
+}
+footer .footer-v21__block-logo-image{
+width: 140px;
+max-width: 100%;
+}
+footer .footer-v21__block-logo-image .xo-image{ display: block; max-width: 140px; }
+footer .footer-v21__block-logo-image img{
+display: block;
+width: 140px;
+height: 140px;
+object-fit: contain;
+}
+footer .footer-v21__block-text{
+margin: 24px 0 16px;
+width: 80%;
+font-size: 16px;
+font-weight: 400;
+line-height: 30.4px;
+color: rgba(255,255,255,.4);
+}
+footer .footer-v21__block-info{
+margin: 0 0 8px;
+font-size: 16px;
+font-weight: 400;
+line-height: 30.4px;
+color: rgba(255,255,255,.4);
+}
+footer .footer-v21__block-info span,
+footer .footer-v21__block-info a{ color: #fff; }
+footer .footer-v21__block-heading{
+position: relative;
+margin: 0 0 16px;
+padding: 0 0 17px;
+color: #fff;
+font-family: "Playfair Display", serif;
+font-size: 14px;
+font-weight: 600;
+line-height: 24px;
+letter-spacing: .7px;
+text-transform: uppercase;
+}
+footer .footer-v21__block-heading::before{
+content: "";
+position: absolute;
+left: 0;
+bottom: 0;
+width: 35px;
+height: 1px;
+background: rgba(255,255,255,.15);
+}
+footer .footer-v21__block-list{
+list-style: none;
+margin: 0;
+padding: 0;
+}
+footer .footer-v21__block-list-item{
+padding: 4px 0;
+font-size: 15px;
+font-weight: 400;
+line-height: 22.5px;
+}
+footer .footer-v21__block-list a{
+color: rgba(255,255,255,.75);
+font-weight: 500;
 text-decoration: none;
-transition: color 0.2s ease;
+transition: color .3s ease, padding-left .3s ease;
 }
-.footer-v21__block-list a:hover,
-.footer-v21__block-info a:hover { color: var(--md-gold); }
-.md-te78b4640 { background:;color: }
+footer .footer-v21__block-list a:hover{
+color: #c9a962;
+padding-left: 10px;
+}
+footer .footer-v21__block-info a{
+text-decoration: none;
+transition: color .3s ease;
+}
+footer .footer-v21__block-info a:hover{ color: #c9a962; }
+footer .footer-v21__content-bottom{ padding: 24px 0; }
+footer .footer-v21__bottom{ align-items: center; }
+footer .footer-v21__copyright{
+grid-column: span 12;
+min-height: 42px;
+font-size: 14px;
+line-height: 21px;
+color: rgba(255,255,255,.75);
+}
+@media (min-width: 768px){
+footer .footer-v21__copyright{ grid-column: span 6; }
+}
+footer .footer-v21__copyright a{
+color: rgba(255,255,255,.75);
+text-decoration: none;
+}
+footer .footer-v21__copyright a:hover{ color: #c9a962; }
+footer .footer-v21__copyright-payment{ grid-column: span 12; }
+@media (min-width: 768px){
+footer .footer-v21__copyright-payment{ grid-column: span 6; }
+}
+.md-te78b4640 { background: #fff; color: #000; }
 .md-t546c7aa6 { --bg-color: #ffffff }
 .md-t14a7f425 { background-color: #fff }
 .md-t5a1e6c53 { fill-opacity:1;fill-rule:nonzero;stroke:none }
@@ -670,46 +875,53 @@ xo-tabs-trigger{cursor:pointer}
 /* The mobile menu drawer (old theme's hamburger, ported to plain values:
    the legacy --color-foreground variables are not defined on this site). */
 .xo-menu-hamburger-style1{display:flex;align-items:center}
-.xo-menu-hamburger-style1__trigger{cursor:pointer;display:block;width:2.3rem;height:1.8rem;color:#000}
+.xo-menu-hamburger-style1__trigger{cursor:pointer;display:flex;align-items:center;justify-content:center;width:44px;height:44px;color:#000}
 .xo-menu-hamburger-style1__trigger svg{vertical-align:middle}
-.xo-menu-hamburger-style1__trigger .icon-hamburger-menu{position:relative;display:block;width:1.2rem;height:.2rem;top:.8rem;background-color:#000;transform-origin:left center;transition:opacity .2s ease,width .2s ease,rotate .2s ease,translate .2s ease}
+.xo-menu-hamburger-style1__trigger .icon-hamburger-menu{position:relative;display:block;width:12px;height:2px;top:0;background-color:#000;transform-origin:left center;transition:opacity .2s ease,width .2s ease,rotate .2s ease,translate .2s ease}
 .xo-menu-hamburger-style1__trigger .icon-hamburger-menu::before,
-.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::after{content:"";position:absolute;height:.2rem;background-color:#000;transform-origin:left center;transition:opacity .2s ease,width .2s ease,rotate .2s ease,translate .2s ease}
-.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::before{top:-.8rem;width:2.3rem}
-.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::after{bottom:-.8rem;width:1.7rem}
+.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::after{content:"";position:absolute;height:2px;background-color:#000;transform-origin:left center;transition:opacity .2s ease,width .2s ease,rotate .2s ease,translate .2s ease}
+.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::before{top:-8px;width:23px}
+.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::after{bottom:-8px;width:17px}
 .xo-menu-hamburger-style1__trigger:hover .icon-hamburger-menu,
-.xo-menu-hamburger-style1__trigger:hover .icon-hamburger-menu::after{width:2.3rem}
-.xo-menu-hamburger-style1__content{display:flex;flex-direction:column;width:30rem;max-width:88vw;min-height:100dvh;background-color:#fff;box-shadow:0 0 40px rgba(0,0,0,.25);overflow-y:auto}
+.xo-menu-hamburger-style1__trigger:hover .icon-hamburger-menu::after{width:23px}
+.xo-menu-hamburger-style1__content{display:flex;flex-direction:column;width:300px;max-width:88vw;min-height:100dvh;background-color:#fff;box-shadow:0 0 40px rgba(0,0,0,.25);overflow-y:auto}
 .menu-hamburger-style1-top{display:flex;align-items:center;background-color:#111}
-.xo-menu-hamburger-style1__link{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:1.4rem 2rem;font-size:1.5rem;color:#000;opacity:.85;border-bottom:.1rem solid #ededed;cursor:pointer;text-decoration:none;transition:background-color .2s ease,opacity .2s ease}
+.xo-menu-hamburger-style1__link{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:14px 20px;font-size:15px;color:#000;opacity:.85;border-bottom:1px solid #ededed;cursor:pointer;text-decoration:none;transition:background-color .2s ease,opacity .2s ease}
 .xo-menu-hamburger-style1__link:hover{opacity:1;background-color:#f6f6f6}
 .xo-menu-hamburger-style1__link--color{background-color:#111;color:#fff;border-bottom:0}
 .xo-menu-hamburger-style1__link--color:hover{background-color:#000}
 .xo-menu-hamburger-style1__label{padding:0;font-weight:500}
 .xo-menu-hamburger-style1__back{display:flex;align-items:center;width:100%}
-.xo-menu-hamburger-style1__tablist{display:flex;align-items:center;color:#fff;text-transform:uppercase;font-size:1.3rem;letter-spacing:.06em}
-[dir=ltr] .xo-menu-hamburger-style1__tablist-item{margin-inline-start:1rem}
-.xo-menu-hamburger-style1__arrow{padding:0 0 0 1.2rem;line-height:normal;pointer-events:none}
+.xo-menu-hamburger-style1__tablist{display:flex;align-items:center;color:#fff;text-transform:uppercase;font-size:13px;letter-spacing:.06em}
+[dir=ltr] .xo-menu-hamburger-style1__tablist-item{margin-inline-start:10px}
+.xo-menu-hamburger-style1__arrow{padding:0 0 0 12px;line-height:normal;pointer-events:none}
 .xo-menu-hamburger-style1__arrow svg{vertical-align:middle}
 .xo-menu-hamburger-style1__mega-menu:empty{display:none}
 
 /* The search sheet */
-.xo-modal-content{display:flex;min-height:100dvh;padding:1.5rem;box-sizing:border-box}
-.xo-modal-content__inner{position:relative;display:flex;flex-direction:column;width:100%;max-width:1100px;margin:0 auto;max-height:calc(100dvh - 3rem);background:#fff;color:#111;border-radius:12px;padding:2.4rem;box-sizing:border-box;overflow-y:auto}
+.xo-modal-content{display:flex;min-height:100dvh;padding:15px;box-sizing:border-box}
+.xo-modal-content__inner{position:relative;display:flex;flex-direction:column;width:100%;max-width:1100px;margin:0 auto;max-height:calc(100dvh - 30px);background:#fff;color:#111;border-radius:12px;padding:24px;box-sizing:border-box;overflow-y:auto}
 .xo-modal-content__body{width:100%}
-.xo-modal-content__close--abs{position:absolute;top:1.5rem;right:1.5rem;display:flex;align-items:center;justify-content:center;width:3.2rem;height:3.2rem;border-radius:50%;background:rgba(0,0,0,.06);cursor:pointer}
+.xo-modal-content__close--abs{position:absolute;top:15px;right:15px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.06);cursor:pointer}
 .xo-modal-content__close--abs:hover{background:rgba(0,0,0,.14);rotate:180deg;transition:rotate .3s ease,background-color .3s ease}
 
 /* Touch targets: the footer's link rows, the header logo link, and the
-   catalog search field measured under 44px on 390/320 (audit 2026-10-25). */
+   catalog search field measured under 44px on 390/320 (audit 2026-10-25).
+   The footer rows keep the old 31px mobile rhythm (footer height parity)
+   and take the 44px minimum from 768px up, where the first column's height
+   already dominates the grid. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ min-height: 44px; }
-.footer-v21__block-list-item a,
-.footer-v21__block-info a,
-.footer-v21__block-text a{
+footer .footer-v21__block-list-item a{
+display: inline;
+padding: 0;
+}
+@media (min-width: 768px){
+footer .footer-v21__block-list-item a{
 display: inline-flex;
 align-items: center;
 min-height: 44px;
-padding: .4rem 0;
+padding: 4px 0;
+}
 }
 .pattern-catalog__search input{ min-height: 44px; box-sizing: border-box; }
 
@@ -720,3 +932,142 @@ padding: .4rem 0;
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ min-width: 44px; }
 .pattern-catalog__search-button{ min-width: 44px; min-height: 44px; }
 .pdp-faq-q{ min-height: 44px; }
+
+/* =========================
+   First-party floating chrome (ticket #67, spec #65)
+   The WhatsApp entry and the back-to-top control are plain anchors in the
+   footer partial; no third-party script is loaded. The back-to-top sits
+   above the WhatsApp button so the two never overlap.
+   ========================= */
+.md-whatsapp-float{
+position: fixed;
+right: 24px;
+bottom: 24px;
+z-index: 900;
+display: flex;
+align-items: center;
+justify-content: center;
+width: 56px;
+height: 56px;
+border-radius: 50%;
+background: #25d366;
+color: #fff;
+box-shadow: 0 8px 24px rgba(0,0,0,.22);
+text-decoration: none;
+transition: transform .2s ease, box-shadow .2s ease;
+}
+.md-whatsapp-float:hover{
+transform: translateY(-2px);
+box-shadow: 0 12px 28px rgba(0,0,0,.28);
+}
+.md-whatsapp-float svg{ display: block; width: 30px; height: 30px; }
+.md-back-to-top{
+position: fixed;
+right: 30px;
+bottom: 96px;
+z-index: 900;
+display: flex;
+align-items: center;
+justify-content: center;
+width: 40px;
+height: 40px;
+border-radius: 50%;
+background: #000;
+color: #fff;
+text-decoration: none;
+box-shadow: 0 6px 18px rgba(0,0,0,.24);
+}
+.md-back-to-top[hidden]{ display: none; }
+@media (max-width: 990px){
+.md-whatsapp-float{
+right: 16px;
+bottom: 16px;
+width: 52px;
+height: 52px;
+}
+.md-whatsapp-float svg{ width: 28px; height: 28px; }
+.md-back-to-top{
+right: 16px;
+bottom: 80px;
+}
+}
+
+/* The footer's quote dialog: the single #open-quote destination on every
+   page without its own quote modal. Values follow the site's dark panel. */
+.md-quote-anchor{
+display: block;
+position: relative;
+top: -1px;
+height: 0;
+}
+.md-quote-modal{
+position: fixed;
+inset: 0;
+z-index: 1000;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 16px;
+}
+.md-quote-modal__backdrop{
+position: absolute;
+inset: 0;
+background: rgba(0,0,0,.85);
+}
+.md-quote-modal__card{
+position: relative;
+width: 100%;
+max-width: 420px;
+max-height: 95vh;
+overflow-y: auto;
+padding: 28px;
+border: 1px solid rgba(255,255,255,.08);
+border-radius: 16px;
+background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+box-shadow: 0 32px 64px rgba(0,0,0,.5);
+color: #fff;
+box-sizing: border-box;
+}
+.md-quote-modal__close{
+position: absolute;
+top: 12px;
+right: 12px;
+width: 44px;
+height: 44px;
+border: 0;
+border-radius: 8px;
+background: rgba(255,255,255,.05);
+color: rgba(255,255,255,.75);
+font-size: 24px;
+line-height: 1;
+cursor: pointer;
+}
+.md-quote-modal__close:hover{ background: rgba(255,255,255,.1); color: #fff; }
+.md-quote-modal__title{
+margin: 0 0 8px;
+font-family: "Playfair Display", serif;
+font-size: 24px;
+font-weight: 600;
+color: #fff;
+}
+.md-quote-modal__copy{
+margin: 0 0 20px;
+font-size: 14px;
+line-height: 1.6;
+color: rgba(255,255,255,.75);
+}
+
+/* The home hero's quote card belongs inside the hero's bottom-right corner
+   (old fold position). The card markup is the page template's; chrome.css
+   positions it without editing the page template. */
+@media (min-width: 1024px){
+section[data-section-name="home-hero"] > .relative{ position: relative; }
+section[data-section-name="home-hero"] > .relative > div:last-child > div:last-child{
+position: absolute;
+right: 40px;
+bottom: 40px;
+width: 360px;
+max-width: calc(100% - 80px);
+z-index: 3;
+}
+}

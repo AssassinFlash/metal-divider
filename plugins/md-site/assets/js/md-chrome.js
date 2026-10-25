@@ -161,12 +161,18 @@
       };
     });
 
-    // The custom-screens quote dialog, opened by [data-quote-source] CTAs.
+    // The quote dialog, opened by [data-quote-source] CTAs and by any
+    // anchor that targets #open-quote. The footer ships one dialog on every
+    // page; a page with its own #quote-modal (custom-screens) keeps the page
+    // dialog as the single open target, so the footer copy stays inert there.
     Alpine.data('quoteModal', function () {
       return {
         isOpen: false,
         detail: null,
         open: function (detail) {
+          if (document.getElementById('quote-modal') && this.$root.id !== 'quote-modal') {
+            return;
+          }
           this.detail = detail || null;
           this.isOpen = true;
         },
@@ -295,14 +301,14 @@
         return;
       }
 
-      // A [data-quote-source] CTA opens the page's quote dialog when one
-      // exists; elsewhere the anchor's #open-quote target handles the jump.
-      var quote = event.target.closest('[data-quote-source]');
+      // A [data-quote-source] CTA, or any anchor to #open-quote, opens the
+      // quote dialog when one exists; elsewhere the anchor target handles it.
+      var quote = event.target.closest('[data-quote-source], a[href="#open-quote"]');
       if (quote && document.querySelector('[x-data^="quoteModal"]')) {
         event.preventDefault();
         window.dispatchEvent(
           new CustomEvent('open-quote', {
-            detail: { source: quote.getAttribute('data-quote-source') }
+            detail: { source: quote.getAttribute('data-quote-source') || 'open-quote' }
           })
         );
       }
@@ -368,11 +374,32 @@
     });
   }
 
+  // The back-to-top control is part of the first-party floating chrome
+  // (ticket #67): it appears after the first viewport and returns to the
+  // top. The WhatsApp float needs no script.
+  function setupFloats() {
+    var top = document.querySelector('.md-back-to-top');
+    if (!top) {
+      return;
+    }
+    var sync = function () {
+      top.hidden = window.scrollY < 400;
+    };
+    window.addEventListener('scroll', sync, { passive: true });
+    sync();
+    top.addEventListener('click', function (event) {
+      event.preventDefault();
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    });
+  }
+
   function start() {
     setupModals();
     setupTabs();
     setupLazyload();
     setupSticky();
+    setupFloats();
 
     // The catalog's sort select posts its form on change (the CSP blocks
     // inline handlers, so the behaviour lives here).
