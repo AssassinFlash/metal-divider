@@ -32,9 +32,9 @@
 
 ### SEO 验证不通过项(2026-10-25 生产实测,证据 docs/deploy/seo-verification.md)
 
-- [ ] **`/inquiry/thank-you/` 404**:生产 page 表无此页(md-inquiry 链路断在成单致谢步;`/pages/custom-metal-divider-screens-thank-you` 的 301 也落进这个 404)
-- [ ] **`/privacy/` 404**:privacy-policy 页停留在 draft;页脚法务链与 `/policies/privacy-policy` 301 均落 404
-- [ ] **FAQPage JSON-LD 缺失**:`/faqs/` HTML 有 40 对 Q&A,但生产 `seopress_schemas` CPT 只有 Product/BlogPosting 两条(dev 验收 ×3 中的 FAQPage 未落生产)
+- [x] **`/inquiry/thank-you/` 404** — 生产已返回 200(2026-10-25 复核);dev 亦 200
+- [x] **`/privacy/` 404** — 生产已返回 200(2026-10-25 复核);dev 亦 200
+- [x] **FAQPage JSON-LD 缺失** — 根因二连:页面查找仍用 `/pages/faqs`(实际 `/faqs/`),且抽取正则绑定已被改写的 `openFaq` 表达式。两处已修,dev `/faqs/` 已输出 FAQPage;待生产部署
 - [ ] **GSC 属性未建**:Hostinger API 写 TXT 的路径已验通(PUT 追加模式),等 GSC 建 URL 前缀属性拿 token 后一条写入;顺带:hPanel 区无 SPF/_dmarc TXT(邮件三防,归 T1 邮件面)
 
 ## 工作法(每轮)
@@ -48,6 +48,23 @@
 ## 进度记录
 
 (每轮追加,最新在上)
+
+### 2026-10-25 阶段二·第二轮:交互层与目录真身修复(dev 全验;生产待部署授权)
+
+**方法**:先读生产线上实物(curl/SSH/真 Chrome),不采信上一轮的记录与注释;发现与记录不符即追到根因再改。所有修复在 dev 实例用真 Chrome + HTTP 实测复验。
+
+**推翻的上一轮结论(证据)**:
+1. “logo 资产不存在,只能文字兜底” **假**——旧站 CDN 的 `metal-divider-primary-logo.webp`(937×414 真字标)与 `metal-divider-icon-logo.webp` 可下载;已按最终像素管线的 WebP 参数重编码,入库 `plugins/md-site/assets/brand/`。页脚旧图 `stainless-steel-screen-logo.png`(旧站实物)同样取自旧站。
+2. “字体只是占位,等以后再补” **当时为真、已补**——`tokens.css` 指向的 9 个 woff2 全 404;现为 Google Fonts 官方 latin 可变字体(Inter wght 100–900、Playfair 400–900,SIL OFL),自托管于 `assets/fonts/`,两文件替代九份重复拷贝。
+3. “WindPress 任意值类修好就只剩样式微调” **假**——站点根本没有交互运行时:转换把 `<script>` 开标签剥掉、留了 JS 正文(shop/series 两页整段 JS 当文本渲染,`</script>` 悬空,`</div></main></section>` 三处闭合丢失),且全站依赖的 Alpine 与 xo-webcomponents 均未加载。现已:自托管 Alpine 3.17.5 CSP 构建 + collapse/focus(安全基线无 unsafe-eval,不能用标准构建),自研 `md-chrome.js` 重实现 xo-modal/xo-tabs/xo-lazyload/xo-sticky 与 8 个 CSP 无法解析的内联组件;dev 实测菜单开合、首页 tab、FAQ 手风琴、报价弹窗、跑马灯均 0 控制台错误。
+4. “PDP 只剩样式问题” **假**——`md_pdp_style()` 声明在插件命名空间内,`[lc_wp_func]` 按全局名解析失败,每个 PDP 把 PHP 错误直接印给访客。已改为全局函数并补单测。
+5. “商品目录已迁完” **假**——shop/series 的卡片是写死的 Agave,`[lc_loop]` 套在 `<article>` 内,每页只渲染 1 个卡片 + 空态框;无分页、搜索 POST `/search`(WP 无此路由)、排序 POST Shopify 参数。现由 `[md_pattern_card]` 逐品装配 + `[md_pattern_pagination]` + `[md_pattern_results_summary]` + `pre_get_posts` 承接搜索/排序;dev 实测 /shop/ 16 卡、10 页、搜索 apiary→1、Z–A 与 Newest 排序生效。
+6. “询盘表单只差触达高度” **假**——`inquiry.css` 整段按原型类名(`.field`/`.btn-primary`)写,插件实际输出 `md-inquiry-*`,所以输入框 21px、提交键无样式、honeypot 对用户可见。已按真实 markup 重写选择器,honeypot 移出视口。
+7. “视频/联系方式已迁” **假**——41 个 `<source>` 仍指 `//metalpartition.com/cdn/...`,8 个 poster 指向 `.mp4`;模板内 WhatsApp 34 处中 31 处是旧双号或占位号。已全部改本地 uploads 与 `+85264731687`,邮箱统一 `info@metal-divider.com`;页脚电话/邮箱补齐。
+
+**本轮已改并在 dev 复验**:上述 1–7;另含 `windpress-check` 缺斜杠(#55 根因)、windpress-compile 的假前置守卫与 `npx playwright install chromium`(违反真 Chrome 铁律)、FAQPage 抽取与 `/faqs/` 路径、移动触达(页脚链 57px、首页 chips 44px、表单 45px、头部报价键 44px+)、页脚 logo 1024px 原图造成的 634px 横向溢出(两个视口 7 页复测 overflow=0)、桌面 header 113px 与旧站一致、生产 `md-volumes.css` 外挂(H 级漂移:684KB 旧 CSS 由不在仓库的 mu-plugin 注入,桌面下拉全靠它)已由仓库内导航样式替代。
+
+**未完成/待授权**:生产部署(本轮 `just deploy prod --write` 被运行环境判定为缺少本次会话的生产授权而拒绝;需业主明确说“部署到 metal-divider.com 生产”后执行)、生产 WindPress 重编译、清理生产 `/wp-content/uploads/md-volumes.css` 与 `mu-plugins/md-volume-css.php`、GSC 属性。**生产实物仍是旧代码,本文件上述 dev 结论不可当作线上已修。**
 
 ### 2026-10-25 移动端视觉审计(阶段二·第一轮:390×844 / 320×568)
 

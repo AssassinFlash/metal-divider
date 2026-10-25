@@ -271,3 +271,6 @@ animation: none;
 .md-tc14287fe { --bg-color: #1a1a1a;--pt: 0;--pb: 0 }
 .md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
 .md-t8ed1802a { background: #d1a63b;color: #ffffff }
+
+/* The proof carousel's category chips measured 38x16 on 390/320. */
+[class^="emt-nav-btn"],[class*=" emt-nav-btn"]{ display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }

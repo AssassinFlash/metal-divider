@@ -201,12 +201,12 @@ border-bottom-color: rgba(0,0,0,.06);
 }
 /* Grid: logo | menu | actions */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
-min-height: 76px;
+min-height: 64px;
 display: grid;
 grid-template-columns: auto 1fr auto;
 align-items: center;
 gap: 28px;
-padding: 10px 0;
+padding: 0;
 }
 /* Logo: never overflow, always centered inside slot */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo{ display:flex; align-items:center; }
@@ -310,7 +310,7 @@ font-size: 1.4rem;
 font-weight: 500;
 color: #000;
 margin: 0;
-padding: 2.2rem 0;
+padding: .8rem 0;
 transition: color .2s ease;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link:hover .xo-menu-horizontal-v1__label,
@@ -699,3 +699,16 @@ xo-tabs-trigger{cursor:pointer}
 .xo-modal-content__body{width:100%}
 .xo-modal-content__close--abs{position:absolute;top:1.5rem;right:1.5rem;display:flex;align-items:center;justify-content:center;width:3.2rem;height:3.2rem;border-radius:50%;background:rgba(0,0,0,.06);cursor:pointer}
 .xo-modal-content__close--abs:hover{background:rgba(0,0,0,.14);rotate:180deg;transition:rotate .3s ease,background-color .3s ease}
+
+/* Touch targets: the footer's link rows, the header logo link, and the
+   catalog search field measured under 44px on 390/320 (audit 2026-10-25). */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ min-height: 44px; }
+.footer-v21__block-list-item a,
+.footer-v21__block-info a,
+.footer-v21__block-text a{
+display: inline-flex;
+align-items: center;
+min-height: 44px;
+padding: .4rem 0;
+}
+.pattern-catalog__search input{ min-height: 44px; box-sizing: border-box; }
