@@ -151,6 +151,52 @@ final class Catalog {
 	}
 
 	/**
+	 * Writes the nine series cards' descriptions from the copy file
+	 * (content/copy/series-descriptions.json, the old collections' own
+	 * descriptionHtml). The hub's card copy was empty because the migrated
+	 * terms carried no description; this restores the old copy without
+	 * inventing any. Idempotent by value.
+	 *
+	 * @return array{written: int, unchanged: int, missing: list<string>}
+	 */
+	public function apply_series_descriptions(): array {
+		$report = array(
+			'written'   => 0,
+			'unchanged' => 0,
+			'missing'   => array(),
+		);
+		$path   = \dirname( __DIR__ ) . '/content/copy/series-descriptions.json';
+		if ( ! is_readable( $path ) ) {
+			$report['missing'][] = 'copy/series-descriptions.json';
+			return $report;
+		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file, read by a manual command.
+		$data = json_decode( (string) file_get_contents( $path ), true );
+		if ( ! is_array( $data ) ) {
+			$report['missing'][] = 'copy/series-descriptions.json (invalid JSON)';
+			return $report;
+		}
+		foreach ( $data as $slug => $text ) {
+			$term = \get_term_by( 'slug', (string) $slug, 'product_cat' );
+			if ( ! $term instanceof \WP_Term ) {
+				$report['missing'][] = "term {$slug}";
+				continue;
+			}
+			if ( trim( (string) $term->description ) === trim( (string) $text ) ) {
+				++$report['unchanged'];
+				continue;
+			}
+			$updated = \wp_update_term( (int) $term->term_id, 'product_cat', array( 'description' => (string) $text ) );
+			if ( \is_wp_error( $updated ) ) {
+				$report['missing'][] = "term {$slug} (update failed)";
+				continue;
+			}
+			++$report['written'];
+		}
+		return $report;
+	}
+
+	/**
 	 * The main archive query's search and sort inputs.
 	 *
 	 * @param \WP_Query $query The query being prepared.

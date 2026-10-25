@@ -30,6 +30,51 @@ final class CatalogCommand {
 	 *
 	 *     wp md-site series-images
 	 *
+	 * @subcommand series-images
+	 * @when after_wp_load
+	 *
+	 * @param array<int, string>   $args       Positional arguments (unused).
+	 * @param array<string, mixed> $assoc_args Options (unused).
+	 */
+	/**
+	 * Writes the nine series card descriptions from the copy file.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp md-site series-copy
+	 *
+	 * @subcommand series-copy
+	 * @when after_wp_load
+	 *
+	 * @param array<int, string>   $args       Positional arguments (unused).
+	 * @param array<string, mixed> $assoc_args Options (unused).
+	 */
+	public function series_copy( array $args, array $assoc_args ): void {
+		unset( $args, $assoc_args );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			WP_CLI::error( 'Run as an administrator: wp md-site series-copy --user=<admin>.' );
+		}
+		$report = ( new Catalog() )->apply_series_descriptions();
+		if ( array() !== $report['missing'] ) {
+			WP_CLI::error( 'series copy: missing ' . implode( ', ', $report['missing'] ) );
+		}
+		WP_CLI::success(
+			sprintf(
+				'series copy: %d written, %d unchanged',
+				$report['written'],
+				$report['unchanged']
+			)
+		);
+	}
+
+	/**
+	 * Writes the nine series hero images.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp md-site series-images
+	 *
+	 * @subcommand series-images
 	 * @when after_wp_load
 	 *
 	 * @param array<int, string>   $args       Positional arguments (unused).

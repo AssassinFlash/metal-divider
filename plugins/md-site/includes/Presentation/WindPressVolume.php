@@ -91,6 +91,8 @@ final class WindPressVolume {
 	 */
 	private const ENTRY_THEME = self::ENTRY_THEME_MARK . "\n"
 		. '@theme static {' . "\n"
+		. '--font-serif: "Playfair Display", Georgia, serif;' . "\n"
+		. '--font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;' . "\n"
 		. '--text-xs: 13px;--text-xs--line-height: inherit;' . "\n"
 		. '--text-sm: 14px;--text-sm--line-height: inherit;' . "\n"
 		. '--text-base: 16px;--text-base--line-height: inherit;' . "\n"
