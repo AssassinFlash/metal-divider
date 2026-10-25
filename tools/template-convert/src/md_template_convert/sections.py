@@ -20,6 +20,17 @@ SECTION_OPEN = re.compile(
     r'<(?P<tag>div|section)\s+id="shopify-section-(?P<key>[^"]+)"[^>]*>', re.IGNORECASE
 )
 
+# The page's head and its style blocks. The old theme's design tokens are
+# printed by ``snippets/settings-adapter.liquid`` into the layout head —
+# 174 custom properties in one ``<style>`` block, outside every Shopify
+# section, so the section-only model never saw them (#70 C3).
+HEAD = re.compile(r"<head\b[^>]*>(.*?)</head>", re.DOTALL | re.IGNORECASE)
+HEAD_STYLE = re.compile(r"[ \t]*<style[^>]*>(.*?)</style>\n?", re.DOTALL)
+#: A style block is a design-token block when it defines custom
+#: properties or a ``:root`` scope; the platform's own head blocks
+#: (accelerated checkout, app widgets) carry neither.
+TOKEN_BLOCK = re.compile(r":root\b|--[A-Za-z0-9_-]+\s*:")
+
 
 @dataclass(frozen=True)
 class Section:
@@ -77,3 +88,29 @@ def section_html(html: str, section: Section, *, strip_wrapper: bool = True) -> 
     # sections() guarantees, so this slice holds the inner content.
     inner_end = section.end - len(f"</{tag_match.group('tag').lower()}>")
     return html[inner_start:inner_end]
+
+
+def head_style_blocks(html: str) -> list[str]:
+    """The design-token ``<style>`` blocks of the page's ``<head>``.
+
+    The old site's ``:root`` custom properties — the colour schemes, the
+    font families and scales, the spacing and card variables — are
+    printed into the layout head, not into a section. The converter's
+    section-only model cannot reach them (#70 C3: 42 variables used by
+    the carried rules and defined nowhere), so the page's head is read
+    separately and its token blocks become the volumes' ``base`` layer.
+
+    A head block counts as a token block when it defines custom
+    properties or a ``:root`` scope; the platform's own blocks carry
+    neither. A page without a ``<head>`` (a test fixture, a fragment)
+    yields none.
+    """
+    head = HEAD.search(html)
+    if head is None:
+        return []
+    blocks: list[str] = []
+    for css in HEAD_STYLE.findall(head.group(1)):
+        stripped = css.strip()
+        if stripped and TOKEN_BLOCK.search(stripped):
+            blocks.append(stripped)
+    return blocks
