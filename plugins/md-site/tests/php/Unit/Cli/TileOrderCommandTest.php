@@ -42,6 +42,13 @@ final class TileOrderCommandTest extends TestCase {
 	private static int $writes = 0;
 
 	/**
+	 * How many products the run created. The command must never create one.
+	 *
+	 * @var int
+	 */
+	private static int $created = 0;
+
+	/**
 	 * The SKU map installed into the WooCommerce double, or null for none.
 	 *
 	 * @var array<string, int>|null
@@ -74,6 +81,22 @@ final class TileOrderCommandTest extends TestCase {
 	);
 
 	/**
+	 * The three patterns whose old code carried a superseded material word, and
+	 * the normalized code the migration renames them to.
+	 *
+	 * Held here independently of the command's own table: this is what the
+	 * export actually says (18-migrate.py's build_products_plan over
+	 * data/shopify-admin-export/products.json yields exactly these three
+	 * `sku != source_code` pairs), so a test comparing the two is comparing the
+	 * command against the migration rather than against itself.
+	 */
+	private const OLD_CODES = array(
+		'Aztec'                           => 'Aztec Corten',
+		'Geo Criss Cross'                 => 'Geo Criss Cross Corten',
+		'Indian Nights Laser Cut Screens' => 'Indian Nights Laser Cut Corten Screens',
+	);
+
+	/**
 	 * Clears the shared WooCommerce double between tests.
 	 */
 	public function setUp(): void {
@@ -86,7 +109,8 @@ final class TileOrderCommandTest extends TestCase {
 	 * Removes the per-test fixtures.
 	 */
 	public function tearDown(): void {
-		self::$skus = null;
+		self::$skus    = null;
+		self::$created = 0;
 		parent::tearDown();
 	}
 
@@ -244,6 +268,122 @@ final class TileOrderCommandTest extends TestCase {
 	}
 
 	/**
+	 * The production failure this closes: a target that has NOT run the SKU
+	 * rename still carries the old Corten code as its SKU.
+	 *
+	 * Production deployed with `Aztec Corten`, `Geo Criss Cross Corten` and
+	 * `Indian Nights Laser Cut Corten Screens`, the seed asked for the
+	 * normalized codes, and the run failed "missing" on all three — while dev
+	 * had been migrated, so no test saw it. The seed must find the three by
+	 * their old identifiers and place them at their panel positions, writing no
+	 * SKU and creating no product.
+	 */
+	public function test_an_unmigrated_target_resolves_the_old_corten_skus(): void {
+		$state = array();
+		// Exactly production's state: only those three still carry old codes.
+		$skus = self::IDS;
+		foreach ( self::OLD_CODES as $normalized => $old ) {
+			unset( $skus[ $normalized ] );
+			$skus[ $old ] = self::IDS[ $normalized ];
+		}
+		$this->mock_wordpress( $state, $skus );
+
+		$output = $this->run_command();
+
+		// The positions the page's own order gives them, per panel.
+		$this->assertSame( 1, $state[ self::IDS['Aztec'] ]['menu_order'] ?? null, 'Aztec is first in geometric' );
+		$this->assertSame( 4, $state[ self::IDS['Geo Criss Cross'] ]['menu_order'] ?? null, 'Geo Criss Cross is fourth' );
+		$this->assertSame( 6, $state[ self::IDS['Indian Nights Laser Cut Screens'] ]['menu_order'] ?? null, 'Indian Nights is sixth' );
+		$this->assertStringContainsString( '18 written', $output, 'all eighteen seeded, none missing' );
+		$this->assertStringContainsString( '0 missing', $output );
+
+		// Found by the old code, and the log says so — an alias hit is the one
+		// thing a deploy log has to name, or the operator cannot tell which
+		// product a position landed on.
+		foreach ( self::OLD_CODES as $normalized => $old ) {
+			$this->assertStringContainsString(
+				sprintf( '%d (%s) resolved by alias-sku', self::IDS[ $normalized ], $normalized ),
+				$output,
+				"{$normalized} was resolved through {$old}"
+			);
+		}
+
+		// Nothing was renamed, created or deleted: the seed writes menu_order and
+		// its marker, nothing else. The SKU stays the migration's.
+		$this->assertSame( 0, self::$created, 'no duplicate product was created for an old code' );
+		foreach ( self::OLD_CODES as $normalized => $old ) {
+			$id = self::IDS[ $normalized ];
+			$this->assertArrayNotHasKey( '_sku', $state[ $id ], 'the seed never writes a SKU' );
+			$this->assertSame( '1', $state[ $id ]['_md_tiles_seeded'] ?? null, 'the marker still lands' );
+		}
+		$this->assertSame( array(), array_diff( array_keys( $state ), self::IDS ), 'no product was created' );
+	}
+
+	/**
+	 * An existing old-code product and a later normalized SKU are the same
+	 * product, and the seed must treat them as one at every stage: it seeds
+	 * once (through whichever identifier exists), and after the migration it
+	 * still recognises the product it already seeded rather than writing a
+	 * second position.
+	 *
+	 * This is the idempotency the deploy depends on, stated over the exact
+	 * transition production is about to make.
+	 */
+	public function test_an_old_sku_then_the_normalized_sku_stays_one_product(): void {
+		$state = array();
+		$skus  = self::IDS;
+		unset( $skus['Aztec'] );
+		$skus['Aztec Corten'] = self::IDS['Aztec'];
+		$this->mock_wordpress( $state, $skus );
+
+		// Before the migration: seeded through the old code.
+		( new TileOrderCommand() )->seed_tiles( array(), array() );
+		$before = $state;
+		$this->assertSame( 1, $before[ self::IDS['Aztec'] ]['menu_order'] ?? null );
+
+		// The migration renames the SKU in place; the product id does not move.
+		self::$skus   = self::IDS;
+		self::$writes = 0;
+
+		( new TileOrderCommand() )->seed_tiles( array(), array() );
+
+		$this->assertSame( $before[ self::IDS['Aztec'] ]['menu_order'], 1, 'the position is unchanged' );
+		$this->assertSame( 0, self::$writes, 'no second write after the rename' );
+		$this->assertSame( '1', $state[ self::IDS['Aztec'] ]['_md_tiles_seeded'] ?? null );
+	}
+
+	/**
+	 * Between the rename and a later plan change a target records provenance
+	 * instead of the old SKU: `_md_source_code` holds the old code while the
+	 * SKU is already normalized. The seed resolves through the provenance too,
+	 * so it does not report the product missing in that window.
+	 */
+	public function test_provenance_resolves_a_code_whose_sku_is_not_yet_normalized(): void {
+		$state = array();
+		$skus  = self::IDS;
+		// The SKU lookup cannot answer for this one at all.
+		unset( $skus['Geo Criss Cross'] );
+		$meta = array( self::IDS['Geo Criss Cross'] => array( '_md_source_code' => 'Geo Criss Cross Corten' ) );
+		$this->mock_wordpress( $state, $skus, $meta );
+
+		try {
+			$output = $this->run_command();
+		} finally {
+			// Asserted even when the command reports a miss: an implementation
+			// that invented the product would otherwise hide behind the
+			// exception the miss raises.
+			$this->assertSame( 0, self::$created, 'a code it cannot resolve is reported, never invented' );
+		}
+
+		$this->assertSame( 4, $state[ self::IDS['Geo Criss Cross'] ]['menu_order'] ?? null, 'found through _md_source_code' );
+		$this->assertStringContainsString(
+			sprintf( '%d (Geo Criss Cross) resolved by alias-meta', self::IDS['Geo Criss Cross'] ),
+			$output
+		);
+		$this->assertStringContainsString( '0 missing', $output );
+	}
+
+	/**
 	 * A dry run writes nothing — no menu_order, and no markers either, so a
 	 * dry run cannot silently claim a product for the seed.
 	 */
@@ -261,12 +401,14 @@ final class TileOrderCommandTest extends TestCase {
 	/**
 	 * A missing product is reported rather than invented, and the command
 	 * fails so the deploy cannot read a half-seeded target as a pass.
+	 *
+	 * The missing product is one with no alias either, so this cannot be
+	 * satisfied by the alias route: Atherton's code is the same before and
+	 * after the migration.
 	 */
 	public function test_a_missing_product_fails_the_command(): void {
-		$state      = array();
-		self::$skus = self::IDS;
-		unset( self::$skus['Atherton'] );
-		$this->mock_wordpress( $state, false );
+		$state = array();
+		$this->mock_wordpress( $state, array_diff_key( self::IDS, array( 'Atherton' => true ) ) );
 
 		$this->expectException( ExitException::class );
 		( new TileOrderCommand() )->seed_tiles( array(), array() );
@@ -284,19 +426,24 @@ final class TileOrderCommandTest extends TestCase {
 	}
 
 	/**
-	 * The WordPress surface the command drives: the SKU lookup resolves the
-	 * eighteen codes, `get_post` answers a published product whose
-	 * menu_order and marker come from `$state`, and every write lands back
-	 * in `$state` and is counted in self::$writes.
+	 * The WordPress surface the command drives.
 	 *
-	 * @param array<int, array<string, mixed>> $state      The product store, by id.
-	 * @param bool                             $install_skus Whether to install the full SKU map.
+	 * The SKU map and any pre-existing provenance live beside `$state` rather
+	 * than in it, so `$state` stays exactly "what this command wrote" — which is
+	 * what the dry-run assertion (`array() === $state`) needs to mean anything.
+	 *
+	 * That separation is also what makes an un-migrated target expressible: a
+	 * test passes `$skus` with the old Corten code and the fixture answers
+	 * exactly as production did — `wc_get_product_id_by_sku('Aztec')` finds
+	 * nothing, `wc_get_product_id_by_sku('Aztec Corten')` finds 51.
+	 *
+	 * @param array<int, array<string, mixed>> $state The write log, by product id.
+	 * @param array<string, int>|null          $skus  SKU → id, the full normalized map by default.
+	 * @param array<int, array<string, mixed>> $meta  Pre-existing post meta, by product id.
 	 */
-	private function mock_wordpress( array &$state, bool $install_skus = true ): void {
+	private function mock_wordpress( array &$state, ?array $skus = null, array $meta = array() ): void {
 		self::$writes = 0;
-		if ( $install_skus && null === self::$skus ) {
-			self::$skus = self::IDS;
-		}
+		self::$skus   = $skus ?? self::IDS;
 
 		WP_Mock::userFunction( 'current_user_can' )->zeroOrMoreTimes()->andReturn( true );
 
@@ -316,8 +463,31 @@ final class TileOrderCommandTest extends TestCase {
 		);
 
 		WP_Mock::userFunction( 'get_post_meta' )->zeroOrMoreTimes()->andReturnUsing(
-			static function ( int $id, string $key ) use ( &$state ) {
-				return $state[ $id ][ $key ] ?? '';
+			static function ( int $id, string $key ) use ( &$state, $meta ) {
+				if ( isset( $state[ $id ][ $key ] ) ) {
+					return $state[ $id ][ $key ];
+				}
+				return $meta[ $id ][ $key ] ?? '';
+			}
+		);
+
+		// The meta-query fallback, answering the way WP_Query answers a
+		// single-key meta_query against the fixture: one product or nothing.
+		// It reads the same two sources the meta getter does, so a test cannot
+		// set provenance one route sees and the other misses.
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturnUsing(
+			static function ( array $args ) use ( &$state, $meta ) {
+				$clause = $args['meta_query'][0] ?? array();
+				$key    = (string) ( $clause['key'] ?? '' );
+				$value  = (string) ( $clause['value'] ?? '' );
+				$ids    = array();
+				foreach ( self::IDS as $id ) {
+					$held = $state[ $id ][ $key ] ?? ( $meta[ $id ][ $key ] ?? '' );
+					if ( '' !== $value && (string) $held === $value ) {
+						$ids[] = $id;
+					}
+				}
+				return array_slice( $ids, 0, 1 );
 			}
 		);
 
@@ -334,6 +504,18 @@ final class TileOrderCommandTest extends TestCase {
 				$state[ (int) $args['ID'] ]['menu_order'] = (int) $args['menu_order'];
 				++self::$writes;
 				return (int) $args['ID'];
+			}
+		);
+
+		// Creating a product is the one thing this command must never do, so the
+		// fixture makes it visible instead of leaving it to fail as a missing
+		// mock: a test asserts self::$created stays 0, and an implementation
+		// that inserted a duplicate would show up as a count, not as an error.
+		self::$created = 0;
+		WP_Mock::userFunction( 'wp_insert_post' )->zeroOrMoreTimes()->andReturnUsing(
+			static function (): int {
+				++self::$created;
+				return 900000 + self::$created;
 			}
 		);
 	}

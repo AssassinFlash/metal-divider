@@ -31,9 +31,15 @@ class _Site(Target):
     wp_calls: list[tuple[str, ...]]
     scheme: list[str]
     stuck: bool
+    wp_failures: dict[tuple[str, ...], str]
 
     def wp(self, *args: str, check: bool = True) -> str:  # noqa: D102 - scripted
         self.wp_calls.append(args)
+        # A command the test declared failing raises the way Target.wp() does on
+        # a non-zero exit, so a step that swallows a WP-CLI failure shows up.
+        failure = self.wp_failures.get(args[:2])
+        if failure is not None and check:
+            raise DeployError(f"wp {' '.join(args[:2])}: {failure}")
         if args[:2] == ("plugin", "list"):
             rows = [
                 {"name": name, "version": version, "status": "active"}
@@ -69,6 +75,7 @@ def _site(tmp_path: Path, **answers: Any) -> _Site:
     object.__setattr__(site, "wp_calls", [])
     object.__setattr__(site, "scheme", answers.get("scheme", list(permalinks.SCHEME)))
     object.__setattr__(site, "stuck", answers.get("stuck", False))
+    object.__setattr__(site, "wp_failures", answers.get("wp_failures", {}))
     return site
 
 
@@ -142,6 +149,43 @@ def test_the_data_plane_names_the_seeded_steps_it_ran(tmp_path: Path) -> None:
         "wp md-site seed-tiles --user=1",
         "wp md-site seo --user=1",
     ]
+
+
+def test_a_failing_seed_fails_the_deploy_instead_of_being_skipped(
+    tmp_path: Path,
+) -> None:
+    """A seed that exits non-zero stops the run; later steps never see a pass.
+
+    This is the guard that made production's failure loud rather than silent:
+    ``seed-tiles`` exited non-zero on the three Corten codes, and the run has to
+    abort there — a deploy that continued to ``seo`` would switch a target whose
+    custom-screens panels are empty and report success.
+
+    The three codes that broke it are now resolved by ``TileOrderCommand``
+    itself (an un-migrated target carries the old SKU), so this test holds the
+    *deploy's* half of that contract: whatever makes a step fail, the failure
+    propagates. It is asserted here rather than in the PHP suite because the
+    swallowing would happen in Python.
+    """
+    site = _site(
+        tmp_path,
+        wp_failures={
+            ("md-site", "seed-tiles"): "seed-tiles: missing pattern-geometric: Aztec"
+        },
+    )
+    actions: list[str] = []
+
+    with pytest.raises(DeployError, match="seed-tiles"):
+        steps.apply_data_plane(site, actions)
+
+    assert [call[:2] for call in site.wp_calls] == [
+        ("md-site", "present"),
+        ("md-site", "seed-series"),
+        ("md-site", "seed-tiles"),
+    ], "the failing step is the last one attempted; seo never ran"
+    assert not any("seo" in action for action in actions), (
+        "a failed seed is not reported as a completed step"
+    )
 
 
 def test_the_windpress_mtime_reads_the_cache_inside_uploads(tmp_path: Path) -> None:
