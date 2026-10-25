@@ -1,0 +1,4309 @@
+{
+ "ticket": "AssassinFlash/metal-divider#61",
+ "title": "全站视觉差异普查台账 (metalpartition.com vs metal-divider.com)",
+ "generatedAt": "2026-10-25",
+ "severityScale": {
+  "S1": "structural: missing/extra section, wrong slot, broken or unusable surface",
+  "S2": "visible: type, scale, rhythm, colour, breadcrumb, floating CTA",
+  "S3": "detail"
+ },
+ "classificationScale": {
+  "regression": "unapproved difference",
+  "approved-upgrade": "difference covered by an approved upgrade",
+  "pending": "needs a #65 decision"
+ },
+ "protocol": {
+  "browser": "Google Chrome (channel: chrome, headless) via Playwright",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  "locale": "en-US",
+  "timezone": "UTC",
+  "viewports": [
+   {
+    "key": "1440x900",
+    "w": 1440,
+    "h": 900,
+    "mobile": false
+   },
+   {
+    "key": "390x844",
+    "w": 390,
+    "h": 844,
+    "mobile": true
+   }
+  ],
+  "reducedMotion": "reduce",
+  "killCss": "*, *::before, *::after {\n  animation-play-state: paused !important;\n  transition: none !important;\n  scroll-behavior: auto !important;\n}",
+  "cookieAcceptSelectors": [
+   "#cookie_action_close_header",
+   ".cky-btn-accept",
+   "#cky-btn-accept",
+   "button.cky-banner-element.cky-btn-accept",
+   ".cookieyes-btn-accept",
+   "#onetrust-accept-btn-handler",
+   "#cookiescript_accept"
+  ],
+  "trackedRequestsAborted": [
+   "google-analytics",
+   "googletagmanager",
+   "hotjar",
+   "clarity.ms",
+   "facebook.net",
+   "doubleclick",
+   "consentmo",
+   "cookieyes",
+   "gdpr-backpack",
+   "consent-tracking"
+  ]
+ },
+ "summary": {
+  "deltas": 64,
+  "bySeverity": {
+   "S1": 15,
+   "S2": 36,
+   "S3": 13
+  },
+  "byClassification": {
+   "approved-upgrade": 6,
+   "pending": 8,
+   "regression": 50
+  },
+  "pageTypesCovered": 18,
+  "captures": 140,
+  "screenshots": 268,
+  "screenshotsMissing": [
+   "blog-cat/1440x900/new",
+   "blog-cat/1440x900/old",
+   "blog-cat/390x844/new",
+   "blog-cat/390x844/old",
+   "blog-single/1440x900/new",
+   "blog-single/390x844/new"
+  ]
+ },
+ "coverage": [
+  {
+   "page": "home",
+   "pageType": "home",
+   "oldUrl": "https://metalpartition.com/",
+   "newUrl": "https://metal-divider.com/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/",
+     "docHeight": 19931,
+     "wordCount": 1609,
+     "shotFull": "shots/home-old-1440x900-full.png",
+     "sha256": "7aab6a7b94c11b5872299bfcc0992f58010d9087b16758e6b16c27263c4c197f"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/",
+     "docHeight": 22691,
+     "wordCount": 1551,
+     "shotFull": "shots/home-new-1440x900-full.png",
+     "sha256": "38c85d79dc8f46e9e752cc640de7a4ac0b5062774edd3326a2862898cf2d5acc"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/",
+     "docHeight": 23041,
+     "wordCount": 1554,
+     "shotFull": "shots/home-old-390x844-full.png",
+     "sha256": "e61b0023b4a28a3479f1accbf6200f48ed739c80d36b507e19d6d5c7dc7752f3"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/",
+     "docHeight": 24940,
+     "wordCount": 1496,
+     "shotFull": "shots/home-new-390x844-full.png",
+     "sha256": "897aca50a11effc7e7fa38dfa577bd5b7cb799eea733a489840aa7a38ff85395"
+    }
+   ]
+  },
+  {
+   "page": "shop",
+   "pageType": "shop",
+   "oldUrl": "https://metalpartition.com/collections/all",
+   "newUrl": "https://metal-divider.com/shop/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/all",
+     "docHeight": 13224,
+     "wordCount": 1145,
+     "shotFull": "shots/shop-old-1440x900-full.png",
+     "sha256": "7a38a730a0e208534bdf4acafaa949b24d86d26dd0d800a3a920d1d564bd1ffe"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/shop/",
+     "docHeight": 11495,
+     "wordCount": 969,
+     "shotFull": "shots/shop-new-1440x900-full.png",
+     "sha256": "7f858067ab2a67fe572b272b3dd624fadcdae4d26b7da76495bea30eaf188812"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/all",
+     "docHeight": 24402,
+     "wordCount": 1108,
+     "shotFull": "shots/shop-old-390x844-full.png",
+     "sha256": "1357ba6ca9e1bd7835c673c0eb81bacabe66c91ccaea41da4de309c35b3cf554"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/shop/",
+     "docHeight": 19316,
+     "wordCount": 932,
+     "shotFull": "shots/shop-new-390x844-full.png",
+     "sha256": "4e4af270ad8b473d64850dfada9ff49b980188da649576f2df4562727bdb468b"
+    }
+   ]
+  },
+  {
+   "page": "hub",
+   "pageType": "hub",
+   "oldUrl": "https://metalpartition.com/collections/",
+   "newUrl": "https://metal-divider.com/collections/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/",
+     "docHeight": 2967,
+     "wordCount": 251,
+     "shotFull": "shots/hub-old-1440x900-full.png",
+     "sha256": "ea03abbdd5946c4101f8b3f79959efb87e65797fe2fe2ec06f7f74228e2ab32b"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/",
+     "docHeight": 4071,
+     "wordCount": 210,
+     "shotFull": "shots/hub-new-1440x900-full.png",
+     "sha256": "3c731f53077143cbfd1155d13ec052bd7a9d935504ba93b1522043e5642ff5bd"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/",
+     "docHeight": 5468,
+     "wordCount": 214,
+     "shotFull": "shots/hub-old-390x844-full.png",
+     "sha256": "8b35557658a1d60fd334e46c7cced8d717966e104ed306f28b60cbba6b926d05"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/",
+     "docHeight": 5856,
+     "wordCount": 173,
+     "shotFull": "shots/hub-new-390x844-full.png",
+     "sha256": "9dcf3cb43f2f2abc5c7fa0214916be92d28efd839a2822042617b12ef1a79d00"
+    }
+   ]
+  },
+  {
+   "page": "arc-abstract",
+   "pageType": "archive",
+   "oldUrl": "https://metalpartition.com/collections/pattern-abstract",
+   "newUrl": "https://metal-divider.com/collections/pattern-abstract/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-abstract",
+     "docHeight": 13545,
+     "wordCount": 1180,
+     "shotFull": "shots/arc-abstract-old-1440x900-full.png",
+     "sha256": "56fd8e313507f65b3a82410ef1bf5a10e3a997ddf65872902ef6770fac10ac39"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-abstract/",
+     "docHeight": 11495,
+     "wordCount": 966,
+     "shotFull": "shots/arc-abstract-new-1440x900-full.png",
+     "sha256": "29bc7596ba540279a58092aeecac96f1188d12cff47489ba25286bfdc2d17d9e"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-abstract",
+     "docHeight": 24915,
+     "wordCount": 1143,
+     "shotFull": "shots/arc-abstract-old-390x844-full.png",
+     "sha256": "4761a88f0368958e44e8cbcfb07c9df6b5918907acb07754e91bbf993b1d4972"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-abstract/",
+     "docHeight": 19316,
+     "wordCount": 929,
+     "shotFull": "shots/arc-abstract-new-390x844-full.png",
+     "sha256": "28af3ef0213aca6935848b0f0a3f6d40d02b7b26b79cdfe8db59ec960741f90d"
+    }
+   ]
+  },
+  {
+   "page": "arc-asian",
+   "pageType": "archive",
+   "oldUrl": "https://metalpartition.com/collections/pattern-asian",
+   "newUrl": "https://metal-divider.com/collections/pattern-asian/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-asian",
+     "docHeight": 7530,
+     "wordCount": 966,
+     "shotFull": "shots/arc-asian-old-1440x900-full.png",
+     "sha256": "60c016e7d2a0ec8150b36916f34d688b8384a3f2db81e33b7ce80e636e965d78"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-asian/",
+     "docHeight": 7782,
+     "wordCount": 818,
+     "shotFull": "shots/arc-asian-new-1440x900-full.png",
+     "sha256": "ebad1ee7886cfab07665f56c46432202aaff5c55081c6cdb06ce08c41ebd3d97"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-asian",
+     "docHeight": 12926,
+     "wordCount": 929,
+     "shotFull": "shots/arc-asian-old-390x844-full.png",
+     "sha256": "544abec45d60f7cc96600052cad92a0732eb1d2e49a5aa3c6376b95b4a9db431"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-asian/",
+     "docHeight": 11991,
+     "wordCount": 781,
+     "shotFull": "shots/arc-asian-new-390x844-full.png",
+     "sha256": "d7bf1ac4804be3ffcf0e2d21a7bcc536a53d0dd59a1e3ab3a18942795c5652b5"
+    }
+   ]
+  },
+  {
+   "page": "arc-geometric",
+   "pageType": "archive",
+   "oldUrl": "https://metalpartition.com/collections/pattern-geometric",
+   "newUrl": "https://metal-divider.com/collections/pattern-geometric/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-geometric",
+     "docHeight": 11087,
+     "wordCount": 1085,
+     "shotFull": "shots/arc-geometric-old-1440x900-full.png",
+     "sha256": "b0c913474493bfafd5598eb0aaff62a97a5049df587ff48e0366a0e223a8862e"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-geometric/",
+     "docHeight": 10220,
+     "wordCount": 922,
+     "shotFull": "shots/arc-geometric-new-1440x900-full.png",
+     "sha256": "b361d5bb4f008c8456b6e560e2dc75e45daef98acd1e86a555e198ea89962dab"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-geometric",
+     "docHeight": 19471,
+     "wordCount": 1048,
+     "shotFull": "shots/arc-geometric-old-390x844-full.png",
+     "sha256": "e12bca85f686f6217c63d835a69839206c9efa1e0ab3f86174cf1646a49d79f6"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-geometric/",
+     "docHeight": 16794,
+     "wordCount": 885,
+     "shotFull": "shots/arc-geometric-new-390x844-full.png",
+     "sha256": "2c9133ab5bb43df594c9d5ce0c73fc90c6af131b805bf04f657894925d8ba7c9"
+    }
+   ]
+  },
+  {
+   "page": "arc-gradient",
+   "pageType": "archive",
+   "oldUrl": "https://metalpartition.com/collections/pattern-gradient",
+   "newUrl": "https://metal-divider.com/collections/pattern-gradient/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-gradient",
+     "docHeight": 6232,
+     "wordCount": 835,
+     "shotFull": "shots/arc-gradient-old-1440x900-full.png",
+     "sha256": "9a7985be5187f12dda1179f6aa013d6a19ad4589de3e97b098df3ccf87b7927f"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-gradient/",
+     "docHeight": 7782,
+     "wordCount": 804,
+     "shotFull": "shots/arc-gradient-new-1440x900-full.png",
+     "sha256": "54dba6d1cc8a409abf3513bf183931ca2c1dd7ffbfd8d8664923fe46e6ea1d79"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-gradient",
+     "docHeight": 9976,
+     "wordCount": 798,
+     "shotFull": "shots/arc-gradient-old-390x844-full.png",
+     "sha256": "2c12e25208ae1e0e7ec7495389a3dac9e3a9b2ff2e709af225c7a6bc77760022"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-gradient/",
+     "docHeight": 11390,
+     "wordCount": 767,
+     "shotFull": "shots/arc-gradient-new-390x844-full.png",
+     "sha256": "0e99830403308ce7c67371e2d7a9470de1690f08053c8140cf47fb08602fb499"
+    }
+   ]
+  },
+  {
+   "page": "arc-landscape",
+   "pageType": "archive",
+   "oldUrl": "https://metalpartition.com/collections/pattern-landscape",
+   "newUrl": "https://metal-divider.com/collections/pattern-landscape/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-landscape",
+     "docHeight": 8727,
+     "wordCount": 1016,
+     "shotFull": "shots/arc-landscape-old-1440x900-full.png",
+     "sha256": "b7393b2370d335ee062288bc3ea534865ef2d066824c9fe6adbd6b8331d6dec5"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-landscape/",
+     "docHeight": 8991,
+     "wordCount": 872,
+     "shotFull": "shots/arc-landscape-new-1440x900-full.png",
+     "sha256": "d46d2e216bb4038cd8016482aff786e06748517625b1821c76e007d8f2b42ee1"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-landscape",
+     "docHeight": 15324,
+     "wordCount": 979,
+     "shotFull": "shots/arc-landscape-old-390x844-full.png",
+     "sha256": "329df16361a257d7784f8c1b1c02faee249b61cbf7b198723558d5cfdce75066"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-landscape/",
+     "docHeight": 14373,
+     "wordCount": 835,
+     "shotFull": "shots/arc-landscape-new-390x844-full.png",
+     "sha256": "4c90493bc1791f361113105ee922d924a6db1ad284c06825259286e0ef656f5c"
+    }
+   ]
+  },
+  {
+   "page": "arc-moroccan",
+   "pageType": "archive",
+   "oldUrl": "https://metalpartition.com/collections/pattern-moroccan-arabic",
+   "newUrl": "https://metal-divider.com/collections/pattern-moroccan-arabic/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-moroccan-arabic",
+     "docHeight": 8707,
+     "wordCount": 1020,
+     "shotFull": "shots/arc-moroccan-old-1440x900-full.png",
+     "sha256": "778a898730748c6a217894124a36458bdfe2f06921a136038dce879f428afffa"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-moroccan-arabic/",
+     "docHeight": 8971,
+     "wordCount": 875,
+     "shotFull": "shots/arc-moroccan-new-1440x900-full.png",
+     "sha256": "4ce05f50b185b8e41efe2eaa85c9e6f0f15ccacbfbc8087cd02d10a64e1618d8"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-moroccan-arabic",
+     "docHeight": 15304,
+     "wordCount": 983,
+     "shotFull": "shots/arc-moroccan-old-390x844-full.png",
+     "sha256": "e64665648634a2f155d9f99c0bbfc2f4a96589984770169d4a4ec69082943263"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-moroccan-arabic/",
+     "docHeight": 14353,
+     "wordCount": 838,
+     "shotFull": "shots/arc-moroccan-new-390x844-full.png",
+     "sha256": "74c70e9ef09ab9aa8a8f79d34b9d66279f7878f4ae1bebc132ebf4d6e4bd9e64"
+    }
+   ]
+  },
+  {
+   "page": "arc-organic",
+   "pageType": "archive",
+   "oldUrl": "https://metalpartition.com/collections/pattern-organic",
+   "newUrl": "https://metal-divider.com/collections/pattern-organic/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-organic",
+     "docHeight": 11087,
+     "wordCount": 1092,
+     "shotFull": "shots/arc-organic-old-1440x900-full.png",
+     "sha256": "b30e8fe42eb691427898cf9f0c2a0bbab1cefc4431b9a4b870937f61823d03fb"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-organic/",
+     "docHeight": 11448,
+     "wordCount": 974,
+     "shotFull": "shots/arc-organic-new-1440x900-full.png",
+     "sha256": "7eef2038dbffca3d88e0874bff11119e0212946adcce9351dab5115a619e12d0"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-organic",
+     "docHeight": 20055,
+     "wordCount": 1055,
+     "shotFull": "shots/arc-organic-old-390x844-full.png",
+     "sha256": "483519fb1ba2ffbd49baab96e6af02eef8b72758357b6e66df9c1a788b72dc91"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-organic/",
+     "docHeight": 19216,
+     "wordCount": 937,
+     "shotFull": "shots/arc-organic-new-390x844-full.png",
+     "sha256": "c5efa2f65376486594d0b60fbf1ac75da9a55d193408848ec1db6fe6e910d1cb"
+    }
+   ]
+  },
+  {
+   "page": "arc-perforated",
+   "pageType": "archive",
+   "oldUrl": "https://metalpartition.com/collections/pattern-perforated",
+   "newUrl": "https://metal-divider.com/collections/pattern-perforated/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-perforated",
+     "docHeight": 6823,
+     "wordCount": 910,
+     "shotFull": "shots/arc-perforated-old-1440x900-full.png",
+     "sha256": "9d851abd05cc9db0f321c15af797ac118d22cc627517f971fed881b55c46279c"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-perforated/",
+     "docHeight": 7158,
+     "wordCount": 772,
+     "shotFull": "shots/arc-perforated-new-1440x900-full.png",
+     "sha256": "0301abfbeb3cab96b473b8fcffceff8ee8439f17905bbe379e7cf2db203efdda"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-perforated",
+     "docHeight": 11038,
+     "wordCount": 873,
+     "shotFull": "shots/arc-perforated-old-390x844-full.png",
+     "sha256": "0d961fad795316ec08b70aa8db7aa4226f7c7a759a281e570cac507adef8ecdc"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-perforated/",
+     "docHeight": 10150,
+     "wordCount": 735,
+     "shotFull": "shots/arc-perforated-new-390x844-full.png",
+     "sha256": "a7c04449a5d60d0c9321a8f0166e23576c6fcae76f4b05b288554367e660b103"
+    }
+   ]
+  },
+  {
+   "page": "arc-vintage",
+   "pageType": "archive",
+   "oldUrl": "https://metalpartition.com/collections/pattern-vintage-retro",
+   "newUrl": "https://metal-divider.com/collections/pattern-vintage-retro/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-vintage-retro",
+     "docHeight": 7431,
+     "wordCount": 961,
+     "shotFull": "shots/arc-vintage-old-1440x900-full.png",
+     "sha256": "076d413101b13e447a5dc3a911c967267df097da72e21fdd65ea8ee8ec8f30c4"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-vintage-retro/",
+     "docHeight": 7762,
+     "wordCount": 817,
+     "shotFull": "shots/arc-vintage-new-1440x900-full.png",
+     "sha256": "4aab294b47d3131ea98527bb8601161bd0c90789cbc40a3bf764c991f07aeceb"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/collections/pattern-vintage-retro",
+     "docHeight": 12851,
+     "wordCount": 924,
+     "shotFull": "shots/arc-vintage-old-390x844-full.png",
+     "sha256": "685fe647ccd9ae4bfce8d8b13e585e8d95ad0987b04b83167c2023c69cd5ed0c"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/collections/pattern-vintage-retro/",
+     "docHeight": 11951,
+     "wordCount": 780,
+     "shotFull": "shots/arc-vintage-new-390x844-full.png",
+     "sha256": "b87c2fb4b4c205c3eea817764ff5b6fafe63a1a01aa177df82d752900eb4d0ca"
+    }
+   ]
+  },
+  {
+   "page": "fam-laser-geo",
+   "pageType": "family",
+   "oldUrl": "https://metalpartition.com/pages/laser-cut-geometric-metal-screens",
+   "newUrl": "https://metal-divider.com/laser-cut-geometric-metal-screens/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/laser-cut-geometric-metal-screens",
+     "docHeight": 9523,
+     "wordCount": 1422,
+     "shotFull": "shots/fam-laser-geo-old-1440x900-full.png",
+     "sha256": "fc59fef3d07977e52cce7196fe9671fa3d709b2ad0b114709d1b32d2eec4a914"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/laser-cut-geometric-metal-screens/",
+     "docHeight": 11724,
+     "wordCount": 1324,
+     "shotFull": "shots/fam-laser-geo-new-1440x900-full.png",
+     "sha256": "e0fd2021fb188e09e84d9f2dfb7318b78875faa8daaff45f3e753f903725c547"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/laser-cut-geometric-metal-screens",
+     "docHeight": 13557,
+     "wordCount": 1394,
+     "shotFull": "shots/fam-laser-geo-old-390x844-full.png",
+     "sha256": "242ff65409338a963c03b94ab157be4ae96a1e9c35e90943815ee9dd8c1dd9b7"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/laser-cut-geometric-metal-screens/",
+     "docHeight": 14709,
+     "wordCount": 1296,
+     "shotFull": "shots/fam-laser-geo-new-390x844-full.png",
+     "sha256": "3bea0e46219ae6ee9de77780ff358850e8ea0ca3bc5e8b4abed6ceab33ae1aae"
+    }
+   ]
+  },
+  {
+   "page": "fam-glass-hybrid",
+   "pageType": "family",
+   "oldUrl": "https://metalpartition.com/pages/glass-hybrid-screens",
+   "newUrl": "https://metal-divider.com/glass-hybrid-screens/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/glass-hybrid-screens",
+     "docHeight": 9748,
+     "wordCount": 1317,
+     "shotFull": "shots/fam-glass-hybrid-old-1440x900-full.png",
+     "sha256": "6831d07e775a95471b7b0904f96252930dbfade974f1e4a494ecac8b0644940f"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/glass-hybrid-screens/",
+     "docHeight": 11972,
+     "wordCount": 1222,
+     "shotFull": "shots/fam-glass-hybrid-new-1440x900-full.png",
+     "sha256": "a1fe40f3bf51d0c385395b6625da176310c660576ab687a6a1ba765ebc4418b3"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/glass-hybrid-screens",
+     "docHeight": 13805,
+     "wordCount": 1289,
+     "shotFull": "shots/fam-glass-hybrid-old-390x844-full.png",
+     "sha256": "28b84ac8b9c2b29a1481da0a191d51f2a7b569390f0e44ebfde142e22b544352"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/glass-hybrid-screens/",
+     "docHeight": 15145,
+     "wordCount": 1194,
+     "shotFull": "shots/fam-glass-hybrid-new-390x844-full.png",
+     "sha256": "2dd267c6d3cd81cb6937dcb5f8446b9fdc66e15d75197c0c4008086bdd6c3a1d"
+    }
+   ]
+  },
+  {
+   "page": "fam-outdoor",
+   "pageType": "family",
+   "oldUrl": "https://metalpartition.com/pages/outdoor-privacy-landscape-screens",
+   "newUrl": "https://metal-divider.com/outdoor-privacy-landscape-screens/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/outdoor-privacy-landscape-screens",
+     "docHeight": 10690,
+     "wordCount": 1695,
+     "shotFull": "shots/fam-outdoor-old-1440x900-full.png",
+     "sha256": "c4eb4a26b837d65674a14e135649204ab28d79f8b58e37a92c4e375a3a6e9310"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/outdoor-privacy-landscape-screens/",
+     "docHeight": 13832,
+     "wordCount": 1640,
+     "shotFull": "shots/fam-outdoor-new-1440x900-full.png",
+     "sha256": "a56c6f6cead18e2c1a09ddadb71d71710b2205af845798b77011755e8dcff75e"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/outdoor-privacy-landscape-screens",
+     "docHeight": 15129,
+     "wordCount": 1667,
+     "shotFull": "shots/fam-outdoor-old-390x844-full.png",
+     "sha256": "36c8a93d20ea328e636fbebc20d856958c07b5cc7b2c1be1bb4c43f5b1250c0f"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/outdoor-privacy-landscape-screens/",
+     "docHeight": 18226,
+     "wordCount": 1612,
+     "shotFull": "shots/fam-outdoor-new-390x844-full.png",
+     "sha256": "cf6e26fb56261fe1c395ff6f2788e761d5bc58182c5337677bb6fb734ea000e2"
+    }
+   ]
+  },
+  {
+   "page": "fam-chinese",
+   "pageType": "family",
+   "oldUrl": "https://metalpartition.com/pages/chinese-style-artistic-screens",
+   "newUrl": "https://metal-divider.com/chinese-style-artistic-screens/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/chinese-style-artistic-screens",
+     "docHeight": 11309,
+     "wordCount": 1403,
+     "shotFull": "shots/fam-chinese-old-1440x900-full.png",
+     "sha256": "adbee62a775d12095c893ea60278b121bb561cdf9839f42456599e56bdea07c8"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/chinese-style-artistic-screens/",
+     "docHeight": 14246,
+     "wordCount": 1340,
+     "shotFull": "shots/fam-chinese-new-1440x900-full.png",
+     "sha256": "0cb7b159499c6a9a4f40fc46ba6b6c55a437dde0ab019862e79f48a6bc2857e0"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/chinese-style-artistic-screens",
+     "docHeight": 15298,
+     "wordCount": 1373,
+     "shotFull": "shots/fam-chinese-old-390x844-full.png",
+     "sha256": "b7f62ff12d9bc383f8ce780e5b5aa330acd33957ac6f4d3061c0e2d41508d7a2"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/chinese-style-artistic-screens/",
+     "docHeight": 17598,
+     "wordCount": 1310,
+     "shotFull": "shots/fam-chinese-new-390x844-full.png",
+     "sha256": "480c1c2947bdb5f37ec27ba584ac0be201f50811dbcef581e1ea293ecf3292e0"
+    }
+   ]
+  },
+  {
+   "page": "fam-stainless",
+   "pageType": "family",
+   "oldUrl": "https://metalpartition.com/pages/stainless-steel-screens",
+   "newUrl": "https://metal-divider.com/stainless-steel-screens/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/stainless-steel-screens",
+     "docHeight": 9797,
+     "wordCount": 1147,
+     "shotFull": "shots/fam-stainless-old-1440x900-full.png",
+     "sha256": "203f870dd0a74d4aadbf8bdfd4196ecf0a65e32d1272b3caa224fc5dd5ca01db"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/stainless-steel-screens/",
+     "docHeight": 12245,
+     "wordCount": 1078,
+     "shotFull": "shots/fam-stainless-new-1440x900-full.png",
+     "sha256": "20121c9390349efa0ce73375e6b0531fa39286f1567f7f34635c78baf1f2598f"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/stainless-steel-screens",
+     "docHeight": 14457,
+     "wordCount": 1115,
+     "shotFull": "shots/fam-stainless-old-390x844-full.png",
+     "sha256": "5e00708684470963f7aa4394aa6da5a515cd8b93442dc3dfd29e2edaccbef7e3"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/stainless-steel-screens/",
+     "docHeight": 16277,
+     "wordCount": 1046,
+     "shotFull": "shots/fam-stainless-new-390x844-full.png",
+     "sha256": "a085a9e2627b3f3692d2dcbd948ec63464b5dfc7fe37d972cf80d73f6eb424b6"
+    }
+   ]
+  },
+  {
+   "page": "fam-custom",
+   "pageType": "family",
+   "oldUrl": "https://metalpartition.com/pages/custom-metal-divider-screens",
+   "newUrl": "https://metal-divider.com/custom-metal-divider-screens/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/custom-metal-divider-screens",
+     "docHeight": 12703,
+     "wordCount": 1388,
+     "shotFull": "shots/fam-custom-old-1440x900-full.png",
+     "sha256": "3dbe4d7a7ed0de083898231bce186184437e880573cc70f7ea2a19af42051ea8"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/custom-metal-divider-screens/",
+     "docHeight": 15246,
+     "wordCount": 1383,
+     "shotFull": "shots/fam-custom-new-1440x900-full.png",
+     "sha256": "1f7146eeffc3b442625e1429ff87f88c3c4d2d5e065794b026f2092ee1d40b14"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/custom-metal-divider-screens",
+     "docHeight": 15715,
+     "wordCount": 1301,
+     "shotFull": "shots/fam-custom-old-390x844-full.png",
+     "sha256": "bbb186e3a660b4ed219739e2e9d50067679166de1866fafca7e18f37045ad41a"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/custom-metal-divider-screens/",
+     "docHeight": 17052,
+     "wordCount": 1315,
+     "shotFull": "shots/fam-custom-new-390x844-full.png",
+     "sha256": "aeff2d890128743bf287de55273df1f69a0bf731ee31c3ba8c3518c89dcf5b68"
+    }
+   ]
+  },
+  {
+   "page": "fam-laser-panels",
+   "pageType": "family",
+   "oldUrl": "https://metalpartition.com/pages/laser-cut-panels",
+   "newUrl": "https://metal-divider.com/laser-cut-panels/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/laser-cut-panels",
+     "docHeight": 12365,
+     "wordCount": 1648,
+     "shotFull": "shots/fam-laser-panels-old-1440x900-full.png",
+     "sha256": "f9fc6ffe3f61399321333925412ddebbfe2000e3aaa99cdb81df11b5fd553148"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/laser-cut-panels/",
+     "docHeight": 15378,
+     "wordCount": 1590,
+     "shotFull": "shots/fam-laser-panels-new-1440x900-full.png",
+     "sha256": "d1240cab2551bd0b1b3313a9d74d68812d832fc66065a61946deb2782b6bba26"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/laser-cut-panels",
+     "docHeight": 15353,
+     "wordCount": 1611,
+     "shotFull": "shots/fam-laser-panels-old-390x844-full.png",
+     "sha256": "44182ea295d430efac4ef903ba994bb1c4d5a35502ca2d8776a7036aa2fa60c2"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/laser-cut-panels/",
+     "docHeight": 18295,
+     "wordCount": 1553,
+     "shotFull": "shots/fam-laser-panels-new-390x844-full.png",
+     "sha256": "bc7127a9559953d9952991ecd07f1e92f76dcc277b2f50acf91086b158f3ae44"
+    }
+   ]
+  },
+  {
+   "page": "fam-perf-panels",
+   "pageType": "family",
+   "oldUrl": "https://metalpartition.com/pages/perforated-panels",
+   "newUrl": "https://metal-divider.com/perforated-panels/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/perforated-panels",
+     "docHeight": 11050,
+     "wordCount": 1645,
+     "shotFull": "shots/fam-perf-panels-old-1440x900-full.png",
+     "sha256": "f93af2d4435a94d9566c371e30bd95533053be3b072b8565e1a64b5fd632b064"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/perforated-panels/",
+     "docHeight": 13490,
+     "wordCount": 1578,
+     "shotFull": "shots/fam-perf-panels-new-1440x900-full.png",
+     "sha256": "bebdc472a8282bcbeb86696eee3660a363340b0b1024ed7217af71616412ba5e"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/perforated-panels",
+     "docHeight": 14432,
+     "wordCount": 1601,
+     "shotFull": "shots/fam-perf-panels-old-390x844-full.png",
+     "sha256": "58be6bcacea39938720a71a57346f293c98c980f49c45440d58f4c464a6c4fa3"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/perforated-panels/",
+     "docHeight": 16166,
+     "wordCount": 1534,
+     "shotFull": "shots/fam-perf-panels-new-390x844-full.png",
+     "sha256": "98b70ef465033e5a8b86c721f30f1299a184908bb5bb799da674e5f38ccab7c5"
+    }
+   ]
+  },
+  {
+   "page": "fam-expanded",
+   "pageType": "family",
+   "oldUrl": "https://metalpartition.com/pages/expanded-metal-panels",
+   "newUrl": "https://metal-divider.com/expanded-metal-panels/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/expanded-metal-panels",
+     "docHeight": 17219,
+     "wordCount": 1782,
+     "shotFull": "shots/fam-expanded-old-1440x900-full.png",
+     "sha256": "cfee6107a68bb6f91293d174c1b846617203123444cfe6a0de8f79515ee2b6b0"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/expanded-metal-panels/",
+     "docHeight": 20385,
+     "wordCount": 1715,
+     "shotFull": "shots/fam-expanded-new-1440x900-full.png",
+     "sha256": "28b316877d9c7d77d7539af50e4345d83fda9d2898811bebfb9f7c4f403b3b77"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/expanded-metal-panels",
+     "docHeight": 21093,
+     "wordCount": 1745,
+     "shotFull": "shots/fam-expanded-old-390x844-full.png",
+     "sha256": "1ff929a32a4c39a88ad428bde4941c51d1f94a217ebce8a866915b1b0747dc50"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/expanded-metal-panels/",
+     "docHeight": 24154,
+     "wordCount": 1678,
+     "shotFull": "shots/fam-expanded-new-390x844-full.png",
+     "sha256": "cfb1602c5cc9b1d557d6cf78a01de2c8eeb8471db8679f3cb388d0bd51b4c423"
+    }
+   ]
+  },
+  {
+   "page": "pdp-apiary",
+   "pageType": "pdp",
+   "oldUrl": "https://metalpartition.com/products/apiary-architectural-metal-screen-pattern",
+   "newUrl": "https://metal-divider.com/pattern/apiary-architectural-metal-screen-pattern/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/products/apiary-architectural-metal-screen-pattern",
+     "docHeight": 5377,
+     "wordCount": 512,
+     "shotFull": "shots/pdp-apiary-old-1440x900-full.png",
+     "sha256": "1926f674eb751a3ede50ea20e8a5927eedf02b6b21f28fea1ff30b734c513c7c"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/pattern/apiary-architectural-metal-screen-pattern/",
+     "docHeight": 6246,
+     "wordCount": 477,
+     "shotFull": "shots/pdp-apiary-new-1440x900-full.png",
+     "sha256": "7cdcea98dd9e000bf4e063687e0f784acd7045143c8e3fe4b19a672135cbfe6b"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/products/apiary-architectural-metal-screen-pattern",
+     "docHeight": 8023,
+     "wordCount": 468,
+     "shotFull": "shots/pdp-apiary-old-390x844-full.png",
+     "sha256": "6f5cf9d45200191c16a9be530614fc3ca15d716bb515fbf4a5093d7590236f82"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/pattern/apiary-architectural-metal-screen-pattern/",
+     "docHeight": 8120,
+     "wordCount": 440,
+     "shotFull": "shots/pdp-apiary-new-390x844-full.png",
+     "sha256": "cf1eee70bd3721c39231e92a57796b0f346ecab19100e4fccf77ad0c90856626"
+    }
+   ]
+  },
+  {
+   "page": "pdp-zelda",
+   "pageType": "pdp",
+   "oldUrl": "https://metalpartition.com/products/zelda-architectural-metal-screen-pattern",
+   "newUrl": "https://metal-divider.com/pattern/zelda-architectural-metal-screen-pattern/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/products/zelda-architectural-metal-screen-pattern",
+     "docHeight": 5377,
+     "wordCount": 512,
+     "shotFull": "shots/pdp-zelda-old-1440x900-full.png",
+     "sha256": "112607107b1785bd68982ce535aedf3c6648909b986fdb1812ddfbcdd5757a64"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/pattern/zelda-architectural-metal-screen-pattern/",
+     "docHeight": 6246,
+     "wordCount": 476,
+     "shotFull": "shots/pdp-zelda-new-1440x900-full.png",
+     "sha256": "9b3b9d0eab7c58df669f189a48f950d56efc6bc0d92f2750fe156a9c49806fac"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/products/zelda-architectural-metal-screen-pattern",
+     "docHeight": 8023,
+     "wordCount": 468,
+     "shotFull": "shots/pdp-zelda-old-390x844-full.png",
+     "sha256": "9b6639a8b027a6eb747e52e6257a094ff51d609cd7ff373978922bde55b12e0d"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/pattern/zelda-architectural-metal-screen-pattern/",
+     "docHeight": 8120,
+     "wordCount": 439,
+     "shotFull": "shots/pdp-zelda-new-390x844-full.png",
+     "sha256": "ca162448c63e4c0c71e143f6715fd4879d885134ec3cfa99041282538a7f823a"
+    }
+   ]
+  },
+  {
+   "page": "pdp-tafoni",
+   "pageType": "pdp",
+   "oldUrl": "https://metalpartition.com/products/tafoni-architectural-metal-screen-pattern",
+   "newUrl": "https://metal-divider.com/pattern/tafoni-architectural-metal-screen-pattern/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/products/tafoni-architectural-metal-screen-pattern",
+     "docHeight": 5908,
+     "wordCount": 517,
+     "shotFull": "shots/pdp-tafoni-old-1440x900-full.png",
+     "sha256": "ea552d32d8d81143f684e6269f042db4dc79ade27c5574b7db3c3c267e39048c"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/pattern/tafoni-architectural-metal-screen-pattern/",
+     "docHeight": 6246,
+     "wordCount": 479,
+     "shotFull": "shots/pdp-tafoni-new-1440x900-full.png",
+     "sha256": "4226da1a7a3fb903c9ebbdc60d5d1fd75418d2ed462c388f2d6d1d0563aa6fb5"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/products/tafoni-architectural-metal-screen-pattern",
+     "docHeight": 8479,
+     "wordCount": 473,
+     "shotFull": "shots/pdp-tafoni-old-390x844-full.png",
+     "sha256": "316357a0da3ab04e871e654399c53bfab94fe2c3632ed6e09a4426d801d2905a"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/pattern/tafoni-architectural-metal-screen-pattern/",
+     "docHeight": 8146,
+     "wordCount": 442,
+     "shotFull": "shots/pdp-tafoni-new-390x844-full.png",
+     "sha256": "425dd22e6e9fd471429a42873a2dce79ef1b9e0454ac60c414e17378666d8d34"
+    }
+   ]
+  },
+  {
+   "page": "about",
+   "pageType": "about",
+   "oldUrl": "https://metalpartition.com/pages/about-us",
+   "newUrl": "https://metal-divider.com/about-us/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/about-us",
+     "docHeight": 7684,
+     "wordCount": 633,
+     "shotFull": "shots/about-old-1440x900-full.png",
+     "sha256": "12323af53b91511043f9041bdf6ef1fdcb776ceb55ccb916b72e3c8e0a7160b0"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/about-us/",
+     "docHeight": 9577,
+     "wordCount": 575,
+     "shotFull": "shots/about-new-1440x900-full.png",
+     "sha256": "28d9fe6141319cbf5f73f6ad2a09d762d05b5e311d044852b9ba38bba1ab6948"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/about-us",
+     "docHeight": 9596,
+     "wordCount": 589,
+     "shotFull": "shots/about-old-390x844-full.png",
+     "sha256": "481ed634be87148c1fd373475562e5c096c244306f0d761b408ebb1a293276a7"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/about-us/",
+     "docHeight": 10551,
+     "wordCount": 531,
+     "shotFull": "shots/about-new-390x844-full.png",
+     "sha256": "d756e646edfd4bedaaa1d443e74db6550803884e34fa9aa857b34edf770ed6e4"
+    }
+   ]
+  },
+  {
+   "page": "faqs",
+   "pageType": "faqs",
+   "oldUrl": "https://metalpartition.com/pages/faqs",
+   "newUrl": "https://metal-divider.com/faqs/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/faqs",
+     "docHeight": 4000,
+     "wordCount": 501,
+     "shotFull": "shots/faqs-old-1440x900-full.png",
+     "sha256": "c3fbe708da152ae3e3592ac41b5634ee50d864ab7b73415c2717972fa837cd35"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/faqs/",
+     "docHeight": 5899,
+     "wordCount": 498,
+     "shotFull": "shots/faqs-new-1440x900-full.png",
+     "sha256": "3e61389c246d9df3f97b15ea1b99f0ed3d4fc1b31e28e66c50863c55ac2e221b"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/faqs",
+     "docHeight": 6938,
+     "wordCount": 464,
+     "shotFull": "shots/faqs-old-390x844-full.png",
+     "sha256": "1bbb1579ca75510eda048341eff3dfaa1c4a2d8707d53c2a59cbc5973c69f5b6"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/faqs/",
+     "docHeight": 9328,
+     "wordCount": 461,
+     "shotFull": "shots/faqs-new-390x844-full.png",
+     "sha256": "c530b6d615d657969e4b2b482bcc8d85345633c60d6e20746ddcba2139f5613e"
+    }
+   ]
+  },
+  {
+   "page": "inquiry",
+   "pageType": "inquiry",
+   "oldUrl": "https://metalpartition.com/pages/contact",
+   "newUrl": "https://metal-divider.com/inquiry/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/contact",
+     "docHeight": 4446,
+     "wordCount": 558,
+     "shotFull": "shots/inquiry-old-1440x900-full.png",
+     "sha256": "ae6674b4875a1010afb0176dbd741b777bc7811a3a50e77d276b1e3a1213743e"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/inquiry/",
+     "docHeight": 2848,
+     "wordCount": 247,
+     "shotFull": "shots/inquiry-new-1440x900-full.png",
+     "sha256": "1e2058392b5e3276acd4a19a1d5f5b5d7937edcd5682851d913302036ec4e72a"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/contact",
+     "docHeight": 7719,
+     "wordCount": 521,
+     "shotFull": "shots/inquiry-old-390x844-full.png",
+     "sha256": "ef71c64f435cdb992c839992255acff83c69ed09dd1e7fff38e8eec4835223e2"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/inquiry/",
+     "docHeight": 3260,
+     "wordCount": 210,
+     "shotFull": "shots/inquiry-new-390x844-full.png",
+     "sha256": "966eba8257a98fbc1ec9eb4a796a5a75eaf64e53c7371da29454bfac0cfcb625"
+    }
+   ]
+  },
+  {
+   "page": "thankyou",
+   "pageType": "thankyou",
+   "oldUrl": "https://metalpartition.com/pages/custom-metal-divider-screens-thank-you",
+   "newUrl": "https://metal-divider.com/inquiry/thank-you/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/custom-metal-divider-screens-thank-you",
+     "docHeight": 900,
+     "wordCount": 80,
+     "shotFull": "shots/thankyou-old-1440x900-full.png",
+     "sha256": "8548379ea92e0a6f19421007edc33e7efc4806ad2ce658e94c3ae4f16d18b12a"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/inquiry/thank-you/",
+     "docHeight": 2202,
+     "wordCount": 179,
+     "shotFull": "shots/thankyou-new-1440x900-full.png",
+     "sha256": "a00407a20c036310ed20818feba70002eeb6fbbe0cbba520f9517d95ae8a1298"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/custom-metal-divider-screens-thank-you",
+     "docHeight": 967,
+     "wordCount": 80,
+     "shotFull": "shots/thankyou-old-390x844-full.png",
+     "sha256": "d928cb232bbc5c456bc95b8ed1e44993587d8f157a7c138d581b670c7c0c4eae"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/inquiry/thank-you/",
+     "docHeight": 2390,
+     "wordCount": 142,
+     "shotFull": "shots/thankyou-new-390x844-full.png",
+     "sha256": "93847db55cf0be2fe8cfd574a59e4922f0c6780b8ff6daea320207398467436b"
+    }
+   ]
+  },
+  {
+   "page": "gallery",
+   "pageType": "gallery",
+   "oldUrl": "https://metalpartition.com/pages/project-gallery",
+   "newUrl": "https://metal-divider.com/project-gallery/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/project-gallery",
+     "docHeight": 3718,
+     "wordCount": 517,
+     "shotFull": "shots/gallery-old-1440x900-full.png",
+     "sha256": "ee84cd4d8dd098694744dba98fff85400bf0e9e5d6d95c04b511c1eab9420449"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/project-gallery/",
+     "docHeight": 6582,
+     "wordCount": 877,
+     "shotFull": "shots/gallery-new-1440x900-full.png",
+     "sha256": "0024a7914521fce611575b9114a6e169849581e0ce09e5aef5a776013d4aa90d"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/project-gallery",
+     "docHeight": 7311,
+     "wordCount": 480,
+     "shotFull": "shots/gallery-old-390x844-full.png",
+     "sha256": "be73ce7d361e583b86e7fec2d7d3487ef45d6fe5c15bf3057a7fa20225c3e882"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/project-gallery/",
+     "docHeight": 12186,
+     "wordCount": 840,
+     "shotFull": "shots/gallery-new-390x844-full.png",
+     "sha256": "3787f452f39c08700815084663d19d55c5575bf9bb20a5f678b10708da255744"
+    }
+   ]
+  },
+  {
+   "page": "mfg",
+   "pageType": "manufacturing",
+   "oldUrl": "https://metalpartition.com/pages/manufacturing-process",
+   "newUrl": "https://metal-divider.com/manufacturing-process/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/manufacturing-process",
+     "docHeight": 13731,
+     "wordCount": 1204,
+     "shotFull": "shots/mfg-old-1440x900-full.png",
+     "sha256": "fdc67b0dc7fdd6ab1d4c513b3bdabb600e7ca01315820eeceaec301256e1894d"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/manufacturing-process/",
+     "docHeight": 18622,
+     "wordCount": 1146,
+     "shotFull": "shots/mfg-new-1440x900-full.png",
+     "sha256": "4039e52e9d5d9caeade6345ac2a8710e924cf2cec67f8b4594bae6b6f22fcfcd"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/pages/manufacturing-process",
+     "docHeight": 18268,
+     "wordCount": 1167,
+     "shotFull": "shots/mfg-old-390x844-full.png",
+     "sha256": "e54ac59383bc893fba12bc16cf8142381f7cc47826127606af31cd8cb3d3be7d"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/manufacturing-process/",
+     "docHeight": 22437,
+     "wordCount": 1109,
+     "shotFull": "shots/mfg-new-390x844-full.png",
+     "sha256": "bfc4b59738f0456c60b176a3df2bf2b4467312aa1deb2c5f6a81c4b86bc88b57"
+    }
+   ]
+  },
+  {
+   "page": "privacy",
+   "pageType": "privacy",
+   "oldUrl": "https://metalpartition.com/policies/privacy-policy",
+   "newUrl": "https://metal-divider.com/privacy/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/policies/privacy-policy",
+     "docHeight": 5885,
+     "wordCount": 2385,
+     "shotFull": "shots/privacy-old-1440x900-full.png",
+     "sha256": "83ce6c76c3bcd7d126c0ac3235535226916b33ab00e3e3a45cb144f8bc1c6f2b"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/privacy/",
+     "docHeight": 4135,
+     "wordCount": 796,
+     "shotFull": "shots/privacy-new-1440x900-full.png",
+     "sha256": "56a2c424c659b3d31804fdbdbde89a2c3372d856e600f6e28e42372af3022541"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/policies/privacy-policy",
+     "docHeight": 8889,
+     "wordCount": 2348,
+     "shotFull": "shots/privacy-old-390x844-full.png",
+     "sha256": "fb89f1ee2f6b4375c293c684a14e18a5687fc5cf7de7c07202e3a1d2b72a6e36"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/privacy/",
+     "docHeight": 5734,
+     "wordCount": 759,
+     "shotFull": "shots/privacy-new-390x844-full.png",
+     "sha256": "4d20877e763c4dc1f7a6aa05f95231f10a42adccca67c00d6926d0ae17f6f3ef"
+    }
+   ]
+  },
+  {
+   "page": "blog-index",
+   "pageType": "blog-index",
+   "oldUrl": "https://metalpartition.com/blogs/knowledge",
+   "newUrl": "https://metal-divider.com/blog/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/blogs/knowledge",
+     "docHeight": 5618,
+     "wordCount": 394,
+     "shotFull": "shots/blog-index-old-1440x900-full.png",
+     "sha256": "374cd135b7046d09715c86c33db608aabc19cc4b4e8f34be6ecb45bab4b4c16d"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/blog/",
+     "docHeight": 2162,
+     "wordCount": 387,
+     "shotFull": "shots/blog-index-new-1440x900-full.png",
+     "sha256": "67a9e61291ffa292bd6be24bf6417d309eb236a479beb99678470c0558316843"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/blogs/knowledge",
+     "docHeight": 8020,
+     "wordCount": 357,
+     "shotFull": "shots/blog-index-old-390x844-full.png",
+     "sha256": "9178c32971df3d4987da3f162ce26dbe86110c4672e45bfe3dca48c582972852"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/blog/",
+     "docHeight": 2660,
+     "wordCount": 350,
+     "shotFull": "shots/blog-index-new-390x844-full.png",
+     "sha256": "36a7432c61083eff6860885ab73d8a19dd6c3991759edac7a04cfa6eff4bb09f"
+    }
+   ]
+  },
+  {
+   "page": "blog-single",
+   "pageType": "blog-single",
+   "oldUrl": "https://metalpartition.com/blogs/knowledge/test-blog-1",
+   "newUrl": "https://metal-divider.com/blog/test-blog-1/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/blogs/knowledge/test-blog-1",
+     "docHeight": 2776,
+     "wordCount": 232,
+     "shotFull": "shots/blog-single-old-1440x900-full.png",
+     "sha256": "a0d5b3166cd6bb799e150a9243eebc6844ac61b842f0c89f0517041fa3e720bf"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 404,
+     "finalUrl": "https://metal-divider.com/blog/test-blog-1/",
+     "docHeight": 1767,
+     "wordCount": 129,
+     "shotFull": null,
+     "sha256": null
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/blogs/knowledge/test-blog-1",
+     "docHeight": 3083,
+     "wordCount": 162,
+     "shotFull": "shots/blog-single-old-390x844-full.png",
+     "sha256": "b7d54e8ec79ff6eb9b7ed159d4716c25f9f9f6126c017f779dbd6f083254c222"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 404,
+     "finalUrl": "https://metal-divider.com/blog/test-blog-1/",
+     "docHeight": 1771,
+     "wordCount": 92,
+     "shotFull": null,
+     "sha256": null
+    }
+   ]
+  },
+  {
+   "page": "blog-cat",
+   "pageType": "blog-cat",
+   "oldUrl": "https://metalpartition.com/blogs/knowledge/tagged/news",
+   "newUrl": "https://metal-divider.com/category/design-guide/",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 404,
+     "finalUrl": "https://metalpartition.com/blogs/knowledge/tagged/news",
+     "docHeight": 1202,
+     "wordCount": 138,
+     "shotFull": null,
+     "sha256": null
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 404,
+     "finalUrl": "https://metal-divider.com/category/design-guide/",
+     "docHeight": 1767,
+     "wordCount": 129,
+     "shotFull": null,
+     "sha256": null
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 404,
+     "finalUrl": "https://metalpartition.com/blogs/knowledge/tagged/news",
+     "docHeight": 1722,
+     "wordCount": 101,
+     "shotFull": null,
+     "sha256": null
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 404,
+     "finalUrl": "https://metal-divider.com/category/design-guide/",
+     "docHeight": 1771,
+     "wordCount": 92,
+     "shotFull": null,
+     "sha256": null
+    }
+   ]
+  },
+  {
+   "page": "search",
+   "pageType": "search",
+   "oldUrl": "https://metalpartition.com/search?q=divider",
+   "newUrl": "https://metal-divider.com/?s=divider",
+   "captures": [
+    {
+     "side": "old",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/search?q=divider",
+     "docHeight": 8399,
+     "wordCount": 712,
+     "shotFull": "shots/search-old-1440x900-full.png",
+     "sha256": "0aa835c2db9495c8a5badcc931078378b3c3747026973abf0a347c5877afe70c"
+    },
+    {
+     "side": "new",
+     "viewport": "1440x900",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/?s=divider",
+     "docHeight": 1873,
+     "wordCount": 277,
+     "shotFull": "shots/search-new-1440x900-full.png",
+     "sha256": "d9ab2b62a1f24c58758433bb3908d4a8f5abda9697ac79b13e2fe7ebc5cc1da5"
+    },
+    {
+     "side": "old",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metalpartition.com/search?q=divider",
+     "docHeight": 14288,
+     "wordCount": 675,
+     "shotFull": "shots/search-old-390x844-full.png",
+     "sha256": "69271d621af2d65d9334d256946117894207898006fcf4771addae6597e586a9"
+    },
+    {
+     "side": "new",
+     "viewport": "390x844",
+     "status": 200,
+     "finalUrl": "https://metal-divider.com/?s=divider",
+     "docHeight": 2151,
+     "wordCount": 240,
+     "shotFull": "shots/search-new-390x844-full.png",
+     "sha256": "5afe89d4b915e01835dbf37ea14863e64344ae52569a93b6733f3410595d78b3"
+    }
+   ]
+  }
+ ],
+ "deltas": [
+  {
+   "id": "VC-001",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "global/typography",
+   "element": "body text",
+   "selector": "body",
+   "old": "Inter 16px (body computed family Inter on all 70 old captures)",
+   "new": "Times 16px (body computed family Times on all 70 new captures)",
+   "delta": "Default text face changed from the sans stack to the serif initial value on every page; paragraphs, labels and form text all inherit it.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "New CSS stack defines --md-font-sans/--md-font-display but no rule applies a body font-family; the browser initial value (Times) wins. Root cause belongs to #62.",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "blog-single",
+    "blog-category",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/body",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    },
+    "probe": "chrome-probe.json#home/1440x900/*/logo,header"
+   }
+  },
+  {
+   "id": "VC-002",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/header",
+   "element": "primary navigation labels",
+   "selector": ".xo-menu-horizontal-v1__label",
+   "old": "15px Inter, uppercase, single row",
+   "new": "24px Times, title case, two-line wrap on \"Manufacturing Process\"; dropdown labels 22.4px Times",
+   "delta": "Nav labels grow +9px and switch to serif; uppercase styling is gone; the row wraps.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "The label is an h3; the component rule (chrome.css h3.xo-menu-horizontal-v1__label { font-size: 13px }) does not win on the new page, so the site heading scale applies.",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "blog-single",
+    "blog-category",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/navs"
+   }
+  },
+  {
+   "id": "VC-003",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/header",
+   "element": "nav row width and quote CTA",
+   "selector": ".xo-header-nav / .xo-header-actions .xo-btn-quote",
+   "old": "nav fits inside the header; quote CTA 142x40 at x=1258, right edge 1400 (40px gutter)",
+   "new": "nav scrollWidth 1079 vs clientWidth 1073 (+6px); quote CTA 132x64 at x=1308, right edge 1440 (0px gutter, pill clipped by the viewport)",
+   "delta": "Navigation overflows its own box and the quote CTA is pushed flush to the viewport edge and visually clipped.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "Measured identically on all 16 page types at 1440.",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "blog-single",
+    "blog-category",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/navs",
+    "probe": "chrome-probe.json#home/1440x900/*/ctas"
+   }
+  },
+  {
+   "id": "VC-004",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "chrome/header",
+   "element": "header search control",
+   "selector": "xo-modal-trigger.xo-header-icon-btn[aria-label=Search]",
+   "old": "visible magnifier glyph, 40x40 hit box at x=1204 (20x20 icon at x=1214)",
+   "new": "control exists in DOM at x=1254 (40x40) but renders no visible glyph (icon disappears against the white header)",
+   "delta": "The search affordance is present but invisible to the customer.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Verified by DOM probe and by the 300x120px header crops crop-old-header.png / crop-new-header.png.",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "blog-single",
+    "blog-category",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/chrome",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    },
+    "probe": "chrome-probe.json#home/1440x900/*/search (empty) + header icon probe"
+   }
+  },
+  {
+   "id": "VC-005",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "chrome/header",
+   "element": "header logo gutter",
+   "selector": ".xo-header-logo",
+   "old": "logo box starts at x=40 desktop / x=20 mobile",
+   "new": "logo box starts at x=0 desktop / x=0 mobile (flush to the viewport edge)",
+   "delta": "Brand mark loses its left gutter and touches the edge of the screen.",
+   "severity": "S3",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "blog-single",
+    "blog-category",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/chrome",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    },
+    "probe": "chrome-probe.json#home/*/*/logo"
+   }
+  },
+  {
+   "id": "VC-006",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "390x844"
+   ],
+   "area": "chrome/header",
+   "element": "header height",
+   "selector": "header",
+   "old": "73px",
+   "new": "81px",
+   "delta": "Header grows 8px at 390.",
+   "severity": "S3",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "blog-single",
+    "blog-category",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    },
+    "facts": "facts.json#all/390x844/header",
+    "probe": "chrome-probe.json#home/390x844/*/header"
+   }
+  },
+  {
+   "id": "VC-007",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "chrome/header",
+   "element": "quote CTA touch target",
+   "selector": ".xo-btn-quote",
+   "old": "122x34 mobile / 142x40 desktop (below the 44px minimum)",
+   "new": "112x60 mobile / 132x64 desktop (above the 44px minimum)",
+   "delta": "Touch target enlarged past 44px.",
+   "severity": "S3",
+   "classification": "approved-upgrade",
+   "rootCauseHint": "AGENTS map: 44px touch targets are an approved upgrade; recorded so it cannot be used to excuse other regressions.",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "blog-single",
+    "blog-category",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/headerCtas",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    }
+   }
+  },
+  {
+   "id": "VC-008",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "chrome/floating",
+   "element": "WhatsApp float",
+   "selector": ".wa-preview-corner-button-container",
+   "old": "fixed \"Message us\" pill + green badge on 70/70 captured pages (195x60 at x=1225,y=820 desktop / x=175,y=764 mobile)",
+   "new": "no WhatsApp float on 0/70 captured pages; only fam-custom carries other fixed chrome (sticky sub-bar 1462x66 + menu panel)",
+   "delta": "The floating WhatsApp entry point is gone from every page; only inline wa.me links remain.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "Fixed-element scan across all 70 new captures returned zero fixed elements.",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/chrome.fixed",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    },
+    "probe": "chrome-probe.json#home/*/*/floats"
+   }
+  },
+  {
+   "id": "VC-009",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "chrome/footer",
+   "element": "footer height and background",
+   "selector": "footer",
+   "old": "629px tall, background rgb(29,29,29), 14 links (desktop) / 1226px (mobile)",
+   "new": "1341px tall, background transparent, 15 links (desktop) / 1377px (mobile)",
+   "delta": "Footer roughly doubles in height (single-column stacking) and loses its own background colour.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Same three column headings (SCREENS / CRAFTSMANSHIP / COMPANY) on both; the columns stack instead of sitting side by side.",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "blog-single",
+    "blog-category",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/footer",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    },
+    "probe": "chrome-probe.json#home/*/*/footer"
+   }
+  },
+  {
+   "id": "VC-010",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/footer",
+   "element": "footer contact email",
+   "selector": "footer a[href^=mailto]",
+   "old": "projects@metalpartition.com",
+   "new": "info@metal-divider.com",
+   "delta": "Contact address changed.",
+   "severity": "S3",
+   "classification": "approved-upgrade",
+   "rootCauseHint": "Customer-facing mailto is info@metal-divider.com per the 2026-10-24 ruling; recorded as an approved content change, not a visual regression.",
+   "pagesAffected": [
+    "home",
+    "shop",
+    "hub",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "inquiry",
+    "thankyou",
+    "gallery",
+    "manufacturing",
+    "privacy",
+    "blog-index",
+    "blog-single",
+    "blog-category",
+    "search"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/footer"
+   }
+  },
+  {
+   "id": "VC-011",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "global/headings",
+   "element": "heading vertical rhythm",
+   "selector": "h1,h2",
+   "old": "component margins: h1 mt/mb 0, h2 mt/mb 0 (home), 0/11 (cards), 0 (families)",
+   "new": "UA margins where no component rule exists: h1 mt/mb 48.2px (72px h1) / 37.5px (56px) / 45.6px (68px); h2 mt 39.8px (48px) / 49.8px (60px); mobile h1 24.1px, h2 26.6px",
+   "delta": "Headings that lost their component rules pick up browser default margins, adding ~40-50px above and below every affected heading.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Chrome UA defaults (0.67em h1 / 0.83em h2) are not reset; shop/archive/hub/PDP keep their component margins and are unaffected.",
+   "pagesAffected": [
+    "home",
+    "family",
+    "about",
+    "faqs",
+    "gallery",
+    "manufacturing",
+    "blog-index",
+    "blog-single",
+    "search",
+    "thankyou"
+   ],
+   "perPage": {
+    "home": {
+     "old": "h1 mt 0 / h2 mt 0",
+     "new": "h1 mt 48.2 / h2 mt 39.8"
+    },
+    "family": {
+     "old": "h1 mt 0 / h2 mt 0",
+     "new": "h1 mt 37.5-45.6 / h2 mt 49.8"
+    },
+    "about": {
+     "old": "h1 mt 0 / h2 mt 0",
+     "new": "h1 mt 37.5 / h2 mt 19.9"
+    },
+    "faqs": {
+     "old": "h1 mt 15 / h2 mt 10",
+     "new": "h1 mt 24 / h2 mt 16"
+    },
+    "gallery": {
+     "old": "h1 mt 0 / h2 mt 0",
+     "new": "h1 mt 0 / h2 mt 39.8"
+    },
+    "manufacturing": {
+     "old": "h1 mt 0 / h2 mt 0",
+     "new": "h1 mt 48.2 / h2 mt 39.8"
+    },
+    "blog-index": {
+     "old": "h1 mt 16 / h2 mt 0",
+     "new": "h1 mt 21.4 / h2 mt 19.9"
+    },
+    "search": {
+     "old": "h1 mt 0 / h2 mt 0",
+     "new": "h1 mt 21.4 / h2 mt 19.9"
+    }
+   },
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/h1",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    }
+   }
+  },
+  {
+   "id": "VC-012",
+   "scope": "page",
+   "page": "home",
+   "pageType": "home",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "56px Playfair, mt 0",
+   "new": "72px Playfair, mt 48.2",
+   "delta": "H1 grows to 72px and gains a 48px top margin.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Same 72px UA h1 scale as the home page; the component scale is no longer applied.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#home/1440x900/h1"
+   }
+  },
+  {
+   "id": "VC-013",
+   "scope": "page",
+   "page": "faqs",
+   "pageType": "faqs",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "56px Playfair, mt 15",
+   "new": "72px Playfair, mt 24",
+   "delta": "H1 grows to 72px and gains a 48px top margin.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Same 72px UA h1 scale as the home page; the component scale is no longer applied.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/faqs-old-1440x900-fold.png",
+     "sha256": "f58415b840efe22b267466e78b19ce3f1ec3d04548808da4db55e1d1a8c35b77"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/faqs-new-1440x900-fold.png",
+     "sha256": "f9fc116252ba76ce1d1a55afd5293cd1f8e39f71fea88a238adfa81346f4f35d"
+    },
+    "facts": "facts.json#faqs/1440x900/h1"
+   }
+  },
+  {
+   "id": "VC-014",
+   "scope": "page",
+   "page": "mfg",
+   "pageType": "manufacturing",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "56px Playfair, mt 0",
+   "new": "72px Playfair, mt 48.2",
+   "delta": "H1 grows to 72px and gains a 48px top margin.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Same 72px UA h1 scale as the home page; the component scale is no longer applied.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/mfg-old-1440x900-fold.png",
+     "sha256": "637a2de49f43061b37965916773343cc2db27cebcfb2ca767dfdc4434b4121b4"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/mfg-new-1440x900-fold.png",
+     "sha256": "5083624298400d8bf75442d2bd12539c6235ac6b2066731c03bfbd18ef60ecad"
+    },
+    "facts": "facts.json#mfg/1440x900/h1"
+   }
+  },
+  {
+   "id": "VC-015",
+   "scope": "page",
+   "page": "fam-chinese",
+   "pageType": "family",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "56px Playfair, mt 0",
+   "new": "72px Playfair, mt 48.2",
+   "delta": "H1 grows to 72px and gains a 48px top margin.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Same 72px UA h1 scale as the home page; the component scale is no longer applied.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/fam-chinese-old-1440x900-fold.png",
+     "sha256": "9db53b4415a8d789b3d12d189c3f33ef624de80b9bef711846b9074559732f05"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/fam-chinese-new-1440x900-fold.png",
+     "sha256": "e8ba026f1137c29da21138a0462421d90c018cfc113dd262453576827233630f"
+    },
+    "facts": "facts.json#fam-chinese/1440x900/h1"
+   }
+  },
+  {
+   "id": "VC-016",
+   "scope": "page",
+   "page": "fam-expanded",
+   "pageType": "family",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "56px Playfair, mt 0",
+   "new": "72px Playfair, mt 48.2",
+   "delta": "H1 grows to 72px and gains a 48px top margin.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Same 72px UA h1 scale as the home page; the component scale is no longer applied.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/fam-expanded-old-1440x900-fold.png",
+     "sha256": "df84f9e23e4a4c773a17e4748f4861af67aed040f743a9fa62562942c9728a58"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/fam-expanded-new-1440x900-fold.png",
+     "sha256": "27badfb94e939845f4afe4c16f4674aab9ac06611f566e8814b6825e93d1b11c"
+    },
+    "facts": "facts.json#fam-expanded/1440x900/h1"
+   }
+  },
+  {
+   "id": "VC-017",
+   "scope": "page",
+   "page": "inquiry",
+   "pageType": "inquiry",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "56px Playfair",
+   "new": "44px Playfair (mt 0, mb 12)",
+   "delta": "H1 shrinks 12px on the new inquiry page.",
+   "severity": "S3",
+   "classification": "regression",
+   "rootCauseHint": "The page itself is a new native form (DEBT-6); see VC-057.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/inquiry-old-1440x900-fold.png",
+     "sha256": "3a96f38c4f84d003c964f31398ae3f08d13600968fdc5caa9372ab5e439d4e61"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/inquiry-new-1440x900-fold.png",
+     "sha256": "183fd37e3478521b38ef79a74250f89539c9149f65ac3c40c648dfe0439e6f55"
+    },
+    "facts": "facts.json#inquiry/1440x900/h1"
+   }
+  },
+  {
+   "id": "VC-018",
+   "scope": "page",
+   "page": "thankyou",
+   "pageType": "thankyou",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "48px Playfair (\"Thank you. Your project request is in.\")",
+   "new": "44px Playfair (\"Inquiry sent\")",
+   "delta": "H1 smaller and wording rewritten.",
+   "severity": "S3",
+   "classification": "pending",
+   "rootCauseHint": "Thank-you page is new copy; whether it counts as an approved rewrite is a #65 decision.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/thankyou-old-1440x900-fold.png",
+     "sha256": "8548379ea92e0a6f19421007edc33e7efc4806ad2ce658e94c3ae4f16d18b12a"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/thankyou-new-1440x900-fold.png",
+     "sha256": "9cc1cca2e7cd05361107920815d1240a6201c43c1a14374b2ef0329fe2f6c2f9"
+    },
+    "facts": "facts.json#thankyou/1440x900/h1"
+   }
+  },
+  {
+   "id": "VC-019",
+   "scope": "page",
+   "page": "privacy",
+   "pageType": "privacy",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "16px Playfair (Shopify policy page)",
+   "new": "44px Playfair (rebuilt privacy page)",
+   "delta": "Policy page rebuilt as a designed page.",
+   "severity": "S3",
+   "classification": "approved-upgrade",
+   "rootCauseHint": "AGENTS: the eight Consentmo compliance pages are retired and one proper privacy policy is written instead.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/privacy-old-1440x900-fold.png",
+     "sha256": "8bc87a6898674211c4f64a314396772aee84cdfa87ed48f61a0444aa3589480b"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/privacy-new-1440x900-fold.png",
+     "sha256": "873533df979c557f6b7277de90181f51257bcab1a39b6eb4cf670b280d710809"
+    },
+    "facts": "facts.json#privacy/1440x900/h1"
+   }
+  },
+  {
+   "id": "VC-020",
+   "scope": "page",
+   "page": "all",
+   "pageType": "family",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h2",
+   "selector": "h2",
+   "old": "48px, mt 0",
+   "new": "60px, mt 49.8",
+   "delta": "Family-page section headings grow 12px and gain 49.8px top margins.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [
+    "fam-laser-geo",
+    "fam-glass-hybrid",
+    "fam-outdoor",
+    "fam-chinese",
+    "fam-perf-panels"
+   ],
+   "perPage": {
+    "fam-stainless": {
+     "old": "42px, mt 0",
+     "new": "48px, mt 39.8"
+    },
+    "fam-laser-panels": {
+     "old": "50px, mt 0",
+     "new": "50px, mt 41.5"
+    }
+   },
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/fam-laser-geo-old-1440x900-fold.png",
+     "sha256": "9b7c260350c7b5ecf1e81f8ebddf3269fc9d86afd8b4adb272435ea38c3d6361"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/fam-laser-geo-new-1440x900-fold.png",
+     "sha256": "6c90530bbf262df05d5432e87e7fcb1a969722e80b1d21c7a2fc75f8f8936933"
+    },
+    "facts": "facts.json#all/1440x900/headings"
+   }
+  },
+  {
+   "id": "VC-021",
+   "scope": "page",
+   "page": "home",
+   "pageType": "home",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h2",
+   "selector": "h2",
+   "old": "42px, mt 0",
+   "new": "48px, mt 39.8",
+   "delta": "Home section headings grow 6px and gain 39.8px top margins.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#home/1440x900/headings"
+   }
+  },
+  {
+   "id": "VC-022",
+   "scope": "page",
+   "page": "gallery",
+   "pageType": "gallery",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h2",
+   "selector": "h2",
+   "old": "42px, mt 0",
+   "new": "48px, mt 39.8",
+   "delta": "Gallery section headings grow and gain margins.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/gallery-old-1440x900-fold.png",
+     "sha256": "5e49dd8f4a590392e3af701c91f79c3bd263c54e16f73f8c7697fdcac37d94b7"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/gallery-new-1440x900-fold.png",
+     "sha256": "c04bddeb38a856d79ad2ca034a60bd33b7d6e40aa7fe58d65a36e07282f274dd"
+    },
+    "facts": "facts.json#gallery/1440x900/headings"
+   }
+  },
+  {
+   "id": "VC-023",
+   "scope": "page",
+   "page": "mfg",
+   "pageType": "manufacturing",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h2",
+   "selector": "h2",
+   "old": "42px, mt 0",
+   "new": "48px, mt 39.8",
+   "delta": "Manufacturing section headings grow and gain margins.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/mfg-old-1440x900-fold.png",
+     "sha256": "637a2de49f43061b37965916773343cc2db27cebcfb2ca767dfdc4434b4121b4"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/mfg-new-1440x900-fold.png",
+     "sha256": "5083624298400d8bf75442d2bd12539c6235ac6b2066731c03bfbd18ef60ecad"
+    },
+    "facts": "facts.json#mfg/1440x900/headings"
+   }
+  },
+  {
+   "id": "VC-024",
+   "scope": "page",
+   "page": "faqs",
+   "pageType": "faqs",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h2",
+   "selector": "h2",
+   "old": "42px, mt 10",
+   "new": "48px, mt 16",
+   "delta": "FAQ headings grow 6px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/faqs-old-1440x900-fold.png",
+     "sha256": "f58415b840efe22b267466e78b19ce3f1ec3d04548808da4db55e1d1a8c35b77"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/faqs-new-1440x900-fold.png",
+     "sha256": "f9fc116252ba76ce1d1a55afd5293cd1f8e39f71fea88a238adfa81346f4f35d"
+    },
+    "facts": "facts.json#faqs/1440x900/headings"
+   }
+  },
+  {
+   "id": "VC-025",
+   "scope": "page",
+   "page": "inquiry",
+   "pageType": "inquiry",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h2",
+   "selector": "h2",
+   "old": "48px",
+   "new": "20px",
+   "delta": "Inquiry section headings drop to 20px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/inquiry-old-1440x900-fold.png",
+     "sha256": "3a96f38c4f84d003c964f31398ae3f08d13600968fdc5caa9372ab5e439d4e61"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/inquiry-new-1440x900-fold.png",
+     "sha256": "183fd37e3478521b38ef79a74250f89539c9149f65ac3c40c648dfe0439e6f55"
+    },
+    "facts": "facts.json#inquiry/1440x900/headings"
+   }
+  },
+  {
+   "id": "VC-026",
+   "scope": "page",
+   "page": "search",
+   "pageType": "search",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h2",
+   "selector": "h2",
+   "old": "28px",
+   "new": "24px Times",
+   "delta": "Search page headings fall back to Times.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/search-old-1440x900-fold.png",
+     "sha256": "ee84b1c47e0b3cde863079f8afb3559bffcb524ad375950d49d2935aee4f3367"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/search-new-1440x900-fold.png",
+     "sha256": "18553c2ee417d7391b92533eee6fe9c1fb1bfb513e3b640dd38aac1c6877f9e4"
+    },
+    "facts": "facts.json#search/1440x900/headings"
+   }
+  },
+  {
+   "id": "VC-027",
+   "scope": "page",
+   "page": "shop",
+   "pageType": "shop",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb band and links",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "124px white band, 13px black links, no underline",
+   "new": "150px transparent band, 16px #9e9eff underlined links",
+   "delta": "White breadcrumb strip replaced by a taller transparent strip; links turned blue (#9e9eff) and underlined, which reads as low-contrast body links on the dark page. At 390 the band grows from 50-98px to 73-125px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Values measured with the pixel-gate protocol (programmatic breadcrumb band box).",
+   "pagesAffected": [
+    "shop"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/shop-old-1440x900-fold.png",
+     "sha256": "73354afaf406093449bf50388189daaf5f1156a3e75a2789454ebe820b0b03f9"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/shop-new-1440x900-fold.png",
+     "sha256": "5a5120acb78e428c0caef42fbc663c396d258a6ddb8d0d04d61fc55c42c190a4"
+    },
+    "facts": "facts.json#shop/1440x900/breadcrumbs",
+    "probe": "chrome-probe.json#shop/1440x900/*/breadcrumb"
+   }
+  },
+  {
+   "id": "VC-028",
+   "scope": "page",
+   "page": "archive",
+   "pageType": "archive",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb band and links",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "124px white band, 13px black links, no underline",
+   "new": "150px transparent band, 16px #9e9eff underlined links",
+   "delta": "White breadcrumb strip replaced by a taller transparent strip; links turned blue (#9e9eff) and underlined, which reads as low-contrast body links on the dark page. At 390 the band grows from 50-98px to 73-125px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Values measured with the pixel-gate protocol (programmatic breadcrumb band box).",
+   "pagesAffected": [
+    "archive"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/archive-old-1440x900-fold.png",
+     "sha256": null
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/archive-new-1440x900-fold.png",
+     "sha256": null
+    },
+    "facts": "facts.json#archive/1440x900/breadcrumbs",
+    "probe": "chrome-probe.json#shop/1440x900/*/breadcrumb"
+   }
+  },
+  {
+   "id": "VC-029",
+   "scope": "page",
+   "page": "family",
+   "pageType": "family",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb band and links",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "60px white band, 13px black links, no underline",
+   "new": "126px transparent band, 16px #9e9eff underlined links",
+   "delta": "White breadcrumb strip replaced by a taller transparent strip; links turned blue (#9e9eff) and underlined, which reads as low-contrast body links on the dark page. At 390 the band grows from 50-98px to 73-125px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Values measured with the pixel-gate protocol (programmatic breadcrumb band box).",
+   "pagesAffected": [
+    "family"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/family-old-1440x900-fold.png",
+     "sha256": null
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/family-new-1440x900-fold.png",
+     "sha256": null
+    },
+    "facts": "facts.json#family/1440x900/breadcrumbs",
+    "probe": "chrome-probe.json#shop/1440x900/*/breadcrumb"
+   }
+  },
+  {
+   "id": "VC-030",
+   "scope": "page",
+   "page": "pdp",
+   "pageType": "pdp",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb band and links",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "54px white band, 13px black links, no underline",
+   "new": "80px transparent band, 16px #9e9eff underlined links",
+   "delta": "White breadcrumb strip replaced by a taller transparent strip; links turned blue (#9e9eff) and underlined, which reads as low-contrast body links on the dark page. At 390 the band grows from 50-98px to 73-125px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Values measured with the pixel-gate protocol (programmatic breadcrumb band box).",
+   "pagesAffected": [
+    "pdp"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/pdp-old-1440x900-fold.png",
+     "sha256": null
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/pdp-new-1440x900-fold.png",
+     "sha256": null
+    },
+    "facts": "facts.json#pdp/1440x900/breadcrumbs",
+    "probe": "chrome-probe.json#shop/1440x900/*/breadcrumb"
+   }
+  },
+  {
+   "id": "VC-031",
+   "scope": "page",
+   "page": "about",
+   "pageType": "about",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb band and links",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "60px white band, 13px black links, no underline",
+   "new": "90px transparent band, 16px #9e9eff underlined links",
+   "delta": "White breadcrumb strip replaced by a taller transparent strip; links turned blue (#9e9eff) and underlined, which reads as low-contrast body links on the dark page. At 390 the band grows from 50-98px to 73-125px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Values measured with the pixel-gate protocol (programmatic breadcrumb band box).",
+   "pagesAffected": [
+    "about"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/about-old-1440x900-fold.png",
+     "sha256": "ea445952f71c2a60f6f6383fbb5ea170d5aa6f8b4d87be4ac9cbf3ed0a53103e"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/about-new-1440x900-fold.png",
+     "sha256": "3da5c192c5a55869d608575160b231b86361b02e9124988a40f3d41dfe39a4a7"
+    },
+    "facts": "facts.json#about/1440x900/breadcrumbs",
+    "probe": "chrome-probe.json#shop/1440x900/*/breadcrumb"
+   }
+  },
+  {
+   "id": "VC-032",
+   "scope": "page",
+   "page": "faqs",
+   "pageType": "faqs",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb band and links",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "60px white band, 13px black links, no underline",
+   "new": "126px transparent band, 16px #9e9eff underlined links",
+   "delta": "White breadcrumb strip replaced by a taller transparent strip; links turned blue (#9e9eff) and underlined, which reads as low-contrast body links on the dark page. At 390 the band grows from 50-98px to 73-125px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Values measured with the pixel-gate protocol (programmatic breadcrumb band box).",
+   "pagesAffected": [
+    "faqs"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/faqs-old-1440x900-fold.png",
+     "sha256": "f58415b840efe22b267466e78b19ce3f1ec3d04548808da4db55e1d1a8c35b77"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/faqs-new-1440x900-fold.png",
+     "sha256": "f9fc116252ba76ce1d1a55afd5293cd1f8e39f71fea88a238adfa81346f4f35d"
+    },
+    "facts": "facts.json#faqs/1440x900/breadcrumbs",
+    "probe": "chrome-probe.json#shop/1440x900/*/breadcrumb"
+   }
+  },
+  {
+   "id": "VC-033",
+   "scope": "page",
+   "page": "gallery",
+   "pageType": "gallery",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb band and links",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "120px white band, 13px black links, no underline",
+   "new": "150px transparent band, 16px #9e9eff underlined links",
+   "delta": "White breadcrumb strip replaced by a taller transparent strip; links turned blue (#9e9eff) and underlined, which reads as low-contrast body links on the dark page. At 390 the band grows from 50-98px to 73-125px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Values measured with the pixel-gate protocol (programmatic breadcrumb band box).",
+   "pagesAffected": [
+    "gallery"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/gallery-old-1440x900-fold.png",
+     "sha256": "5e49dd8f4a590392e3af701c91f79c3bd263c54e16f73f8c7697fdcac37d94b7"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/gallery-new-1440x900-fold.png",
+     "sha256": "c04bddeb38a856d79ad2ca034a60bd33b7d6e40aa7fe58d65a36e07282f274dd"
+    },
+    "facts": "facts.json#gallery/1440x900/breadcrumbs",
+    "probe": "chrome-probe.json#shop/1440x900/*/breadcrumb"
+   }
+  },
+  {
+   "id": "VC-034",
+   "scope": "page",
+   "page": "mfg",
+   "pageType": "manufacturing",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb band and links",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "60px white band, 13px black links, no underline",
+   "new": "90px transparent band, 16px #9e9eff underlined links",
+   "delta": "White breadcrumb strip replaced by a taller transparent strip; links turned blue (#9e9eff) and underlined, which reads as low-contrast body links on the dark page. At 390 the band grows from 50-98px to 73-125px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Values measured with the pixel-gate protocol (programmatic breadcrumb band box).",
+   "pagesAffected": [
+    "mfg"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/mfg-old-1440x900-fold.png",
+     "sha256": "637a2de49f43061b37965916773343cc2db27cebcfb2ca767dfdc4434b4121b4"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/mfg-new-1440x900-fold.png",
+     "sha256": "5083624298400d8bf75442d2bd12539c6235ac6b2066731c03bfbd18ef60ecad"
+    },
+    "facts": "facts.json#mfg/1440x900/breadcrumbs",
+    "probe": "chrome-probe.json#shop/1440x900/*/breadcrumb"
+   }
+  },
+  {
+   "id": "VC-035",
+   "scope": "page",
+   "page": "fam-perf-panels",
+   "pageType": "family",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb band and links",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "120px white band, 13px black links, no underline",
+   "new": "186px transparent band, 16px #9e9eff underlined links",
+   "delta": "White breadcrumb strip replaced by a taller transparent strip; links turned blue (#9e9eff) and underlined, which reads as low-contrast body links on the dark page. At 390 the band grows from 50-98px to 73-125px.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Values measured with the pixel-gate protocol (programmatic breadcrumb band box).",
+   "pagesAffected": [
+    "fam-perf-panels"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/fam-perf-panels-old-1440x900-fold.png",
+     "sha256": "d4e09d1f6c6f2bc7a7da29329a0d329fdc3547642d3219c3caeafb4473ad0aa5"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/fam-perf-panels-new-1440x900-fold.png",
+     "sha256": "cc87fb9c58bf211b14e3d74cbbb64f2bf12cf66aad661af9635ebd9bb3690dea"
+    },
+    "facts": "facts.json#fam-perf-panels/1440x900/breadcrumbs",
+    "probe": "chrome-probe.json#shop/1440x900/*/breadcrumb"
+   }
+  },
+  {
+   "id": "VC-036",
+   "scope": "page",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "chrome/breadcrumb",
+   "element": "breadcrumb text",
+   "selector": "[aria-label*=breadcrumb]",
+   "old": "e.g. \"Home › Products\" / \"Home › Abstract Patterns\"",
+   "new": "e.g. \"Home › – Products\" / \"Home › – Abstract Patterns ›\"",
+   "delta": "A stray en-dash is prefixed to the current-page label (and a trailing chevron added on family pages).",
+   "severity": "S3",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [
+    "shop",
+    "archive",
+    "family",
+    "pdp",
+    "about",
+    "faqs",
+    "gallery",
+    "manufacturing"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/breadcrumbs",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    }
+   }
+  },
+  {
+   "id": "VC-037",
+   "scope": "page",
+   "page": "arc-abstract",
+   "pageType": "archive",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "content",
+   "element": "series archive title",
+   "selector": "h1",
+   "old": "per-collection title (Abstract / Asian / Geometric / Gradient / Landscape / Moroccan / Organic / Perforated / Vintage)",
+   "new": "\"Organic Patterns\" on all nine archive URLs",
+   "delta": "Every series archive renders the Organic title, the Organic sidebar selection and an Organic breadcrumb, while the grid/count still belongs to the requested collection.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "Verified with curl on all nine /collections/<handle>/ URLs and in facts.json at both viewports.",
+   "pagesAffected": [
+    "arc-abstract",
+    "arc-asian",
+    "arc-geometric",
+    "arc-gradient",
+    "arc-landscape",
+    "arc-moroccan",
+    "arc-organic",
+    "arc-perforated",
+    "arc-vintage"
+   ],
+   "perPage": {
+    "arc-abstract": {
+     "old": "own collection title",
+     "new": "Organic Patterns"
+    },
+    "arc-asian": {
+     "old": "own collection title",
+     "new": "Organic Patterns"
+    },
+    "arc-geometric": {
+     "old": "own collection title",
+     "new": "Organic Patterns"
+    },
+    "arc-gradient": {
+     "old": "own collection title",
+     "new": "Organic Patterns"
+    },
+    "arc-landscape": {
+     "old": "own collection title",
+     "new": "Organic Patterns"
+    },
+    "arc-moroccan": {
+     "old": "own collection title",
+     "new": "Organic Patterns"
+    },
+    "arc-organic": {
+     "old": "own collection title",
+     "new": "Organic Patterns"
+    },
+    "arc-perforated": {
+     "old": "own collection title",
+     "new": "Organic Patterns"
+    },
+    "arc-vintage": {
+     "old": "own collection title",
+     "new": "Organic Patterns"
+    }
+   },
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/arc-abstract-old-1440x900-fold.png",
+     "sha256": "7e5623b9038d41733d8a00396568f0500506f8789d53b7167740bc67ae4a7cf5"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/arc-abstract-new-1440x900-fold.png",
+     "sha256": "4d0e28e541428ef726203379351a037f77aafe95567aed9f751a63e48b4b341d"
+    },
+    "facts": "facts.json#arc-abstract/1440x900/h1",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/arc-abstract-old-390x844-fold.png",
+     "sha256": "ef0bf03923c231fa5ada2fd034447afc6a807d18479c404951b3aa8ed4b3f90e"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/arc-abstract-new-390x844-fold.png",
+     "sha256": "fdb34cc205bd3237203734ab021b7f30a8f666a3c369868edba6bc2d9c93cfb8"
+    }
+   }
+  },
+  {
+   "id": "VC-038",
+   "scope": "page",
+   "page": "arc-geometric",
+   "pageType": "archive",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "content",
+   "element": "collection membership",
+   "selector": ".pattern-grid",
+   "old": "Geometric 15 patterns; Gradient 0 patterns",
+   "new": "Geometric 12 patterns; Gradient 3 patterns",
+   "delta": "Collection membership changed: 3 patterns left Geometric and 3 entered Gradient, which was empty on the old site (its 301 to /shop/ was planned on that basis).",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "Counts read from \"Showing N patterns\" on both sides.",
+   "pagesAffected": [
+    "arc-geometric",
+    "arc-gradient"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/arc-geometric-old-1440x900-fold.png",
+     "sha256": "c4d91735e7944e01384cdccc89aedb34416d6d4f839ee8548dc8bbb1fe355ca3"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/arc-geometric-new-1440x900-fold.png",
+     "sha256": "8fb3bbf765afd8860fcd79b990a9beec00d4fba2edb7de9efb4a4cc290f1e180"
+    },
+    "facts": "facts.json#arc-geometric/1440x900/bodyText"
+   }
+  },
+  {
+   "id": "VC-039",
+   "scope": "page",
+   "page": "shop",
+   "pageType": "shop",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "content",
+   "element": "pagination page size",
+   "selector": ".pattern-catalog__pagination",
+   "old": "146 patterns across 7 pages (~21/page); Abstract 90 patterns across 4 pages",
+   "new": "146 patterns across 10 pages (15/page); Abstract 90 patterns across 6 pages",
+   "delta": "Page size shrank from ~21 to 15 items, so the grid and \"Page x of y\" differ and each page is shorter.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [
+    "shop",
+    "archive"
+   ],
+   "perPage": {
+    "archive": {
+     "old": "Abstract: Page 1 of 4",
+     "new": "Abstract: Page 1 of 6"
+    }
+   },
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/shop-old-1440x900-fold.png",
+     "sha256": "73354afaf406093449bf50388189daaf5f1156a3e75a2789454ebe820b0b03f9"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/shop-new-1440x900-fold.png",
+     "sha256": "5a5120acb78e428c0caef42fbc663c396d258a6ddb8d0d04d61fc55c42c190a4"
+    },
+    "facts": "facts.json#shop/1440x900/bodyText"
+   }
+  },
+  {
+   "id": "VC-040",
+   "scope": "page",
+   "page": "arc-gradient",
+   "pageType": "archive",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "surface",
+   "element": "retired collection URL",
+   "selector": "/collections/pattern-gradient",
+   "old": "empty collection (0 patterns) queued for retirement: 301 -> /shop/ per url-map D8",
+   "new": "HTTP 200 with 3 patterns and the standard archive template (no redirect)",
+   "delta": "The collection that was retired because it was empty now resolves with content instead of redirecting to /shop/.",
+   "severity": "S2",
+   "classification": "pending",
+   "rootCauseHint": "URL-map (tools/pixel-check/url-map.json) still marks pattern-gradient as retired with a 301; live behaviour differs.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/arc-gradient-old-1440x900-fold.png",
+     "sha256": "38778f9ab1c6eae321212973bd7a126510ea7ff390722902aebc60488d05b8fe"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/arc-gradient-new-1440x900-fold.png",
+     "sha256": "c0e981c09479019c183d9002434bb8d024cf064bc8659cd9f0b2893824ad3c25"
+    },
+    "facts": "facts.json#arc-gradient/1440x900/status"
+   }
+  },
+  {
+   "id": "VC-041",
+   "scope": "page",
+   "page": "hub",
+   "pageType": "hub",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "images",
+   "element": "hub collection card images",
+   "selector": ".grid [class*=card] img",
+   "old": "8 cards, each with a project photo (17 visible images on the page)",
+   "new": "9 cards, 0 card images (2 visible images on the page: header logo + footer logo); first grid cell renders empty",
+   "delta": "The series hub is a grid of unillustrated dark blocks with a blank first slot; the visual index of pattern families is gone.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/hub-old-1440x900-fold.png",
+     "sha256": "bd2e33c68c7b6008e8a9e7c5fc594ef64ea2cc7a2ee021524d789b9f3f33088c"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/hub-new-1440x900-fold.png",
+     "sha256": "86f02f5378cc7c01a29cc353db5ac6ef599e0bcd87ade38e4bce86e397d07ed0"
+    },
+    "facts": "facts.json#hub/1440x900/images",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/hub-old-390x844-fold.png",
+     "sha256": "ca031b927136c503b03c73959024e04d03c874033922594de3baaaee02d57c4f"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/hub-new-390x844-fold.png",
+     "sha256": "01260ad73148d841dea8ba1a84e53fb84efc64d2b0a38b975e1f6bd784f53a44"
+    }
+   }
+  },
+  {
+   "id": "VC-042",
+   "scope": "page",
+   "page": "hub",
+   "pageType": "hub",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "content",
+   "element": "hub card copy",
+   "selector": "[class*=card] h3 + p",
+   "old": "card title + one-line description (e.g. \"Perforated — Airflow, screening, clean repeat openings.\")",
+   "new": "card title + \"EXPLORE\" only",
+   "delta": "Card descriptions dropped; only the CTA word remains.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/hub-old-1440x900-fold.png",
+     "sha256": "bd2e33c68c7b6008e8a9e7c5fc594ef64ea2cc7a2ee021524d789b9f3f33088c"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/hub-new-1440x900-fold.png",
+     "sha256": "86f02f5378cc7c01a29cc353db5ac6ef599e0bcd87ade38e4bce86e397d07ed0"
+    },
+    "facts": "facts.json#hub/1440x900/bodyText"
+   }
+  },
+  {
+   "id": "VC-043",
+   "scope": "page",
+   "page": "hub",
+   "pageType": "hub",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "structure",
+   "element": "hub card set and order",
+   "selector": "main grid",
+   "old": "Perforated, Geometric, Abstract / Organic, Landscape, Classic Motif / Structured Lattice, Interlaced Lattice",
+   "new": "Abstract, Asian Inspired, Geometric, Gradient / Landscape, Moroccan & Arabic, Organic / Perforated, Vintage & Retro",
+   "delta": "Card taxonomy and order changed (old hub mixes project categories; new hub uses the pattern-collection terms).",
+   "severity": "S2",
+   "classification": "pending",
+   "rootCauseHint": "Visible difference, but the card set is an IA/content decision outside this ticket; flagged for #65.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/hub-old-1440x900-fold.png",
+     "sha256": "bd2e33c68c7b6008e8a9e7c5fc594ef64ea2cc7a2ee021524d789b9f3f33088c"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/hub-new-1440x900-fold.png",
+     "sha256": "86f02f5378cc7c01a29cc353db5ac6ef599e0bcd87ade38e4bce86e397d07ed0"
+    },
+    "facts": "facts.json#hub/1440x900/bodyText"
+   }
+  },
+  {
+   "id": "VC-044",
+   "scope": "page",
+   "page": "home",
+   "pageType": "home",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "images",
+   "element": "home hero image slot",
+   "selector": "hero img",
+   "old": "hotel-lobby-decorative-stainless-steel-screen-divider.webp (592x591 source, ornate screens close-up)",
+   "new": "hero-hotel-lobby-gold-1024w.webp (1440x1440 source, dark fin corridor)",
+   "delta": "The home hero points at a different asset: the ornate screen scene is replaced by a dark vertical-fin interior.",
+   "severity": "S1",
+   "classification": "pending",
+   "rootCauseHint": "Slot-level evidence for #63; if the new asset is the approved final render this becomes an approved upgrade, otherwise a wrong-slot regression.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#home/1440x900/hero",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    }
+   }
+  },
+  {
+   "id": "VC-045",
+   "scope": "page",
+   "page": "pdp",
+   "pageType": "pdp",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "images",
+   "element": "PDP hero background slot",
+   "selector": "hero background",
+   "old": "scene photo (paralocal__apiary-apy-new-gallery-image-desktop_2x.jpg, 1353x820)",
+   "new": "the pattern plate itself (apiary-architectural-metal-screen-pattern-01-400w.webp, 400x800) stretched full-bleed",
+   "delta": "Background image and plate are swapped: the scene photo is gone from the background and the pattern is used as the backdrop.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "Same construction on all three PDPs; mapping against the intended slot table is #63.",
+   "pagesAffected": [
+    "pdp-apiary",
+    "pdp-zelda",
+    "pdp-tafoni"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/pdp-old-1440x900-fold.png",
+     "sha256": null
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/pdp-new-1440x900-fold.png",
+     "sha256": null
+    },
+    "facts": "facts.json#pdp/1440x900/hero",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/pdp-old-390x844-fold.png",
+     "sha256": null
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/pdp-new-390x844-fold.png",
+     "sha256": null
+    }
+   }
+  },
+  {
+   "id": "VC-046",
+   "scope": "page",
+   "page": "pdp",
+   "pageType": "pdp",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "images",
+   "element": "PDP pattern plate",
+   "selector": "hero plate card",
+   "old": "black/white pattern plate (pattern-media-*.png, 400x800)",
+   "new": "red pattern plate (apiary-…-02-2048w.webp rendered 458x611)",
+   "delta": "The hero plate asset changed from the monochrome pattern to a red variant.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "Red plate verified visually on Apiary and Zelda; Tafoni shares the same PDP template and image set in facts.json.",
+   "pagesAffected": [
+    "pdp-apiary",
+    "pdp-zelda",
+    "pdp-tafoni"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/pdp-old-1440x900-fold.png",
+     "sha256": null
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/pdp-new-1440x900-fold.png",
+     "sha256": null
+    },
+    "facts": "facts.json#pdp/1440x900/images",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/pdp-old-390x844-fold.png",
+     "sha256": null
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/pdp-new-390x844-fold.png",
+     "sha256": null
+    }
+   }
+  },
+  {
+   "id": "VC-047",
+   "scope": "page",
+   "page": "pdp",
+   "pageType": "pdp",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "content",
+   "element": "PDP hero subline",
+   "selector": "hero copy",
+   "old": "\"Built for light behavior, privacy, and surface impact in Architectural screening.\" present under the title",
+   "new": "subline absent",
+   "delta": "One hero sentence is missing on the new PDP.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [
+    "pdp-apiary",
+    "pdp-zelda",
+    "pdp-tafoni"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/pdp-old-1440x900-fold.png",
+     "sha256": null
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/pdp-new-1440x900-fold.png",
+     "sha256": null
+    },
+    "facts": "facts.json#pdp/1440x900/bodyText"
+   }
+  },
+  {
+   "id": "VC-048",
+   "scope": "page",
+   "page": "pdp",
+   "pageType": "pdp",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "content",
+   "element": "adjacent patterns strip",
+   "selector": "Adjacent patterns in this family",
+   "old": "Zelda, Winter Branches, Wild Spinach",
+   "new": "Constella, Dan di Lion, Cellular Flow",
+   "delta": "Adjacent-pattern set changed on the Apiary PDP.",
+   "severity": "S3",
+   "classification": "pending",
+   "rootCauseHint": "Data-driven ordering; recorded, not judged.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/pdp-old-1440x900-fold.png",
+     "sha256": null
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/pdp-new-1440x900-fold.png",
+     "sha256": null
+    },
+    "facts": "facts.json#pdp/1440x900/bodyText"
+   }
+  },
+  {
+   "id": "VC-049",
+   "scope": "page",
+   "page": "home",
+   "pageType": "home",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "structure",
+   "element": "hero quote card position",
+   "selector": "[class*=quote-card], \"Get Custom Quote in 24h\"",
+   "old": "desktop 1350x134 at y=783 (fully inside the 900px fold); mobile 365x360 at y=436",
+   "new": "desktop 1360x152 at y=901 (below the fold); mobile 350x477 at y=548",
+   "delta": "The conversion card falls below the fold at 1440 and grows ~117px taller on mobile.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#home/1440x900/chrome.quoteEls",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/home-old-390x844-fold.png",
+     "sha256": "63284a52e3440d4f0305ed33c88199610c4805b208ae0d59b1e20c551edd2cc2"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/home-new-390x844-fold.png",
+     "sha256": "7092733b1506ed50efa903e919bc3336e19e86aa44ffa29d2f8f95698a4b11ae"
+    },
+    "probe": "chrome-probe.json#home/*/*/quoteCard"
+   }
+  },
+  {
+   "id": "VC-050",
+   "scope": "page",
+   "page": "blog-index",
+   "pageType": "blog-index",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "structure",
+   "element": "blog index template output",
+   "selector": "main",
+   "old": "rendered blog index (Knowledge hero, category chips, post cards)",
+   "new": "template source escapes into the page: \"<d=\"md-–dx\"=\"ju-h\">…\" blocks, \"{Fd u}\" placeholders and a garbled H1 replace the whole index",
+   "delta": "The blog index renders corrupted template markup as visible text; the page has no usable content above the footer.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "Visible in blog-index-new-1440x900-fold.png and blog-index-new-390x844-fold.png; also present in the DOM text (\"Kwd f yu x j.\"). Root cause is #62 territory.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/blog-index-old-1440x900-fold.png",
+     "sha256": "c7d3cca55ad25b8a31066669602a667e44409bbdcba233e5032af92a3038e4d4"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/blog-index-new-1440x900-fold.png",
+     "sha256": "293b95e545bbc0ab65fdb36c84ac0410a351c8c6d5d14342e36e064764dbd31e"
+    },
+    "facts": "facts.json#blog-index/1440x900/bodyText",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/blog-index-old-390x844-fold.png",
+     "sha256": "003fda6377d34e67c272405546896b29356147bcc45a42f35cc9878471a69829"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/blog-index-new-390x844-fold.png",
+     "sha256": "1ba3eeb22cd9e3c4996f067e4a6bbc8cbfafc731a6e58a73a4a810029cf81d8c"
+    }
+   }
+  },
+  {
+   "id": "VC-051",
+   "scope": "page",
+   "page": "search",
+   "pageType": "search",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "structure",
+   "element": "search results template output",
+   "selector": "main",
+   "old": "Search hub page: 111 results for \"divider\", hero, search field, result list",
+   "new": "same escaped-template corruption; no result list, only raw template fragments and the footer",
+   "delta": "The site search results page is broken in the same way as the blog index.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "/?s=divider returns HTTP 200 but renders template code as text.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/search-old-1440x900-fold.png",
+     "sha256": "ee84b1c47e0b3cde863079f8afb3559bffcb524ad375950d49d2935aee4f3367"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/search-new-1440x900-fold.png",
+     "sha256": "18553c2ee417d7391b92533eee6fe9c1fb1bfb513e3b640dd38aac1c6877f9e4"
+    },
+    "facts": "facts.json#search/1440x900/bodyText",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/search-old-390x844-fold.png",
+     "sha256": "6ec44e731b7407842c402107046f2347f6bd17f49a2e318bf0081887cbfd0e56"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/search-new-390x844-fold.png",
+     "sha256": "fa5a5dd5abdcc8e33a7c1addc7bd93da208081d1520e543e029a891c69433f88"
+    }
+   }
+  },
+  {
+   "id": "VC-052",
+   "scope": "page",
+   "page": "blog-single",
+   "pageType": "blog-single",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "surface",
+   "element": "blog article surface",
+   "selector": "document",
+   "old": "/blogs/knowledge/test-blog-1 returns 200 with a full article template (breadcrumb, category, title, author, share, body)",
+   "new": "/blog/test-blog-1/ returns 404 \"Page not found\" (no posts are published)",
+   "delta": "The article surface cannot be reached at all on the new site.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "The new site publishes zero posts (post-sitemap lists only /blog/), so index/single/category are all empty or 404.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/blog-single-old-1440x900-fold.png",
+     "sha256": "ce58b148beb63ff41f81a8128a20a6d3f5259e19ba857cbe1f737d706c87bda3"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/blog-single-new-1440x900-fold.png",
+     "sha256": null
+    },
+    "facts": "facts.json#blog-single/1440x900/status",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/blog-single-old-390x844-fold.png",
+     "sha256": "9ab7d58fc4f22dccb142dbc86404fd46ea68ae1934f5122e0779cd36c6fc6218"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/blog-single-new-390x844-fold.png",
+     "sha256": null
+    }
+   }
+  },
+  {
+   "id": "VC-053",
+   "scope": "page",
+   "page": "blog-cat",
+   "pageType": "blog-category",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "surface",
+   "element": "blog category archive",
+   "selector": "document",
+   "old": "/blogs/knowledge/tagged/news 404",
+   "new": "/category/design-guide/ 404",
+   "delta": "No category archive exists on either side.",
+   "severity": "S3",
+   "classification": "pending",
+   "rootCauseHint": "Informational: the old site never had tag archives; the new site has no categories because it has no posts.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/blog-cat-old-1440x900-fold.png",
+     "sha256": null
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/blog-cat-new-1440x900-fold.png",
+     "sha256": null
+    },
+    "facts": "facts.json#blog-cat/1440x900/status",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/blog-cat-old-390x844-fold.png",
+     "sha256": null
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/blog-cat-new-390x844-fold.png",
+     "sha256": null
+    }
+   }
+  },
+  {
+   "id": "VC-054",
+   "scope": "page",
+   "page": "blog-index",
+   "pageType": "blog-index",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "content",
+   "element": "blog post inventory",
+   "selector": "blog list",
+   "old": "5 test posts (knowledge/design-guide/technical)",
+   "new": "0 posts",
+   "delta": "The new blog has no posts to list.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/blog-index-old-1440x900-fold.png",
+     "sha256": "c7d3cca55ad25b8a31066669602a667e44409bbdcba233e5032af92a3038e4d4"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/blog-index-new-1440x900-fold.png",
+     "sha256": "293b95e545bbc0ab65fdb36c84ac0410a351c8c6d5d14342e36e064764dbd31e"
+    },
+    "facts": "facts.json#blog-index/1440x900/bodyText"
+   }
+  },
+  {
+   "id": "VC-055",
+   "scope": "page",
+   "page": "inquiry",
+   "pageType": "inquiry",
+   "viewports": [
+    "1440x900",
+    "390x844"
+   ],
+   "area": "structure",
+   "element": "inquiry page sections",
+   "selector": "main",
+   "old": "4 sections: \"Tell us your project scope.\" + \"Route your inquiry to the right scope\" + \"From Inquiry to Quote Route — 5 Steps\" + \"Questions before you submit\"",
+   "new": "1 section: \"Request your quote\" + the native form",
+   "delta": "The inquiry page lost its routing explainer, 5-step process and pre-submit FAQ; page height drops from 4446 to 2848.",
+   "severity": "S1",
+   "classification": "pending",
+   "rootCauseHint": "The native form itself is an approved DEBT-6 replacement; whether dropping the surrounding sections is allowed is a #65 decision.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/inquiry-old-1440x900-fold.png",
+     "sha256": "3a96f38c4f84d003c964f31398ae3f08d13600968fdc5caa9372ab5e439d4e61"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/inquiry-new-1440x900-fold.png",
+     "sha256": "183fd37e3478521b38ef79a74250f89539c9149f65ac3c40c648dfe0439e6f55"
+    },
+    "facts": "facts.json#inquiry/1440x900/sections",
+    "oldShot390": {
+     "path": "/tmp/visual-census/shots/inquiry-old-390x844-fold.png",
+     "sha256": "99ed89bc3f42f7c90d4cf524aadf9e0602cceea0c0b85ac7aeb8f8a0640c1e89"
+    },
+    "newShot390": {
+     "path": "/tmp/visual-census/shots/inquiry-new-390x844-fold.png",
+     "sha256": "508ac4d4dc4c177da3d30cf476335fd4997dc4326062ea2e79b6d29fc057ccaa"
+    }
+   }
+  },
+  {
+   "id": "VC-056",
+   "scope": "page",
+   "page": "inquiry",
+   "pageType": "inquiry",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "content",
+   "element": "inquiry form implementation",
+   "selector": "form",
+   "old": "embedded api.form-data.com form (8 fields, submit \"Send\") on the old contact page",
+   "new": "native WordPress form (5 fields, submit \"Send inquiry\")",
+   "delta": "Form engine replaced by the native inquiry form.",
+   "severity": "S2",
+   "classification": "approved-upgrade",
+   "rootCauseHint": "DEBT-6: the 16 form-data forms are replaced by a single native form; recorded as an approved upgrade.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/inquiry-old-1440x900-fold.png",
+     "sha256": "3a96f38c4f84d003c964f31398ae3f08d13600968fdc5caa9372ab5e439d4e61"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/inquiry-new-1440x900-fold.png",
+     "sha256": "183fd37e3478521b38ef79a74250f89539c9149f65ac3c40c648dfe0439e6f55"
+    },
+    "facts": "facts.json#inquiry/1440x900/forms"
+   }
+  },
+  {
+   "id": "VC-057",
+   "scope": "page",
+   "page": "thankyou",
+   "pageType": "thankyou",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "structure",
+   "element": "thank-you page",
+   "selector": "main",
+   "old": "900px page, H1 only (\"Thank you. Your project request is in.\")",
+   "new": "2202px page with H1 + \"While you wait\" + \"Need something now?\" sections",
+   "delta": "Thank-you page rebuilt with two new sections.",
+   "severity": "S3",
+   "classification": "pending",
+   "rootCauseHint": "Copy rewrite; #65 to confirm it is the approved thank-you state.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/thankyou-old-1440x900-fold.png",
+     "sha256": "8548379ea92e0a6f19421007edc33e7efc4806ad2ce658e94c3ae4f16d18b12a"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/thankyou-new-1440x900-fold.png",
+     "sha256": "9cc1cca2e7cd05361107920815d1240a6201c43c1a14374b2ef0329fe2f6c2f9"
+    },
+    "facts": "facts.json#thankyou/1440x900/sections"
+   }
+  },
+  {
+   "id": "VC-058",
+   "scope": "page",
+   "page": "privacy",
+   "pageType": "privacy",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "structure",
+   "element": "privacy page",
+   "selector": "main",
+   "old": "Shopify policy page, 5885px, 2385 words, 16px H1",
+   "new": "rebuilt page, 4135px, 796 words, 44px H1",
+   "delta": "Privacy policy rebuilt from the Shopify policy into a designed page with shorter text.",
+   "severity": "S3",
+   "classification": "approved-upgrade",
+   "rootCauseHint": "AGENTS: one proper privacy policy replaces the eight Consentmo pages; content boundary permits rewriting.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/privacy-old-1440x900-fold.png",
+     "sha256": "8bc87a6898674211c4f64a314396772aee84cdfa87ed48f61a0444aa3589480b"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/privacy-new-1440x900-fold.png",
+     "sha256": "873533df979c557f6b7277de90181f51257bcab1a39b6eb4cf670b280d710809"
+    },
+    "facts": "facts.json#privacy/1440x900/sections"
+   }
+  },
+  {
+   "id": "VC-059",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "structure",
+   "element": "inline inquiry form in page body",
+   "selector": "form[action*=\"form-data\"]",
+   "old": "inline form-data form on home, all 9 family pages, manufacturing, about and gallery (8-9 fields)",
+   "new": "no inline form; pages end with the inquiry CTA partial instead",
+   "delta": "The mid/end-of-page inquiry form is removed from every template and replaced by a CTA.",
+   "severity": "S2",
+   "classification": "approved-upgrade",
+   "rootCauseHint": "DEBT-6 approved replacement (single-source md-inquiry-cta); visual sufficiency of the CTA is #65.",
+   "pagesAffected": [
+    "home",
+    "family",
+    "manufacturing",
+    "about",
+    "gallery"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/forms"
+   }
+  },
+  {
+   "id": "VC-060",
+   "scope": "page",
+   "page": "fam-outdoor",
+   "pageType": "family",
+   "viewports": [
+    "390x844"
+   ],
+   "area": "layout",
+   "element": "horizontal overflow",
+   "selector": "html",
+   "old": "scrollWidth 390 (no overflow)",
+   "new": "scrollWidth 740 (+350px)",
+   "delta": "Page scrolls sideways at 390.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "Overflow offenders listed in facts.json overflowEls.",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/fam-outdoor-old-390x844-fold.png",
+     "sha256": "2f23e745578e56a308572241f7cdfeee808740ba89f2a5f21316f7540a42e0f3"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/fam-outdoor-new-390x844-fold.png",
+     "sha256": "6ec48fa63162a9b03cacccd518c2f6e1442a7d3c6b2404492011d5af26c1cb7b"
+    },
+    "facts": "facts.json#fam-outdoor/390x844/hOverflow"
+   }
+  },
+  {
+   "id": "VC-061",
+   "scope": "page",
+   "page": "mfg",
+   "pageType": "manufacturing",
+   "viewports": [
+    "390x844"
+   ],
+   "area": "layout",
+   "element": "horizontal overflow",
+   "selector": "html",
+   "old": "scrollWidth 390 (no overflow)",
+   "new": "scrollWidth 760 (+370px)",
+   "delta": "Page scrolls sideways at 390.",
+   "severity": "S1",
+   "classification": "regression",
+   "rootCauseHint": "",
+   "pagesAffected": [],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/mfg-old-390x844-fold.png",
+     "sha256": "df7779401c1294d32e2878b85c86929f634d3bf9108cb0ab2df43dbb56a4ad3d"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/mfg-new-390x844-fold.png",
+     "sha256": "4a6f0c2eb4752d0ceea2b11ac8acc946cb22e956866053832bfb21e36c705df7"
+    },
+    "facts": "facts.json#mfg/390x844/hOverflow"
+   }
+  },
+  {
+   "id": "VC-062",
+   "scope": "global",
+   "page": "all",
+   "pageType": "all",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "layout",
+   "element": "page height",
+   "selector": "documentElement",
+   "old": "home 19,931px | family 9,523px | manufacturing 13,731px | gallery 3,718px | shop 13,224px",
+   "new": "home 22,691px | family 11,724px | manufacturing 18,622px | gallery 6,582px | shop 11,495px",
+   "delta": "Page heights drift with the type/margin changes: +14% home, +23% family, +36% manufacturing, +77% gallery, -13% shop.",
+   "severity": "S3",
+   "classification": "regression",
+   "rootCauseHint": "Aggregate symptom of VC-011/026/027/028/045/046; use per-page rows for fixes.",
+   "pagesAffected": [
+    "home",
+    "family",
+    "manufacturing",
+    "gallery",
+    "shop"
+   ],
+   "perPage": {
+    "home": {
+     "old": "19931",
+     "new": "22691"
+    },
+    "family(fam-laser-geo)": {
+     "old": "9523",
+     "new": "11724"
+    },
+    "manufacturing": {
+     "old": "13731",
+     "new": "18622"
+    },
+    "gallery": {
+     "old": "3718",
+     "new": "6582"
+    },
+    "shop": {
+     "old": "13224",
+     "new": "11495"
+    }
+   },
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/home-old-1440x900-fold.png",
+     "sha256": "9db85f3a770a93f3e4b918c255aed44d4feffeae013b1a4a5b7e2c2ecdeb9dce"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/home-new-1440x900-fold.png",
+     "sha256": "888bd6f53581424877e15bafc1b455b89188fc882ab21d3371db663c7fd6c6d8"
+    },
+    "facts": "facts.json#all/1440x900/docH"
+   }
+  },
+  {
+   "id": "VC-063",
+   "scope": "page",
+   "page": "gallery",
+   "pageType": "gallery",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "56px Playfair Display",
+   "new": "56px Times",
+   "delta": "Gallery H1 is rendered in the serif fallback instead of Playfair.",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "The component rule that sets Playfair on this H1 does not win on the new page.",
+   "pagesAffected": [
+    "gallery"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/gallery-old-1440x900-fold.png",
+     "sha256": "5e49dd8f4a590392e3af701c91f79c3bd263c54e16f73f8c7697fdcac37d94b7"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/gallery-new-1440x900-fold.png",
+     "sha256": "c04bddeb38a856d79ad2ca034a60bd33b7d6e40aa7fe58d65a36e07282f274dd"
+    },
+    "facts": "facts.json#gallery/1440x900/h1"
+   }
+  },
+  {
+   "id": "VC-064",
+   "scope": "page",
+   "page": "fam-custom",
+   "pageType": "family",
+   "viewports": [
+    "1440x900"
+   ],
+   "area": "global/headings",
+   "element": "h1",
+   "selector": "h1",
+   "old": "56px Playfair Display (mb 24)",
+   "new": "72px ui-serif (mb 24)",
+   "delta": "Custom-screens family H1 is larger and uses a different serif stack than every other family page; the page runs its own template (fixed sticky sub-nav + menu panel; no breadcrumb on either side).",
+   "severity": "S2",
+   "classification": "regression",
+   "rootCauseHint": "Only family page built from the custom-screens template; the hero H1 rules used by the other family pages do not apply. Old page had 4 fixed elements, new page 2 — both sides render a sticky bar, so that part is not counted as a delta.",
+   "pagesAffected": [
+    "fam-custom"
+   ],
+   "perPage": {},
+   "evidence": {
+    "oldShot": {
+     "path": "/tmp/visual-census/shots/fam-custom-old-1440x900-fold.png",
+     "sha256": "94d47a07437ae1dfcd8ac9fecad8e0478d1794686e32dc4ea5d36fc2a59e5322"
+    },
+    "newShot": {
+     "path": "/tmp/visual-census/shots/fam-custom-new-1440x900-fold.png",
+     "sha256": "14b61edc0a2c5714c70530e6dc34214c36ae7ca91c5b02ee7930d141fe133395"
+    },
+    "facts": "facts.json#fam-custom/1440x900/h1"
+   }
+  }
+ ]
+}
