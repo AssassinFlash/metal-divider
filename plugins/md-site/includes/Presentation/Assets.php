@@ -55,7 +55,15 @@ final class Assets {
 		foreach ( array( 'woocommerce', 'wc-add-to-cart', 'wc-jquery-blockui', 'wc-zoom', 'wc-flexslider', 'wc-photoswipe', 'wc-photoswipe-ui-default', 'wc-single-product', 'wc-js-cookie', 'sourcebuster-js', 'wc-order-attribution', 'hostinger-reach-embed-js' ) as $script ) {
 			\wp_dequeue_script( $script );
 		}
-		\remove_action( 'wp_footer', 'wc_no_js' );
+		// Woo attaches the flipper on body_class, after this hook: remove it
+		// again in wp_footer, before its own priority-10 print.
+		\add_action(
+			'wp_footer',
+			static function (): void {
+				\remove_action( 'wp_footer', 'wc_no_js' );
+			},
+			1
+		);
 	}
 
 	/**
