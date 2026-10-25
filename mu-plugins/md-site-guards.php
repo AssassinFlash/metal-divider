@@ -103,6 +103,42 @@ function md_site_guards_is_author_enumeration( string $author ): bool {
 }
 
 /**
+ * Whether a request path is the legacy author archive: the author base at the
+ * site root, followed by a name.
+ *
+ * `$request` is `WP::$request` — the path WordPress already resolved, with the
+ * home path and the query string taken off, so this predicate needs no
+ * superglobal and no `home_url()` of its own.
+ *
+ * The shape exists because the author permastruct follows the site's front
+ * (`$wp_rewrite->front . $author_base . '/%author%'`). With the journal's
+ * `/blog/%postname%/` the archive lives at `/blog/author/<name>/`, and the
+ * older `/author/<name>/` — the address every WordPress site had, and the one
+ * written into whatever linked to it — matches no rewrite rule at all and
+ * falls through to a 404 that is WordPress's to shape, not this guard's.
+ *
+ * Only a root-level segment counts. `/authors/alice` and `/pattern/author/`
+ * are not this door, and a nested path under the base is: the base is a
+ * reserved permastruct and a page cannot live there beside the archive. The
+ * predicate therefore cannot mistake an unrelated path for an author.
+ *
+ * @param string $request     The request path relative to the site root, no slashes at either end.
+ * @param string $author_base The author base in use (`$wp_rewrite->author_base`).
+ * @return bool Whether it is an author archive under the legacy base.
+ */
+function md_site_guards_is_legacy_author_path( string $request, string $author_base = 'author' ): bool {
+	$path = trim( $request, '/' );
+	$base = trim( $author_base, '/' );
+	if ( '' === $path || '' === $base ) {
+		return false;
+	}
+	if ( ! str_starts_with( $path, $base . '/' ) ) {
+		return false;
+	}
+	return '' !== trim( substr( $path, strlen( $base ) + 1 ), '/' );
+}
+
+/**
  * Closes the front end's doors to login-name enumeration besides the REST
  * list: the numeric `?author` parameter, and the author archives — by name as
  * well as resolved. A site with no public author pages has no use for any of
@@ -114,6 +150,14 @@ function md_site_guards_is_author_enumeration( string $author ): bool {
  * this hook runs (WP::handle_404 → WP_Query::set_404() → init_query_flags(),
  * measured on the local instance, 2026-10-24), so the `author_name` query
  * variable — which the 404 leaves in place — is what catches that shape.
+ *
+ * Neither of those sees the *legacy* `/author/<name>/` address once the site's
+ * front moved the archive to `/blog/author/<name>/`: WordPress matches no rule
+ * there, so no author query variable is ever set and the request dies in
+ * WP::handle_404. Such a request is recognised by its path instead
+ * (`md_site_guards_is_legacy_author_path`) and answered with the same 301 the
+ * other doors get — the response must not depend on whether the name exists,
+ * which is the one thing an enumeration reads.
  */
 function md_site_guards_block_author_enumeration(): void {
 	// filter_input reads the request without touching the superglobals; the
@@ -121,6 +165,15 @@ function md_site_guards_block_author_enumeration(): void {
 	// there is nothing to forge and no state to protect.
 	$author  = filter_input( INPUT_GET, 'author' );
 	$archive = is_author() || '' !== (string) get_query_var( 'author_name' );
+	if ( ! $archive ) {
+		// WP::$request is the path after WordPress stripped the home path and
+		// the query string; on this hook it is always set (WP::main parsed the
+		// request before template_redirect fired).
+		global $wp, $wp_rewrite;
+		$request = $wp instanceof WP ? (string) $wp->request : '';
+		$base    = $wp_rewrite instanceof WP_Rewrite ? (string) $wp_rewrite->author_base : 'author';
+		$archive = md_site_guards_is_legacy_author_path( $request, $base );
+	}
 	if ( ( is_string( $author ) && md_site_guards_is_author_enumeration( $author ) ) || $archive ) {
 		wp_safe_redirect( home_url( '/' ), 301 );
 		exit;

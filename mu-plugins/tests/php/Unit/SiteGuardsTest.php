@@ -20,6 +20,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers ::md_site_guards_header_lines
  * @covers ::md_site_guards_is_author_enumeration
+ * @covers ::md_site_guards_is_legacy_author_path
  * @covers ::md_site_guards_is_users_route
  * @covers ::md_site_guards_remove_pingback
  */
@@ -98,6 +99,54 @@ final class SiteGuardsTest extends TestCase {
 
 		self::assertFalse( md_site_guards_is_author_enumeration( 'admin' ) );
 		self::assertFalse( md_site_guards_is_author_enumeration( '' ) );
+	}
+
+	/**
+	 * The legacy archive is the author base at the site root, followed by a
+	 * name. `$request` is WP::$request, which carries no home path and no
+	 * query string, so `/blog/author/<name>/` (the site's *current* archive)
+	 * is `blog/author/<name>` here and is not this predicate's business —
+	 * WordPress's own author query variables catch that one.
+	 */
+	public function test_the_legacy_author_path_is_the_base_at_the_root(): void {
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'author/local-admin' ) );
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'author/nobody-here' ) );
+		// Trailing slashes are not part of the path WordPress parses.
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'author/local-admin/' ) );
+		// A nested path under the base is still the archive: the base is a
+		// reserved permastruct and no page can live there beside it.
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'author/team/alice' ) );
+	}
+
+	/**
+	 * Everything else is left to WordPress: other roots, names that merely
+	 * start with the base, the bare base, the empty path, and the current
+	 * archive under the site's front.
+	 */
+	public function test_unrelated_paths_are_not_the_legacy_author_path(): void {
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'authors/alice' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'authorizer/alice' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'author' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( '' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( '/' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'blog/author/local-admin' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'pattern/author' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'blog' ) );
+	}
+
+	/**
+	 * The base is read from the rewrite rules, not assumed: a site that renamed
+	 * it closes the archives at its own base, and the default stays the
+	 * legacy `author` where WordPress's own default is.
+	 */
+	public function test_the_legacy_author_path_follows_the_author_base(): void {
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'writer/alice', 'writer' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'author/alice', 'writer' ) );
+		// Bare and slashed spellings of the base mean the same thing.
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'author/alice', '/author/' ) );
+		// An empty base is not a door: everything would look like an archive.
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'author/alice', '' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'anything/at/all', '/' ) );
 	}
 
 	/**
