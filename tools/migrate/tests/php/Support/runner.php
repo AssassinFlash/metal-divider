@@ -117,3 +117,20 @@ function md_migrate_remote_entry( string $relative, string $name, string $extens
 		),
 	);
 }
+
+/**
+ * One products/write request carrying a single change entry.
+ *
+ * @param array<string, mixed> $change The change as the plan holds it.
+ * @return array<string, mixed> The decoded answer.
+ */
+function md_migrate_products_write( array $change ): array {
+	return md_migrate_run_request(
+		array(
+			'stage'  => 'products',
+			'action' => 'write',
+			'marker' => MD_MIGRATE_MARKER,
+			'items'  => array( $change ),
+		)
+	);
+}

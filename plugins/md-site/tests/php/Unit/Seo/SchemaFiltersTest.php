@@ -332,13 +332,13 @@ final class SchemaFiltersTest extends TestCase {
 		$this->assertSame(
 			array(
 				array( 'Home', 'https://metal-divider.com/' ),
-				array( 'FAQs & Downloads', 'https://metal-divider.com/pages/faqs/' ),
+				array( 'FAQs & Downloads', 'https://metal-divider.com/faqs/' ),
 			),
 			( new SchemaFilters() )->crumbs(
 				array(
 					array( 'Home', 'https://metal-divider.com/' ),
 					array( 'Pages', 'https://metal-divider.com/pages/' ),
-					array( 'FAQs & Downloads', 'https://metal-divider.com/pages/faqs/' ),
+					array( 'FAQs & Downloads', 'https://metal-divider.com/faqs/' ),
 				)
 			)
 		);

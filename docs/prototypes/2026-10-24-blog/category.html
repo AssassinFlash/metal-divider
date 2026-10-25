@@ -1,0 +1,136 @@
+<!doctype html>
+<!-- MetalDivider Journal — category archive prototype (wayfinder #11, 2026-10-24).
+     Structure after de-linker category_archive: topic rail + hub intro + post
+     stream, plus the cluster-hub product-family links required by the blog IA.
+     Shown for the buying-guides cluster. Static HTML only. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buying Guides · Blog · Metal Divider</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="blog.css">
+</head>
+<body>
+<section id="mdj-category" class="mdj">
+  <div class="mdj-shell">
+
+    <aside class="mdj-sidebar">
+      <a class="mdj-home" href="index.html"><span class="mdj-mark" aria-hidden="true">M</span>MetalDivider Journal</a>
+      <nav class="mdj-topics" aria-label="Journal topics">
+        <a href="index.html">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><rect x="13.5" y="13.5" width="7" height="7" rx="1"/></svg>
+          All topics
+        </a>
+        <ul>
+          <li><a href="category.html" aria-current="page">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4" width="15" height="17" rx="2"/><path d="M9 4a3 3 0 0 1 6 0"/><path d="M9 10.5h6M9 14h6"/><path d="m9.5 17 1.5 1.5 3.5-3.5"/></svg>
+            Buying Guides
+          </a></li>
+          <li><a href="category.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 8.5 4.5L12 12.5 3.5 8 12 3.5Z"/><path d="m4.5 12.5 7.5 4 7.5-4"/><path d="m4.5 16.5 7.5 4 7.5-4"/></svg>
+            Materials &amp; Finishes
+          </a></li>
+          <li><a href="category.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>
+            Manufacturing
+          </a></li>
+          <li><a href="category.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6.5-4v17"/><path d="M9.5 12.5 16 8.5l5 3V21"/><path d="M3 21h18"/><path d="M6.5 10.5v1M6.5 14v1M13 14v1M16 14v1M13 17.5v1M16 17.5v1"/></svg>
+            Applications
+          </a></li>
+          <li><a href="category.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v16M8.5 19.5h7M12 5.5H6M12 5.5h6"/><path d="M6 5.5 3 11.5a3.2 3.2 0 0 0 6 0L6 5.5Z"/><path d="M18 5.5l-3 6a3.2 3.2 0 0 0 6 0l-3-6Z"/></svg>
+            Comparisons
+          </a></li>
+        </ul>
+      </nav>
+      <div class="mdj-resources">
+        <p>Explore</p>
+        <a href="#">Patterns <span aria-hidden="true">↗</span></a>
+        <a href="#">Product families <span aria-hidden="true">↗</span></a>
+      </div>
+    </aside>
+
+    <div class="mdj-main">
+      <div class="mdj-topbar">
+        <div class="mdj-intro">
+          <p class="mdj-eyebrow">MetalDivider Journal</p>
+          <h1>Buying Guides</h1>
+          <p class="tag">Everything to settle before you place an order: how to choose a screen pattern for your application, how to read a specification, and how to verify a manufacturer's capabilities — written from the factory floor, not from a brochure.</p>
+        </div>
+        <form class="mdj-search" role="search" action="#" onsubmit="return false">
+          <label for="journal-search" class="mdj-sr">Search the journal</label>
+          <input id="journal-search" type="search" placeholder="Search the journal">
+          <button type="submit" aria-label="Search">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+          </button>
+        </form>
+      </div>
+
+      <div class="mdj-content">
+        <div class="mdj-stream">
+
+          <section class="mdj-feed" aria-label="Posts in Buying Guides">
+            <h2>All posts</h2>
+            <div class="mdj-grid">
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--grid" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Buying Guides</div>
+                    <h3>How to Choose Decorative Metal Screens: The Complete B2B Buying Guide</h3>
+                    <span class="mdj-card-date">Oct 20, 2026 · Content pillar</span>
+                  </div>
+                </a>
+              </article>
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--laser" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Buying Guides</div>
+                    <h3>How to Verify a Metal Screen Manufacturer Before You Order: 10-Point Checklist</h3>
+                    <span class="mdj-card-date">Oct 16, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+            </div>
+          </section>
+
+          <section class="mdj-families" aria-label="Product families in these guides">
+            <h2>Product families in these guides</h2>
+            <p>The buying guides reference every fabrication family in the catalog. Each family page carries the specifications the guides explain.</p>
+            <div class="mdj-family-grid">
+              <a class="mdj-family" href="#">
+                <span>Laser-Cut Panels<span>Geometric, organic, and custom-drawn patterns</span></span>
+                <em aria-hidden="true">↗</em>
+              </a>
+              <a class="mdj-family" href="#">
+                <span>Perforated Panels<span>Open area engineered for privacy, light, and airflow</span></span>
+                <em aria-hidden="true">↗</em>
+              </a>
+              <a class="mdj-family" href="#">
+                <span>Expanded Metal<span>Rigid mesh formed from a single sheet</span></span>
+                <em aria-hidden="true">↗</em>
+              </a>
+              <a class="mdj-family" href="#">
+                <span>Stainless Steel Screens<span>304 and 316 material routes</span></span>
+                <em aria-hidden="true">↗</em>
+              </a>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <p class="mdj-proto-note">Static prototype — blog faces, wayfinder #11 · structure after the de-linker journal, tokens from the MetalDivider design system · 2026-10-24</p>
+</section>
+</body>
+</html>

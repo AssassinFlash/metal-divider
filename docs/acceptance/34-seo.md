@@ -12,8 +12,8 @@
 | sitemap | `seopress_xml_sitemap_option_name` | page/post/product + category/product_cat;图片扩展 ON;无 tag/author/附件 |
 | robots.txt | PRO 虚拟文件 | §4.2 七行逐字 + `Sitemap: <home>/sitemaps.xml` |
 | 面包屑 | PRO breadcrumbs + JSON-LD | 开;JSON-LD 形状按旧站实际两级(PDP=Home>图案;内容页=Home>页;去 /pages 壳层) |
-| Schema builder | `seopress_schemas` ×3 | Product(post_type=product;brand=MetalDivider;价格 none ⇒ 无 offers)、FAQPage(custom,postId=/pages/faqs,Q&A 自单源模板实时抽取 40 对)、BlogPosting(post_type=post) |
-| /pages 壳 | SEOPress redirect | `/pages` → `/` 301(#4 裁定:URL 前缀不是页面)+ per-page noindex(出 sitemap) |
+| Schema builder | `seopress_schemas` ×3 | Product(post_type=product;brand=MetalDivider;价格 none ⇒ 无 offers)、FAQPage(custom,postId=<`/faqs/` 的页 ID>,Q&A 自单源模板实时抽取 40 对)、BlogPosting(post_type=post) |
+| /pages 壳 | SEOPress redirect | `/pages` → `/` 301(#4 裁定:URL 前缀不是页面,故**不设 page meta**:无页可 noindex,301 在 `template_redirect` 先于任何渲染触发,壳自然出 sitemap 与索引) |
 | 逐页 meta | `_seopress_*` postmeta | inquiry / privacy 手工 title;blog 页 title+分页;thank-you noindex;sample-page(WP 安装残留,内容面落地前先不可见)noindex |
 | 运行时装配 | `SchemaFilters`(六个 filter) | WebSite+SearchAction;Organization 双 contactPoint(sales 邮箱 + WhatsApp 电话);Product 补 material/category/ACF 四属性(16 空值品省略 open_area)/画廊前 6/绝对 @id/QuoteAction;BlogPosting author+publisher=@id;面包屑 crumbs 塑形;标题空白收敛 |
 
@@ -28,8 +28,8 @@
 | 博客首页 `/blog/` | `Blog — …`+分页 | — | — | — | — |
 | 博客分类 | `… — Blog — …` | — | — | — | — |
 | 博客文 `/hello-world/` | 页面模板 | 继承 | 自指 | index | BlogPosting(author/publisher=@organization);og:title/desc 继承 |
-| 内容页 ×13(`/pages/about-us/` 等) | 页面模板 | — | 自指 | index | BreadcrumbList 两级 |
-| `/pages/faqs/` | 页面模板 | — | — | index | **FAQPage 40 问**(与单源组件同源);PDP 无 FAQPage(单源,无 ×146 重复) |
+| 内容页 ×13(`/about-us/` 等,根级) | 页面模板 | — | 自指 | index | BreadcrumbList 两级 |
+| `/faqs/` | 页面模板 | — | — | index | **FAQPage 40 问**(与单源组件同源);PDP 无 FAQPage(单源,无 ×146 重复) |
 | `/inquiry/`、`/privacy/` | 手工位 | — | — | index | — |
 | `/inquiry/thank-you/` | — | — | — | **noindex** | — |
 | 搜索/日期/作者档案 | — | — | — | **noindex** ×3 | — |

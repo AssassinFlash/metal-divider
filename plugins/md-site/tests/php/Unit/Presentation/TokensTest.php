@@ -31,8 +31,13 @@ final class TokensTest extends TestCase {
 	 * wholesale change: when a change to tokens.css is INTENDED, recompute
 	 * the hash and re-pin it in the same diff, so the review sees a
 	 * conscious token-layer change instead of a silent transplant.
+	 *
+	 * Re-pinned 2026-10-26 for the `--md-header-h` addition: the sticky
+	 * header band's measured height (73/76/113px across its three tiers),
+	 * which the sticky rails and every in-page anchor offset now read
+	 * instead of hard-coding a guess.
 	 */
-	private const NORMALIZED_SHA256 = '439e73c3f10ede91f082a9d2e87848d136b7e697c3a5197384f1c547ea740f8f';
+	private const NORMALIZED_SHA256 = 'da795c06d66f9521ab64ec2b01b95c995c4e517684721becef9be05ac6bb03ee';
 
 	/**
 	 * The exported stylesheet carries the design tokens of the MASTER.md
@@ -56,7 +61,10 @@ final class TokensTest extends TestCase {
 		$this->assertStringContainsString( '--md-font-display: "Playfair Display", Georgia, serif', $css );
 		$this->assertStringContainsString( '--md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif', $css );
 		$this->assertStringContainsString( '--md-container: 1400px', $css );
-		$this->assertStringContainsString( '/wp-content/plugins/md-site/assets/fonts/inter-400.woff2', $css, 'the fonts are self-hosted from this plugin (OFL), never a third-party CDN' );
+		$this->assertStringContainsString( '--md-header-h: 73px', $css, 'the sticky band height is a token the sticky rails and anchors read' );
+		$this->assertStringContainsString( '--md-header-h: 76px', $css, 'the 991–1199 tier' );
+		$this->assertStringContainsString( '--md-header-h: 113px', $css, 'the >=1200 tier carries the 37px notification strip' );
+		$this->assertStringContainsString( '/wp-content/plugins/md-site/assets/fonts/inter-var.woff2', $css, 'the fonts are self-hosted from this plugin (OFL), never a third-party CDN' );
 
 		$stripped   = preg_replace( '/\/\*.*?\*\//s', '', $css ) ?? '';
 		$normalized = strtolower( preg_replace( '/\s+/', ' ', $stripped ) ?? '' );

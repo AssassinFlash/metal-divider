@@ -32,6 +32,22 @@ final class MD_Migrate_Fakes {
 	public static array $product_ids = array();
 
 	/**
+	 * The SKU the product double reports and records (the rename path reads
+	 * it before writing, so a test can hand it the source's code).
+	 *
+	 * @var string
+	 */
+	public static string $product_sku = '';
+
+	/**
+	 * The product id the double reports (the write path records its meta
+	 * against it).
+	 *
+	 * @var int
+	 */
+	public static int $product_id = 5;
+
+	/**
 	 * The id wp_insert_attachment hands out.
 	 *
 	 * @var int
@@ -61,6 +77,8 @@ final class MD_Migrate_Fakes {
 	public static function reset( string $basedir ): void {
 		self::$upload_basedir = $basedir;
 		self::$product_ids    = array();
+		self::$product_sku    = '';
+		self::$product_id     = 5;
 		self::$attachment_id  = 77;
 		self::$meta           = array();
 		self::$calls          = array();

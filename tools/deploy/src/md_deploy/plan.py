@@ -74,6 +74,26 @@ STAGING_MU = "md-staging-guards.php"
 # tickets add the guard when they add the templates.
 PRESENT = ("md-site", "present")
 
+# The series cards' one-time seed (the hub's card images and copy). It rides
+# the same DB plane as present, and for the same reason: the hub reads
+# WooCommerce's own `thumbnail_id` and the term description, a freshly
+# migrated site carries neither, and a clean target would otherwise ship nine
+# blank cards. The command writes only an EMPTY field and marks each term it
+# handled, so a later deploy onto a maintained site is a no-op and an
+# administrator's edit — including a deliberate clearing — is never restored.
+SEED_SERIES = ("md-site", "seed-series")
+
+# The custom-screens pattern library's one-time tile order. Same DB plane,
+# same discipline: the page's curation is WooCommerce's `menu_order`, a fresh
+# target has every product at 0 (no tiles at all), and the seed gives the
+# eighteen curated patterns their positions. It marks every product it has
+# handled, so a later deploy is a no-op and an administrator's edit —
+# including the deliberate REMOVAL of a tile (clearing `menu_order` back to
+# 0, which the field alone cannot tell from "never seeded") — is never
+# restored. It runs beside seed-series and before seo, so the editorial
+# faces are in their seeded state for anything the SEO plane reads.
+SEED_TILES = ("md-site", "seed-tiles")
+
 # The SEO configuration plane's DB-plane step (spec 22, ticket #34): the same
 # deploy that ships md-site installs its SEOPress state, so staging and
 # production never see a deploy whose SEO surface went stale. Idempotent, and
@@ -83,8 +103,10 @@ SEO = ("md-site", "seo")
 # The WindPress cache compile is browser-side only (Tailwind v4 has no
 # server-side build): the deploy prints how to run it and checks the result.
 # The anchor-class half of the assertion is the presentation plugin's own
-# checker (spec 17 §5.4), reached through this WP-CLI contract; the plugin's
-# ticket implements it, and until then the check says the plugin is absent.
+# checker (spec 17 §5.4, plugins/md-site/includes/Presentation/
+# WindPressAnchors.php), reached through this WP-CLI contract: it prints the
+# anchor classes the compiled cache does not carry, `[]` when it carries them
+# all.
 WINDPRESS_CACHE = "wp-content/uploads/windpress/cache/tailwind.css"
 WINDPRESS_ANCHORS = ("md-site", "windpress-anchors", "--format=json")
 

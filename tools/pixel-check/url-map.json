@@ -1,16 +1,16 @@
 {
   "ticket": "AssassinFlash/metal-divider#30",
-  "generated_at": "2026-10-24T07:31:26.345Z",
+  "generated_at": "2026-10-25T21:31:16.605Z",
   "sources": {
-    "baseline_manifest": "../pixel-baseline/manifest.json",
-    "baseline_manifest_sha256": "c0ae4f80415a2103d35d5f5359b420fa6c16bb55a748bfb28332276cfcb0bd86",
+    "baseline_manifest": "../../data/pixel-baseline/manifest.json",
+    "baseline_manifest_sha256": "a9e8432e55b7eb1698368e82965e4a202806e387cf4c4475a15587d90583fac7",
     "shopify_public_sha256": {
       "pages": "43c21333cedb493071e2ba19b65d1753f3e17737fb65835e090e9219d8835260",
       "collections": "3d4e31a4a85013c9efb99e49e660e2518cc050780d872f663ed39a35326fb90a",
       "products": "3f19c439fdb1da8c662abe837596fc2c67a135eea8988c089fb000e47f006f0c"
     }
   },
-  "rules": "spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /shop/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7/D8",
+  "rules": "spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /shop/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7; collections/pattern-gradient retired from this map only (issue #25 cancelled D8 — the series is live with no 301 — and the old empty collection has no comparable baseline)",
   "summary": {
     "total": 182,
     "active": 170,
@@ -44,7 +44,7 @@
       "type": "pages",
       "slug": "faqs",
       "status": "active",
-      "path": "/pages/faqs",
+      "path": "/faqs",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/faqs"
     },
@@ -52,7 +52,7 @@
       "type": "pages",
       "slug": "laser-cut-geometric-metal-screens",
       "status": "active",
-      "path": "/pages/laser-cut-geometric-metal-screens",
+      "path": "/laser-cut-geometric-metal-screens",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/laser-cut-geometric-metal-screens"
     },
@@ -60,7 +60,7 @@
       "type": "pages",
       "slug": "glass-hybrid-screens",
       "status": "active",
-      "path": "/pages/glass-hybrid-screens",
+      "path": "/glass-hybrid-screens",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/glass-hybrid-screens"
     },
@@ -68,7 +68,7 @@
       "type": "pages",
       "slug": "outdoor-privacy-landscape-screens",
       "status": "active",
-      "path": "/pages/outdoor-privacy-landscape-screens",
+      "path": "/outdoor-privacy-landscape-screens",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/outdoor-privacy-landscape-screens"
     },
@@ -76,7 +76,7 @@
       "type": "pages",
       "slug": "chinese-style-artistic-screens",
       "status": "active",
-      "path": "/pages/chinese-style-artistic-screens",
+      "path": "/chinese-style-artistic-screens",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/chinese-style-artistic-screens"
     },
@@ -84,7 +84,7 @@
       "type": "pages",
       "slug": "stainless-steel-screens",
       "status": "active",
-      "path": "/pages/stainless-steel-screens",
+      "path": "/stainless-steel-screens",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/stainless-steel-screens"
     },
@@ -92,7 +92,7 @@
       "type": "pages",
       "slug": "manufacturing-process",
       "status": "active",
-      "path": "/pages/manufacturing-process",
+      "path": "/manufacturing-process",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/manufacturing-process"
     },
@@ -100,7 +100,7 @@
       "type": "pages",
       "slug": "laser-cut-panels",
       "status": "active",
-      "path": "/pages/laser-cut-panels",
+      "path": "/laser-cut-panels",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/laser-cut-panels"
     },
@@ -108,7 +108,7 @@
       "type": "pages",
       "slug": "perforated-panels",
       "status": "active",
-      "path": "/pages/perforated-panels",
+      "path": "/perforated-panels",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/perforated-panels"
     },
@@ -116,7 +116,7 @@
       "type": "pages",
       "slug": "expanded-metal-panels",
       "status": "active",
-      "path": "/pages/expanded-metal-panels",
+      "path": "/expanded-metal-panels",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/expanded-metal-panels"
     },
@@ -124,7 +124,7 @@
       "type": "pages",
       "slug": "project-gallery",
       "status": "active",
-      "path": "/pages/project-gallery",
+      "path": "/project-gallery",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/project-gallery"
     },
@@ -132,7 +132,7 @@
       "type": "pages",
       "slug": "about-us",
       "status": "active",
-      "path": "/pages/about-us",
+      "path": "/about-us",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/about-us"
     },
@@ -212,7 +212,7 @@
       "type": "pages",
       "slug": "custom-metal-divider-screens",
       "status": "active",
-      "path": "/pages/custom-metal-divider-screens",
+      "path": "/custom-metal-divider-screens",
       "ledger": "L5-L17",
       "baseline_url": "https://metalpartition.com/pages/custom-metal-divider-screens"
     },
@@ -1420,8 +1420,8 @@
       "type": "collections",
       "slug": "pattern-gradient",
       "status": "retired",
-      "ledger": "D8",
-      "reason": "empty collection, 301 -> /shop/ (spec 08 D8)",
+      "ledger": "D8/#25",
+      "reason": "Issue #25 cancelled D8 (the series is live, no 301); the old collection HAS a baseline but it is an empty-content one — the captured page is an empty state (\"Showing 0 patterns\", 0 /products/ links), so there is no product grid to compare against",
       "baseline_url": "https://metalpartition.com/collections/pattern-gradient"
     },
     {

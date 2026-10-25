@@ -18,14 +18,38 @@
  *   - pages/<h>          -> /pages/<h>             (L5-L17; R5)
  *   - retired: contact (X1), custom-metal-divider-screens-thank-you (X2),
  *     metal-divider old landing (X3), the 8 Consentmo compliance pages (X4,
- *     D7), the empty pattern-gradient collection (D8).
+ *     D7).
+ *
+ * `collections/pattern-gradient` is retired from the pixel comparison and
+ * from nothing else. Two rulings meet on that one row and they do not
+ * contradict each other:
+ *   - On the site it is a live series. Issue #25 re-homes the three
+ *     gradient patterns (La Pente, Nara, Skyfall) into it and cancels spec
+ *     08's D8 redirect, so the path stays /collections/pattern-gradient/
+ *     with no 301 (`Seo\Config::REDIRECT_TARGETS` carries only the /pages
+ *     shell). A map row is not a routing decision.
+ *   - In the pixel gate the baseline is empty. It exists — two screenshots
+ *     with sha256s, page HTTP 200 — but it records an empty state, not a
+ *     product grid, so there is nothing to compare a grid against. The old
+ *     collection was empty on Shopify (product_count 0 in
+ *     data/shopify-public), and the page captured on 2026-10-25 is the
+ *     theme chrome around that empty grid: measured again 2026-10-26 in real
+ *     Chrome, https://metalpartition.com/collections/pattern-gradient has
+ *     0 links to /products/, `main` 5,491px tall and `innerText` that never
+ *     reaches a card, against 24 product links, 12,804px and real cards for
+ *     the sibling /collections/pattern-abstract. Diffing the new site's
+ *     three cards against that page measures content presence, not styling;
+ *     a mask wide enough to hide it would hide the whole grid, which is the
+ *     page. Retiring the row is the honest reading of the baseline.
  *
  * Expected result: 182 rows, 170 active (1 home + 13 pages + 146 PDP +
- * 8 collections + 2 index) and 12 retired — spec 08 §5.1's pixel-gate set.
+ * 8 collections + 2 index) and 12 retired — spec 08 §5.1's pixel-gate set,
+ * with the gradient collection retired for the empty-baseline reason above
+ * rather than for a redirect.
  *
  * Usage:
  *   node gen-url-map.mjs --data /path/to/data/shopify-public \
- *                       [--manifest ../pixel-baseline/manifest.json] \
+ *                       [--manifest ../../data/pixel-baseline/manifest.json] \
  *                       [--out url-map.json]
  */
 import fs from 'node:fs';
@@ -49,11 +73,23 @@ const RETIRED_PAGES = {
   'us-laws-compliance': { ledger: 'X4/D7', reason: 'Consentmo compliance page, 301 -> /privacy/ (spec 08 D7)' },
 };
 const RETIRED_COLLECTIONS = {
-  'pattern-gradient': { ledger: 'D8', reason: 'empty collection, 301 -> /shop/ (spec 08 D8)' },
+  // Comparison-only retirement: the row is skipped by the capture, and its
+  // reason is an empty-content baseline, not a redirect. Nothing on the site
+  // points this URL anywhere — it serves the live series.
+  'pattern-gradient': {
+    ledger: 'D8/#25',
+    reason:
+      'Issue #25 cancelled D8 (the series is live, no 301); the old collection HAS a baseline but it is an empty-content one — the captured page is an empty state ("Showing 0 patterns", 0 /products/ links), so there is no product grid to compare against',
+  },
 };
 
 function parseArgs(argv) {
-  const a = { manifest: path.join(HERE, '..', 'pixel-baseline', 'manifest.json'), out: path.join(HERE, 'url-map.json') };
+  // The default manifest is the one check.mjs diffs against: it resolves
+  // `--baseline` to <repo>/data/pixel-baseline by default and refuses a
+  // url-map recorded against any other capture (sha256 guard). Pointing
+  // this default at tools/pixel-baseline instead — a different file with a
+  // different sha — regenerated a map the checker rejected on every run.
+  const a = { manifest: path.join(HERE, '..', '..', 'data', 'pixel-baseline', 'manifest.json'), out: path.join(HERE, 'url-map.json') };
   for (let i = 2; i < argv.length; i++) {
     const k = argv[i];
     const v = argv[i + 1];
@@ -116,7 +152,7 @@ for (const t of manifest.targets) {
     const retired = RETIRED_PAGES[t.slug];
     row = retired
       ? { type: t.type, slug: t.slug, status: 'retired', ledger: retired.ledger, reason: retired.reason }
-      : { type: t.type, slug: t.slug, status: 'active', path: `/pages/${t.slug}`, ledger: 'L5-L17' };
+      : { type: t.type, slug: t.slug, status: 'active', path: `/${t.slug}`, ledger: 'L5-L17' };
   } else {
     fail(`${key}: unknown target type in baseline manifest`);
   }
@@ -143,7 +179,10 @@ const tally = {
     'collections-index': count((e) => e.type === 'collections-index'),
   },
 };
-// Spec 08 §5.1: 1 + 13 + 146 + 8 + 2 = 170 active of 182 captured.
+// Spec 08 §5.1 with the gradient collection retired from the comparison (its
+// old page is empty, so there is no baseline to diff): 1 + 13 + 146 + 8 + 2 =
+// 170 active of 182 captured. The retirement does not touch the site: the
+// series is live at /collections/pattern-gradient/ with its three patterns.
 const expected = { total: 182, active: 170, retired: 12 };
 for (const [k, v] of Object.entries(expected)) {
   if (tally[k] !== v) fail(`expected ${k}=${v}, got ${tally[k]} — a ruling changed, update this generator`);
@@ -164,7 +203,7 @@ const out = {
       products: sha256(path.join(dataDir, 'products.json')),
     },
   },
-  rules: 'spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /shop/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7/D8',
+  rules: 'spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /shop/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7; collections/pattern-gradient retired from this map only (issue #25 cancelled D8 — the series is live with no 301 — and the old empty collection has no comparable baseline)',
   summary: tally,
   entries,
 };

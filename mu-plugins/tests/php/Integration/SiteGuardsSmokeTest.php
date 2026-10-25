@@ -180,12 +180,36 @@ final class SiteGuardsSmokeTest extends TestCase {
 	 * numeric `?author` parameter, and the author archive — whether the
 	 * author exists (WordPress would serve the archive) or not (it would
 	 * serve a 404 whose URL still confirms the name).
+	 *
+	 * The archive is asked at both addresses it has. The site's front is
+	 * `/blog/%postname%/`, so the author permastruct is
+	 * `/blog/author/<name>/` and that is what `get_author_posts_url()` returns
+	 * — WordPress's own rewrite rules resolve it, and the guard answers off
+	 * its author query variables. `/author/<name>/` is the address the site
+	 * had before that front, it matches no rewrite rule now, and the guard
+	 * answers off the path instead (md_site_guards_is_legacy_author_path).
+	 * Both must 301: an enumeration reads whether the name exists, and the
+	 * two shapes must not answer differently.
 	 */
 	public function test_the_author_doors_redirect_home(): void {
 		$author = trim( self::wp( array( 'eval', 'echo (string) ( get_userdata( 1 )->user_nicename ?? "" );' ) ) );
 		self::assertNotSame( '', $author, 'the site has no user 1 to name an archive' );
 
-		foreach ( array( '/?author=1', "/author/{$author}", '/author/nobody-here' ) as $target ) {
+		// The current archive's address, as WordPress itself builds it: the
+		// assertion follows the permalink scheme rather than assuming one.
+		// The path is taken inside WP-CLI, where the helper exists — this test
+		// runs outside WordPress.
+		$path = trim(
+			self::wp(
+				array(
+					'eval',
+					'echo (string) wp_parse_url( (string) get_author_posts_url( 1 ), PHP_URL_PATH );',
+				)
+			)
+		);
+		self::assertSame( "/blog/author/{$author}/", $path, 'the author archive moved: this test asserts the current address' );
+
+		foreach ( array( '/?author=1', $path, "/author/{$author}", '/author/nobody-here' ) as $target ) {
 			$response = self::fetch( self::$url . $target );
 
 			self::assertSame( 301, $response['status'], $target );

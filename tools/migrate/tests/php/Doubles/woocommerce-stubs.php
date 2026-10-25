@@ -33,6 +33,15 @@ namespace {
 		}
 
 		/**
+		 * The product's SKU (WooCommerce's get_sku, '' when unset).
+		 *
+		 * @return string The SKU.
+		 */
+		public function get_sku(): string {
+			return '';
+		}
+
+		/**
 		 * The product's name.
 		 *
 		 * @return string The name.

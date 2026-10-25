@@ -2,7 +2,7 @@
 
 全站用词。文档、代码、票面一律用规范词;列出禁用词的,禁止使用。
 
-- **图案 Pattern**:可定制的装饰金属屏风切割图案,站内以 WooCommerce「产品」承载,现 146 个。全站核心名词。不用「款式」「花型」。
+- **图案 Pattern**:可定制的装饰金属屏风切割图案,站内以 WooCommerce「产品」承载,现 146 个。全站核心名词。不用「款式」「花型」。**客户可见面(文案、规格表头、面包屑、CTA、alt、页面标题)一律用 pattern,不出现 product/products**;WooCommerce 内部机制、后台菜单、`post_type`/`product_cat`、schema `@type: Product` 与 URL 片段不在限制内(裁定见 AGENTS.md 2026-10-24 修订 5;守卫见 `TemplatesTest::test_no_customer_template_calls_a_pattern_a_product`)。
 - **图案系列 Pattern Series**:按风格划分的图案分组(abstract、geometric、moroccan-arabic、organic、perforated、gradient、landscape、asian、vintage-retro),共 9 个。承自旧站的 pattern collections。
 - **产品族页 Product Family Page**:按工艺或应用组织的营销落地页(激光切割几何、玻璃混合、中式艺术、户外隐私与景观、激光切割板、穿孔板、拉伸金属板),及不锈钢屏风枢纽页。
 - **镂空率 Open area**:图案开孔面积占比,产品核心规格之一。

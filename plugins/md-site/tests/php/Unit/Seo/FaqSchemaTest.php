@@ -29,12 +29,12 @@ final class FaqSchemaTest extends TestCase {
 	 */
 	private const HTML = <<<'HTML'
 		<div><article>
-			<button type="button" x-on:click="openFaq = openFaq === 'faq_01' ? '' : 'faq_01'" aria-controls="faq-download-answer-x-faq_01">
+			<button type="button" x-on:click="toggle('faq_01')" aria-controls="faq-download-answer-x-faq_01">
 				<span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How do I get a quote?</span>
 			</button>
 			<div id="faq-download-answer-x-faq_01" x-show="openFaq === 'faq_01'"><p>Send the application, approximate dimensions.</p><p>We reply with pricing.</p></div>
 		</article><article>
-			<button type="button" x-on:click="openFaq = openFaq === 'faq_02' ? '' : 'faq_02'" aria-controls="faq-download-answer-x-faq_02">
+			<button type="button" x-on:click="toggle('faq_02')" aria-controls="faq-download-answer-x-faq_02">
 				<span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Pricing &amp; MOQ?</span>
 			</button>
 			<div id="faq-download-answer-x-faq_02" x-show="openFaq === 'faq_02'"><p>Quotes are per project.</p></div>
@@ -83,13 +83,13 @@ final class FaqSchemaTest extends TestCase {
 	 * acceptedAnswer.
 	 */
 	public function test_json_ld_is_the_faqpage_script_element(): void {
-		$json_ld = FaqSchema::json_ld( self::HTML, 'https://metal-divider.com/pages/faqs/' );
+		$json_ld = FaqSchema::json_ld( self::HTML, 'https://metal-divider.com/faqs/' );
 		$this->assertStringStartsWith( '<script type="application/ld+json">', $json_ld );
 		$this->assertStringEndsWith( '</script>', $json_ld );
 		$decoded = json_decode( substr( $json_ld, strlen( '<script type="application/ld+json">' ), -strlen( '</script>' ) ), true );
 		$this->assertSame( 'https://schema.org', $decoded['@context'] );
 		$this->assertSame( 'FAQPage', $decoded['@type'] );
-		$this->assertSame( 'https://metal-divider.com/pages/faqs/#faqpage', $decoded['@id'] );
+		$this->assertSame( 'https://metal-divider.com/faqs/#faqpage', $decoded['@id'] );
 		$this->assertCount( 2, $decoded['mainEntity'] );
 		$this->assertSame( 'How do I get a quote?', $decoded['mainEntity'][0]['name'] );
 		$this->assertSame( 'Answer', $decoded['mainEntity'][0]['acceptedAnswer']['@type'] );
@@ -100,6 +100,6 @@ final class FaqSchemaTest extends TestCase {
 	 * Without pairs there is no element at all.
 	 */
 	public function test_json_ld_empty_without_pairs(): void {
-		$this->assertSame( '', FaqSchema::json_ld( '<div>nothing</div>', 'https://metal-divider.com/pages/faqs/' ) );
+		$this->assertSame( '', FaqSchema::json_ld( '<div>nothing</div>', 'https://metal-divider.com/faqs/' ) );
 	}
 }

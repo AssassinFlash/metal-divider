@@ -187,6 +187,20 @@ export async function captureOne(context, t, vp, outDir, opts = {}) {
     await page
       .waitForFunction(() => Array.from(document.images).every((i) => i.complete), { timeout: 15_000 })
       .catch(() => null);
+    // WindPress Tailwind v4 JIT compiles client-side after DOM load; without
+    // this wait the screenshot captures an unstyled page (styles still in the
+    // VFS blob, not yet injected into <style> tags). On sites without WindPress
+    // this passes immediately (style bytes are already stable).
+    await page
+      .waitForFunction(
+        () => {
+          let total = 0;
+          document.querySelectorAll('style').forEach((s) => { total += s.textContent.length; });
+          return total > 50000;
+        },
+        { timeout: 30_000, polling: 500 }
+      )
+      .catch(() => null); // no WindPress JIT → pass through
     await page.waitForTimeout(1500);
     const residualBanner = await detectResidualBanner(page);
     const extras = {};

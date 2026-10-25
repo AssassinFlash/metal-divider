@@ -76,16 +76,9 @@ class="xo-container--box"
   
   <header class="pdp-hero" id="hero">
     <div class="pdp-hero-bg" aria-hidden="true">
-      
-<img
-          src="[md_pdp_image slot="hero-bg"]"
-          alt=""
-          loading="eager"
-          fetchpriority="high"
-         width="2400" height="1351">
+      [md_pdp_image slot="hero-bg"]
         <span class="pdp-hero-scrim"></span>
-      
-    </div>
+      </div>
 
     <div class="pdp-container pdp-hero-inner">
       <div class="pdp-hero-grid-cols">
@@ -110,13 +103,7 @@ class="xo-container--box"
           <p class="pdp-hero-alt">Prefer email? <a href="/inquiry/?source_page=pattern-pdp&source_module=hero&source_button=request_quote">Send files through the contact form</a></p>
         </div>
 
-        
-          <div class="pdp-hero-plate gs-reveal"><img
-              src="[md_pdp_image slot="plate"]"
-              alt="[lc_the_title] pattern detail reference"
-              loading="lazy"
-             width="1000" height="1998">
-          </div>
+        [lc_if condition="md_pdp_slot_has_image" param="plate"]<div class="pdp-hero-plate gs-reveal">[md_pdp_image slot="plate"]</div>[/lc_if]
         
       </div>
 
@@ -137,17 +124,11 @@ class="xo-container--box"
         <div class="gs-reveal">
           <span class="pdp-eyebrow">Design intent</span>
           <h2>Visual rhythm and light behavior</h2>
-          <p class="pdp-body">[md_pdp_design_intent slot="lead"]</p>
-          <p class="pdp-body">[md_pdp_design_intent slot="supplemental"]</p>
+          [lc_if condition="md_pdp_has_design_intent" param="lead"]<p class="pdp-body">[md_pdp_design_intent slot="lead"]</p>[/lc_if]
+          [lc_if condition="md_pdp_has_design_intent" param="supplemental"]<p class="pdp-body">[md_pdp_design_intent slot="supplemental"]</p>[/lc_if]
           
         </div>
-        
-          <figure class="pdp-square gs-reveal"><img
-              src="[md_pdp_image slot="square"]"
-              alt="[lc_the_title] official installation scene 3"
-              loading="lazy"
-             width="1200" height="680">
-          </figure>
+        [lc_if condition="md_pdp_slot_has_image" param="square"]<figure class="pdp-square gs-reveal">[md_pdp_image slot="square"]</figure>[/lc_if]
         
       </div>
     </div>
@@ -197,7 +178,7 @@ class="xo-container--box"
       <div class="pdp-container">
         <div class="pdp-related-head gs-reveal">
           <h2>Adjacent patterns in this family</h2>
-          <a href="/collections/all" class="pdp-textlink">View the full catalog</a>
+          <a href="/shop/" class="pdp-textlink">View the full catalog</a>
         </div>
         <div class="pdp-related-grid">[md_pdp_related]</div>
     </section>

@@ -56,6 +56,7 @@ defined( 'ABSPATH' ) || exit;
 				'cad_status',
 				'summary',
 				'inspiration',
+				'notable_effect',
 				'source_site',
 				'source_slug',
 				'source_manifest',
@@ -69,6 +70,11 @@ defined( 'ABSPATH' ) || exit;
 
 		return array(
 			'id'                 => $product->get_id(),
+			'sku'                => (string) $product->get_sku(),
+			// The export's raw pattern_code when the SKU was normalized away
+			// from it; '' when the two are the same, so the reconcile can
+			// prove the invariant rather than assume it.
+			'source_code'        => (string) get_post_meta( $product->get_id(), '_md_source_code', true ),
 			'title'              => $product->get_name(),
 			'slug'               => $product->get_slug(),
 			'status'             => $product->get_status(),
@@ -389,12 +395,28 @@ defined( 'ABSPATH' ) || exit;
 			$product          = $id ? wc_get_product( $id ) : null;
 			$products[ $sku ] = $product ? $product_read( $product ) : null;
 		}
-		// Products are not hierarchical: the path is the slug.
+		// Products are not hierarchical: the path is the slug. The row
+		// carries the product's current SKU, because a SKU whose material
+		// word was corrected no longer answers the plan's lookup while the
+		// post itself is still the same pattern — the caller tells the
+		// rename apart from a genuinely taken slug by that value, and reads
+		// the current row under that code so the diff can see the drift.
 		$by_slug = array();
 		foreach ( (array) $request['slugs'] as $slug ) {
 			$post = get_page_by_path( (string) $slug, OBJECT, 'product' );
-			if ( $post ) {
-				$by_slug[ $slug ] = (int) $post->ID;
+			if ( ! $post ) {
+				continue;
+			}
+			// One guard for both answers: a post that is not a product (a
+			// stale id, a ghost row) still owns its slug but names no SKU.
+			$owner            = wc_get_product( (int) $post->ID );
+			$owner_sku        = $owner instanceof WC_Product ? (string) $owner->get_sku() : '';
+			$by_slug[ $slug ] = array(
+				'id'  => (int) $post->ID,
+				'sku' => $owner_sku,
+			);
+			if ( $owner instanceof WC_Product && '' !== $owner_sku && ! isset( $products[ $owner_sku ] ) ) {
+				$products[ $owner_sku ] = $product_read( $owner );
 			}
 		}
 
@@ -493,8 +515,12 @@ defined( 'ABSPATH' ) || exit;
 			$sku = (string) $change['sku'];
 			$set = (array) $change['set'];
 			try {
-				$id      = (int) wc_get_product_id_by_sku( $sku );
-				$product = $id ? wc_get_product( $id ) : null;
+				// The plan's SKU is the corrected value; a row that still
+				// carries the source's code is named by id instead, which is
+				// how a rename is told apart from a create.
+				$row_id  = (int) ( $change['id'] ?? 0 );
+				$id      = $row_id > 0 ? 0 : (int) wc_get_product_id_by_sku( $sku );
+				$product = $row_id > 0 ? wc_get_product( $row_id ) : ( $id ? wc_get_product( $id ) : null );
 				if ( ! empty( $set['create'] ) ) {
 					if ( $product ) {
 						$fail( "product {$sku} exists although the plan said create" );
@@ -503,7 +529,10 @@ defined( 'ABSPATH' ) || exit;
 					$product->set_sku( $sku );
 				}
 				if ( ! $product instanceof WC_Product ) {
-					$fail( "no product with SKU {$sku}" );
+					$fail( "no product with SKU {$sku}" . ( $row_id > 0 ? " or id {$row_id}" : '' ) );
+				}
+				if ( $row_id > 0 && (string) $product->get_sku() !== $sku ) {
+					$product->set_sku( $sku );
 				}
 				if ( isset( $set['title'] ) ) {
 					$product->set_name( (string) $set['title'] );
@@ -550,6 +579,12 @@ defined( 'ABSPATH' ) || exit;
 				}
 				$product->save();
 				$post_id = $product->get_id();
+				// The source's own pattern code, when the plan's SKU is not
+				// it: provenance for the rename, written once.
+				$source_code = (string) ( $change['item']['source_code'] ?? '' );
+				if ( '' !== $source_code && $source_code !== $sku ) {
+					update_post_meta( $post_id, '_md_source_code', wp_slash( $source_code ) );
+				}
 				foreach ( (array) ( $set['acf_set'] ?? array() ) as $name => $value ) {
 					if ( 'motifs' === $name ) {
 						$value = array_values( (array) $value );
@@ -645,6 +680,12 @@ defined( 'ABSPATH' ) || exit;
 				if ( isset( $fill['variants'] ) && ! $row['variants'] ) {
 					update_post_meta( $row['id'], '_md_variants', wp_slash( (string) wp_json_encode( $fill['variants'] ) ) );
 				}
+				// The alt is customer-visible: the plan's corrected text
+				// replaces a stale one (the superseded material words), and
+				// the empty case still only fills a blank (import_media).
+				if ( isset( $fill['alt'] ) && $fill['alt'] !== $row['alt'] ) {
+					update_post_meta( $row['id'], '_wp_attachment_image_alt', wp_slash( (string) $fill['alt'] ) );
+				}
 			}
 			$product = wc_get_product( $id );
 			if ( ! $product instanceof WC_Product ) {
@@ -734,9 +775,10 @@ defined( 'ABSPATH' ) || exit;
 	$pages_read = static function () use ( $request, $attachment_row ): array {
 		$pages = array();
 		foreach ( (array) $request['slugs'] as $slug ) {
-			// The content pages are children of the 'pages' shell, so the
-			// path is pages/<slug> (that parent is what keeps the old URLs).
-			$post = get_page_by_path( 'pages/' . $slug, OBJECT, 'page' );
+			// Canonical pages are root-level (owner ruling): /about-us/, not
+			// /pages/about-us/. The old /pages/<slug> URLs are the redirects
+			// stage's, so the lookup is the bare slug.
+			$post = get_page_by_path( (string) $slug, OBJECT, 'page' );
 			if ( ! $post ) {
 				$pages[ $slug ] = null;
 				continue;
@@ -753,7 +795,6 @@ defined( 'ABSPATH' ) || exit;
 					: null,
 			);
 		}
-		$parent      = get_page_by_path( (string) $request['parent'], OBJECT, 'page' );
 		$attachments = array();
 		$by_sha      = array();
 		global $wpdb;
@@ -781,7 +822,6 @@ defined( 'ABSPATH' ) || exit;
 
 		return array(
 			'pages'       => (object) $pages,
-			'parent'      => $parent ? array( 'id' => (int) $parent->ID ) : null,
 			'attachments' => (object) $attachments,
 			'by_sha256'   => (object) $by_sha,
 		);
@@ -790,31 +830,13 @@ defined( 'ABSPATH' ) || exit;
 	$pages_write = static function () use ( $request, $fail ): array {
 		$results = array();
 		$errors  = array();
-		$parent  = null;
-		if ( ! empty( $request['parent'] ) ) {
-			$made = wp_insert_post(
-				array(
-					'post_type'    => 'page',
-					'post_name'    => (string) $request['parent']['slug'],
-					'post_title'   => (string) $request['parent']['title'],
-					'post_status'  => (string) $request['parent']['status'],
-					'post_content' => (string) $request['parent']['content'],
-				),
-				true
-			);
-			if ( is_wp_error( $made ) ) {
-				$fail( 'parent page: ' . $made->get_error_message() );
-			}
-			$parent = (int) $made;
-		} else {
-			$shell  = get_page_by_path( 'pages', OBJECT, 'page' );
-			$parent = $shell ? (int) $shell->ID : $fail( 'no parent pages shell' );
-		}
 		foreach ( (array) $request['items'] as $change ) {
 			$slug = (string) $change['item']['slug'];
 			$set  = (array) $change['set'];
 			try {
-				$post = get_page_by_path( 'pages/' . $slug, OBJECT, 'page' );
+				// Root-level canonical pages: the lookup and the create both
+				// use the bare slug, so no 'pages' shell is needed.
+				$post = get_page_by_path( $slug, OBJECT, 'page' );
 				$args = array();
 				if ( ! empty( $set['create'] ) ) {
 					if ( $post ) {
@@ -822,7 +844,7 @@ defined( 'ABSPATH' ) || exit;
 					}
 					$args['post_type']   = 'page';
 					$args['post_name']   = $slug;
-					$args['post_parent'] = $parent;
+					$args['post_parent'] = 0;
 					$args['post_status'] = (string) ( $set['status'] ?? 'publish' );
 				} elseif ( $post ) {
 					$args['ID'] = (int) $post->ID;

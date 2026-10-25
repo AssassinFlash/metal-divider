@@ -271,3 +271,92 @@ animation: none;
 .md-tc14287fe { --bg-color: #1a1a1a;--pt: 0;--pb: 0 }
 .md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
 .md-t8ed1802a { background: #d1a63b;color: #ffffff }
+
+/* The proof carousel's category chips measured 38x16 on 390/320. */
+[class^="emt-nav-btn"],[class*=" emt-nav-btn"]{ display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
+
+/* =========================
+   Home pattern-library tab strip (.hpl__*)
+   The conversion carried the markup but no rules for these classes (no
+   volume ever defined .hpl__*; measured 2026-10-26: <xo-tabs> computed
+   `display:inline`, the four triggers ran together as one line of inline
+   text at 20px tall). The skin below uses the section's own vocabulary —
+   #141414/#1a1a1a ground, the #c9a962 accent, the white/[0.06] hairline the
+   cards use — and gives every trigger a 44px target. It is presentation
+   only: the roles, roving tabindex and arrow keys are md-chrome.js's.
+   ========================= */
+.hpl__tabs{
+display: block;
+width: 100%;
+}
+.hpl__tablist{
+display: flex;
+flex-wrap: wrap;
+justify-content: center;
+gap: 8px;
+margin: 0 auto 40px;
+max-width: 100%;
+}
+.hpl__tab{
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-height: 44px;
+padding: 10px 24px;
+border: 1px solid rgba(255,255,255,.12);
+border-radius: 999px;
+background: rgba(255,255,255,.03);
+color: rgba(255,255,255,.8);
+font-family: "Inter", sans-serif;
+font-size: 14px;
+font-weight: 600;
+letter-spacing: .04em;
+line-height: 1.2;
+white-space: nowrap;
+cursor: pointer;
+transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+.hpl__tab:hover{
+border-color: rgba(201,169,98,.45);
+color: #fff;
+}
+.hpl__tab.is-active{
+border-color: #c9a962;
+background: #c9a962;
+color: #1a1a1a;
+}
+/* The strip's own focus ring: the carried outline is 3px in the foreground
+   colour, which is invisible on the dark ground. */
+.hpl__tab:focus-visible{
+outline: 2px solid #c9a962;
+outline-offset: 3px;
+}
+.hpl__tab.is-active:focus-visible{
+outline-color: #fff;
+}
+.hpl__content{
+display: block;
+}
+.hpl__pane{
+display: block;
+}
+.hpl__pane[hidden]{
+display: none !important;
+}
+.hpl__pane:focus-visible{
+outline: 2px solid #c9a962;
+outline-offset: 8px;
+}
+@media (max-width: 767px){
+.hpl__tablist{
+gap: 6px;
+margin-bottom: 28px;
+}
+.hpl__tab{
+padding: 10px 16px;
+font-size: 13px;
+}
+}
+@media (prefers-reduced-motion: reduce){
+.hpl__tab{ transition: none; }
+}

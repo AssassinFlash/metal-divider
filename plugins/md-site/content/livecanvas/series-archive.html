@@ -55,9 +55,9 @@ class="xo-container--box"
       </li><li class='breadcrumb__item breadcrumb__item--current'>
               <a
                 class='breadcrumb__link breadcrumb--current breadcrumb--normal'
-                href='/collections/pattern-organic'
+                href='[md_series_current_url]'
                 aria-current='page'
-              >Organic Patterns</a>
+              >[md_series_current_label]</a>
             </li></ol>
   </nav>
     </xo-container>
@@ -79,108 +79,21 @@ class="xo-container--box"
       <div class="pattern-catalog__sidebar-intro">
         <span class="pattern-catalog__label">Categories</span>
         
-          <p class="pattern-catalog__sidebar-copy">Filter by pattern family before opening the product detail page.</p>
+          <p class="pattern-catalog__sidebar-copy">Filter by pattern family before opening the pattern detail page.</p>
         
       </div>
 
       <nav class="pattern-catalog__nav">
         <a
-          href="/collections/all"
+          href="/shop/"
           class="pattern-catalog__nav-link "
         >
           <span>All Patterns</span>
-          <span class="pattern-catalog__count">146</span>
+          <span class="pattern-catalog__count">[md_pattern_total]</span>
         </a>
 
-        
-          
-          
-            <a
-              href="/collections/pattern-perforated"
-              class="pattern-catalog__nav-link "
-            >
-              <span>Perforated Patterns</span>
-              <span class="pattern-catalog__count">1</span>
-            </a>
-          
-        
-          
-          
-            <a
-              href="/collections/pattern-geometric"
-              class="pattern-catalog__nav-link "
-            >
-              <span>Geometric Patterns</span>
-              <span class="pattern-catalog__count">15</span>
-            </a>
-          
-        
-          
-          
-            <a
-              href="/collections/pattern-abstract"
-              class="pattern-catalog__nav-link "
-            >
-              <span>Abstract Patterns</span>
-              <span class="pattern-catalog__count">90</span>
-            </a>
-          
-        
-          
-          
-            <a
-              href="/collections/pattern-organic"
-              class="pattern-catalog__nav-link is-active"
-            >
-              <span>Organic Patterns</span>
-              <span class="pattern-catalog__count">16</span>
-            </a>
-          
-        
-          
-          
-            <a
-              href="/collections/pattern-landscape"
-              class="pattern-catalog__nav-link "
-            >
-              <span>Landscape Patterns</span>
-              <span class="pattern-catalog__count">8</span>
-            </a>
-          
-        
-          
-          
-            <a
-              href="/collections/pattern-vintage-retro"
-              class="pattern-catalog__nav-link "
-            >
-              <span>Vintage & Retro Patterns</span>
-              <span class="pattern-catalog__count">4</span>
-            </a>
-          
-        
-          
-          
-            <a
-              href="/collections/pattern-asian"
-              class="pattern-catalog__nav-link "
-            >
-              <span>Asian Inspired Patterns</span>
-              <span class="pattern-catalog__count">4</span>
-            </a>
-          
-        
-          
-          
-            <a
-              href="/collections/pattern-moroccan-arabic"
-              class="pattern-catalog__nav-link "
-            >
-              <span>Moroccan & Arabic Patterns</span>
-              <span class="pattern-catalog__count">8</span>
-            </a>
-          
-        
+        <!-- md-data: the nine series links from the product_cat terms; the queried series carries the active class, so no series is named here -->
+        [md_series_nav]
       </nav>
 
       
@@ -196,45 +109,33 @@ class="xo-container--box"
       <div class="pattern-catalog__toolbar">
         <div>
           <span class="pattern-catalog__label">Browse</span>
-          <h1 class="pattern-catalog__title">Organic Patterns</h1>
+          <!-- md-data: the current product_cat term name (LC native archive title; the taxonomy label prefix WP adds is stripped, shared by all nine series) -->
+          <h1 class="pattern-catalog__title">[lc_the_archive_title strip_label="1"]</h1>
           
-            <p class="pattern-catalog__intro">Compare pattern families, open product pages, and send the selected reference with panel size and finish target.</p>
+            <p class="pattern-catalog__intro">Compare pattern families, open pattern pages, and send the selected reference with panel size and finish target.</p>
           
         </div>
 
         <div class="pattern-catalog__tools">
-          <form class="pattern-catalog__search" action="/search" method="get" role="search" data-pattern-search-form>
-            <input type="hidden" name="type" value="product">
-            <input type="hidden" name="options[prefix]" value="last">
-            <input
-              type="search"
-              name="q"
-              placeholder="Search pattern name or material"
-              aria-label="Search patterns"
-              data-pattern-search-input
-            >
+          <form class="pattern-catalog__search" action="[md_archive_form_action]" method="get" role="search">
+            <input type="search" name="pattern_search" placeholder="Search pattern name or material" aria-label="Search patterns" value="[md_search_value]">
+            <!-- md-data: the order this archive is using, carried through a search submission -->
+            [md_preserve_param name="sort_by" except="pattern_search"]
             <button class="pattern-catalog__search-button" type="submit" aria-label="Search patterns">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"></circle>
-                <path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"></circle><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
             </button>
           </form>
 
           
-            <form class="pattern-catalog__sort" action="/collections/pattern-organic" method="get">
-              <label class="pattern-catalog__sort-label" for="PatternCatalogSort-template--21844031570173__pattern-catalog-main">Sort patterns</label>
+            <form class="pattern-catalog__sort" action="[md_archive_form_action]" method="get">
+              <label class="pattern-catalog__sort-label" for="pattern-catalog-sort">Sort patterns</label>
               <span class="pattern-catalog__select-wrap">
-                <select id="PatternCatalogSort-template--21844031570173__pattern-catalog-main" name="sort_by" onchange="this.form.submit()">
-                  <option value="created-descending" >
-                    Newest
-                  </option>
-                  <option value="title-ascending" >
-                    A-Z
-                  </option>
-                  <option value="title-descending" >
-                    Z-A
-                  </option>
+                <!-- md-data: the search term, carried through a sort submission -->
+                [md_preserve_param name="pattern_search" except="sort_by"]
+                <select id="pattern-catalog-sort" name="sort_by" data-md-sort>
+                  <option value="created-descending"[md_sort_selected value="created-descending"]>Newest</option>
+                  <option value="title-ascending"[md_sort_selected value="title-ascending"]>A-Z</option>
+                  <option value="title-descending"[md_sort_selected value="title-descending"]>Z-A</option>
                 </select>
               </span>
             </form>
@@ -243,167 +144,24 @@ class="xo-container--box"
       </div>
 
       
-        <div class="pattern-catalog__results-bar">
-          <span data-pattern-results-summary>
-            Showing <strong>16</strong>
-            patterns
-          </span>
-          <span class="pattern-catalog__search-status" data-pattern-search-status aria-live="polite"></span>
-          
-        </div>
+        <div class="pattern-catalog__results-bar"><span data-pattern-results-summary>[md_pattern_results_summary]</span></div>
 
         
           <div class="pattern-catalog__products" data-pattern-grid>
             
               
 
-              <article class="pattern-card">
-                <!-- md-loop: the product loop (LiveCanvas native lc_loop) -->
-[lc_loop]
-<a class="pattern-card__link" href="[lc_the_permalink]" aria-label="View Timothy&#39;s Vine specification">
-                  <div class="pattern-card__media">
-                    
-                      <img
-                        src="[lc_the_thumbnail_url]"
-                        alt="Timothy&#39;s Vine finish preview"
-                        loading="lazy"
-                        width="400"
-                        height="800"
-                      >
-                    
-                  </div>
-
-                  <div class="pattern-card__body">
-                    <div class="pattern-card__specs" aria-label="Timothy&#39;s Vine pattern summary">
-                      <div class="pattern-card__row">
-                        <span class="pattern-card__key">Pattern</span>
-                        <span class="pattern-card__value pattern-card__value--title">Timothy's Vine</span>
-                      </div>
-
-                      <div class="pattern-card__row">
-                        <span class="pattern-card__key">Family</span>
-                        <span class="pattern-card__value">Organic</span>
-                      </div>
-
-                      <div class="pattern-card__row">
-                        <span class="pattern-card__key">Best fit</span>
-                        <span class="pattern-card__value">Architectural screening</span>
-                      </div>
-
-                      <div class="pattern-card__row">
-                        <span class="pattern-card__key">Open</span>
-                        <span class="pattern-card__value">17%</span>
-                      </div>
-                    </div>
-
-                    <span class="pattern-card__action">
-                      View specification
-                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                        <path d="m13 6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                      </svg>
-                    </span>
-                  </div>
-                </a>
+              [lc_loop]
+[md_pattern_card]
 [/lc_loop]
-        </article>
-      `;
-    };
+              <!-- md-data: the empty state, rendered only when the main query found no pattern; the pager prints nothing in that case -->
+              [md_catalog_empty]
+          </div>
 
-    const restoreCatalog = () => {
-      if (searchController) searchController.abort();
-      grid.innerHTML = originalGrid;
-      summary.innerHTML = originalSummary;
-      if (status) status.textContent = originalStatus;
-      if (pagination) pagination.hidden = false;
-    };
-
-    const renderEmptySearch = (query) => {
-      grid.innerHTML = `
-        <div class="pattern-catalog__empty">
-          <h3>No matching patterns</h3>
-          <p>Try another pattern name, material, or family. The catalog above remains available by category.</p>
-        </div>
-      `;
-      summary.innerHTML = `Search results for "${escapeHtml(query)}" <strong>0</strong> patterns`;
-      if (status) status.textContent = '';
-      if (pagination) pagination.hidden = true;
-    };
-
-    const runSearch = async (rawQuery) => {
-      const query = rawQuery.trim();
-      delete form.dataset.searchFallback;
-      if (!query) {
-        restoreCatalog();
-        return;
-      }
-
-      if (query.length < 2) {
-        if (status) status.textContent = 'Type at least 2 characters';
-        return;
-      }
-
-      if (searchController) searchController.abort();
-      searchController = new AbortController();
-      if (status) status.textContent = 'Searching...';
-
-      const params = new URLSearchParams();
-      params.set('q', query);
-      params.set('resources[type]', 'product');
-      params.set('resources[limit]', '10');
-      params.set('resources[limit_scope]', 'each');
-      params.set('resources[options][unavailable_products]', 'last');
-      params.set('resources[options][fields]', 'title,body,product_type,tag,vendor,variants.title,variants.sku');
-
-      try {
-        const response = await fetch(`/search/suggest.json?${params.toString()}`, {
-          headers: { Accept: 'application/json' },
-          signal: searchController.signal
-        });
-        if (!response.ok) throw new Error('Search request failed');
-
-        const payload = await response.json();
-        const products = (((payload || {}).resources || {}).results || {}).products || [];
-
-        if (products.length === 0) {
-          renderEmptySearch(query);
-          return;
-        }
-
-        grid.innerHTML = products.map(renderProductCard).join('');
-        summary.innerHTML = `Search results for "${escapeHtml(query)}" <strong>${products.length}</strong> ${
-          products.length === 1 ? 'pattern' : 'patterns'
-        }`;
-        if (status) status.textContent = products.length >= 10 ? 'Showing top matches' : '';
-        if (pagination) pagination.hidden = true;
-      } catch (error) {
-        if (error.name === 'AbortError') return;
-        form.dataset.searchFallback = 'true';
-        if (status) status.textContent = 'Search could not load. Press Enter again to use the full search page.';
-      }
-    };
-
-    input.addEventListener('input', () => {
-      delete form.dataset.searchFallback;
-      window.clearTimeout(searchTimer);
-      searchTimer = window.setTimeout(() => runSearch(input.value), 260);
-    });
-
-    input.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        input.value = '';
-        restoreCatalog();
-      }
-    });
-
-    form.addEventListener('submit', (event) => {
-      if (form.dataset.searchFallback === 'true' && input.value.trim()) return;
-      event.preventDefault();
-      window.clearTimeout(searchTimer);
-      runSearch(input.value);
-    });
-  })();
-</script>
+          [md_pattern_pagination]
+        </main>
+      </div>
+    </section>
 
 
 
@@ -412,7 +170,7 @@ class="xo-container--box"
 <section id="pattern-spec-decision-guide-template--21844031570173__pattern-spec-guide" data-pattern-spec-guide="template--21844031570173__pattern-spec-guide">
   <div class="psd__container">
     <div class="psd__header">
-      <div><span class="psd__eyebrow">Specification Decision Guide</span><h2 class="psd__title">Choose the pattern route before the finish.</h2></div><p class="psd__intro">Pattern selection changes privacy, open area, cutting time, and panel thickness. Use this guide to narrow the brief before opening a product page.</p></div>
+      <div><span class="psd__eyebrow">Specification Decision Guide</span><h2 class="psd__title">Choose the pattern route before the finish.</h2></div><p class="psd__intro">Pattern selection changes privacy, open area, cutting time, and panel thickness. Use this guide to narrow the brief before opening a pattern page.</p></div>
 
     <div class="psd__cards" role="list" aria-label="Pattern specification routes"><button
           type="button"
@@ -757,7 +515,7 @@ Check the mounting frame early when the screen spans large openings."
               Browse matching patterns
               <span aria-hidden="true">-></span>
             </a></div>
-      </article><p class="pag__pull">Open the closest application first. Then send the product link with size, finish, and mounting target.</p></div>
+      </article><p class="pag__pull">Open the closest application first. Then send the pattern link with size, finish, and mounting target.</p></div>
 </section>
 
 
@@ -797,7 +555,7 @@ Check the mounting frame early when the screen spans large openings."
               <div>
                 <div class="ppp__label">Key checks</div>
                 <ul class="ppp__proofs"><li>Pattern route locked before fabrication review.</li><li>Panel repeat aligned to the opening width before nesting.</li><li>Finish target confirmed with the pattern link, not by description alone.</li></ul>
-              </div><p class="ppp__quote">Use the product link and finish target together so the drawing review starts from the right screen family.</p><div class="ppp__client"><a class="ppp__cta" href="/pages/project-gallery?category=Hospitality">View hospitality references</a></div>
+              </div><p class="ppp__quote">Use the pattern link and finish target together so the drawing review starts from the right screen family.</p><div class="ppp__client"><a class="ppp__cta" href="/project-gallery/?category=Hospitality">View hospitality references</a></div>
             </div>
           </div>
         </article><article class="ppp__card" >
@@ -814,7 +572,7 @@ Check the mounting frame early when the screen spans large openings."
               <div>
                 <div class="ppp__label">Key checks</div>
                 <ul class="ppp__proofs"><li>Open area target checked before panel thickness is priced.</li><li>Mounting condition reviewed before the pattern scale is approved.</li><li>Ventilation and privacy were discussed from the same pattern reference.</li></ul>
-              </div><p class="ppp__quote">The right pattern shortens revisions because the privacy target, opening size, and frame logic start aligned.</p><div class="ppp__client"><a class="ppp__cta" href="/pages/project-gallery?category=Commercial">View commercial references</a></div>
+              </div><p class="ppp__quote">The right pattern shortens revisions because the privacy target, opening size, and frame logic start aligned.</p><div class="ppp__client"><a class="ppp__cta" href="/project-gallery/?category=Commercial">View commercial references</a></div>
             </div>
           </div>
         </article><article class="ppp__card" >
@@ -831,7 +589,7 @@ Check the mounting frame early when the screen spans large openings."
               <div>
                 <div class="ppp__label">Key checks</div>
                 <ul class="ppp__proofs"><li>The pattern family was chosen before color discussions began.</li><li>Sightline control and daylight were reviewed from the same image set.</li><li>The quote brief included panel size, finish, and intended room use.</li></ul>
-              </div><p class="ppp__quote">Start with the closest pattern family, then send the room use and dimensions so the quote path stays specific.</p><div class="ppp__client"><a class="ppp__cta" href="/pages/project-gallery?category=Residential">View residential references</a></div>
+              </div><p class="ppp__quote">Start with the closest pattern family, then send the room use and dimensions so the quote path stays specific.</p><div class="ppp__client"><a class="ppp__cta" href="/project-gallery/?category=Residential">View residential references</a></div>
             </div>
           </div>
         </article></div>
@@ -902,7 +660,7 @@ class="xo-section xo-section--template--21844031570173__pattern-contact md-t156d
               <h3 class="m-0 font-['Playfair_Display'] text-lg text-white">Prefer WhatsApp?</h3>
             </div>
             <p class="mb-4 text-sm text-white/75">Share the pattern link, dimensions, and finish target. Feasibility and quote path confirmed quickly.</p>
-            <a href="https://wa.me/8613068660047" target="_blank" rel="noopener noreferrer" data-source-page="pattern-catalog" data-source-module="Collection Pattern Inquiry" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#22c55e]">
+            <a href="https://wa.me/85264731687" target="_blank" rel="noopener noreferrer" data-source-page="pattern-catalog" data-source-module="Collection Pattern Inquiry" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#22c55e]">
               Chat on WhatsApp
             </a>
           </div>
@@ -910,9 +668,9 @@ class="xo-section xo-section--template--21844031570173__pattern-contact md-t156d
           <div class="rounded-xl border border-white/[0.12] bg-white/[0.04] p-5 backdrop-blur-sm">
             <h3 class="mb-3 font-['Playfair_Display'] text-lg text-white">What to include for faster pattern quoting</h3>
             <ul class="space-y-2 text-sm text-white/80">
-              <li>• Pattern name, product link, or category route</li>
+              <li>• Pattern name, pattern link, or category route</li>
               <li>• Panel size, quantity, and layout location</li>
-              <li>• Material and finish target: stainless steel, aluminum, PVD, powder coat</li>
+              <li>• Material and finish target: stainless steel 304 / 316, PVD, powder coat</li>
               <li>• Indoor or outdoor exposure and target delivery date</li>
             </ul>
           </div>

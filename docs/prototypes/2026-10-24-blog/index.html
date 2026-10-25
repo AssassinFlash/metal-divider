@@ -1,0 +1,241 @@
+<!doctype html>
+<!-- MetalDivider Journal — blog index prototype (wayfinder #11, 2026-10-24).
+     Structure after de-linker blog_index: topic rail + intro topbar + featured
+     post + all-posts grid + reading rail. Static HTML only. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blog · Metal Divider</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="blog.css">
+</head>
+<body>
+<section id="mdj-index" class="mdj">
+  <div class="mdj-shell">
+
+    <aside class="mdj-sidebar">
+      <a class="mdj-home" href="index.html"><span class="mdj-mark" aria-hidden="true">M</span>MetalDivider Journal</a>
+      <nav class="mdj-topics" aria-label="Journal topics">
+        <a href="index.html" aria-current="page">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><rect x="13.5" y="13.5" width="7" height="7" rx="1"/></svg>
+          All topics
+        </a>
+        <ul>
+          <li><a href="category.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4" width="15" height="17" rx="2"/><path d="M9 4a3 3 0 0 1 6 0"/><path d="M9 10.5h6M9 14h6"/><path d="m9.5 17 1.5 1.5 3.5-3.5"/></svg>
+            Buying Guides
+          </a></li>
+          <li><a href="category.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 8.5 4.5L12 12.5 3.5 8 12 3.5Z"/><path d="m4.5 12.5 7.5 4 7.5-4"/><path d="m4.5 16.5 7.5 4 7.5-4"/></svg>
+            Materials &amp; Finishes
+          </a></li>
+          <li><a href="category.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>
+            Manufacturing
+          </a></li>
+          <li><a href="category.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6.5-4v17"/><path d="M9.5 12.5 16 8.5l5 3V21"/><path d="M3 21h18"/><path d="M6.5 10.5v1M6.5 14v1M13 14v1M16 14v1M13 17.5v1M16 17.5v1"/></svg>
+            Applications
+          </a></li>
+          <li><a href="category.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v16M8.5 19.5h7M12 5.5H6M12 5.5h6"/><path d="M6 5.5 3 11.5a3.2 3.2 0 0 0 6 0L6 5.5Z"/><path d="M18 5.5l-3 6a3.2 3.2 0 0 0 6 0l-3-6Z"/></svg>
+            Comparisons
+          </a></li>
+        </ul>
+      </nav>
+      <div class="mdj-resources">
+        <p>Explore</p>
+        <a href="#">Patterns <span aria-hidden="true">↗</span></a>
+        <a href="#">Product families <span aria-hidden="true">↗</span></a>
+      </div>
+    </aside>
+
+    <div class="mdj-main">
+      <div class="mdj-topbar">
+        <div class="mdj-intro">
+          <p class="mdj-eyebrow">MetalDivider Journal</p>
+          <h1>Buy and specify metal screens with confidence.</h1>
+          <p class="tag">Buying guides, materials, and fabrication know-how from a decorative screen manufacturer — written for architects, contractors, and distributors.</p>
+        </div>
+        <form class="mdj-search" role="search" action="#" onsubmit="return false">
+          <label for="journal-search" class="mdj-sr">Search the journal</label>
+          <input id="journal-search" type="search" placeholder="Search the journal">
+          <button type="submit" aria-label="Search">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+          </button>
+        </form>
+      </div>
+
+      <div class="mdj-content mdj-content-with-rail">
+        <div class="mdj-stream">
+
+          <a class="mdj-feature" href="post.html">
+            <div class="mdj-feature-image"><span class="ph ph--feature" aria-hidden="true"></span></div>
+            <div class="mdj-feature-copy">
+              <span class="mdj-feature-label">Featured guide</span>
+              <h2>How to Choose Decorative Metal Screens: The Complete B2B Buying Guide</h2>
+              <div class="mdj-feature-meta">
+                <span>Buying Guides</span>
+                <span>Oct 20, 2026</span>
+                <span>Pattern library: 146 patterns in 9 series</span>
+              </div>
+              <span class="mdj-read">Read the guide <span aria-hidden="true">→</span></span>
+            </div>
+          </a>
+
+          <section class="mdj-feed" aria-label="All posts">
+            <h2>All posts</h2>
+            <div class="mdj-grid">
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--laser" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Buying Guides</div>
+                    <h3>How to Verify a Metal Screen Manufacturer Before You Order: 10-Point Checklist</h3>
+                    <span class="mdj-card-date">Oct 16, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--layers" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Comparisons</div>
+                    <h3>PVD Coating vs Powder Coating for Metal Screens</h3>
+                    <span class="mdj-card-date">Oct 12, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--brushed" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Comparisons</div>
+                    <h3>Brushed, Polished, or PVD: Stainless Steel Finishes Compared</h3>
+                    <span class="mdj-card-date">Oct 8, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--diag" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Comparisons</div>
+                    <h3>Laser Cut vs Perforated vs Expanded Metal: Which Process Fits Your Project</h3>
+                    <span class="mdj-card-date">Oct 4, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--grid" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Materials &amp; Finishes</div>
+                    <h3>304 vs 316 Stainless Steel for Architectural Screens</h3>
+                    <span class="mdj-card-date">Sep 28, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--layers" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Materials &amp; Finishes</div>
+                    <h3>What Is PVD Coating on Stainless Steel?</h3>
+                    <span class="mdj-card-date">Sep 22, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--perf" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Manufacturing</div>
+                    <h3>Open Area Explained: Choosing Perforation Density for Privacy, Light and Airflow</h3>
+                    <span class="mdj-card-date">Sep 15, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--arab" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Applications</div>
+                    <h3>Hotel Lobby Screens: 10 Design Directions with Metal Patterns</h3>
+                    <span class="mdj-card-date">Sep 10, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+              <article class="mdj-card">
+                <a href="post.html">
+                  <div class="mdj-card-image"><span class="ph ph--arab" aria-hidden="true"></span></div>
+                  <div class="mdj-card-copy">
+                    <div class="mdj-card-category">Applications</div>
+                    <h3>Mashrabiya Screen Design Guide: Geometry, Tradition, Modern Fabrication</h3>
+                    <span class="mdj-card-date">Sep 3, 2026</span>
+                  </div>
+                </a>
+              </article>
+
+            </div>
+          </section>
+
+          <div class="mdj-tool">
+            <p>From reading to a shortlist.</p>
+            <a href="#">Open the pattern list <span aria-hidden="true">↗</span></a>
+          </div>
+
+        </div>
+
+        <aside class="mdj-suggestions" aria-label="More from the journal">
+          <h2>More from the journal</h2>
+          <a class="mdj-suggestion" href="post.html">
+            <span class="mdj-suggestion-image"><span class="ph ph--laser" aria-hidden="true"></span></span>
+            <div>
+              <h3>How to Verify a Metal Screen Manufacturer Before You Order</h3>
+              <span class="mdj-suggestion-date">Oct 16, 2026</span>
+            </div>
+          </a>
+          <a class="mdj-suggestion" href="post.html">
+            <span class="mdj-suggestion-image"><span class="ph ph--layers" aria-hidden="true"></span></span>
+            <div>
+              <h3>PVD Coating vs Powder Coating for Metal Screens</h3>
+              <span class="mdj-suggestion-date">Oct 12, 2026</span>
+            </div>
+          </a>
+          <a class="mdj-suggestion" href="post.html">
+            <span class="mdj-suggestion-image"><span class="ph ph--brushed" aria-hidden="true"></span></span>
+            <div>
+              <h3>Brushed, Polished, or PVD: Stainless Steel Finishes Compared</h3>
+              <span class="mdj-suggestion-date">Oct 8, 2026</span>
+            </div>
+          </a>
+          <a class="mdj-suggestion" href="post.html">
+            <span class="mdj-suggestion-image"><span class="ph ph--diag" aria-hidden="true"></span></span>
+            <div>
+              <h3>Laser Cut vs Perforated vs Expanded Metal</h3>
+              <span class="mdj-suggestion-date">Oct 4, 2026</span>
+            </div>
+          </a>
+        </aside>
+
+      </div>
+    </div>
+
+  </div>
+  <p class="mdj-proto-note">Static prototype — blog faces, wayfinder #11 · structure after the de-linker journal, tokens from the MetalDivider design system · 2026-10-24</p>
+</section>
+</body>
+</html>

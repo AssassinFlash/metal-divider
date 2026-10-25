@@ -34,3 +34,7 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 .phpunit.result.cache
+
+# The public Shopify export used by the migrator is local working data
+# like the rest of data/ (ticket #2); not part of the shipped tree.
+data/shopify-public/

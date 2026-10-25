@@ -156,7 +156,10 @@ def main(argv: list[str] | None = None) -> int:
             _print(deployed)
             assert deployed.publication is not None
             checked = steps.finish_deploy(
-                target, deployed.publication, cache_buster=_cache_buster()
+                target,
+                deployed.publication,
+                cache_buster=_cache_buster(),
+                phase_notes=deployed.notes,
             )
             _print(checked)
             return 1 if checked.notes else 0

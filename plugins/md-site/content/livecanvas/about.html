@@ -53,7 +53,7 @@ class="xo-container--box"
 
         </span>
       </li><li class='breadcrumb__item'>
-            <a class='breadcrumb__link' href='/pages/about-us' aria-current='page'>About Us</a>
+            <a class='breadcrumb__link' href='/about-us/' aria-current='page'>About Us</a>
             <span class='breadcrumb__separator'>
               
 
@@ -96,7 +96,7 @@ class="xo-container--box"
              class="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-[#c9a962] to-[#d4b878] text-[#1a1a1a] text-sm font-semibold rounded-lg shadow-[0_4px_16px_rgba(201,169,98,0.3)] hover:shadow-[0_8px_32px_rgba(201,169,98,0.4)] hover:-translate-y-0.5 transition-all duration-300">
             Get a Quote →
           </a>
-          <a href="https://wa.me/8613000000000?text=Hi%2C+I+found+you+on+metalpartition.com+and+would+like+to+discuss+a+project."
+          <a href="https://wa.me/85264731687?text=Hi%2C+I+found+you+on+metal-divider.com+and+would+like+to+discuss+a+project."
              target="_blank" rel="noopener"
              class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#25D366] text-white text-sm font-semibold rounded-lg hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(37,211,102,0.3)] transition-all duration-300">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.625-1.467A11.932 11.932 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75c-2.115 0-4.093-.652-5.74-1.77l-.41-.248-2.742.87.882-2.652-.27-.424A9.72 9.72 0 012.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75z"/></svg>
@@ -709,44 +709,10 @@ class="xo-container--box"
 
       <!-- LEFT: Contact Form -->
       <div
-        x-data="{
-          loading: false,
-          success: false,
-          submitForm(formEl) {
-            this.loading = true;
-            const data = {};
-            new FormData(formEl).forEach((v, k) => { data[k] = v; });
-            fetch(formEl.action, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
-            })
-            .then(r => {
-              if (r.ok) { this.success = true; formEl.reset(); }
-              else { alert('Submission failed. Please try again.'); }
-            })
-            .catch(() => { alert('Network error. Please try again.'); })
-            .finally(() => { this.loading = false; });
-          }
-        }"
         class="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 md:p-10"
       >
 
-        <!-- Success Message -->
-        <div x-show="success" x-transition class="text-center py-12">
-          <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-          </div>
-          <h3 class="font-['Playfair_Display'] text-2xl font-bold text-white mb-2">Message Sent</h3>
-          <p class="font-['Inter'] text-white/60 text-sm">Our team will review your project and respond within 24 hours.</p>
-          <button
-            type="button"
-            x-on:click="success = false"
-            class="mt-6 px-6 py-2 border border-white/20 text-white/70 rounded-lg text-sm font-['Inter'] hover:border-[#c9a962]/40 hover:text-[#c9a962] transition-all duration-200"
-          >Send Another</button>
-        </div>
+        
 
         <!-- Form -->
         [lc_get_partial slug="md-inquiry-cta"]
@@ -769,7 +735,7 @@ class="xo-container--box"
               <div class="font-['Inter'] text-white/40 text-xs">Instant response during business hours</div>
             </div>
           </div><a
-              href="https://wa.me/8613800138000?text=Hi%2C%20I%27m%20interested%20in%20a%20custom%20metal%20panel%20project&source_page=about&source_module=contact&source_button=whatsapp"
+              href="https://wa.me/85264731687?text=Hi%2C%20I%27m%20interested%20in%20a%20custom%20metal%20panel%20project&source_page=about&source_module=contact&source_button=whatsapp"
               target="_blank"
               rel="noopener"
               class="w-full flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-['Inter'] font-bold text-sm rounded-xl transition-colors duration-200"
@@ -789,7 +755,7 @@ class="xo-container--box"
             </div>
             <div class="min-w-0">
               <div class="font-['Inter'] text-white/40 text-[11px] uppercase tracking-widest mb-1">Email</div>
-              <a href="mailto:info@metalpartition.com" class="font-['Inter'] text-white text-sm font-medium hover:text-[#c9a962] transition-colors duration-200 truncate block">info@metalpartition.com</a>
+              <a href="mailto:info@metal-divider.com" class="font-['Inter'] text-white text-sm font-medium hover:text-[#c9a962] transition-colors duration-200 truncate block">info@metal-divider.com</a>
             </div>
           </div><!-- Location --><div class="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex items-center gap-4">
             <div class="w-10 h-10 rounded-xl bg-[#c9a962]/10 border border-[#c9a962]/20 flex items-center justify-center flex-none">

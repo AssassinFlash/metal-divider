@@ -5,6 +5,12 @@
  * into the term's display name, the five-material list dropped as bad data —
  * owner ruling 2026-10-24 revision 6).
  *
+ * `style_blurb` is the fifth: the PDP design-intent lead the old site
+ * rendered above the pattern's own notable effect. It is series-level
+ * editorial copy — one sentence per family, measured identical for every
+ * member of a series — so the term is its correct carrier, not the product.
+ * Seeded once from the old rendering; read from WooCommerce at runtime.
+ *
  * @package MetalDivider\Site
  */
 
@@ -49,6 +55,14 @@ return array(
 			'label' => '页底内容 Bottom content',
 			'name'  => 'bottom_content',
 			'type'  => 'wysiwyg',
+		),
+		array(
+			'key'          => 'field_md_style_blurb',
+			'label'        => '风格简介 Style blurb',
+			'name'         => 'style_blurb',
+			'type'         => 'textarea',
+			'rows'         => 3,
+			'instructions' => 'PDP 设计意图第一段(系列级文案,同系列共用一句)。留空则该段不渲染。',
 		),
 	),
 	'location'     => array(

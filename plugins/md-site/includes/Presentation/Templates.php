@@ -111,15 +111,39 @@ final class Templates {
 	 * The partials: file → array( slug, title, assignment meta or null ).
 	 * The chrome pair carries LiveCanvas's is_header / is_footer keys
 	 * (the picostrap header/footer call them through lc_custom_header /
-	 * lc_custom_footer); the two content partials are plain lc_partial
-	 * posts the PDP template references by slug (spec 19 §5.2).
+	 * lc_custom_footer); the content partials are plain lc_partial posts the
+	 * templates and the card renderer reference by slug (spec 19 §5.2).
+	 *
+	 * The seven card partials are the pattern faces' markup: a Tailwind
+	 * utility and an SVG path are design (AGENTS §5), so they live in a
+	 * template a designer opens rather than in a PHP string. Installing them
+	 * is load-bearing twice over:
+	 *
+	 * - LiveCanvas edits the copy the visitor sees — `Partials` reads the
+	 *   installed post first and the repository file only as its fallback, so
+	 *   a partial that is not installed can never be edited in the builder;
+	 * - WindPress's LiveCanvas integration compiles the classes it finds in
+	 *   `lc_partial` posts (`src/Integration/LiveCanvas/Compile.php`), and
+	 *   these files are the cards' only source for their utilities — markup
+	 *   that stayed in PHP was invisible to the compiler.
 	 */
 	private const PARTIALS = array(
-		'partials/header.html'         => array( 'header', 'Site header', 'is_header' ),
-		'partials/footer.html'         => array( 'footer', 'Site footer', 'is_footer' ),
-		'partials/md-where-works.html' => array( 'md-where-works', 'Where this pattern works', null ),
-		'partials/md-pdp-faq.html'     => array( 'md-pdp-faq', 'Pattern technical FAQ', null ),
-		'partials/md-inquiry-cta.html' => array( 'md-inquiry-cta', 'Inquiry CTA band', null ),
+		'partials/header.html'           => array( 'header', 'Site header', 'is_header' ),
+		'partials/footer.html'           => array( 'footer', 'Site footer', 'is_footer' ),
+		'partials/md-where-works.html'   => array( 'md-where-works', 'Where this pattern works', null ),
+		'partials/md-pdp-faq.html'       => array( 'md-pdp-faq', 'Pattern technical FAQ', null ),
+		'partials/md-inquiry-cta.html'   => array( 'md-inquiry-cta', 'Inquiry CTA band', null ),
+		'partials/card-editorial.html'   => array( 'card-editorial', 'Pattern card (home)', null ),
+		'partials/card-catalog.html'     => array( 'card-catalog', 'Pattern card (catalog)', null ),
+		'partials/pattern-tile.html'     => array( 'pattern-tile', 'Pattern tile and lightbox', null ),
+		'partials/tile-thumbs.html'      => array( 'tile-thumbs', 'Pattern tile: thumb frame', null ),
+		'partials/tile-strip.html'       => array( 'tile-strip', 'Pattern tile: lightbox strip', null ),
+		'partials/tile-thumb.html'       => array( 'tile-thumb', 'Pattern tile: one thumb', null ),
+		'partials/lightbox-thumb.html'   => array( 'lightbox-thumb', 'Pattern lightbox: one strip button', null ),
+		'partials/pdp-related-card.html' => array( 'pdp-related-card', 'PDP: one related pattern card', null ),
+		'partials/hub-series-card.html'  => array( 'hub-series-card', 'Hub: one series card', null ),
+		'partials/hub-series-image.html' => array( 'hub-series-image', 'Hub: one series card image', null ),
+		'partials/pdp-image.html'        => array( 'pdp-image', 'PDP: one gallery-slot image', null ),
 	);
 
 	/**

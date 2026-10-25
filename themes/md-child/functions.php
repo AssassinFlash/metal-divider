@@ -57,3 +57,14 @@ add_action( 'after_setup_theme', 'md_child_retire_parent_preload_hint' );
  * might have needed one went with the dequeued bundle. A flag nothing
  * consumes is dead code (spec 17 §6.3: measure, then only add what is used).
  */
+
+/**
+ * The favicon: the brand mark, served from the plugin's assets (the site
+ * had none; the browser's automatic /favicon.ico request was a 404).
+ */
+function md_child_favicon(): void {
+	$base = content_url( 'plugins/md-site/assets/brand' );
+	echo '<link rel="icon" type="image/png" sizes="32x32" href="' . esc_url( $base . '/metal-divider-icon-32.png' ) . '">' . "\n";
+	echo '<link rel="apple-touch-icon" sizes="180x180" href="' . esc_url( $base . '/metal-divider-icon-180.png' ) . '">' . "\n";
+}
+add_action( 'wp_head', 'md_child_favicon' );

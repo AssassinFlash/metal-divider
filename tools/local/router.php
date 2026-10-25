@@ -33,8 +33,75 @@ if ( is_dir( $md_local_file ) && ! str_ends_with( $md_local_path, '/' ) ) {
 // phpcs:enable
 
 if ( is_file( $md_local_file ) || is_file( $md_local_file . 'index.php' ) ) {
+	// The built-in server ignores `Range:`: it answers 200 with the whole
+	// file. Production (LiteSpeed) and every real web server answer 206,
+	// and a browser fetching video by byte range aborts the 200 it cannot
+	// seek — the local `<video>` then never plays, a difference no real
+	// target has. Serve the range here so dev matches the targets.
+	if ( is_file( $md_local_file ) && isset( $_SERVER['HTTP_RANGE'] ) ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- a request header, parsed by the handler below; WordPress is not loaded yet.
+		if ( md_local_serve_range( $md_local_file, (string) $_SERVER['HTTP_RANGE'] ) ) {
+			return true;
+		}
+	}
 	return false;
 }
 
 chdir( $md_local_root );
 require $md_local_root . '/index.php';
+
+/**
+ * Answer a single-range request as the production servers do.
+ *
+ * Only the `bytes=N-M` forms are honoured (no multipart ranges — nothing
+ * this stack serves asks for them); a malformed or unsatisfiable range
+ * falls back to the built-in server's plain response.
+ *
+ * @param string $file  Absolute path of an existing file.
+ * @param string $range The `Range` request header.
+ *
+ * @return bool True when the request was answered here; false leaves it to
+ *              the built-in server (an unsupported or malformed range).
+ */
+function md_local_serve_range( string $file, string $range ): bool {
+	if ( ! preg_match( '/^bytes=\s*(\d*)\s*-\s*(\d*)\s*$/', trim( $range ), $matched ) ) {
+		return false;
+	}
+	[ , $first, $last ] = $matched;
+	if ( '' === $first && '' === $last ) {
+		return false;
+	}
+	$size = (int) filesize( $file );
+	if ( '' === $first ) {
+		// `bytes=-N`: the last N bytes.
+		$start = max( 0, $size - (int) $last );
+		$end   = $size - 1;
+	} else {
+		$start = (int) $first;
+		$end   = '' === $last ? $size - 1 : min( (int) $last, $size - 1 );
+	}
+	if ( $start > $end || $start >= $size ) {
+		header( 'Content-Range: bytes */' . $size, true, 416 );
+		return true;
+	}
+	$length = $end - $start + 1;
+	$type   = mime_content_type( $file );
+	header( 'Content-Type: ' . ( false === $type ? 'application/octet-stream' : $type ) );
+	header( 'Accept-Ranges: bytes' );
+	header( 'Content-Range: bytes ' . $start . '-' . $end . '/' . $size );
+	header( 'Content-Length: ' . $length );
+	http_response_code( 206 );
+	$handle = fopen( $file, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- streaming a static file, not a WordPress filesystem operation.
+	if ( false === $handle ) {
+		// The headers already went out; nothing more can be done cleanly.
+		return true;
+	}
+	fseek( $handle, $start ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fseek -- streaming a static file.
+	while ( $length > 0 && ! feof( $handle ) ) {
+		$chunk = (int) min( 8192, $length );
+		echo fread( $handle, $chunk ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped,WordPress.WP.AlternativeFunctions.file_system_operations_fread -- raw bytes of a static file, streamed.
+		$length -= $chunk;
+	}
+	fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- streaming a static file.
+	return true;
+}

@@ -53,7 +53,7 @@ class="xo-container--wide"
 
         </span>
       </li><li class='breadcrumb__item'>
-            <a class='breadcrumb__link' href='/pages/glass-hybrid-screens' aria-current='page'>Glass & Hybrid Screens</a>
+            <a class='breadcrumb__link' href='/glass-hybrid-screens/' aria-current='page'>Glass & Hybrid Screens</a>
             <span class='breadcrumb__separator'>
               
 
@@ -130,14 +130,14 @@ class="xo-container--wide"
             </svg>
           </a>
           <p class="mt-3 font-['Inter'] text-[13px] leading-relaxed text-white/80 md:text-[13px]">
-            MOQ from 1 sqm · Typical shipment prep around 30 days · 24h quote response
+            Minimum quantity confirmed per project · Typical shipment prep around 30 days · 24h quote response
           </p>
         </div>
       </div>
 
       <div class="relative">
         <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111111] shadow-[0_30px_90px_rgba(0,0,0,0.35)]">
-          <div class="relative aspect-[16/11] md:aspect-[16/10]"><img src="/wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-1536w.webp" alt="Brass framed fluted glass ring partition screens dividing a luxury bedroom suite — visualization" srcset="/wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-480w.webp 480w, /wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-768w.webp 768w, /wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-1024w.webp 1024w, /wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-1536w.webp 1536w" width="2200" height="1375" loading="eager" class="absolute inset-0 h-full w-full object-cover" fetchpriority="high">
+          <div class="relative aspect-[16/11] md:aspect-[16/10]"><img src="/wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-1536w.webp" alt="Bronze PVD framed fluted glass ring partition screens dividing a luxury bedroom suite — visualization" srcset="/wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-480w.webp 480w, /wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-768w.webp 768w, /wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-1024w.webp 1024w, /wp-content/uploads/2026/10/our-brass-fluted-ring-partition-screens-1536w.webp 1536w" width="2200" height="1375" loading="eager" class="absolute inset-0 h-full w-full object-cover" fetchpriority="high">
               <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div></div>
         </div>
 
@@ -169,37 +169,7 @@ class="xo-container--wide"
 
 <section
   id="glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions"
-  x-data="{
-    activeTab: 'fluted',
-    isDesktopHover: false,
-    hoverTimer: null,
-    init() {
-      const mediaQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
-      this.isDesktopHover = mediaQuery.matches;
-      const updateHoverMode = (event) => {
-        this.isDesktopHover = event.matches;
-        this.clearQueuedTab();
-      };
-      if (mediaQuery.addEventListener) {
-        mediaQuery.addEventListener('change', updateHoverMode);
-      } else {
-        mediaQuery.addListener(updateHoverMode);
-      }
-    },
-    setTab(tabId) {
-      clearTimeout(this.hoverTimer);
-      if (this.activeTab === tabId) return;
-      this.activeTab = tabId;
-    },
-    queueTab(tabId) {
-      if (!this.isDesktopHover) return;
-      clearTimeout(this.hoverTimer);
-      this.hoverTimer = setTimeout(() => this.setTab(tabId), 120);
-    },
-    clearQueuedTab() {
-      clearTimeout(this.hoverTimer);
-    }
-  }"
+  x-data="mdHoverTabs('fluted')"
   class="relative overflow-hidden text-white md-taf2adc0d"
 >
   <div class="max-w-[1400px] mx-auto px-5 md:px-10">
@@ -410,7 +380,7 @@ class="xo-container--wide"
             class="ghs-gallery"
             x-data="{ activePanel: 0 }"
           >
-            <!-- Panel 1: Main product image -->
+            <!-- Panel 1: Main pattern image -->
             <div
               class="ghs-panel"
               :class="activePanel === 0 ? 'ghs-panel--active' : ''"
@@ -472,7 +442,7 @@ class="xo-container--wide"
             class="ghs-gallery"
             x-data="{ activePanel: 0 }"
           >
-            <!-- Panel 1: Main product image -->
+            <!-- Panel 1: Main pattern image -->
             <div
               class="ghs-panel"
               :class="activePanel === 0 ? 'ghs-panel--active' : ''"
@@ -534,7 +504,7 @@ class="xo-container--wide"
             class="ghs-gallery"
             x-data="{ activePanel: 0 }"
           >
-            <!-- Panel 1: Main product image -->
+            <!-- Panel 1: Main pattern image -->
             <div
               class="ghs-panel"
               :class="activePanel === 0 ? 'ghs-panel--active' : ''"
@@ -804,7 +774,7 @@ class="xo-container--wide"
                 <div class="text-white font-semibold text-base">Lina H.</div>
                 <div class="text-white/80 text-sm uppercase tracking-[0.08em] mt-1">Interior Designer</div>
                 <a
-                  href="/pages/project-gallery?category=hospitality&project=park-hyatt-shenzhen&image=1&source_page=glass-hybrid-screens&source_module=project-showcase&source_button=view_project_photos"
+                  href="/project-gallery/?category=hospitality&project=park-hyatt-shenzhen&image=1&source_page=glass-hybrid-screens&source_module=project-showcase&source_button=view_project_photos"
                   data-source-page="glass-hybrid-screens"
                   data-source-module="glass-hybrid-showcase"
                   data-source-button="view_project_photos"
@@ -867,7 +837,7 @@ class="xo-container--wide"
                 <div class="text-white font-semibold text-base">Marcus T.</div>
                 <div class="text-white/80 text-sm uppercase tracking-[0.08em] mt-1">Project Manager</div>
                 <a
-                  href="/pages/project-gallery?category=commercial&project=179-lincoln-boston&image=1&source_page=glass-hybrid-screens&source_module=project-showcase&source_button=view_project_photos"
+                  href="/project-gallery/?category=commercial&project=179-lincoln-boston&image=1&source_page=glass-hybrid-screens&source_module=project-showcase&source_button=view_project_photos"
                   data-source-page="glass-hybrid-screens"
                   data-source-module="glass-hybrid-showcase"
                   data-source-button="view_project_photos"
@@ -930,7 +900,7 @@ class="xo-container--wide"
                 <div class="text-white font-semibold text-base">James W.</div>
                 <div class="text-white/80 text-sm uppercase tracking-[0.08em] mt-1">Chief Architect</div>
                 <a
-                  href="/pages/project-gallery?category=residential&project=aurum-presidential-suites-cape-town&image=1&source_page=glass-hybrid-screens&source_module=project-showcase&source_button=view_project_photos"
+                  href="/project-gallery/?category=residential&project=aurum-presidential-suites-cape-town&image=1&source_page=glass-hybrid-screens&source_module=project-showcase&source_button=view_project_photos"
                   data-source-page="glass-hybrid-screens"
                   data-source-module="glass-hybrid-showcase"
                   data-source-button="view_project_photos"
@@ -959,7 +929,7 @@ class="xo-container--wide"
   id="interior-manufacturing-stats-template--21873710530813__interior_room_partitions_manufacturing_stats"
   class="overflow-hidden text-white md-t4d66bb95"
   x-data="interiorMfgStatsMarquee()"
-  x-init="init()"
+ 
 >
   <div class="mx-auto max-w-[1400px] px-6">
     <div class="mx-auto mb-12 max-w-[1200px] text-center md:mb-16">
@@ -1051,7 +1021,7 @@ class="xo-container--wide"
 
     
       <div class="mf-marquee-wrapper relative mb-10 overflow-hidden border-y border-white/10 py-8 md:mb-14 md:py-10 md-t80e98d4a" data-marquee x-ref="marquee" x-on:mouseenter="paused = true" x-on:mouseleave="resume()">
-        <div class="mf-marquee-track flex w-max gap-4 will-change-transform md:gap-6" data-marquee-track x-ref="track" :style="`transform: translate3d(${offset}px, 0, 0)`">
+        <div class="mf-marquee-track flex w-max gap-4 will-change-transform md:gap-6" data-marquee-track x-ref="track" :style="'transform: translate3d(' + offset + 'px, 0, 0)'">
           
             
               
@@ -1205,7 +1175,7 @@ class="xo-container--wide"
   id="glass-hybrid-mid-cta-template--21873710530813__interior_room_partitions_mid_cta"
   class="relative overflow-hidden md-tcc07631f"
 >
-  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" loading="lazy"><source src="//metalpartition.com/cdn/shop/videos/c/vp/00af6f1ec2da47bfbb8e296ba63de4f1/00af6f1ec2da47bfbb8e296ba63de4f1.HD-720p-3.0Mbps-68262742.mp4?v=0" type="video/mp4"><img src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"></video>
+  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-hd-720p-3-0mbps-68262742.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"></video>
 <div class="absolute inset-0 bg-black/55"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(201,169,98,0.12)_0%,_rgba(20,20,20,0.25)_40%,_rgba(20,20,20,0.82)_100%)]"></div>
     <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,20,20,0.28)_0%,rgba(20,20,20,0.72)_100%)]"></div>
@@ -1232,7 +1202,7 @@ class="xo-container--wide"
             >
               Get Your Quote
             </a><a
-              href="https://wa.me/8613068660047"
+              href="https://wa.me/85264731687"
               target="_blank"
               rel="noopener noreferrer"
               data-source-page="glass-hybrid"
@@ -1258,7 +1228,7 @@ class="xo-container--wide"
 >
   <div
     class="mx-auto max-w-[1400px] px-5 md:px-10"
-    x-data="{ activeTab: 'execution_step_drawing_alignment' }"
+    x-data="mdHoverTabs('fluted')"
   >
     <div class="text-center mb-12 md:mb-16"><p class="mb-3 font-['Inter'] text-xs font-semibold uppercase tracking-[0.22em] text-[#c9a962] md:mb-4 md:text-sm">PROJECT EXECUTION</p><h2 class="mx-auto max-w-[1120px] font-['Playfair_Display'] text-[32px] font-bold leading-[1.08] tracking-[-0.02em] text-white md:text-[42px] lg:text-[56px] md-t722f84cd">From your drawing to your site — four steps</h2>
       <p class="mx-auto mt-5 max-w-[980px] font-['Inter'] text-[15px] leading-relaxed text-white/70 md:text-[18px] md-t78970fa2">You send the scope. We confirm, build, check, and ship. Here&#39;s what happens at each step — and what you control.</p>
@@ -1425,7 +1395,7 @@ class="xo-container--wide"
 
 <section
   id="glass-hybrid-specs-template--21873710530813__interior_room_partitions_specs"
-  x-data="{ activeTab: 'fluted' }"
+  x-data="mdHoverTabs('fluted')"
   class="text-white md-tecede96f"
 >
   <div class="max-w-[1400px] mx-auto px-5 md:px-10">
@@ -1530,8 +1500,8 @@ class="xo-container--wide"
                   <span class="text-white/80 w-2/5">Thickness Range</span>
                   <span class="text-white font-medium text-right w-3/5">0.8mm – 3.0mm (frame)</span>
                 </div><div class="flex justify-between py-3 px-4 md:px-6  border-b border-white/5">
-                  <span class="text-white/80 w-2/5">MOQ</span>
-                  <span class="text-white font-medium text-right w-3/5">From 1 sqm</span>
+                  <span class="text-white/80 w-2/5">Minimum quantity</span>
+                  <span class="text-white font-medium text-right w-3/5">Confirmed in your quote</span>
                 </div><div class="flex justify-between py-3 px-4 md:px-6 bg-white/[0.02] border-b border-white/5">
                   <span class="text-white/80 w-2/5">Lead Time</span>
                   <span class="text-white font-medium text-right w-3/5">~30 days after drawing approval</span>
@@ -1620,8 +1590,8 @@ class="xo-container--wide"
                   <span class="text-white/80 w-2/5">Standard Size</span>
                   <span class="text-white font-medium text-right w-3/5">15 × 100 × 230 cm (customizable)</span>
                 </div><div class="flex justify-between py-3 px-4 md:px-6  border-b border-white/5">
-                  <span class="text-white/80 w-2/5">MOQ</span>
-                  <span class="text-white font-medium text-right w-3/5">From 1 piece</span>
+                  <span class="text-white/80 w-2/5">Minimum quantity</span>
+                  <span class="text-white font-medium text-right w-3/5">Confirmed in your quote</span>
                 </div><div class="flex justify-between py-3 px-4 md:px-6 bg-white/[0.02] border-b border-white/5">
                   <span class="text-white/80 w-2/5">Lead Time</span>
                   <span class="text-white font-medium text-right w-3/5">~30 days after payment</span>
@@ -1707,8 +1677,8 @@ class="xo-container--wide"
                   <span class="text-white/80 w-2/5">Surface Finish</span>
                   <span class="text-white font-medium text-right w-3/5">PVD coordinated with glass tone</span>
                 </div><div class="flex justify-between py-3 px-4 md:px-6 bg-white/[0.02] border-b border-white/5">
-                  <span class="text-white/80 w-2/5">MOQ</span>
-                  <span class="text-white font-medium text-right w-3/5">From 1 sqm</span>
+                  <span class="text-white/80 w-2/5">Minimum quantity</span>
+                  <span class="text-white font-medium text-right w-3/5">Confirmed in your quote</span>
                 </div><div class="flex justify-between py-3 px-4 md:px-6  border-b border-white/5">
                   <span class="text-white/80 w-2/5">Lead Time</span>
                   <span class="text-white font-medium text-right w-3/5">~30 days after drawing approval</span>
@@ -1758,7 +1728,7 @@ class="xo-container--wide"
     <div class="flex flex-col lg:flex-row gap-10 lg:gap-16">
 
       <!-- Left: Video -->
-      <div class="lg:w-5/12 lg:sticky lg:top-24 lg:self-start">
+      <div class="lg:w-5/12 lg:sticky lg:self-start md-sticky-rail">
         <div class="relative rounded-2xl overflow-hidden border border-white/10 aspect-[9/14] md:aspect-[9/16] lg:aspect-auto lg:h-[680px] bg-[#0a0a0a]"><video
               playsinline
               autoplay
@@ -1768,7 +1738,7 @@ class="xo-container--wide"
               preload="none"
               class="absolute inset-0 w-full h-full object-cover"
             >
-              <source src="/cdn/shop/videos/c/vp/6b7e0c5457f1445dbbfd88f00cd2465c/6b7e0c5457f1445dbbfd88f00cd2465c.HD-1080p-4.8Mbps-68978841.mp4?v=0" type="video/mp4">
+              <source src="/wp-content/uploads/2026/10/6b7e0c5457f1445dbbfd88f00cd2465c-hd-1080p-4-8mbps-68978841.mp4" type="video/mp4">
             </video></div>
       </div>
 
@@ -1780,7 +1750,7 @@ class="xo-container--wide"
               :class="activeQ === 0 ? 'text-white' : 'text-white/80 hover:text-white'"
               :aria-expanded="activeQ === 0"
             >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">How much do glass-hybrid screens cost?</span>
+              <span class="font-semibold text-base md:text-lg leading-snug pr-4">How is a glass-hybrid screen quoted?</span>
               <svg
                 class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
                 :class="activeQ === 0 ? 'rotate-45' : ''"
@@ -1798,10 +1768,10 @@ class="xo-container--wide"
             >
               <div class="ghfaq-answer max-w-none text-sm leading-relaxed text-white/75">
                 
-<p><strong>Transparent, tier-based pricing</strong> linked directly to frame thickness, PVD finish, and glass type.</p>
-<table><tr><th>Tier</th><th>Price range</th><th>What's included</th><th>Typical use</th></tr><tr><td><strong>Standard</strong></td><td>$80–$150/sqm</td><td>Fluted glass + brushed stainless frame</td><td>Office partitions, restaurant booths</td></tr><tr><td><strong>Mid-range</strong></td><td>$150–$300/sqm</td><td>Thicker 304 SS + PVD finish + crystal glass</td><td>Hotel lobbies, sales centers, VIP zones</td></tr><tr><td><strong>Premium</strong></td><td>$300–$500/sqm</td><td>CNC laser-cut art patterns + AFP coating</td><td>Signature installations, branded walls</td></tr></table>
-<p><strong>What drives the price up or down:</strong></p>
-<ul><li><strong>Frame thickness</strong> — heavier profiles cost more but handle larger panels</li><li><strong>PVD color</strong> — standard gold/black is baseline; custom matching adds 10–15%</li><li><strong>Glass complexity</strong> — fluted is most economical; art glass is premium</li><li><strong>Quantity</strong> — unit cost drops significantly above 20 sqm</li></ul>
+<p><strong>Three build tiers, each quoted per project</strong> — the quote follows frame thickness, PVD finish, and glass type.</p>
+<table><tr><th>Tier</th><th>What's included</th><th>Typical use</th></tr><tr><td><strong>Standard</strong></td><td>Fluted glass + brushed stainless frame</td><td>Office partitions, restaurant booths</td></tr><tr><td><strong>Mid-range</strong></td><td>Thicker 304 SS + PVD finish + crystal glass</td><td>Hotel lobbies, sales centers, VIP zones</td></tr><tr><td><strong>Premium</strong></td><td>CNC laser-cut art patterns + AFP coating</td><td>Signature installations, branded walls</td></tr></table>
+<p><strong>What shapes the quote:</strong></p>
+<ul><li><strong>Frame thickness</strong> — heavier profiles handle larger panels and carry more material</li><li><strong>PVD colour</strong> — gold and black are standard recipes; a custom match is a separate finish-development step</li><li><strong>Glass complexity</strong> — fluted is the simplest build; art glass adds fabrication and breakage risk</li><li><strong>Quantity</strong> — repeated panels spread the setup cost across the run</li></ul>
 <p>Send your project scope → we'll return a line-item quote within 24h.</p>
 
               </div>
@@ -1832,7 +1802,7 @@ class="xo-container--wide"
               <div class="ghfaq-answer max-w-none text-sm leading-relaxed text-white/75">
                 
 <p><strong>Three different ways to control light, privacy, and visual identity.</strong></p>
-<table><tr><th>Property</th><th>Fluted</th><th>Crystal</th><th>Art Glass</th></tr><tr><td><strong>How it works</strong></td><td>Vertical ribbed texture diffuses light</td><td>High-refraction glass creates depth</td><td>CNC laser-cut metal + glass composite</td></tr><tr><td><strong>Light</strong></td><td>High — daylight flows through</td><td>High — with added brilliance</td><td>Medium — depends on pattern density</td></tr><tr><td><strong>Privacy</strong></td><td>Medium — frosted effect</td><td>Low-Medium — textured distortion</td><td>Varies by motif density</td></tr><tr><td><strong>Frame</strong></td><td>304 SS, 0.8–1.5mm</td><td>304 SS, 1.5–2.0mm</td><td>304 SS + CNC, ±1%</td></tr><tr><td><strong>Price</strong></td><td>$80–$150/sqm</td><td>$150–$300/sqm</td><td>$300–$500/sqm</td></tr></table>
+<table><tr><th>Property</th><th>Fluted</th><th>Crystal</th><th>Art Glass</th></tr><tr><td><strong>How it works</strong></td><td>Vertical ribbed texture diffuses light</td><td>High-refraction glass creates depth</td><td>CNC laser-cut metal + glass composite</td></tr><tr><td><strong>Light</strong></td><td>High — daylight flows through</td><td>High — with added brilliance</td><td>Medium — depends on pattern density</td></tr><tr><td><strong>Privacy</strong></td><td>Medium — frosted effect</td><td>Low-Medium — textured distortion</td><td>Varies by motif density</td></tr><tr><td><strong>Frame</strong></td><td>304 SS, 0.8–1.5mm</td><td>304 SS, 1.5–2.0mm</td><td>304 SS + CNC, ±1%</td></tr><tr><td><strong>Build route</strong></td><td>Simplest glass build</td><td>Higher-grade glass, same frame route</td><td>Metal + glass composite adds a fabrication stage</td></tr></table>
 <p><strong>Quick decision guide:</strong></p>
 <ol><li><strong>Need daylight + privacy?</strong> → Fluted. Ribbed texture does both.</li><li><strong>Need a visual focal point?</strong> → Crystal. Catches light, adds depth.</li><li><strong>Need your brand in the space?</strong> → Art Glass. Your motif, physically embedded.</li></ol>
 <p><em>Still unsure? Request one fluted and one crystal sample side by side. Most buyers decide within 5 minutes.</em></p>
@@ -1898,7 +1868,7 @@ class="xo-container--wide"
               <div class="ghfaq-answer max-w-none text-sm leading-relaxed text-white/75">
                 
 <p><strong>Molecular-bonded PVD coating</strong> — not paint, not powder coat. Doesn't peel, chip, or fade indoors.</p>
-<table><tr><th>Color</th><th>Finish options</th><th>Popular pairings</th></tr><tr><td>Titanium Gold</td><td>Mirror, Hairline, Satin</td><td>Crystal glass, hotel lobbies</td></tr><tr><td>Rose Gold</td><td>Mirror, Hairline</td><td>Crystal glass, residential entries</td></tr><tr><td>Champagne Gold</td><td>Hairline, Satin</td><td>Fluted glass, office partitions</td></tr><tr><td>Black Titanium</td><td>Mirror, Hairline, Satin</td><td>All glass types, modern commercial</td></tr><tr><td>Bronze / Antique Copper</td><td>Brushed, Etched</td><td>Art glass, heritage-style interiors</td></tr><tr><td>Silver / Natural SS</td><td>Mirror, Hairline, Satin</td><td>Fluted glass, minimalist spaces</td></tr></table>
+<table><tr><th>Color</th><th>Finish options</th><th>Popular pairings</th></tr><tr><td>Titanium Gold</td><td>Mirror, Hairline, Satin</td><td>Crystal glass, hotel lobbies</td></tr><tr><td>Rose Gold</td><td>Mirror, Hairline</td><td>Crystal glass, residential entries</td></tr><tr><td>Champagne Gold</td><td>Hairline, Satin</td><td>Fluted glass, office partitions</td></tr><tr><td>Black Titanium</td><td>Mirror, Hairline, Satin</td><td>All glass types, modern commercial</td></tr><tr><td>Bronze / Antique Bronze</td><td>Brushed, Etched</td><td>Art glass, heritage-style interiors</td></tr><tr><td>Silver / Natural SS</td><td>Mirror, Hairline, Satin</td><td>Fluted glass, minimalist spaces</td></tr></table>
 <p><strong>Why PVD outlasts paint:</strong></p>
 <ul><li><strong>Bonding</strong> — molecular-level deposition, not a surface layer</li><li><strong>Base</strong> — 304/316 stainless steel, inherently corrosion-resistant</li><li><strong>Indoors</strong> — no UV degradation, no oxidation, no color shift</li></ul>
 <p><em>Custom color-matching available. Send a Pantone reference — we'll produce a test chip.</em></p>
@@ -1947,7 +1917,7 @@ class="xo-container--wide"
               :class="activeQ === 5 ? 'text-white' : 'text-white/80 hover:text-white'"
               :aria-expanded="activeQ === 5"
             >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">What's the MOQ and lead time for international projects?</span>
+              <span class="font-semibold text-base md:text-lg leading-snug pr-4">What's the minimum quantity and lead time for international projects?</span>
               <svg
                 class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
                 :class="activeQ === 5 ? 'rotate-45' : ''"
@@ -1965,13 +1935,12 @@ class="xo-container--wide"
             >
               <div class="ghfaq-answer max-w-none text-sm leading-relaxed text-white/75">
                 
-<p><strong>Flexible entry points</strong> for both designer sampling and contractor bulk.</p>
-<table><tr><th>Order type</th><th>MOQ</th><th>Lead time</th><th>Best for</th></tr><tr><td>Sample / test panel</td><td><strong>1 pc or 1 sqm</strong></td><td>7–10 days</td><td>Finish + glass verification</td></tr><tr><td>Single-zone project</td><td><strong>10+ sqm</strong></td><td>15–25 days</td><td>One lobby, one restaurant zone</td></tr><tr><td>Multi-zone rollout</td><td><strong>20+ sqm</strong></td><td>25–30 days</td><td>Full-floor hotel program</td></tr></table>
+<p><strong>Flexible entry points</strong> for both designer sampling and contractor production runs. Minimum quantities are confirmed with your quote.</p>
+<table><tr><th>Scope</th><th>Lead time</th><th>Best for</th></tr><tr><td>Sample / test panel</td><td>7–10 days</td><td>Finish + glass verification</td></tr><tr><td>Single-zone project</td><td>15–25 days</td><td>One lobby, one restaurant zone</td></tr><tr><td>Multi-zone rollout</td><td>25–30 days</td><td>Full-floor hotel program</td></tr></table>
 <p><strong>Lead time breakdown:</strong></p>
 <ol><li><strong>Day 0</strong> — Drawing + finish confirmed by you</li><li><strong>Day 1–15</strong> — Frame fabrication + PVD coating</li><li><strong>Day 15–25</strong> — Glass fitting + QC</li><li><strong>Day 25–30</strong> — Packing + dispatch</li></ol>
 <p><strong>What shortens the timeline:</strong></p>
 <ul><li>Confirmed <strong>CAD drawings</strong> on Day 0 (not sketches needing revision)</li><li>Standard <strong>PVD colors</strong> vs. custom matching</li><li>Approving <strong>finish sample upfront</strong></li></ul>
-<p><strong>On-time delivery rate: 100%</strong> across all recorded orders.</p>
 
               </div>
             </div>
@@ -2049,7 +2018,7 @@ class="xo-container--wide"
               :class="activeQ === 8 ? 'text-white' : 'text-white/80 hover:text-white'"
               :aria-expanded="activeQ === 8"
             >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">What files should I provide for a custom pattern order?</span>
+              <span class="font-semibold text-base md:text-lg leading-snug pr-4">What files should I provide for a custom pattern inquiry?</span>
               <svg
                 class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
                 :class="activeQ === 8 ? 'rotate-45' : ''"
@@ -2157,7 +2126,7 @@ class="xo-section xo-section--template--21873710530813__glass_hybrid_contact md-
               <h3 class="m-0 text-lg font-serif text-white">Prefer WhatsApp?</h3>
             </div>
             <p class="mb-4 text-sm text-white/75">Share your layout and quantity. We can confirm feasibility quickly.</p>
-            <a href="https://wa.me/8613068660047" target="_blank" rel="noopener noreferrer" data-source-page="glass-hybrid-screens" data-source-module="contact" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#22c55e]">
+            <a href="https://wa.me/85264731687" target="_blank" rel="noopener noreferrer" data-source-page="glass-hybrid-screens" data-source-module="contact" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#22c55e]">
               Chat on WhatsApp
             </a>
           </div>

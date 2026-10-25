@@ -89,6 +89,31 @@ def test_slot_pdp_replaces_every_sample_value() -> None:
     )
 
 
+def test_slot_pdp_guards_the_identity_paragraphs() -> None:
+    """A pattern Woo holds no prose for must leave no empty .pdp-body:
+    the identity block's two paragraphs are [lc_if]-guarded on the
+    predicate that asks the assembly itself."""
+    out = slot_pdp(PDP_BODY, pdp_sample(PDP_BODY))
+
+    assert (
+        '[lc_if condition="md_pdp_has_design_intent" param="lead"]'
+        '<p class="pdp-body">[md_pdp_design_intent slot="lead"]</p>[/lc_if]'
+    ) in out
+    assert (
+        '[lc_if condition="md_pdp_has_design_intent" param="supplemental"]'
+        '<p class="pdp-body">[md_pdp_design_intent slot="supplemental"]</p>[/lc_if]'
+    ) in out
+    assert '<p class="pdp-body">[md_pdp_design_intent' not in out.replace(
+        '[lc_if condition="md_pdp_has_design_intent" param="lead"]'
+        '<p class="pdp-body">[md_pdp_design_intent slot="lead"]</p>[/lc_if]',
+        "",
+    ).replace(
+        '[lc_if condition="md_pdp_has_design_intent" param="supplemental"]'
+        '<p class="pdp-body">[md_pdp_design_intent slot="supplemental"]</p>[/lc_if]',
+        "",
+    ), "no unguarded identity paragraph survives"
+
+
 def test_slot_grid_collapses_repeated_cards_into_the_loop() -> None:
     html = (
         '<div class="grid">'

@@ -56,22 +56,21 @@
 @media (min-width: 750px) { .quote-inner { padding: 40px; } }
 
 /* --- the form's semantic classes (the plugin renders them; the volume
-       styles them — AGENTS.md: plugins carry zero CSS) --- */
-.md-inquiry .field { margin-bottom: 20px; }
-.md-inquiry .field label {
+       styles them — AGENTS.md: plugins carry zero CSS). Selectors follow
+       md-inquiry's actual markup: md-inquiry-field*, -submit, -whatsapp,
+       -actions, -note, -notice, -pattern (verified against Form.php). --- */
+.md-inquiry .md-inquiry-field { margin-bottom: 20px; }
+.md-inquiry .md-inquiry-field__label {
   display: block;
   font-size: 14px;
   font-weight: 600;
   color: #fff;
   margin-bottom: 8px;
 }
-.md-inquiry .field .opt {
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 400;
-}
-.md-inquiry .field input,
-.md-inquiry .field textarea {
+.md-inquiry .md-inquiry-field__input {
   width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
   background: var(--md-bg-darkest);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
@@ -80,23 +79,36 @@
   font-size: 15px;
   padding: 12px 14px;
 }
-.md-inquiry .field input:focus,
-.md-inquiry .field textarea:focus {
+.md-inquiry .md-inquiry-field__input:focus {
   outline: none;
   border-color: var(--md-gold);
 }
-.md-inquiry .field textarea { min-height: 120px; resize: vertical; }
-.md-inquiry .err {
+.md-inquiry textarea.md-inquiry-field__input { min-height: 120px; resize: vertical; }
+.md-inquiry .md-inquiry-field--invalid .md-inquiry-field__input { border-color: #e08b8b; }
+.md-inquiry .md-inquiry-field__error {
+  display: block;
   color: #e08b8b;
   font-size: 13px;
-  margin: 6px 0 0;
+  margin-top: 6px;
 }
-.md-inquiry .hint {
+.md-inquiry .md-inquiry-field__hint {
+  display: block;
   color: rgba(255, 255, 255, 0.5);
   font-size: 13px;
-  margin: 6px 0 0;
+  margin-top: 6px;
 }
-.md-inquiry .turnstile {
+/* The honeypot is for bots only: off-canvas, never display:none (some
+   scrapers skip hidden fields, which would defeat the trap). */
+.md-inquiry .md-inquiry-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.md-inquiry .md-inquiry-turnstile {
   align-items: center;
   border: 1px dashed rgba(255, 255, 255, 0.15);
   border-radius: 10px;
@@ -108,21 +120,19 @@
   min-height: 65px;
   padding: 12px 16px;
 }
-.md-inquiry .turnstile svg {
-  height: 20px;
-  stroke: var(--md-gold);
-  fill: none;
-  width: 20px;
-}
-.md-inquiry .form-actions {
+.md-inquiry .md-inquiry-turnstile-status { margin: 0; }
+.md-inquiry .md-inquiry-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
+  margin-top: 8px;
 }
-.md-inquiry .btn {
+.md-inquiry .md-inquiry-submit,
+.md-inquiry .md-inquiry-whatsapp {
   align-items: center;
   border-radius: 10px;
   display: inline-flex;
+  font: inherit;
   font-weight: 600;
   font-size: 15px;
   justify-content: center;
@@ -130,36 +140,57 @@
   padding: 0 24px;
   text-decoration: none;
 }
-.md-inquiry .btn-primary {
+.md-inquiry .md-inquiry-submit {
   background: var(--md-gold);
   border: 1px solid var(--md-gold);
   color: var(--md-bg-darkest);
+  cursor: pointer;
 }
-.md-inquiry .btn-primary:hover { background: var(--md-gold-light); }
-.md-inquiry .btn-whatsapp {
+.md-inquiry .md-inquiry-submit:hover { background: var(--md-gold-light); }
+.md-inquiry .md-inquiry-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+.md-inquiry .md-inquiry-whatsapp {
   background: transparent;
   border: 1px solid var(--md-whatsapp);
   color: var(--md-whatsapp);
 }
-.md-inquiry .btn-whatsapp:hover { background: rgba(37, 211, 102, 0.1); }
+.md-inquiry .md-inquiry-whatsapp:hover { background: rgba(37, 211, 102, 0.1); }
+.md-inquiry .md-inquiry-note,
 .md-inquiry .form-note {
   color: rgba(255, 255, 255, 0.55);
   font-size: 13.5px;
   line-height: 1.55;
   margin: 16px 0 0;
 }
-.md-inquiry .pattern-context {
+.md-inquiry .md-inquiry-notice {
+  border-radius: 10px;
+  font-size: 14px;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+}
+.md-inquiry .md-inquiry-notice--error {
+  background: rgba(224, 139, 139, 0.12);
+  border: 1px solid rgba(224, 139, 139, 0.4);
+  color: #f0b4b4;
+}
+.md-inquiry .md-inquiry-pattern {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   display: grid;
   gap: 14px;
   grid-template-columns: 64px 1fr;
-  margin-bottom: 24px;
+  margin: 0 0 24px;
   padding: 14px;
 }
-.md-inquiry .pattern-context .name { color: #fff; font-weight: 600; }
-.md-inquiry .pattern-context .code,
-.md-inquiry .pattern-context .facts {
+.md-inquiry .md-inquiry-pattern__thumb {
+  border-radius: 8px;
+  height: 64px;
+  object-fit: cover;
+  width: 64px;
+}
+.md-inquiry .md-inquiry-pattern__caption { display: flex; flex-direction: column; gap: 2px; }
+.md-inquiry .md-inquiry-pattern__name { color: #fff; font-weight: 600; }
+.md-inquiry .md-inquiry-pattern__code,
+.md-inquiry .md-inquiry-pattern__note {
   color: rgba(255, 255, 255, 0.6);
   font-size: 13.5px;
 }

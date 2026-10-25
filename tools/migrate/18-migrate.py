@@ -11,19 +11,21 @@ research/spec-data-model):
              which overturns spec 06's "gradient term is not built") — with
              the ACF series meta (the five-material list is dropped as bad
              data, owner ruling revision 6)
-  products   146 patterns in one Woo CRUD shape each: SKU = pattern_code,
-             one series term, empty price (native unpurchasable), ACF groups
-             A/B/C, SEOPress title/description; plus the Woo settings
+  products   146 patterns in one Woo CRUD shape each: SKU = pattern_code
+             (both through drop_material_words, so a superseded material
+             word never reaches the PDP's h1), one series term, empty price
+             (native unpurchasable), ACF groups A/B/C, SEOPress
+             title/description; plus the Woo settings
              (product base /pattern/, category base /collections/, no
              checkout surface)
   media      the 1063 pattern images of the media-final sidecars: one
              attachment per source (the top tier), the other tiers as
-             sibling files, alt and the _md_* postmeta, featured = old
+             sibling files, alt (superseded material words dropped —
+             normalize_alt) and the _md_* postmeta, featured = old
              media[0], gallery = old media[1:] in order
-  pages      the 13 content pages under /pages/ (the 11 other published
-             pages are retired to redirects per spec 08 §2.2; the 7 drafts
-             are dropped) with their source bodies, their parent 'pages'
-             shell and their media
+  pages      the 13 canonical content pages at root level (the 11 other
+             published pages are retired to redirects per spec 08 §2.2; the
+             7 drafts are dropped) with their source bodies and their media
   redirects  28 redirects into SEOPress PRO redirections: the 16 old-site
              redirects resolved to final targets (15 imported, /pages/about-us
              superseded by the live page), the 11 retired URLs, two mapped
@@ -68,6 +70,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -129,12 +132,106 @@ DENSITY = {
 }
 DIFFICULTY = {"Simple": "simple", "Moderate": "moderate", "Complex": "complex"}
 
-# The 18 discarded product metafield keys (spec 06 §2.3) — reconcile item 4
+# The superseded material words (owner ruling 2026-10-24 revision 6: the
+# site's one material wording is Stainless Steel (304 / 316); the old five
+# material names are bad data, not displayed anywhere a customer can see).
+# They survive in the old site's attachment alt text ("Aztec Corten pattern
+# detail reference"), which renders as the img alt of every PDP slot, so the
+# media plan drops them. Stainless is deliberately absent: that wording is
+# permitted and stays verbatim wherever the source carried it. Longer names
+# precede their substrings so one pass never leaves half a word behind.
+SUPERSEDED_MATERIAL_WORDS = (
+    "mild steel",
+    "aluminium",
+    "aluminum",
+    "corten",
+    "copper",
+)
+
+# One pattern for the whole vocabulary, so "did anything match?" is a single
+# question and a clean string can be answered without touching it. Word
+# boundaries keep a longer name intact ("Copperfield" is not a copper claim).
+_MATERIAL_ALTERNATION = "|".join(re.escape(word) for word in SUPERSEDED_MATERIAL_WORDS)
+_MATERIAL_WORD = re.compile(rf"\b(?:{_MATERIAL_ALTERNATION})\b", re.IGNORECASE)
+
+# The removal also takes a comma or semicolon the word carried with it
+# ("Corten, brass" → "brass"), so a word that led a list leaves no orphan
+# punctuation behind.
+_MATERIAL_WORD_AND_SEPARATOR = re.compile(
+    rf"\b(?:{_MATERIAL_ALTERNATION})\b[,;]?", re.IGNORECASE
+)
+
+
+def drop_material_words(text: str) -> str:
+    """The customer-visible text with the superseded material words removed.
+
+    Only the material name goes; every other word stays: "Aztec Corten
+    pattern detail reference" → "Aztec pattern detail reference".
+
+    A string with no superseded word comes back **byte-identical** — not
+    just equal after normalization. That is the load-bearing half of the
+    contract: this function runs over body HTML, whose newlines and
+    indentation are document structure, and over every alt, title and
+    description in the corpus. Tidying whitespace or pipe spacing
+    unconditionally would silently rewrite files that carry no material
+    word at all, and would make a second plan run disagree with the first.
+    So the cleanup below runs only once a match has been found.
+
+    On a matched string the removal is surgical: the word plus the spaces or
+    tabs around it become one space, runs of spaces/tabs collapse, a space
+    that a removal stranded before punctuation is dropped, and the ends are
+    trimmed. Newlines are never touched — indentation and line structure
+    survive even in a body that did carry the word.
+    """
+    if not _MATERIAL_WORD.search(text):
+        return text
+    cleaned = _MATERIAL_WORD_AND_SEPARATOR.sub("", text)
+    # The word leaves its own spaces behind ("Aztec  Corten  Screen" →
+    # "Aztec   Screen"); collapse the runs it created.
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    # A removal at a boundary can strand a space before punctuation
+    # ("Corten, brass" → " , brass").
+    cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned)
+    return cleaned.strip()
+
+
+def normalize_alt(alt: str) -> str:
+    """An attachment alt through drop_material_words.
+
+    The alt stays descriptive, and the image roles the slot algorithm reads
+    ("pattern detail", "installation scene", "pattern render", …) survive.
+    """
+    return drop_material_words(alt)
+
+
+def normalize_title(title: str) -> str:
+    """A pattern's display title through drop_material_words.
+
+    The title is the one string the customer-visible name is built from: the
+    catalog card's alt (Catalog::card() assembles it from get_the_title), the
+    related-card heading, the breadcrumb trail, and the Product schema's name
+    all read post_title. Removing the material word here fixes every one of
+    them at once: "Aztec Corten | Architectural Metal Screen Pattern" →
+    "Aztec | Architectural Metal Screen Pattern".
+
+    The title does not drive the PDP's h1: the template renders the SKU there
+    ([lc_wc_product get="sku"]), so the SKU is normalized separately in
+    build_products_plan with the same rule. The slug, which is the URL, is
+    the export handle and never moves.
+    """
+    return drop_material_words(title)
+
+
+# The 17 discarded product metafield keys (spec 06 §2.3) — reconcile item 4
 # proves they left no trace in wp_postmeta. pattern_materials is the
 # series-level key the same revision 6 ruling discards; it is scanned with
 # them so a bad terms write cannot smuggle it back either.
+#
+# notable_effect is NOT here: the old PDP rendered it as the design-intent
+# block's second paragraph on 146/146 patterns, so it is retained product
+# data (ACF `notable_effect`, group B). Dropping it cost 103 of 146 patterns
+# their second paragraph, which is the parity defect this list caused.
 DROPPED_KEYS = (
-    "notable_effect",
     "fabrication_note",
     "compliance_notes",
     "seo_primary_phrase",
@@ -155,7 +252,7 @@ DROPPED_KEYS = (
     "pattern_materials",
 )
 
-# The 17 ACF field names of plugins/md-site (groups A/B/C on the product,
+# The 18 ACF field names of plugins/md-site (groups A/B/C on the product,
 # D on product_cat); the preflight proves each resolves on the instance.
 PRODUCT_ACF = (
     "open_area",
@@ -166,6 +263,7 @@ PRODUCT_ACF = (
     "cad_status",
     "summary",
     "inspiration",
+    "notable_effect",
     "source_site",
     "source_slug",
     "source_manifest",
@@ -342,18 +440,50 @@ def build_terms_plan(export: dict[str, Any]) -> dict[str, Any]:
 
 def build_products_plan(export: dict[str, Any]) -> dict[str, Any]:
     """146 patterns with the Woo native fields, ACF groups A/B/C and the
-    SEOPress title/description, per the spec 06 §9 mapping table."""
+    SEOPress title/description, per the spec 06 §9 mapping table.
+
+    Every customer-visible string carrying the pattern's name goes through
+    drop_material_words:
+
+    - the display title (post_title) — the catalog card, the related-card
+      heading, the breadcrumb trail and the Product schema's name;
+    - the SEOPress title and description — the SERP would otherwise
+      contradict the page it links to;
+    - the body and the summary (excerpt + ACF summary) — prose that names the
+      pattern;
+    - the SKU, which is the PDP's h1 and its "Pattern code" cell
+      (pdp.html, [lc_wc_product get="sku"]), so leaving a material word
+      there would keep it on the page.
+
+    The SKU is the migration's identity key, so the rule is stated exactly:
+
+    - ``sku`` is ``drop_material_words(pattern_code)`` — **the normalized**
+      pattern code, not the export's raw one. For 143 of the 146 it is
+      byte-identical to the source code; for the three that carried a
+      superseded material word it differs, and that difference is the point.
+    - ``source_code`` is the export's raw ``pattern_code``, written to the
+      product as ``_md_source_code`` so the old value stays traceable.
+    - The invariant the reconcile proves is therefore
+      ``sku == drop_material_words(source_code)``, which is checked by
+      construction here (and by the instance lookup in reconcile item 3) —
+      never ``sku == source_code``. The media plan builds its join key
+      through the same helper, so the two stages agree.
+    - The slug, which is the URL, is the export handle and never moves.
+    """
     skus: set[str] = set()
     products: list[dict[str, Any]] = []
     for product in export["products"]:
         fields = metafields(product)
-        sku = fields["pattern_code"]
+        source_code = fields["pattern_code"]
+        sku = drop_material_words(source_code)
         if not sku or sku in skus:
             raise MigrationError(f"{product['handle']}: empty or duplicate SKU {sku!r}")
         skus.add(sku)
         seo = product.get("seo") or {}
-        title = seo.get("title") or fields.get("title_tag") or ""
-        description = seo.get("description") or fields.get("description_tag") or ""
+        title = normalize_title(seo.get("title") or fields.get("title_tag") or "")
+        description = drop_material_words(
+            seo.get("description") or fields.get("description_tag") or ""
+        )
         if not title or not description:
             raise MigrationError(f"{product['handle']}: no SEO title/description")
         best_fit = BEST_FIT.get(fields.get("best_for", ""))
@@ -367,13 +497,20 @@ def build_products_plan(export: dict[str, Any]) -> dict[str, Any]:
                 f"{product['handle']}: unknown visual_density "
                 f"{fields.get('visual_density')!r}"
             )
-        summary = fields.get("pattern_summary") or ""
+        summary = drop_material_words(fields.get("pattern_summary") or "")
         products.append(
             {
                 "sku": sku,
-                "title": product["title"],
+                # The export's own code, kept as provenance so the original
+                # value stays traceable after the SKU's material word goes.
+                "source_code": source_code,
+                "title": normalize_title(product["title"]),
                 "slug": product["handle"],
-                "content": product["bodyHtml"] or "",
+                # The body and the summary are customer-visible prose that
+                # names the pattern ("The Aztec Corten Decorative Screen …"),
+                # so they take the same rule; markup and every other word
+                # stay as the source wrote them.
+                "content": drop_material_words(product["bodyHtml"] or ""),
                 # The summary lands twice by design (spec 06 §9): the ACF
                 # field is the data, the excerpt is the PDP short slot.
                 "excerpt": summary,
@@ -387,6 +524,12 @@ def build_products_plan(export: dict[str, Any]) -> dict[str, Any]:
                     "cad_status": fields["cad_status"],
                     "summary": summary,
                     "inspiration": fields.get("pattern_inspiration") or "",
+                    # The old PDP's design-intent second paragraph, verbatim.
+                    # It is product data (146/146 carry it) and the block's
+                    # own prose, so it takes no material-word rewrite: the
+                    # measured values are "Filtered light and pattern shadow"
+                    # and "Decorative screening", neither naming a material.
+                    "notable_effect": (fields.get("notable_effect") or "").strip(),
                     "source_site": fields["source_site"],
                     "source_slug": fields["source_slug"],
                     "source_manifest": fields.get("source_manifest") or "",
@@ -423,14 +566,17 @@ def media_entry(
     entry: dict[str, Any], manifest_dir: Path, staging_dir: Path
 ) -> dict[str, Any]:
     """One sidecar media entry as the media plan holds it: the attachment is
-    the top (widest) tier, every tier rides along for the srcset."""
+    the top (widest) tier, every tier rides along for the srcset. The alt is
+    the customer-visible text, so the superseded material words are dropped
+    here (normalize_alt) — the plan is the one authority the WordPress side
+    writes _wp_attachment_image_alt from."""
     tiers = sorted(entry["tiers"], key=lambda tier: tier["w"])
     top = tiers[-1]
     return {
         "seq": entry.get("seq"),
         "master_src": entry["source"]["master_src"],
         "role": entry.get("role") or "unknown",
-        "alt": entry.get("alt") or "",
+        "alt": normalize_alt(entry.get("alt") or ""),
         "sha256": entry["source"]["sha256"],
         "attach": str(resolve_tier(top["file"], manifest_dir, staging_dir)),
         "variants": [
@@ -488,7 +634,12 @@ def build_media_plan(
             )
         products.append(
             {
-                "sku": metafields(product)["pattern_code"],
+                # The plan's SKU, normalized exactly as the products stage
+                # does: the media stage joins the target by this value, so a
+                # SKU whose material word was corrected must agree here or
+                # the media would look like it belongs to a product that no
+                # longer exists.
+                "sku": drop_material_words(metafields(product)["pattern_code"]),
                 "handle": product["handle"],
                 "media": media,
             }
@@ -516,8 +667,10 @@ def build_pages_plan(
     product_sha256: set[str],
     attachment_map: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """The 13 content pages under /pages/ (a parent 'pages' shell carries the
-    URL prefix), their source bodies, and their media from the site sidecar.
+    """The 13 canonical content pages (root-level, owner ruling: /about-us/,
+    not /pages/about-us/), their source bodies, and their media from the site
+    sidecar. The old site's /pages/<slug> URLs are what the redirects stage
+    resolves to these targets, so the pages themselves take no parent.
     A page image whose bytes a product already owns (the site sidecar cites
     it into the products/ tree) reuses that attachment instead of importing a
     second copy (spec 18 §2: one import per sha256). In remote mode the dev
@@ -557,7 +710,7 @@ def build_pages_plan(
                 "status": "publish",
                 "content": page["body_html"] or "",
                 "source_body": page["body_html"] or "",
-                "parent": "pages",
+                "parent": 0,
             }
         )
         for entry in refs.get(f"page:{slug}", []):
@@ -571,7 +724,7 @@ def build_pages_plan(
                     "source_url": source_url,
                     "sha256": entry["sha256"],
                     "role": entry.get("role") or "unknown",
-                    "alt": entry.get("alt") or "",
+                    "alt": normalize_alt(entry.get("alt") or ""),
                     "attach": str(staging_dir / entry["file"]),
                     "variants": [],
                 }
@@ -604,12 +757,12 @@ def build_pages_plan(
         "schema": "md-migrate/pages@1",
         "staging_dir": str(staging_dir),
         "remote": attachment_map is not None,
-        "parent": {
-            "slug": "pages",
-            "title": "Pages",
-            "status": "publish",
-            "content": "",
-        },
+        # Canonical pages are root-level (owner ruling): /about-us/, not
+        # /pages/about-us/. The old site's /pages/<slug> URLs are the ones
+        # the redirects stage carries to their final targets, so no 'pages'
+        # shell exists and no page takes a parent. The key stays in the
+        # payload as null so an older plan's shape is still readable.
+        "parent": None,
         "pages": pages,
         "media": media,
         "retired": {handle: RETIRED_PAGES[handle] for handle in sorted(RETIRED_PAGES)},
@@ -617,16 +770,42 @@ def build_pages_plan(
         "note": (
             "13 content pages of the 24 published (spec 08 §2.2): 11 retire to "
             "redirects (see the redirects plan), 7 drafts are dropped; the "
-            "parent 'pages' shell is what makes the URLs /pages/<slug>"
+            "pages are root-level (/<slug>/), and the old /pages/<slug> URLs "
+            "are carried by the redirects stage"
         ),
     }
+
+
+def canonical_page_url(handle: str) -> str:
+    """A content page's canonical URL: root-level (owner ruling), so
+    /about-us/, not /pages/about-us/."""
+    return f"/{handle}/"
+
+
+def resolve_page_move(target: str, content_pages: set[str]) -> str | None:
+    """The canonical URL a /pages/<slug> target now lives at, or None when
+    the target is not a page that moved. One hop only: the caller uses this
+    so a redirect lands on the page, never on another redirect."""
+    for prefix in ("/pages/", "pages/"):
+        if target.startswith(prefix):
+            name = target[len(prefix) :].strip("/")
+            return canonical_page_url(name) if name in content_pages else None
+    return None
 
 
 def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
     """Every redirect the WordPress side owns. The domain-only rows of the
     redirect map stay at the DNS layer; the path-changed rows resolve to
     their final targets (ticket #4's no-chain rule), the retired URLs follow
-    spec 08, and the PENDING and /zh rows are held with their reasons."""
+    spec 08, and the PENDING and /zh rows are held with their reasons.
+
+    Content pages are root-level (owner ruling), so the old site's
+    /pages/<slug> URL is a moved URL, not a live one: every canonical page
+    gets its own 301 to /<slug>/, and every redirect that used to point at a
+    /pages/<slug> target points at that root URL instead. Without both, the
+    route the old site published is a 404 and an imported redirect lands on
+    one.
+    """
     series = {collection["handle"] for collection in export["collections"]}
     content_pages = {
         page["handle"]
@@ -641,6 +820,14 @@ def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
         }
         for handle, target in RETIRED_PAGES.items()
     }
+    # The 13 canonical pages moved out of /pages/: the old URL 301s to the
+    # root one, which is the only route the page answers on now.
+    for handle in content_pages:
+        entries[f"/pages/{handle}"] = {
+            "source": f"/pages/{handle}",
+            "target": canonical_page_url(handle),
+            "basis": "page moved from /pages/<slug> to root level (owner ruling)",
+        }
     held: list[dict[str, str]] = []
 
     # The 16 old-site redirects, each resolved to its final destination.
@@ -666,15 +853,13 @@ def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
                 else "old-site redirect, target kept",
             }
         elif target == "/pages/about":
-            # /pages/about 404s on the old site while /pages/about-us is
-            # the live page here: importing the redirect would hijack it.
-            held.append(
-                {
-                    "source": source,
-                    "reason": "superseded: live page at the same path, the old "
-                    "target /pages/about 404s on the old site",
-                }
-            )
+            # The old site pointed /pages/about-us at /pages/about, which
+            # 404s there — the owner's redirect never worked. Our canonical
+            # about page is /about-us/, and the move rule above already 301s
+            # /pages/about-us there, so the row is consumed by that rule and
+            # /pages/about (404 on the old site) gets no rule of its own.
+            if "about-us" not in content_pages:
+                raise MigrationError(f"{source} -> {target}: no about page")
         elif target.startswith("/pages/"):
             name = target[len("/pages/") :]
             if name in RETIRED_PAGES:
@@ -690,8 +875,8 @@ def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
             else:
                 entries[source] = {
                     "source": source,
-                    "target": target,
-                    "basis": "old-site redirect, target kept (no chain)",
+                    "target": canonical_page_url(name),
+                    "basis": "old-site redirect, target at root level (no chain)",
                 }
         else:
             raise MigrationError(
@@ -730,7 +915,12 @@ def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
         if source == target:
             continue  # domain-only: the DNS layer carries it
         if source in entries:
-            if entries[source]["target"] != target:
+            # A redirect map row whose target is itself a moved URL resolves
+            # through that move: /pages/<slug> is no longer where the page
+            # lives, so the final target is the root URL and importing the
+            # map's literal value would land on a second hop.
+            resolved = resolve_page_move(target, content_pages) or target
+            if entries[source]["target"] not in (target, resolved):
                 raise MigrationError(
                     f"{source}: redirect map says {target}, resolution says "
                     f"{entries[source]['target']}"
@@ -982,6 +1172,10 @@ def diff_product(
         for name in ("title", "slug", "content", "excerpt", "series")
         if plan[name] != current.get(name)
     }
+    # The plan's SKU is the corrected value; a row still carrying the
+    # source's code is the same product, renamed in place (never a create).
+    if plan["sku"] != current.get("sku"):
+        set_map["sku"] = plan["sku"]
     set_map.update(
         {
             name: value
@@ -1130,6 +1324,12 @@ def media_product_diff(
             to_fill["variants"] = [
                 {"w": tier["w"], "f": tier["file"]} for tier in entry["variants"]
             ]
+        # The alt is customer-visible text, and the plan's is the corrected
+        # one (normalize_alt): an attachment imported before that correction
+        # still carries the superseded material word, so a differing alt is
+        # rewritten rather than left standing. Equal alts write nothing.
+        if there.get("alt", "") != entry["alt"]:
+            to_fill["alt"] = entry["alt"]
         if to_fill:
             fills.append({"master_src": entry["master_src"], **to_fill})
     srcs = [entry["master_src"] for entry in plan_product["media"]]
@@ -1340,21 +1540,28 @@ def apply_products(
     for item in items:
         current = answer["products"].get(item["sku"])
         owner = answer["by_slug"].get(item["slug"])
+        # A product found by slug but not by the plan's SKU is this pattern
+        # still carrying the source's code: the rename is the write, not a
+        # create. The read hands that row back under its current SKU.
+        renamed_id = 0
+        if current is None and owner is not None and owner["sku"] != item["sku"]:
+            renamed_id = int(owner["id"])
+            current = answer["products"].get(owner["sku"])
         if current is None and owner is not None:
             results.append(
                 {
                     "key": item["sku"],
                     "status": "error",
-                    "error": f"slug {item['slug']} is taken by post {owner}",
+                    "error": f"slug {item['slug']} is taken by post {owner['id']}",
                 }
             )
             continue
-        if current is not None and owner is not None and owner != current["id"]:
+        if current is not None and owner is not None and owner["id"] != current["id"]:
             results.append(
                 {
                     "key": item["sku"],
                     "status": "error",
-                    "error": f"slug {item['slug']} is taken by post {owner}",
+                    "error": f"slug {item['slug']} is taken by post {owner['id']}",
                 }
             )
             continue
@@ -1368,7 +1575,14 @@ def apply_products(
             {"key": item["sku"], "status": "apply" if differs else "identical"}
         )
         if differs:
-            writes.append({"sku": item["sku"], "item": item, "set": set_map})
+            pending: dict[str, Any] = {
+                "sku": item["sku"],
+                "item": item,
+                "set": set_map,
+            }
+            if renamed_id:
+                pending["id"] = renamed_id
+            writes.append(pending)
 
     settings_answer = wp.eval_file(
         {
@@ -1513,7 +1727,6 @@ def apply_pages(
             "stage": "pages",
             "action": "read",
             "slugs": [item["slug"] for item in items],
-            "parent": plan["parent"]["slug"],
             "media": [
                 {"source_url": entry["source_url"], "sha256": entry["sha256"]}
                 for entry in plan["media"]
@@ -1544,26 +1757,22 @@ def apply_pages(
         f"pages{' (dry run)' if not write else ''}: "
         f"{sum(1 for r in results if r['status'] == 'apply')} to apply, "
         f"{sum(1 for r in results if r['status'] == 'identical')} identical; "
-        f"parent {'missing' if answer.get('parent') is None else 'present'}; "
         f"media {len(media_missing)}/{len(plan['media'])} to import"
     )
     if not write:
         return 0
 
-    if writes or answer.get("parent") is None:
+    if writes:
         write_answer = wp.eval_file(
             {
                 "stage": "pages",
                 "action": "write",
-                "parent": plan["parent"] if answer.get("parent") is None else None,
                 "items": writes,
             }
         )
         results = merge_status(
             results, write_answer["results"], write_answer.get("errors")
         )
-        if answer.get("parent") is None:
-            results.append({"key": "pages-parent", "status": "created"})
     media_status: dict[str, str] = {}
     for start in range(0, len(media_missing), 20):
         chunk = media_missing[start : start + 20]
@@ -1768,11 +1977,46 @@ def reconcile(wp: Wp, run_dir: Path, data_dir: Path, staging_dir: Path) -> int:
         f"{sorted(extra_terms) or 'none'}, "
         f"gradient={actual_members.get('pattern-gradient', 0)} (ruling #25)",
     )
+    # The SKU is the normalized pattern code, not the export's raw one, so
+    # the identity check is stated as it actually holds — against the source
+    # code, not against the SKU read back from the same lookup that found it:
+    #
+    #   sku == drop_material_words(source_code)
+    #
+    # For the three products whose code carried a superseded material word
+    # the two differ, and _md_source_code records the raw value. Anything
+    # else (an unnormalized SKU, a lost provenance row, a SKU that drifted
+    # from the plan) fails here.
+    unnormalized = [
+        item["sku"]
+        for item in products_plan["products"]
+        if item["sku"] != drop_material_words(item["source_code"])
+    ]
+    sku_drift = [
+        item["sku"]
+        for item in products_plan["products"]
+        if (found.get(item["sku"]) or {}).get("sku") != item["sku"]
+    ]
+    provenance_missing = [
+        item["sku"]
+        for item in products_plan["products"]
+        if item["sku"] != item["source_code"]
+        and (found.get(item["sku"]) or {}).get("source_code") != item["source_code"]
+    ]
+    renamed = sum(
+        1 for item in products_plan["products"] if item["sku"] != item["source_code"]
+    )
     check(
         "3 SKUs",
-        len(found) == total,
-        f"{len(found)} of {total} products found by _sku (the key itself): the "
-        f"values equal pattern_code by construction of the lookup",
+        len(found) == total
+        and not unnormalized
+        and not sku_drift
+        and not provenance_missing,
+        f"{len(found)}/{total} products found by _sku; every SKU = the "
+        f"normalized pattern_code (sku == drop_material_words(source_code), "
+        f"{len(unnormalized)} violations); {renamed} renamed from the source code "
+        f"with _md_source_code recording it ({len(provenance_missing)} missing); "
+        f"SKU drift: {len(sku_drift)}",
     )
     if any(entry["result"] == "FAIL" for entry in checks):
         return finish_report(run_dir, checks, plans, products_answer, found)
@@ -1854,8 +2098,9 @@ def reconcile(wp: Wp, run_dir: Path, data_dir: Path, staging_dir: Path) -> int:
         "6 image bindings",
         not missing_attachments and not bad_bindings and not alt_drift,
         f"1063 attachments present, featured+gallery order correct for all "
-        f"{len(media_plan['products'])} ({gallery_slots} gallery slots), alt "
-        f"verbatim; missing={len(missing_attachments)}, binding drift="
+        f"{len(media_plan['products'])} ({gallery_slots} gallery slots), alt = "
+        f"the plan's (superseded material words dropped); "
+        f"missing={len(missing_attachments)}, binding drift="
         f"{len(bad_bindings)}, alt drift={len(alt_drift)}",
     )
 
@@ -1890,7 +2135,7 @@ def reconcile(wp: Wp, run_dir: Path, data_dir: Path, staging_dir: Path) -> int:
         "7 image samples",
         not sample_problems,
         f"5 samples ({', '.join(h[:24] for h in sample_handles)}): featured = old "
-        f"media[0], gallery order = old media order, alt verbatim; problems: "
+        f"media[0], gallery order = old media order, alt = the plan's; problems: "
         f"{sample_problems or 'none'}",
     )
 
@@ -1933,7 +2178,6 @@ def reconcile(wp: Wp, run_dir: Path, data_dir: Path, staging_dir: Path) -> int:
             "stage": "pages",
             "action": "read",
             "slugs": [item["slug"] for item in plans["pages"]["pages"]],
-            "parent": plans["pages"]["parent"]["slug"],
             "media": [],
         }
     )
@@ -1946,7 +2190,7 @@ def reconcile(wp: Wp, run_dir: Path, data_dir: Path, staging_dir: Path) -> int:
         "10 pages",
         not pages_missing,
         f"{len(plans['pages']['pages']) - len(pages_missing)}/"
-        f"{len(plans['pages']['pages'])} content pages under /pages/ with "
+        f"{len(plans['pages']['pages'])} content pages at root level with "
         f"_md_source_body; the 11 retired live as redirects",
     )
 
@@ -2084,7 +2328,7 @@ def describe_plan(stage: str, plan: dict[str, Any]) -> str:
         return detail
     if stage == "pages":
         detail = (
-            f"{len(plan['pages'])} pages + parent, {len(plan['media'])} page media, "
+            f"{len(plan['pages'])} root-level pages, {len(plan['media'])} page media, "
             f"{len(plan['retired'])} retired"
         )
         if plan.get("remote"):

@@ -3,9 +3,11 @@
  * with this site's tokens (the mapping lives in the fork command
  * of tools/template-convert, ticket #32).
  */
-/* The face's own rules. Shared content-platform composition is journal.css.
- * The current category comes from the native query, its navigation marker
- * from WordPress's category walker. No separate selection state is maintained.
+/* The face's own rules. Shared content-platform composition travels in the
+ * journal block of blog-index.css (folded there to keep the site's fixed
+ * thirty-six-volume inventory). The current category comes from the native
+ * query, its navigation marker from WordPress's category walker. No separate
+ * selection state is maintained.
  */
 #md-blog-category .journal-feed { margin-top: 0; }
 #md-blog-category .journal-intro h1 { max-width: 36ch; }

@@ -29,7 +29,7 @@ T1  DNS 与 301 上线(= #9 步骤 3–5)
 
 T2  301 生效验证(= #9 步骤 6;AGENTS.md §5 硬门:不过,禁转出/解约)
     ├─ 逐规则抽测全绿:产品(/products/<slug> → /pattern/<slug>)、
-    │  类目(含 gradient 归位与删除类目 → /shop/)、page、zh 镜像、
+    │  类目(9 个 pattern-* 原位保留、无跳转——gradient 亦然 #25;旧站跳转的已删测试类目 → /shop/)、page、zh 镜像、
     │  带参 URL(CF 边缘剥参后落净 URL)、legacy 3 条源路径、
     │  404 policies 维持 404(不软跳)
     ├─ 新站 sitemap 提交(新属性,https://metal-divider.com/sitemaps.xml,

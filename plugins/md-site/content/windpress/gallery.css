@@ -306,6 +306,7 @@ color: #d4af37 !important;
 margin-bottom: 16px;
 }
 #project-gallery-template--21844034846973__project_gallery_8jJr6t .gallery-title {
+font-family: "Playfair Display", Georgia, serif;
 font-size: clamp(36px, 5vw, 56px);
 font-weight: 700;
 line-height: 1.1;
@@ -423,7 +424,14 @@ flex-direction: column;
 justify-content: flex-end;
 padding: 24px;
 }
-#project-gallery-template--21844034846973__project_gallery_8jJr6t .project-card:hover .project-overlay {
+/* Keyboard parity for the card overlay: it carries the card's category, title
+   and the "View Gallery" action, and it used to appear on hover only — a
+   keyboard user tabbed to a card whose whole affordance stayed invisible.
+   The card is a focusable button-like target (see md-chrome.js), so focus
+   paints the same overlay the pointer does. */
+#project-gallery-template--21844034846973__project_gallery_8jJr6t .project-card:hover .project-overlay,
+#project-gallery-template--21844034846973__project_gallery_8jJr6t .project-card:focus-visible .project-overlay,
+#project-gallery-template--21844034846973__project_gallery_8jJr6t .project-card:focus-within .project-overlay {
 opacity: 1;
 }
 #project-gallery-template--21844034846973__project_gallery_8jJr6t .project-category {

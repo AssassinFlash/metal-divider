@@ -25,6 +25,11 @@ namespace MetalDivider\Site\Presentation;
  * no utility class at all, arbitrary or standard (ticket #58, where 502
  * unique arbitrary-value classes in the LiveCanvas templates computed to
  * nothing because the entry imported only the volumes).
+ *
+ * After the imports the entry carries the old site's px type scale in an
+ * `@theme` block (ticket #66, decision #64 root-10): Tailwind v4's default
+ * scale is rem-based, the old build's was px, and the carried `text-*`
+ * utilities must keep the sizes the old site rendered.
  */
 final class WindPressVolume {
 
@@ -36,13 +41,21 @@ final class WindPressVolume {
 	/**
 	 * The head the entry must carry, verbatim from WindPress's stub entry for
 	 * Tailwind v4 (plugins/windpress/stubs/tailwindcss-v4/main.css): the layer
-	 * order, the theme variables and the on-demand utilities. Preflight stays
-	 * commented out as in the stub — the volume rules carry the old site's
-	 * resets, and a second reset would rebase the replica pages.
+	 * order, the theme variables, the on-demand utilities — and the preflight.
+	 *
+	 * The preflight is load-bearing (#64 parity): the old site compiled its
+	 * Tailwind with preflight, so every box was `border-box` and every block
+	 * element had its UA margins reset before the template utilities ran. The
+	 * first build left it commented out and only re-added the base rules it
+	 * noticed, so the whole site sized as `content-box` (a max-w-[1400px]
+	 * block with px-10 measured 1440) and every `<p>` grew a 1em UA margin.
+	 * Enabled here in the `base` layer, where the old build had it: the
+	 * volumes and base.css sit in `components`, so they still win every
+	 * collision.
 	 */
 	private const ENTRY_HEAD = '@layer theme, base, components, utilities;' . "\n\n"
 		. '@import "tailwindcss/theme.css" layer(theme) theme(static);' . "\n"
-		. '/* @import "tailwindcss/preflight.css" layer(base); */' . "\n"
+		. '@import "tailwindcss/preflight.css" layer(base);' . "\n"
 		. '@import "tailwindcss/utilities.css" layer(utilities);';
 
 	/**
@@ -54,6 +67,54 @@ final class WindPressVolume {
 	 * growing a duplicate head.
 	 */
 	private const ENTRY_HEAD_MARK = '@import "tailwindcss/utilities.css" layer(utilities);';
+
+	/**
+	 * The theme block the entry must carry after its imports: the old site's
+	 * px type scale (ticket #66, decision #64 root-10). Tailwind v4's default
+	 * scale is rem-based (--text-5xl: 3rem = 48px at a 16px root); the old
+	 * build replaced it with this px scale (the old project's
+	 * scripts/tailwind/tailwind.config.js), so the carried `text-*` utilities
+	 * keep the sizes the old site rendered (5xl = 42px, 7xl = 56px, …).
+	 *
+	 * The companion `--text-*--line-height: inherit` reproduces the old
+	 * build's "no default line-height tuples" setting. `inherit` is a CSS-wide
+	 * keyword, so the custom property inherits from :root's parent — nothing —
+	 * and stays guaranteed-invalid; the v4 utility's
+	 * `line-height: var(--tw-leading, var(--text-5xl--line-height))` is then
+	 * invalid at computed-value time and the element inherits line-height,
+	 * exactly as the old font-size-only utility did. Verified in real Chrome
+	 * on the dev instance: `.text-5xl` under a 1.5 ancestor computes
+	 * 42px/63px, not the v4 default's 42px/42px.
+	 *
+	 * The block is appended after the volume imports, so every `@import`
+	 * stays ahead of it in the entry. `@theme static` emits all thirteen
+	 * variables whether or not a utility currently uses them (#66's
+	 * acceptance reads the compiled scale; a size that no template uses today
+	 * must still be defined when one does).
+	 */
+	private const ENTRY_THEME_MARK = '/* md-site: old-site px type scale (#66) */';
+
+	/**
+	 * The theme block itself, marker line included.
+	 */
+	private const ENTRY_THEME = self::ENTRY_THEME_MARK . "\n"
+		. '@theme static {' . "\n"
+		. '--font-serif: "Playfair Display", Georgia, serif;' . "\n"
+		. '--font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;' . "\n"
+		. '--text-xs: 13px;--text-xs--line-height: inherit;' . "\n"
+		. '--text-sm: 14px;--text-sm--line-height: inherit;' . "\n"
+		. '--text-base: 16px;--text-base--line-height: inherit;' . "\n"
+		. '--text-lg: 18px;--text-lg--line-height: inherit;' . "\n"
+		. '--text-xl: 20px;--text-xl--line-height: inherit;' . "\n"
+		. '--text-2xl: 24px;--text-2xl--line-height: inherit;' . "\n"
+		. '--text-3xl: 30px;--text-3xl--line-height: inherit;' . "\n"
+		. '--text-4xl: 36px;--text-4xl--line-height: inherit;' . "\n"
+		. '--text-5xl: 42px;--text-5xl--line-height: inherit;' . "\n"
+		. '--text-6xl: 48px;--text-6xl--line-height: inherit;' . "\n"
+		. '--text-7xl: 56px;--text-7xl--line-height: inherit;' . "\n"
+		. '--text-8xl: 64px;--text-8xl--line-height: inherit;' . "\n"
+		. '--text-9xl: 72px;--text-9xl--line-height: inherit;' . "\n"
+		. '}';
 
 	/**
 	 * Directory of the exported stylesheets, relative to this plugin.
@@ -103,6 +164,9 @@ final class WindPressVolume {
 	 * missing pieces are added and present ones left byte-identical, and a
 	 * changed entry keeps its previous copy beside it.
 	 *
+	 * The tail is the `@theme` px type scale (#66): appended after every
+	 * import, so the entry's `@import` rules all stay ahead of it.
+	 *
 	 * @param string   $entry   Absolute path of `main.css`.
 	 * @param string[] $imports The relative paths to import.
 	 */
@@ -111,8 +175,22 @@ final class WindPressVolume {
 		$current = is_readable( $entry ) ? (string) file_get_contents( $entry ) : '';
 		$updated = $current;
 
-		if ( ! str_contains( $updated, self::ENTRY_HEAD_MARK ) ) {
-			$updated = '' === rtrim( $updated ) ? self::ENTRY_HEAD : self::ENTRY_HEAD . "\n\n" . ltrim( $updated );
+		if ( ! str_contains( $updated, self::ENTRY_HEAD ) ) {
+			$mark_at = strpos( $updated, self::ENTRY_HEAD_MARK );
+			if ( false !== $mark_at ) {
+				// An older head (the pre-#64 one: preflight commented out): replace
+				// it whole — from the layer-order line when present, otherwise from
+				// the utilities line — so the current head reaches a site that was
+				// already installed once.
+				$start = strpos( $updated, '@layer theme, base, components, utilities;' );
+				if ( false === $start || $start > $mark_at ) {
+					$start = $mark_at;
+				}
+				$head_end = $mark_at + strlen( self::ENTRY_HEAD_MARK );
+				$updated  = substr( $updated, 0, $start ) . self::ENTRY_HEAD . substr( $updated, $head_end );
+			} else {
+				$updated = '' === rtrim( $updated ) ? self::ENTRY_HEAD : self::ENTRY_HEAD . "\n\n" . ltrim( $updated );
+			}
 		}
 
 		$missing = array();
@@ -130,6 +208,15 @@ final class WindPressVolume {
 		}
 		if ( array() !== $missing ) {
 			$updated = rtrim( $updated ) . "\n" . implode( "\n", $missing ) . "\n";
+		}
+		// The theme block is the entry's tail: from its marker to the end is
+		// replaced on every change, so a value change here reaches an existing
+		// entry (a present-only check would pin the first version forever).
+		$theme_at = strpos( $updated, self::ENTRY_THEME_MARK );
+		if ( false === $theme_at ) {
+			$updated = rtrim( $updated ) . "\n\n" . self::ENTRY_THEME . "\n";
+		} else {
+			$updated = rtrim( substr( $updated, 0, $theme_at ) ) . "\n\n" . self::ENTRY_THEME . "\n";
 		}
 		if ( $updated === $current ) {
 			return;
@@ -201,6 +288,19 @@ final class WindPressVolume {
 				'surface' => 'windpress volume',
 				'target'  => self::ENTRY,
 				'detail'  => 'the entry does not carry the Tailwind v4 theme/utilities imports: no utility class compiles',
+			);
+		} elseif ( ! str_contains( $entry, self::ENTRY_HEAD ) ) {
+			$rows[] = array(
+				'surface' => 'windpress volume',
+				'target'  => self::ENTRY,
+				'detail'  => 'the entry carries an older head without the preflight: the site sizes as content-box and block elements regain their UA margins (#64)',
+			);
+		}
+		if ( ! str_contains( $entry, self::ENTRY_THEME ) ) {
+			$rows[] = array(
+				'surface' => 'windpress volume',
+				'target'  => self::ENTRY,
+				'detail'  => 'the entry does not carry the current old-site px type scale @theme: text-5xl…9xl fall back to the Tailwind v4 rem defaults (#66)',
 			);
 		}
 		foreach ( $imports as $import ) {

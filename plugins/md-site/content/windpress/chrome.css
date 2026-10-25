@@ -10,11 +10,12 @@
  * Selectors are the markup's own classes; the ratio utilities carry
  * the md- prefix per the spec's naming rule.
  */
-span.xo-menu-horizontal-v1__label { font-size: 15px; --color: rgb(0, 0, 0); color: rgb(0, 0, 0); }
-h3.xo-menu-horizontal-v1__label { font-size: 13px; }
+/* The nav label's size/family/case is set once in the header block below
+   (ticket #67); the old inline-span 15px and h3 13px pair are gone so the
+   deploy-time overlay definition cannot win again. */
 .xo-loader-3 { --size: 10; --color: rgb(var(--color-foreground)); --duration: 1000; }
-.xo-modal-content { --width: 50rem; --height: 80vh; --header-height: 7rem; --footer-height: 7rem; }
-.xo-modal-content__body { --width: ; --scrollbar-thumb-padding: 0rem; }
+.xo-modal-content { --width: 500px; --height: 80vh; --header-height: 70px; --footer-height: 70px; }
+.xo-modal-content__body { --width: 0; --scrollbar-thumb-padding: 0px; }
 .xo-predictive-search__left { --lg: 3; }
 .xo-predictive-search__center { --xs: 12; --lg: 9; }
 .md-ratio-100 { --xo-ratio-percent: 1.0; }
@@ -22,24 +23,30 @@ h3.xo-menu-horizontal-v1__label { font-size: 13px; }
 .md-ratio-177-7 { --xo-ratio-percent: 1.7772511848341233; }
 .footer-v21__grid { --xs: 12; --sm: 12; --md: 6; --lg: 3; }
 .footer-v21__block-logo-image { max-width: min(100%, 140px); }
+/* The converted logo is an <img width="1024"> inside the old theme's
+   .xo-image wrapper; without the wrapper's CSS the intrinsic width
+   overflows every page by 634px (measured 2026-10-25 on 390px). */
+.footer-v21__block-logo-image .xo-image { display: block; max-width: 140px; }
+.footer-v21__block-logo-image .xo-image img { display: block; width: 100%; height: auto; }
 .footer-v21__copyright { --xs: 12; --md: 6; --lg: 6; }
 .footer-v21__copyright-payment { --xs: 12; --md: 6; --lg: 6; }
 .header-v9-top { display: none;
-background-color: var(--background-menu);
-padding: 1rem 0; }
+background-color: #fff;
+padding: 0; }
 @media (min-width: 1200px) {
 .header-v9-top { display: block; }
 }
 .header-v9-top__notification { display: flex;
 align-items: center;
-gap: 0.3rem;
+gap: 3px;
 justify-content: center;
-font-size: 1.2rem;
+height: 37px;
+font-size: 12px;
 text-transform: uppercase;
 font-weight: 500;
-line-height: calc(1 + 1.1 / var(--font-heading-scale));
-letter-spacing: calc(var(--font-heading-scale) * 0.032rem);
-color: var(--text-menu); }
+line-height: 1;
+letter-spacing: 0.32px;
+color: #000; }
 .header-v9-top__notification span { font-weight: 800; }
 .hover-style__link { transition: all 0.8s; }
 .hover-style:hover .hover-style__link { color: rgb(var(--color-accent)); }
@@ -48,16 +55,16 @@ color: var(--text-menu); }
 .hover-style__link { display: unset; }
 }
 @media (max-width: 1399px) {
-.menu-header-v2-grid { --col-width: 20rem !important; }
+.menu-header-v2-grid { --col-width: 200px !important; }
 }
 .menu-header-v2__img { transition: box-shadow 0.2s ease-out;
-box-shadow: 0.3rem 0.4rem 1.8rem rgba(var(--color-foreground), 0.05);
+box-shadow: 3px 4px 18px rgba(var(--color-foreground), 0.05);
 transition-duration: 0.3s;
 transition-property: transform;
 display: block;
-margin: 0.5rem !important;
-line-height: calc(1 + 0.6 / var(--font-heading-scale));
-height: 21.5rem;
+margin: 5px !important;
+line-height: 1.6;
+height: 215px;
 overflow: hidden;
 position: relative; }
 .menu-header-v2__img:hover img { -o-object-position: bottom;
@@ -70,11 +77,11 @@ height: 100%;
 object-position: top; }
 .menu-header-v2__img .xo-image { height: 100%; }
 .menu-header-v2__link { display: inline-block;
-font-size: calc(var(--font-body-scale) * 1.6rem);
+font-size: 16px;
 color: rgb(var(--color-foreground));
-padding-bottom: 1rem;
-margin-bottom: 1.4rem;
-margin-top: 1.5rem;
+padding-bottom: 10px;
+margin-bottom: 14px;
+margin-top: 15px;
 position: relative;
 transition: 0.3s ease; }
 .menu-header-v2__link::after { content: "";
@@ -82,19 +89,19 @@ position: absolute;
 width: 50%;
 bottom: 0;
 left: 0;
-border-bottom: 0.1rem solid rgb(var(--color-foreground), 0.15); }
+border-bottom: 1px solid rgb(var(--color-foreground), 0.15); }
 .menu-header-v2__link:hover { color: rgb(var(--color-foreground), 0.6); }
-.xo-container--wide { padding-left: 1.5rem;
-padding-right: 1.5rem;
+.xo-container--wide { padding-left: 15px;
+padding-right: 15px;
 width: 100%; }
 @media (min-width: 1400px) {
 .xo-container--wide { max-width: unset;
-padding-left: 14rem;
-padding-right: 14rem; }
+padding-left: 140px;
+padding-right: 140px; }
 }
 .xo-container--wide:has(.new20__title) { max-width: unset; }
 @media (min-width: 1400px) {
-.xo-container--wide:has(.new20__title) { padding: 0 14rem; }
+.xo-container--wide:has(.new20__title) { padding: 0 140px; }
 }
 .xo-header-v9 { position: relative;
 z-index: 100; }
@@ -165,142 +172,301 @@ letter-spacing: .02em;
 color: #fff;
 white-space: nowrap;
 }
-/* ===== Jobs-ish: clean + strict layout ===== */
+/* ===== Header parity (ticket #67; spec #65 values, old-site computed
+   2026-10-26 at 1440x900 and 390x844). Every value is px on purpose:
+   the chrome must not move when the root font size changes. ===== */
 #HeaderV9-sections--21844031144189__header_v1_main{
 position: relative;
 z-index: 100;
+background: #fff;
 }
-/* Topbar */
+/* The old header is 113px: a 37px top strip plus the 76px grid. The
+   converted top strip is empty but its height is part of the band. */
+#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top{
+display: none;
+height: 37px;
+padding: 0;
+background: #fff;
+}
+@media (min-width: 1200px){
+#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top{ display: block; }
+}
 #HeaderV9-sections--21844031144189__header_v1_main .header-v9-top__notification{
-text-align:center;
-padding: 8px 0;
+height: 37px;
+padding: 0;
 font-size: 12px;
-letter-spacing: .02em;
+letter-spacing: .32px;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top__text{ margin:0; display:inline; }
-#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top__sub{ margin-left:10px; opacity:.75; }
-/* Wrapper backgrounds */
+/* The merged class now really carries xo-section (the duplicate attribute
+   used to drop it); the section's 50px rhythm must not pad the header. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-v9__inner{
+background: #fff;
+padding: 0;
+}
+#HeaderV9-sections--21844031144189__header_v1_main xo-sticky{
+display: block;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-v9__wrapper{
-background: #ffffff;
-border-bottom: 1px solid rgba(0,0,0,.06);
-transition: background .25s ease, box-shadow .25s ease;
-}
-#HeaderV9-sections--21844031144189__header_v1_main.xo-header-v9--trans .xo-header-v9__wrapper{
-background: transparent;
-border-bottom-color: rgba(255,255,255,.14);
+background: #fff;
+border: 0;
 }
 #HeaderV9-sections--21844031144189__header_v1_main xo-sticky[xo-is-sticky] .xo-header-v9__wrapper{
-background: #ffffff !important;
+background: #fff !important;
 box-shadow: 0 10px 30px rgba(0,0,0,.06);
-border-bottom-color: rgba(0,0,0,.06);
+border: 0;
 }
-/* Grid: logo | menu | actions */
+/* 1400px container with 20px side padding: at 1440 the content starts at
+   x=40 and the CTA's right edge is x=1400, the old gutter. */
+#HeaderV9-sections--21844031144189__header_v1_main xo-container{
+display: block;
+width: 100%;
+max-width: 1400px;
+margin: 0 auto;
+padding: 0 20px;
+box-sizing: border-box;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
-min-height: 76px;
+min-height: var(--md-header-h, 76px);
 display: grid;
 grid-template-columns: auto 1fr auto;
 align-items: center;
 gap: 28px;
-padding: 10px 0;
+padding: 0;
 }
-/* Logo: never overflow, always centered inside slot */
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo{ display:flex; align-items:center; }
+/* The band the token names is this grid plus the 37px strip the >=1200
+   tier adds, so the grid takes the remainder there. */
+@media (min-width: 1200px){
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
+min-height: calc(var(--md-header-h, 113px) - 37px);
+}
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo{
+display: flex;
+align-items: center;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{
-display:flex;
-align-items:center;
-height: 56px;               /* 控制 logo 占位高度 */
-max-width: 220px;           /* 防止超宽 */
+display: flex;
+align-items: center;
+justify-content: flex-start;
+height: 56px;
+min-width: 44px;
+max-width: 140px;
+color: #000;
+text-decoration: none;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img{
-max-height: 44px;           /* ✅ 关键：再大图也不会撑爆 header */
-width: auto;
-height: auto;
+display: block;
+width: 100px;
+height: 44px;
+max-height: 44px;
 object-fit: contain;
-display:block;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{ display:none; }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__fallback{
-font-size: 16px;
-font-weight: 700;
-letter-spacing: .02em;
-color: inherit;
-white-space: nowrap;
-}
-/* Menu */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{ display: none; }
+/* Nav */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-nav{
 justify-self: center;
-position: static !important; /* mega menu full width */
+position: static !important;
 }
-/* Actions */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions{
-display:flex;
-align-items:center;
+display: flex;
+align-items: center;
 gap: 14px;
 justify-self: end;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn{
-width: 40px;
-height: 40px;
-display:inline-flex;
-align-items:center;
-justify-content:center;
+width: 44px;
+height: 44px;
+display: inline-flex;
+align-items: center;
+justify-content: center;
 border-radius: 999px;
-transition: background .2s ease, transform .2s ease;
+color: #000;
+transition: background .2s ease;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn:hover{
-background: rgba(0,0,0,.06);
-transform: translateY(-1px);
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn svg{
+display: block;
+width: 20px;
+height: 20px;
+color: #000;
 }
-/* Quote button: subtle premium pill */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn svg path{ fill: #000; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn:hover{ background: rgba(0,0,0,.06); }
+/* The 40px pill keeps a 44px hit area without changing its visual box. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote{
+position: relative;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+height: 40px;
+width: 142px;
+padding: 0 10px;
+border-radius: 999px;
+box-sizing: border-box;
 background: #141414;
 color: #fff;
-padding: 10px 18px;
-border-radius: 999px;
+font-family: "Inter", sans-serif;
 font-size: 13px;
 font-weight: 700;
 letter-spacing: .02em;
-text-decoration:none;
+line-height: 1;
+text-decoration: none;
 white-space: nowrap;
 transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
 }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote::after{
+content: "";
+position: absolute;
+left: 0;
+right: 0;
+top: -2px;
+bottom: -2px;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote:hover{
 transform: translateY(-1px);
-background:#000;
+background: #000;
 box-shadow: 0 10px 24px rgba(0,0,0,.14);
 }
-/* Mega menu full width (kept, but safer selectors) */
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-nav ul li > div,
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-nav .mega-menu,
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-nav .xo-mega-menu,
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-nav .sub-menu{
-position: absolute !important;
-left: 50% !important;
-transform: translateX(-50%) !important;
-width: 100vw !important;
-max-width: 100vw !important;
-box-sizing: border-box !important;
-margin: 0 !important;
-top: 100% !important;
+/* Desktop navigation: 15px Inter links; 13px Playfair uppercase labels;
+   20px item spacing; hover is the old 50% black, not gold. */
+#HeaderV9-sections--21844031144189__header_v1_main{
+--color-foreground: 0, 0, 0;
+--color-background: 255, 255, 255;
+--color-accent: 201, 169, 98;
 }
-/* Responsive */
-#HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display:none; }
-#HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display:block; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1{
+display: flex;
+align-items: center;
+margin: 0;
+padding: 0;
+list-style: none;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item{ position: relative; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link{
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 4px;
+padding: 0 20px 0 0;
+color: #000;
+font-family: "Inter", sans-serif;
+font-size: 15px;
+font-weight: 500;
+line-height: 16px;
+text-decoration: none;
+transition: color .3s ease;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item:first-child > .xo-menu-horizontal-v1__link{ padding-left: 0; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__label{
+margin: 0;
+padding: 0;
+color: #000;
+font-family: "Playfair Display", serif;
+font-size: 13px;
+font-weight: 500;
+line-height: 15.79px;
+text-transform: uppercase;
+white-space: nowrap;
+transition: color .3s ease;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:hover > .xo-menu-horizontal-v1__link,
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:hover > .xo-menu-horizontal-v1__link .xo-menu-horizontal-v1__label{
+color: rgba(0,0,0,.5);
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__arrow{ line-height: 0; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__arrow--hide{ display: none; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__sub-menu{
+position: absolute;
+top: 100%;
+left: 0;
+z-index: 60;
+width: 200px;
+margin: 0;
+padding: 15px 0;
+list-style: none;
+background: #fff;
+box-shadow: 0 5px 15px rgba(0,0,0,.07);
+border-radius: 5px;
+opacity: 0;
+pointer-events: none;
+transform: translateY(10px);
+transition: .3s;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:hover > .xo-menu-horizontal-v1__sub-menu,
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:focus-within > .xo-menu-horizontal-v1__sub-menu{
+opacity: 1;
+pointer-events: auto;
+transform: none;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub{
+padding: 0 15px;
+/* Sub-menu rows: the old site's computed values, read in real Chrome
+   (metalpartition.com, 2026-10-26, 1280 and 1440): Inter 15px / 22.5px,
+   weight 500, row 33px tall, label padding 5px 0, menu 95px.
+   The conversion had left these on Playfair 15px/19px, which made every row
+   29px and the menu 88px — a 4px row and 7px menu drift, and the wrong
+   typeface for a utility menu. The panel's own card titles keep Playfair;
+   only the plain row list is Inter. */
+font-family: "Inter", sans-serif;
+font-size: 15px;
+font-weight: 500;
+line-height: 22.5px;
+color: #000;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub .xo-menu-horizontal-v1__label{
+padding: 5px 0;
+font-family: "Inter", sans-serif;
+font-size: 15px;
+font-weight: 500;
+line-height: 22.5px;
+text-transform: none;
+white-space: normal;
+color: #000;
+transition: transform .3s ease, color .3s ease;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub:hover .xo-menu-horizontal-v1__label{
+transform: translateX(5px);
+color: #000;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__mega-menu:empty{ display: none; }
+/* Responsive: 73px white band, icon logo, no search, 34px CTA,
+   44x44 hamburger hit area. */
+#HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display: none; }
+#HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display: block; }
 @media (max-width: 990px){
-#HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display:none !important; }
-#HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display:block; }
+#HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display: none !important; }
+#HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display: block; }
+#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top{ display: none; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
 grid-template-columns: auto 1fr auto;
-gap: 12px;
-min-height: 64px;
-padding: 8px 0;
+gap: 14px;
+min-height: var(--md-header-h, 73px);
+padding: 0;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--desktop{ display:none; }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{ display:block; max-height: 34px; }
+#HeaderV9-sections--21844031144189__header_v1_main xo-container{ padding: 0 20px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ height: 56px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--desktop{ display: none; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{
+display: block;
+width: auto;
+height: auto;
+max-width: 80px;
+max-height: 34px;
+object-fit: contain;
+}
+/* The old mobile header keeps the search entry beside the quote button
+   (40x40, 20px icon); only the desktop nav and top bar drop out. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn{
+display: inline-flex;
+width: 40px;
+height: 40px;
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote{
-padding: 8px 12px;
+height: 34px;
+width: 122px;
+padding: 0 8px;
 font-size: 12px;
 }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote::after{ top: -5px; bottom: -5px; }
 }
 /* =========================
 Desktop：一屏显示（不滚动）
@@ -308,6 +474,61 @@ Desktop：一屏显示（不滚动）
 - 少于6个：自动居中，不会靠左留大空白
 - 图片统一比例 + 统一卡片
 ========================= */
+/* The mega-menu templates sit after </header>, so they do not inherit the
+   header's scheme variables; give both panels their own black-on-white set. */
+[data-id^="sections--21844031144189__mega_menu_v2_"]{
+--color-foreground: 0, 0, 0;
+--color-background: 255, 255, 255;
+--color-accent: 201, 169, 98;
+background: #fff;
+/* The old panel's section carried .mmv2 alone, with no section rhythm; the
+   conversion merged in .xo-section, whose 50px --pt/--pb made every dropdown
+   100px taller than the old one (old panel 337px, ours 437px). The panel
+   hangs off the header's bottom edge, so the page rhythm is not part of it.
+   Both the variables and the properties are zeroed: the properties alone
+   would depend on where this rule sits relative to .xo-section's media
+   query. */
+--pt: 0;
+--pb: 0;
+padding-top: 0;
+padding-bottom: 0;
+}
+[data-id^="sections--21844031144189__mega_menu_v2_"] xo-container{ display: block; }
+/* Font-metric normalisation, shared by BOTH mega panels (2026-10-26).
+   The old site's Playfair cut is ~1.6% narrower than the one this repo
+   self-hosts, which moved the wrap point at 1280: the old panel measured
+   336.8 / card 310.8 with every title on one line, ours measured 356 / 330
+   with two titles on two lines.
+   Measured advances for "Laser-Cut & Geometric Metal Screens" at 800/15px in
+   the same 265px box: old 261.37 (3.63px of slack), ours 265.59 (0.59 over).
+   "Outdoor Privacy & Landscape Screens": old 263.49, ours 268.85.
+   font-optical-sizing and every 'opsz' value leave the advance unchanged (all
+   measured 265.55), so this is the file, not a variable-font axis. Re-sourcing
+   the font is not an option (one font source only), so a hairline negative
+   tracking reclaims the 4px: -0.008em = 0.12px/char, ~4.0px over a 33-character
+   title. That restores 336.8/310.8 at 1280 and leaves 1024 untouched, where
+   two-line wrapping is the OLD site's own behaviour (355.5/329.5).
+   Scoped to the container prefix, not one panel's data-id: the conversion
+   emitted the same card rules twice (HEAtbw and x7pRC4), and applying the
+   tracking to only one left the two mega panels rendering identically-role
+   titles at different tracking.
+   NOT text-wrap:balance: an in-page A/B (same DOM, only the declaration
+   flipped) showed identical link heights [48,29,29,48] and identical panel and
+   card heights with balance, with wrap, and with the clamp removed entirely.
+   balance only moves where a two-line break falls; it never changes the count,
+   so it could neither cause nor fix the extra line, and it shifted the break
+   away from the old site's at 1024 where the wrap is authentic. */
+[data-id^="sections--21844031144189__mega_menu_v2_"] .mmv2__link{ letter-spacing: -0.008em; }
+/* The card titles are h4s. The old theme's h4 rule (Playfair Display, 16px,
+   19.4286px = 16 x calc(1 + 0.3 / 1.4)) set both, and .mmv2__link inherits
+   the family from its h4. This site's base.css only zeroes heading margins,
+   so the h4 falls back to the body's Inter/24px and long titles wrap an extra
+   line (at 992 a 4-card panel measured 703px against the old 666px). Scoped
+   to the panels: the site's own heading scale is a separate decision. */
+[data-id^="sections--21844031144189__mega_menu_v2_"] .mmv2__title{
+font-family: "Playfair Display", serif;
+line-height: 1.2142857;
+}
 [data-id="sections--21844031144189__mega_menu_v2_HEAtbw"]{
 --mm-gap: 18px;
 --mm-radius: 18px;
@@ -552,13 +773,149 @@ border: none !important;
 transition: none !important;
 }
 }
-.footer-v21__block-heading {
-font-size: 1.4rem !important;
-font-weight: 600 !important;
-letter-spacing: 0.05em !important;
-text-transform: uppercase !important;
+/* ===== Footer parity (ticket #67; spec #65 values, old-site computed
+   2026-10-26 at 1440x900 and 390x844): #1d1d1d, 4 columns, 629px
+   desktop / 1226px mobile. ===== */
+footer.xo-section{
+background-color: #1d1d1d;
+color: rgba(255,255,255,.75);
+font-family: "Inter", sans-serif;
+font-size: 16px;
+line-height: 24px;
+padding: 0;
 }
-.md-te78b4640 { background:;color: }
+footer .footer-v21__content-top{
+padding: 30px 0;
+border-bottom: 1px solid rgba(255,255,255,.15);
+}
+footer xo-animate{ display: block; }
+footer .footer-v21__content-top xo-container,
+footer .xo-container--wide{
+display: block;
+width: 100%;
+margin: 0 auto;
+padding: 0 15px;
+box-sizing: border-box;
+}
+@media (min-width: 1400px){
+footer .footer-v21__content-top xo-container,
+footer .xo-container--wide{ padding: 0 140px; }
+}
+footer .footer-v21__content-top xo-grid,
+footer .footer-v21__bottom{
+display: grid;
+grid-template-columns: repeat(12, minmax(0, 1fr));
+gap: 15px;
+align-items: stretch;
+}
+@media (min-width: 768px){
+footer .footer-v21__content-top xo-grid,
+footer .footer-v21__bottom{ gap: 30px; }
+}
+footer .footer-v21__grid{ grid-column: span 12; min-width: 0; }
+@media (min-width: 768px){
+footer .footer-v21__grid{ grid-column: span 6; }
+}
+@media (min-width: 1200px){
+footer .footer-v21__grid{ grid-column: span 3; }
+}
+footer .footer-v21__block-logo-image{
+width: 140px;
+max-width: 100%;
+}
+footer .footer-v21__block-logo-image .xo-image{ display: block; max-width: 140px; }
+footer .footer-v21__block-logo-image img{
+display: block;
+width: 140px;
+height: 140px;
+object-fit: contain;
+}
+footer .footer-v21__block-text{
+margin: 24px 0 16px;
+width: 80%;
+font-size: 16px;
+font-weight: 400;
+line-height: 30.4px;
+color: rgba(255,255,255,.4);
+}
+footer .footer-v21__block-info{
+margin: 0 0 8px;
+font-size: 16px;
+font-weight: 400;
+line-height: 30.4px;
+color: rgba(255,255,255,.4);
+}
+footer .footer-v21__block-info span,
+footer .footer-v21__block-info a{ color: #fff; }
+footer .footer-v21__block-heading{
+position: relative;
+margin: 0 0 16px;
+padding: 0 0 17px;
+color: #fff;
+font-family: "Playfair Display", serif;
+font-size: 14px;
+font-weight: 600;
+line-height: 24px;
+letter-spacing: .7px;
+text-transform: uppercase;
+}
+footer .footer-v21__block-heading::before{
+content: "";
+position: absolute;
+left: 0;
+bottom: 0;
+width: 35px;
+height: 1px;
+background: rgba(255,255,255,.15);
+}
+footer .footer-v21__block-list{
+list-style: none;
+margin: 0;
+padding: 0;
+}
+footer .footer-v21__block-list-item{
+padding: 4px 0;
+font-size: 15px;
+font-weight: 400;
+line-height: 22.5px;
+}
+footer .footer-v21__block-list a{
+color: rgba(255,255,255,.75);
+font-weight: 500;
+text-decoration: none;
+transition: color .3s ease, padding-left .3s ease;
+}
+footer .footer-v21__block-list a:hover{
+color: #c9a962;
+padding-left: 10px;
+}
+footer .footer-v21__block-info a{
+text-decoration: none;
+transition: color .3s ease;
+}
+footer .footer-v21__block-info a:hover{ color: #c9a962; }
+footer .footer-v21__content-bottom{ padding: 24px 0; }
+footer .footer-v21__bottom{ align-items: center; }
+footer .footer-v21__copyright{
+grid-column: span 12;
+min-height: 42px;
+font-size: 14px;
+line-height: 21px;
+color: rgba(255,255,255,.75);
+}
+@media (min-width: 768px){
+footer .footer-v21__copyright{ grid-column: span 6; }
+}
+footer .footer-v21__copyright a{
+color: rgba(255,255,255,.75);
+text-decoration: none;
+}
+footer .footer-v21__copyright a:hover{ color: #c9a962; }
+footer .footer-v21__copyright-payment{ grid-column: span 12; }
+@media (min-width: 768px){
+footer .footer-v21__copyright-payment{ grid-column: span 6; }
+}
+.md-te78b4640 { background: #fff; color: #000; }
 .md-t546c7aa6 { --bg-color: #ffffff }
 .md-t14a7f425 { background-color: #fff }
 .md-t5a1e6c53 { fill-opacity:1;fill-rule:nonzero;stroke:none }
@@ -566,3 +923,304 @@ text-transform: uppercase !important;
 .md-tfb6e8023 { --pt: 50;--pb: 50 }
 .md-t03bb2ded { --mm-cols: 3 }
 .md-t38d94802 { --bg-color: #1d1d1d;--pt: 0;--pb: 0 }
+
+/* =========================
+   Chrome runtime styles (md-chrome.js)
+   The converted templates carry the old site's custom elements. Alpine's
+   x-cloak hides pre-init markup; the modal, tabs and menu rules below give
+   those elements their behaviour's presentation (the old theme's
+   xo-webcomponents stylesheet does not enter the site — ticket #19 T6).
+   ========================= */
+[x-cloak]{display:none !important}
+html.md-modal-open,html.md-modal-open body{overflow:hidden}
+xo-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);overflow-y:auto}
+xo-modal.is-open{display:block}
+xo-modal[xo-placement="top-left"]{background:rgba(0,0,0,.55)}
+xo-tabs-pane{display:block}
+xo-tabs-trigger{cursor:pointer}
+
+/* The desktop mega panel. The markup ships an empty <xo-mega-menu> in every
+   nav item plus the panel's content in a <template>; md-chrome.js clones the
+   content in, and these rules give the result the dropdown's presentation.
+   The styling lives here rather than in the runtime so the closed state is
+   honest without JavaScript: an opacity-0 panel that is merely
+   pointer-events:none still takes Tab. `visibility` removes the links from
+   the tab order and the accessibility tree, and its transition delay lets
+   the fade finish before it goes.
+
+   The item becomes a pass-through (static) so the full-width panel lays out
+   against the header band instead of the 16px-tall menu row — `:has()`
+   states that dependency, and the id prefix outranks the parity rule's
+   `position: relative` on the item. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item:has(> .xo-menu-horizontal-v1__mega-menu:not(:empty)){position:static}
+.xo-menu-horizontal-v1__mega-menu:not(:empty) ~ .xo-menu-horizontal-v1__sub-menu{display:none}
+.xo-menu-horizontal-v1__mega-menu:not(:empty){
+position:absolute;
+top:100%;
+left:0;
+width:100%;
+z-index:60;
+opacity:0;
+pointer-events:none;
+visibility:hidden;
+transform:translateY(10px);
+transition:opacity .3s ease,transform .3s ease,visibility 0s linear .3s;
+}
+.xo-menu-horizontal-v1__item.md-mega-open > .xo-menu-horizontal-v1__mega-menu:not(:empty){
+opacity:1;
+pointer-events:auto;
+visibility:visible;
+transform:none;
+transition:opacity .3s ease,transform .3s ease,visibility 0s;
+}
+@media (prefers-reduced-motion: reduce){
+.xo-menu-horizontal-v1__mega-menu:not(:empty),
+.xo-menu-horizontal-v1__item.md-mega-open > .xo-menu-horizontal-v1__mega-menu:not(:empty){ transition:none; transform:none; }
+}
+
+/* The mobile menu drawer (old theme's hamburger, ported to plain values:
+   the legacy --color-foreground variables are not defined on this site). */
+.xo-menu-hamburger-style1{display:flex;align-items:center}
+.xo-menu-hamburger-style1__trigger{cursor:pointer;display:flex;align-items:center;justify-content:center;width:44px;height:44px;color:#000}
+.xo-menu-hamburger-style1__trigger svg{vertical-align:middle}
+.xo-menu-hamburger-style1__trigger .icon-hamburger-menu{position:relative;display:block;width:12px;height:2px;top:0;background-color:#000;transform-origin:left center;transition:opacity .2s ease,width .2s ease,rotate .2s ease,translate .2s ease}
+.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::before,
+.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::after{content:"";position:absolute;height:2px;background-color:#000;transform-origin:left center;transition:opacity .2s ease,width .2s ease,rotate .2s ease,translate .2s ease}
+.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::before{top:-8px;width:23px}
+.xo-menu-hamburger-style1__trigger .icon-hamburger-menu::after{bottom:-8px;width:17px}
+.xo-menu-hamburger-style1__trigger:hover .icon-hamburger-menu,
+.xo-menu-hamburger-style1__trigger:hover .icon-hamburger-menu::after{width:23px}
+.xo-menu-hamburger-style1__content{display:flex;flex-direction:column;width:300px;max-width:88vw;min-height:100dvh;background-color:#fff;box-shadow:0 0 40px rgba(0,0,0,.25);overflow-y:auto}
+.menu-hamburger-style1-top{display:flex;align-items:center;background-color:#111}
+.xo-menu-hamburger-style1__link{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:14px 20px;font-size:15px;color:#000;opacity:.85;border-bottom:1px solid #ededed;cursor:pointer;text-decoration:none;transition:background-color .2s ease,opacity .2s ease}
+.xo-menu-hamburger-style1__link:hover{opacity:1;background-color:#f6f6f6}
+.xo-menu-hamburger-style1__link--color{background-color:#111;color:#fff;border-bottom:0}
+.xo-menu-hamburger-style1__link--color:hover{background-color:#000}
+.xo-menu-hamburger-style1__label{padding:0;font-weight:500}
+.xo-menu-hamburger-style1__back{display:flex;align-items:center;width:100%}
+.xo-menu-hamburger-style1__tablist{display:flex;align-items:center;color:#fff;text-transform:uppercase;font-size:13px;letter-spacing:.06em}
+[dir=ltr] .xo-menu-hamburger-style1__tablist-item{margin-inline-start:10px}
+.xo-menu-hamburger-style1__arrow{padding:0 0 0 12px;line-height:normal;pointer-events:none}
+.xo-menu-hamburger-style1__arrow svg{vertical-align:middle}
+.xo-menu-hamburger-style1__mega-menu:empty{display:none}
+/* A filled drawer panel is the accordion's content: it replaces the row list
+   the drawer prints beside it, because both list the same destinations. The
+   old theme stated this as markup-time JS; with the panel filled by the
+   runtime the sibling rule says the same thing in CSS. */
+.xo-menu-hamburger-style1__mega-menu:not(:empty){display:block}
+.xo-menu-hamburger-style1__mega-menu:not(:empty) ~ .xo-menu-hamburger-style1__link{display:none}
+
+/* The search sheet */
+.xo-modal-content{display:flex;min-height:100dvh;padding:15px;box-sizing:border-box}
+.xo-modal-content__inner{position:relative;display:flex;flex-direction:column;width:100%;max-width:1100px;margin:0 auto;max-height:calc(100dvh - 30px);background:#fff;color:#111;border-radius:12px;padding:24px;box-sizing:border-box;overflow-y:auto}
+.xo-modal-content__body{width:100%}
+.xo-modal-content__close--abs{position:absolute;top:15px;right:15px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.06);cursor:pointer}
+.xo-modal-content__close--abs:hover{background:rgba(0,0,0,.14);rotate:180deg;transition:rotate .3s ease,background-color .3s ease}
+
+/* Touch targets: the footer's link rows, the header logo link, and the
+   catalog search field measured under 44px on 390/320 (audit 2026-10-25).
+   The footer rows keep the old 31px mobile rhythm (footer height parity)
+   and take the 44px minimum from 768px up, where the first column's height
+   already dominates the grid. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ min-height: 44px; }
+footer .footer-v21__block-list-item a{
+display: inline;
+padding: 0;
+}
+@media (min-width: 768px){
+footer .footer-v21__block-list-item a{
+display: inline-flex;
+align-items: center;
+min-height: 44px;
+padding: 4px 0;
+}
+}
+.pattern-catalog__search input{ min-height: 44px; box-sizing: border-box; }
+
+/* Final touch-target pass (customer-profile audit 2026-10-25): the home
+   chips are 38px wide, the mobile logo link 27px, the catalog search
+   button and the PDP FAQ rows under 44px in one dimension. */
+[class^="emt-nav-btn"],[class*=" emt-nav-btn"]{ min-width: 44px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ min-width: 44px; }
+.pattern-catalog__search-button{ min-width: 44px; min-height: 44px; }
+.pdp-faq-q{ min-height: 44px; }
+
+/* =========================
+   First-party floating chrome (ticket #67, spec #65)
+   The WhatsApp entry and the back-to-top control are plain anchors in the
+   footer partial; no third-party script is loaded. The back-to-top sits
+   above the WhatsApp button so the two never overlap.
+   ========================= */
+.md-whatsapp-float{
+position: fixed;
+right: 24px;
+bottom: 24px;
+z-index: 900;
+display: flex;
+align-items: center;
+justify-content: center;
+width: 56px;
+height: 56px;
+border-radius: 50%;
+background: #25d366;
+color: #fff;
+box-shadow: 0 8px 24px rgba(0,0,0,.22);
+text-decoration: none;
+transition: transform .2s ease, box-shadow .2s ease;
+}
+.md-whatsapp-float:hover{
+transform: translateY(-2px);
+box-shadow: 0 12px 28px rgba(0,0,0,.28);
+}
+.md-whatsapp-float svg{ display: block; width: 30px; height: 30px; }
+.md-back-to-top{
+position: fixed;
+right: 30px;
+bottom: 96px;
+z-index: 900;
+display: flex;
+align-items: center;
+justify-content: center;
+width: 40px;
+height: 40px;
+border-radius: 50%;
+background: #000;
+color: #fff;
+text-decoration: none;
+box-shadow: 0 6px 18px rgba(0,0,0,.24);
+}
+.md-back-to-top[hidden]{ display: none; }
+@media (max-width: 990px){
+.md-whatsapp-float{
+right: 16px;
+bottom: 16px;
+width: 52px;
+height: 52px;
+}
+.md-whatsapp-float svg{ width: 28px; height: 28px; }
+.md-back-to-top{
+right: 16px;
+bottom: 80px;
+}
+}
+
+/* The footer's quote dialog: the single #open-quote destination on every
+   page without its own quote modal. Values follow the site's dark panel. */
+.md-quote-anchor{
+display: block;
+position: relative;
+top: -1px;
+height: 0;
+}
+.md-quote-modal{
+position: fixed;
+inset: 0;
+z-index: 1000;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 16px;
+}
+.md-quote-modal__backdrop{
+position: absolute;
+inset: 0;
+background: rgba(0,0,0,.85);
+}
+.md-quote-modal__card{
+position: relative;
+width: 100%;
+max-width: 420px;
+max-height: 95vh;
+overflow-y: auto;
+padding: 28px;
+border: 1px solid rgba(255,255,255,.08);
+border-radius: 16px;
+background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+box-shadow: 0 32px 64px rgba(0,0,0,.5);
+color: #fff;
+box-sizing: border-box;
+}
+.md-quote-modal__close{
+position: absolute;
+top: 12px;
+right: 12px;
+width: 44px;
+height: 44px;
+border: 0;
+border-radius: 8px;
+background: rgba(255,255,255,.05);
+color: rgba(255,255,255,.75);
+font-size: 24px;
+line-height: 1;
+cursor: pointer;
+}
+.md-quote-modal__close:hover{ background: rgba(255,255,255,.1); color: #fff; }
+.md-quote-modal__title{
+margin: 0 0 8px;
+font-family: "Playfair Display", serif;
+font-size: 24px;
+font-weight: 600;
+color: #fff;
+}
+.md-quote-modal__copy{
+margin: 0 0 20px;
+font-size: 14px;
+line-height: 1.6;
+color: rgba(255,255,255,.75);
+}
+
+/* The home hero's quote card is placed by the template's own grid (the last
+   row's `md:grid-cols-[1fr_auto]` + `justify-self-end`), exactly as the old
+   section places it. Do not absolutely position it here: that collapsed the
+   row to zero height and floated the card over the hero. */
+
+/* =========================
+   Sticky host (OWNER-APPROVED UPGRADE 2026-10-26, ledger 升级-1)
+   The header band sticks to the top. The old site's header scrolled away;
+   the owner ruled that defect fixed. This is that upgrade's host contract,
+   and it is CSS, not script: LiveCanvas wraps the header partial in
+   <header id="lc-header">, which is the <body> child whose full height is the
+   band, so a direct-child selector names it exactly.
+
+   The runtime used to find this element by climbing from <xo-sticky> until a
+   parent was taller than the band ("pass-through" heuristic, +40px slack).
+   That was a guess about wrapper heights: any theme or template wrapper of
+   near-band height moved the sticky host. The selector states the same fact —
+   the element that owns the band sticks — and the runtime keeps a no-op
+   fallback for a markup shape that lacks the id.
+
+   z-index 100 is the band's own layer: below the modals (1000), above page
+   sections (9) and the first-party floats (900). The band must NOT be
+   opaque itself: the mega panels are its absolutely positioned children and
+   hang below its bottom edge, so anything that clips or paints over them
+   would hide the dropdown.
+   ========================= */
+body > header#lc-header:has(> #HeaderV9-sections--21844031144189__header_v1_main){
+position: sticky;
+top: 0;
+z-index: 100;
+}
+
+/* Anchor and scroll offsets: every in-page target must clear the sticky band.
+   `scroll-padding-top` on the scroll container is the one place that covers
+   fragment navigation, `scrollIntoView()`, and the browser's scroll-to-focus,
+   so pages do not each need their own scroll-margin. The 16px gap keeps a
+   focused heading off the band's shadow edge. */
+html{
+scroll-padding-top: calc(var(--md-header-h, 113px) + 16px);
+}
+@media (prefers-reduced-motion: reduce){
+html{ scroll-behavior: auto; }
+}
+
+/* The one sticky-rail offset. Every page's sticky column (FAQ sidebars, the
+   home FAQ image, the family spec rails, the PDP applications lead) takes its
+   top from this class instead of a Tailwind `lg:top-24`/`lg:top-10` literal:
+   those resolved to 60–72px against a 73–113px band, so the rail's own first
+   lines sat under the header. `top` is inert while the element is static
+   below the `lg`/`750px` breakpoints, so the class is safe at every width.
+   In the components layer and not a utility, so no layer fight with a
+   `top-*` class — the templates drop theirs in favour of this one. */
+.md-sticky-rail{
+top: calc(var(--md-header-h, 113px) + 16px);
+}

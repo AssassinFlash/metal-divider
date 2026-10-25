@@ -104,7 +104,7 @@ final class SeoCommandTest extends TestCase {
 	private function given_provisioned_site( array $options = array(), bool $installed = true ): void {
 		$this->state = array();
 		WP_Mock::userFunction( 'home_url' )->zeroOrMoreTimes()->andReturnUsing( static fn( string $path = '/' ) => 'http://site.test' . $path );
-		WP_Mock::userFunction( 'get_permalink' )->zeroOrMoreTimes()->andReturn( 'http://site.test/pages/faqs/' );
+		WP_Mock::userFunction( 'get_permalink' )->zeroOrMoreTimes()->andReturn( 'http://site.test/faqs/' );
 		WP_Mock::passthruFunction( 'wp_strip_all_tags', true );
 		WP_Mock::passthruFunction( 'untrailingslashit', true );
 		WP_Mock::userFunction( 'wp_json_encode' )->zeroOrMoreTimes()->andReturnUsing(
@@ -136,7 +136,7 @@ final class SeoCommandTest extends TestCase {
 
 		$faqs_ld = FaqSchema::json_ld(
 			\MetalDivider\Site\Presentation\Templates::read( \MetalDivider\Site\Presentation\Templates::path( 'faqs' ) ),
-			'http://site.test/pages/faqs/'
+			'http://site.test/faqs/'
 		);
 		$metas   = $this->target_metas( $faqs_ld );
 		$next    = 10;
@@ -161,12 +161,12 @@ final class SeoCommandTest extends TestCase {
 			}
 		);
 		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturnUsing(
-			static function () use ( $installed, $metas ) {
+			static function ( array $args = array() ) use ( $installed, $metas ) {
 				if ( ! $installed ) {
 					return array();
 				}
 				$post     = new WP_Post( new \stdClass() );
-				$post->ID = $metas['redirect']['id'];
+				$post->ID = $metas['redirects'][ $args['title'] ?? '' ] ?? 0;
 				return array( $post );
 			}
 		);
@@ -188,7 +188,7 @@ final class SeoCommandTest extends TestCase {
 	 * builders against the real faqs template).
 	 *
 	 * @param string $faqs_ld The FAQPage payload built from the real template.
-	 * @return array{posts: array<string, array{id: int<1, max>, type: non-empty-string, title: string}>, meta: array<int, array<string, mixed>>, redirect: array{id: int<1, max>}}
+	 * @return array{posts: array<string, array{id: int<1, max>, type: non-empty-string, title: string}>, meta: array<int, array<string, mixed>>, redirects: array<string, int<1, max>>}
 	 */
 	private function target_metas( string $faqs_ld ): array {
 		$inquiry     = 101;
@@ -196,7 +196,6 @@ final class SeoCommandTest extends TestCase {
 		$blog        = 103;
 		$thank_you   = 104;
 		$faqs        = 105;
-		$shell       = 106;
 		$sample_page = 107;
 		$s_product   = 201;
 		$s_faq       = 202;
@@ -226,17 +225,12 @@ final class SeoCommandTest extends TestCase {
 				'type'  => 'page',
 				'title' => 'Inquiry thank you',
 			),
-			'pages'             => array(
-				'id'    => $shell,
-				'type'  => 'page',
-				'title' => 'Pages',
-			),
 			'sample-page'       => array(
 				'id'    => $sample_page,
 				'type'  => 'page',
 				'title' => 'Sample Page',
 			),
-			'pages/faqs'        => array(
+			'faqs'              => array(
 				'id'    => $faqs,
 				'type'  => 'page',
 				'title' => 'FAQs & Downloads',
@@ -263,7 +257,6 @@ final class SeoCommandTest extends TestCase {
 			$privacy     => $page_metas['privacy'],
 			$blog        => $page_metas['blog'],
 			$thank_you   => $page_metas['inquiry/thank-you'],
-			$shell       => $page_metas['pages'],
 			$sample_page => $page_metas['sample-page'],
 			$s_product   => array(
 				'_seopress_pro_rich_snippets_type'         => 'products',
@@ -326,15 +319,18 @@ final class SeoCommandTest extends TestCase {
 				'_seopress_redirections_enabled'       => 'yes',
 				'_seopress_redirections_type'          => '301',
 				'_seopress_redirections_value'         => '/',
+				'_seopress_redirections_param'         => 'without_param',
 				'_seopress_redirections_logged_status' => 'both',
 				'_seopress_redirections_enabled_regex' => '',
 			),
 		);
 
 		return array(
-			'posts'    => $posts,
-			'meta'     => $meta,
-			'redirect' => array( 'id' => $redirect ),
+			'posts'     => $posts,
+			'meta'      => $meta,
+			'redirects' => array(
+				'pages' => $redirect,
+			),
 		);
 	}
 }

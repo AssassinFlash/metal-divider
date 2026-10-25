@@ -29,6 +29,9 @@ parameters:
 		# double lives in tests/php/Doubles/wordpress.php, which stays out of
 		# analysis so real WordPress classes are not shadowed.
 		- tests/php/Doubles/wp-cli-stubs.php
+		# The shortcode engine double's own reset helper: WordPress ships the
+		# engine, not the hook the tests use to clear it between cases.
+		- tests/php/Doubles/shortcodes-stubs.php
 		# WP_Mock declares its hook responders next to the hooks, outside the
 		# autoloader.
 		- vendor/10up/wp_mock/php/WP_Mock/Action.php

@@ -17,20 +17,43 @@ that uses them otherwise. The minted inline classes always land in the
 page's own template volume: an inline style is page-specific even when
 its section is a component (§5.3: the shared thing is the recipe, not
 the copy).
+
+The ``base`` volume sits below all of them (#70 C2/C3): the old head's
+``:root`` design tokens (the ``settings-adapter`` block, outside every
+Shopify section) and every stylesheet's class-less rules — ``html`` and
+``body``, the heading reset, ``a``, ``img``, ``xo-container``,
+``#xo-root``, the old Tailwind preflight. The class distribution above
+is untouched: a class's rules still land in exactly the volume the page
+plan gives it.
 """
 
 from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 from . import pageplan
-from .csslib import Minter, Stylesheet, collapse_duplicated_openers, collect_classes
-from .sections import section_html, sections
+from .csslib import (
+    STYLE_ATTR,
+    STYLE_BLOCK,
+    Minter,
+    Stylesheet,
+    collapse_duplicated_openers,
+    collect_classes,
+)
+from .sections import head_style_blocks, section_html, sections
 from .transform import map_assets, root_relative, strip_scaffolding, strip_scripts
 
 SETTINGS_VARS = re.compile(r":root|--color-|--gradient-")
+
+#: The volume the class-less baseline and the head tokens land in (#70).
+#: WindPress imports the volume files alphabetically into the components
+#: layer (Presentation/WindPressVolume.php), so this name places the
+#: baseline ahead of every component and page volume but ``about.css``
+#: — which carries no element selectors (checked over the 36 volumes).
+BASE_VOLUME = "base"
 
 #: The old theme's stylesheets the pages link (F9: one external CSS link
 #: per page, these four behind it). Their rules move into the volumes
@@ -41,9 +64,6 @@ STYLESHEETS = (
     "tailwin.min.css",
     "gp-global.css",
 )
-
-STYLE_BLOCK = re.compile(r"[ \t]*<style[^>]*>(.*?)</style>\n?", re.DOTALL)
-INLINE_STYLE = re.compile(r'\sstyle="([^"]*)"')
 
 HEADER_SECTIONS = (
     "header_v1_main",
@@ -85,6 +105,9 @@ class Converter:
         self._chrome_minter: Minter | None = None
         self._chrome_classes: set[str] = set()
         self._chrome_style_blocks: list[tuple[str, str]] = []
+        #: the head's design-token blocks, first page seen, deduplicated
+        #: (every page carries the same rendered settings-adapter block)
+        self._head_tokens: list[str] = []
         self._pending_style_blocks = 0
 
     # -- volume plumbing ------------------------------------------------
@@ -126,7 +149,7 @@ class Converter:
         transforms never touch a slot's template tags."""
         body, _ = strip_scaffolding(body)
         scripts = len(re.findall(r"<script\b", body))
-        inline = len(INLINE_STYLE.findall(body))
+        inline = len(STYLE_ATTR.findall(body))
         blocks = [
             collapse_duplicated_openers(css.strip())
             for css in STYLE_BLOCK.findall(body)
@@ -139,6 +162,20 @@ class Converter:
         return body, scripts, inline, blocks
 
     # -- the per-page pipeline ------------------------------------------
+
+    def ingest_head(self, html: str) -> None:
+        """The page head's design-token blocks into the model (#70 C3).
+
+        Every standard page carries the same rendered
+        ``settings-adapter`` block, so the first page's copy is kept and
+        later duplicates drop; ``distribute()`` writes it to the
+        ``base`` volume, where the rules that consume the variables —
+        the carried class rules and the class-less baseline — can
+        resolve them.
+        """
+        for css in head_style_blocks(html):
+            if css not in self._head_tokens:
+                self._head_tokens.append(css)
 
     def convert_page(
         self,
@@ -155,6 +192,7 @@ class Converter:
         values are LiveCanvas tags and the md_* assemblies.
         """
         html = raw_file.read_text(encoding="utf-8")
+        self.ingest_head(html)
         page_sections = sections(html)
         minter = Minter()
         pieces: list[str] = []
@@ -199,6 +237,7 @@ class Converter:
         second global chrome.
         """
         html = (self.raw / "home" / "index.html").read_text(encoding="utf-8")
+        self.ingest_head(html)
         header: list[str] = []
         footer: list[str] = []
         minter = Minter()
@@ -228,7 +267,15 @@ class Converter:
         and a component is among them; otherwise the single volume the
         one section that carries it maps to. The minted inline rules
         join the page's own template volume.
+
+        The ``base`` volume is written first and holds what belongs to
+        no class: the head's design tokens and every stylesheet's
+        class-less rules (#70 C2/C3). It is a separate pass on purpose —
+        adding it does not move a single class out of the volume the
+        distribution above gives it.
         """
+        self._distribute_base()
+
         # The chrome classes come from the chrome minter's output — the
         # partials' markup — plus what the header/footer sections' own
         # classes add.
@@ -268,6 +315,20 @@ class Converter:
             self.add_rules(template, minter.css())
         if self._chrome_minter is not None:
             self.add_rules("chrome", self._chrome_minter.css())
+
+    def _distribute_base(self) -> None:
+        """The ``base`` volume: head tokens, then each sheet's class-less
+        rules in the sheets' own order (the old pages' link order), so
+        the later sheet's global declarations keep the precedence they
+        had in the old cascade — main.css's baseline first, the old
+        Tailwind preflight after it."""
+        pieces: list[str] = list(self._head_tokens)
+        for sheet in self.stylesheets:
+            bare = sheet.bare_rules()
+            if bare:
+                pieces.append("\n".join(bare))
+        if pieces:
+            self.add_rules(BASE_VOLUME, "\n".join(pieces))
 
     def record_chrome_classes(self, partials: dict[str, str]) -> None:
         """Pass one for the chrome: the classes the partials carry."""
@@ -322,19 +383,165 @@ def _rule_units(css: str) -> list[str]:
 def _fold_inline(body: str, minter: Minter) -> str:
     """Mint classes for inline styles and fold them into class attributes.
 
-    Two passes, both plain string work: first each ``style="…"`` becomes
-    a ``md-inline`` marker attribute (its minted class as the value),
-    then each marker merges into the same tag's class attribute —
-    appended when one exists, on either side of the marker, created
-    when none does.
+    Tag by tag, either quote style (#70 C1/C5): each ``style`` attribute
+    — ``style="…"`` or ``style='…'`` — mints ``md-t<hash>`` and the
+    minted name joins the tag's **first** ``class`` attribute, in that
+    attribute's own quote style, or becomes one when the tag has none.
+
+    Appending to the *first* class attribute is load-bearing: the old
+    theme repeats the attribute on some tags (a wrapper carries
+    ``class="xo-header-v9__inner" class="xo-section …"``), and HTML
+    honours the first, so a minted name appended to the second would sit
+    invisible — the same defect the old marker merge produced on a
+    single-quoted class by creating a second attribute (three elements in
+    the header partial, #62 C1).
     """
-    body = INLINE_STYLE.sub(
-        lambda match: f' md-inline="{minter.mint(match.group(1))}"', body
+    out: list[str] = []
+    cursor = 0
+    for match in _TAG.finditer(body):
+        if match.start() < cursor:
+            continue
+        start = match.start()
+        if body.startswith("<!--", start):
+            close = body.find("-->", start)
+            end = len(body) if close < 0 else close + 3
+            out.append(body[cursor:end])  # comments are text, never folded
+        else:
+            end = _tag_end(body, start)
+            out.append(body[cursor:start])
+            out.append(_fold_tag(body[start:end], minter))
+        cursor = end
+    out.append(body[cursor:])
+    return "".join(out)
+
+
+#: The start of an element tag or a comment. An attribute's closing
+#: ``>`` is found by :func:`_tag_end`, so a value may hold one
+#: (``x-data="a > b"``, an inline handler).
+_TAG = re.compile(r"<!--|</?[A-Za-z]")
+
+
+def _tag_end(body: str, start: int) -> int:
+    """The offset just past the tag's ``>``, attribute quotes respected."""
+    index = start + 1
+    quote: str | None = None
+    while index < len(body):
+        char = body[index]
+        if quote is not None:
+            if char == quote:
+                quote = None
+        elif char in "\"'":
+            quote = char
+        elif char == ">":
+            return index + 1
+        index += 1
+    return len(body)
+
+
+@dataclass(frozen=True)
+class Attr:
+    """One attribute of a tag: its name and its value's span.
+
+    ``value_start``/``value_end`` bound the value's content — the quotes
+    excluded. ``quote`` is the quote character, or ``""`` for an
+    unquoted value and for a valueless attribute.
+    """
+
+    name: str
+    name_start: int
+    value_start: int
+    value_end: int
+    quote: str
+
+
+def _attributes(tag: str) -> list[Attr]:
+    """A tag's attributes, its quoted values walked over, not through.
+
+    A ``style=`` written inside another attribute's value — an HTML
+    string in a ``data-…`` value, a handler body such as
+    ``this.style='…'`` — is text, not an attribute, so the fold never
+    mistakes it for one. Tag names are skipped; an attribute without a
+    value carries an empty span.
+    """
+    attrs: list[Attr] = []
+    index = 1
+    if tag.startswith("</"):
+        return attrs
+    while index < len(tag) and tag[index] not in " \t\r\n/>":  # the tag name
+        index += 1
+    while index < len(tag):
+        char = tag[index]
+        if char in " \t\r\n/":
+            index += 1
+            continue
+        if char == ">":
+            break
+        name_start = index
+        while index < len(tag) and tag[index] not in " \t\r\n=/>":
+            index += 1
+        name = tag[name_start:index].lower()
+        probe = index
+        while probe < len(tag) and tag[probe] in " \t\r\n":
+            probe += 1
+        if probe >= len(tag) or tag[probe] != "=":
+            attrs.append(Attr(name, name_start, index, index, ""))
+            index = probe if probe > index else index + 1
+            continue
+        probe += 1
+        while probe < len(tag) and tag[probe] in " \t\r\n":
+            probe += 1
+        if probe < len(tag) and tag[probe] in "\"'":
+            quote = tag[probe]
+            value_start = probe + 1
+            close = tag.find(quote, value_start)
+            value_end = len(tag) if close < 0 else close
+            attrs.append(Attr(name, name_start, value_start, value_end, quote))
+            index = value_end + 1
+        else:
+            value_start = probe
+            while probe < len(tag) and tag[probe] not in " \t\r\n>":
+                probe += 1
+            attrs.append(Attr(name, name_start, value_start, probe, ""))
+            index = probe
+    return attrs
+
+
+def _fold_tag(tag: str, minter: Minter) -> str:
+    """One tag's inline styles folded into its first class attribute."""
+    attrs = _attributes(tag)
+    styles = [attr for attr in attrs if attr.name == "style"]
+    if not styles:
+        return tag
+    minted = " ".join(
+        minter.mint(tag[attr.value_start : attr.value_end]) for attr in styles
     )
-    # class= either side of the marker: append the minted class to it
-    # and the marker is consumed.
-    body = re.sub(r'class="([^"]*)"\s+md-inline="([^"]*)"', r'class="\1 \2"', body)
-    body = re.sub(r'md-inline="([^"]*)"\s+class="([^"]*)"', r'class="\2 \1"', body)
-    # No class attribute: the marker alone becomes one.
-    body = re.sub(r'md-inline="([^"]*)"', r'class="\1"', body)
-    return body
+    edits: list[tuple[int, int, str]] = []
+    for attr in styles:
+        # The attribute goes, with the whitespace that separated it.
+        start = attr.name_start
+        while start > 0 and tag[start - 1] in " \t\r\n":
+            start -= 1
+        edits.append((start, attr.value_end + (1 if attr.quote else 0), ""))
+    class_attr = next((attr for attr in attrs if attr.name == "class"), None)
+    if class_attr is not None:
+        existing = tag[class_attr.value_start : class_attr.value_end].strip()
+        merged = f"{existing} {minted}".strip()
+        if class_attr.quote:
+            edits.append((class_attr.value_start, class_attr.value_end, merged))
+        else:  # an unquoted class value becomes a quoted one
+            edits.append(
+                (class_attr.name_start, class_attr.value_end, f'class="{merged}"')
+            )
+    else:
+        # Create the attribute before the tag closes (and before a
+        # self-closing ``/``), with a separator space unless one is
+        # already there.
+        insert = len(tag) - 1
+        if tag[insert - 1] == "/":
+            insert -= 1
+        space = "" if insert > 0 and tag[insert - 1] in " \t\r\n" else " "
+        edits.append((insert, insert, f'{space}class="{minted}"'))
+    folded = tag
+    for start, end, replacement in sorted(edits, reverse=True):
+        folded = folded[:start] + replacement + folded[end:]
+    return folded

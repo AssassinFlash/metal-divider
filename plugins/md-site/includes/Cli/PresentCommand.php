@@ -58,6 +58,17 @@ final class PresentCommand {
 		( new WindPressVolume() )->install();
 		WP_CLI::log( 'windpress volume: ' . implode( ', ', array_map( 'basename', WindPressVolume::files() ) ) );
 
+		// Cached mode: the compiled cache is the stylesheet; the play CDN's
+		// runtime (a 600KB inline VFS plus a client-side compiler) is exactly
+		// the runtime conversion the stack rules out and the CSP blocks.
+		$options = json_decode( (string) get_option( 'windpress_options', '{}' ), true );
+		$options = is_array( $options ) ? $options : array();
+		if ( 'cached' !== ( $options['performance']['mode'] ?? '' ) ) {
+			$options['performance']['mode'] = 'cached';
+			update_option( 'windpress_options', (string) wp_json_encode( $options ) );
+			WP_CLI::log( 'windpress: performance mode set to cached' );
+		}
+
 		$enabled = ( new LiveCanvasOptions() )->enable();
 		WP_CLI::log( $enabled ? 'livecanvas: dynamic templating + chrome partials enabled' : 'livecanvas: already enabled' );
 
