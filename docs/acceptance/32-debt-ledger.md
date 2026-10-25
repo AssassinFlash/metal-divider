@@ -54,5 +54,5 @@
 
 - **站点图地址**:模板内站点图为 `/wp-content/uploads/<终稿文件名>`(spec 15 §3.1 命名,`--{width}w` 档宽随 srcset);#31 导入侧载时按 `_md_variants` 解析真实路径后如需改写模板地址,一次性 sed(映射表 `.scratch/32/asset-map.json` 是管线与导入器的合同)。
 - **custom-screens 专属 landing chrome**(L17):收编为标准 chrome + 页面内容;旧 header-landing/landing-footer 与标准 chrome 的差异是 DEBT 台账行,升级处置归后续批次。
-- **`md_series_grid` 的系列卡图**:读 term meta `hero_image`(#31 写入;无图渲染无图卡)。
+- **`md_series_grid` 的系列卡图**:读 term meta `hero_image`(票 #68 由 `wp md-site series-images` 从已导入的源图写入,幂等重跑报告 0 written;无图渲染无图卡)。
 - **docs/copy/pdp-series-phrases.json**:design_intent 装配的运行时读入路径为仓库根 `docs/copy/`;部署形态(#35)需携带该文件或改路径。

@@ -32,9 +32,11 @@ namespace MetalDivider\Site\Presentation;
  *   "On request" rule (spec 08 D2: no invented values); LiveCanvas's
  *   ``lc_get_cf`` prints the raw meta, an empty string when the value
  *   is absent, and has no conditional fallback of its own.
- * - ``[md_pdp_image slot=…]`` — the gallery's images by position;
- *   LiveCanvas has ``lc_the_thumbnail_url`` for the featured image and
- *   no tag for gallery position N.
+ * - ``[md_pdp_image slot=…]`` — the old theme's media slots (hero = the
+ *   first scene, plate = the first detail else finish, square = the second
+ *   scene else accent, wide = the first accent when unused); LiveCanvas has
+ *   ``lc_the_thumbnail_url`` for the featured image and no tag for the
+ *   alt-role algorithm the old PDP derived its slots from.
  * - ``[md_pdp_related]`` — the adjacent-patterns cards;
  *   ``lc_wc_related`` and Woo's own shortcodes render the WooCommerce
  *   card template, not this markup, and the card recipe is the
@@ -113,6 +115,52 @@ final class Shortcodes {
 	 * source (spec 08 O1: "On request", never an invented number).
 	 */
 	private const OPEN_AREA_ON_REQUEST = 'On request';
+
+	/**
+	 * The migrator's eleven `_md_role` phrases collapsed to the old theme's
+	 * six media classes (docs/research/2026-10-25-image-slot-map.md §3.1).
+	 * Anything outside this table is "other" and only fills the first
+	 * position — except that its alt text still gets the old substring
+	 * classification below, because the eleven-phrase vocabulary does not
+	 * cover every alt the old theme recognised (the sixty
+	 * "pattern installation scene visualization" images are the measured
+	 * case: `_md_role` unknown, old alt class scene).
+	 */
+	private const ROLE_CLASSES = array(
+		'local installation scene'    => 'scene',
+		'official installation scene' => 'scene',
+		'installed screen scene'      => 'scene',
+		'project installation'        => 'scene',
+		'detail reference'            => 'detail',
+		'finish preview'              => 'finish',
+		'accent render'               => 'accent',
+		'cut sheet'                   => 'cutsheet',
+	);
+
+	/**
+	 * The old theme's alt substrings, in its first-match order
+	 * (product-pattern-cinematic.liquid lines 79–111): cut sheets are
+	 * excluded first, finish precedes scene, and the rest fall through to
+	 * "other". The order is load-bearing — an image whose alt carries both
+	 * a finish and a scene phrase is a finish preview.
+	 */
+	private const ALT_CLASSES = array(
+		'cutsheet' => array( 'cut sheet', 'cad', 'drawing', 'scale preview' ),
+		'finish'   => array( 'finish preview', 'powder coat', 'anod', 'coating' ),
+		'scene'    => array(
+			'application scene',
+			'installation scene',
+			'installed screen scene',
+			'installed facade',
+			'facade screen',
+			'interior divider',
+			'privacy screen',
+			'room divider',
+			'project scene',
+		),
+		'detail'   => array( 'pattern detail', 'detail reference', 'texture detail' ),
+		'accent'   => array( 'accent render' ),
+	);
 
 	/**
 	 * Adds the shortcodes.
@@ -220,40 +268,232 @@ final class Shortcodes {
 	}
 
 	/**
-	 * A gallery image by slot: the hero background (the featured
-	 * image), the hero plate (the first gallery image) or the identity
-	 * square (the second). Returns the URL alone — the template's img
-	 * element is the replica's own markup.
+	 * The slot's image element. The old PDP did not take media by position:
+	 * it classified every image by its alt role and then derived the slots
+	 * (product-pattern-cinematic.liquid lines 79–191, reproduced in
+	 * docs/research/2026-10-25-image-slot-map.md §2.1):
 	 *
-	 * @param array<string, mixed>|string $atts    Shortcode attributes: slot = hero-bg|plate|square.
+	 * - hero background: the first scene, else nothing (the old template's
+	 *   gold-grid fallback, which this template does not draw);
+	 * - hero plate: the first detail that is not the hero, else the first
+	 *   finish that is not the hero, else nothing;
+	 * - identity square: the second scene, else the first accent that is
+	 *   not the plate, else nothing;
+	 * - wide: the first accent, only when no other slot took it.
+	 *
+	 * No two slots share an image, and a slot with no qualifying image
+	 * returns '' — the template hides it, so no ``src=""`` ever reaches the
+	 * browser (the five two-image patterns' square). The element carries the
+	 * selected attachment's real width and height (omitted when the
+	 * metadata has none) and its own alt; the hero is the template's
+	 * decorative background and keeps the empty alt the old theme gave it.
+	 *
+	 * @param array<string, mixed>|string $atts    Shortcode attributes: slot = hero-bg|plate|square|wide.
 	 * @param string|null                 $content Enclosed content (unused).
-	 * @return string The image URL, empty when the slot has no image.
+	 * @return string The img element, empty when the slot has no image.
 	 */
 	public function image( $atts = array(), ?string $content = '' ): string {
 		unset( $content );
 		$slot = is_array( $atts ) && isset( $atts['slot'] ) ? (string) $atts['slot'] : '';
+		if ( ! in_array( $slot, array( 'hero-bg', 'plate', 'square', 'wide' ), true ) ) {
+			return '';
+		}
 		$post = get_post();
 		if ( null === $post || 'product' !== $post->post_type ) {
 			return '';
 		}
+		$id = $this->slot_image_id( $slot, (int) $post->ID );
+		if ( null === $id ) {
+			return '';
+		}
+		return $this->image_element( $id, 'hero-bg' === $slot, (string) get_the_title( $post ) );
+	}
+
+	/**
+	 * The attachment id a slot resolves to, or null when it has none.
+	 *
+	 * @param string $slot    hero-bg|plate|square|wide.
+	 * @param int    $post_id The product id.
+	 * @return int|null
+	 */
+	private function slot_image_id( string $slot, int $post_id ): ?int {
+		$ids = $this->media_ids( $post_id );
+
+		$by_class = array();
+		foreach ( $ids as $id ) {
+			$by_class[ $this->media_class( $id ) ][] = $id;
+		}
+
+		$hero = isset( $by_class['scene'][0] ) ? (int) $by_class['scene'][0] : null;
 		if ( 'hero-bg' === $slot ) {
-			$url = (string) get_the_post_thumbnail_url( $post->ID, 'full' );
-			return esc_url( $url );
+			return $hero;
 		}
-		$offset = 'plate' === $slot ? 0 : 1;
-		if ( ! function_exists( 'wc_get_product' ) ) {
+
+		if ( null !== $hero ) {
+			$plate = $this->first_unused( $by_class['detail'] ?? array(), array( $hero ) );
+			if ( null === $plate ) {
+				$plate = $this->first_unused( $by_class['finish'] ?? array(), array( $hero ) );
+			}
+		} else {
+			$plate = $this->first_non_cutsheet( $ids );
+		}
+		if ( 'plate' === $slot ) {
+			return $plate;
+		}
+
+		$square = null;
+		if ( null !== $hero ) {
+			$scene_rest = array_slice( $by_class['scene'], 1 );
+			$used       = null === $plate ? array( $hero ) : array( $hero, $plate );
+			$square     = $this->first_unused( $scene_rest, $used );
+			if ( null === $square ) {
+				$square = $this->first_unused( $by_class['accent'] ?? array(), $used );
+			}
+		} elseif ( null !== $plate ) {
+			$square = $this->first_unused( $by_class['detail'] ?? array(), array( $plate ) );
+			if ( null === $square ) {
+				$square = $this->first_unused( $by_class['finish'] ?? array(), array( $plate ) );
+			}
+		}
+		if ( 'square' === $slot ) {
+			return $square;
+		}
+
+		// The old template offers the first accent only, and only when no
+		// other slot already took it (context_media, liquid lines 154–169).
+		$accent = isset( $by_class['accent'][0] ) ? (int) $by_class['accent'][0] : null;
+		if ( null === $accent ) {
+			return null;
+		}
+		$used = array_filter( array( $hero, $plate, $square ), static fn( $id ) => null !== $id );
+		return in_array( $accent, $used, true ) ? null : $accent;
+	}
+
+	/**
+	 * The product's media attachment ids in the migrated order: the
+	 * featured image (old media[0]) then the gallery (old media[1:]), with
+	 * a repeat dropped so no attachment can fill two slots.
+	 *
+	 * @param int $post_id The product id.
+	 * @return int[]
+	 */
+	private function media_ids( int $post_id ): array {
+		$ids       = array();
+		$thumbnail = (int) get_post_thumbnail_id( $post_id );
+		if ( $thumbnail > 0 ) {
+			$ids[] = $thumbnail;
+		}
+		if ( function_exists( 'wc_get_product' ) ) {
+			$product = wc_get_product( $post_id );
+			if ( is_object( $product ) && method_exists( $product, 'get_gallery_image_ids' ) ) {
+				foreach ( $product->get_gallery_image_ids() as $id ) {
+					$id = (int) $id;
+					if ( $id > 0 && ! in_array( $id, $ids, true ) ) {
+						$ids[] = $id;
+					}
+				}
+			}
+		}
+		return $ids;
+	}
+
+	/**
+	 * The old theme's media class for one attachment: the migrator's role
+	 * when the eleven-phrase vocabulary recognises it, else the old
+	 * substring classification of the attachment's alt text.
+	 *
+	 * @param int $id The attachment id.
+	 * @return string scene|detail|finish|accent|cutsheet|other.
+	 */
+	private function media_class( int $id ): string {
+		$role = (string) get_post_meta( $id, '_md_role', true );
+		if ( isset( self::ROLE_CLASSES[ $role ] ) ) {
+			return self::ROLE_CLASSES[ $role ];
+		}
+		$alt = (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
+		return $this->classify_alt( $alt );
+	}
+
+	/**
+	 * The old theme's alt classification, first match in its own order
+	 * (see ALT_CLASSES).
+	 *
+	 * @param string $alt The attachment alt text.
+	 * @return string scene|detail|finish|accent|cutsheet|other.
+	 */
+	private function classify_alt( string $alt ): string {
+		$alt = strtolower( $alt );
+		foreach ( self::ALT_CLASSES as $class => $phrases ) {
+			foreach ( $phrases as $phrase ) {
+				if ( str_contains( $alt, $phrase ) ) {
+					return $class;
+				}
+			}
+		}
+		return 'other';
+	}
+
+	/**
+	 * The first id not already used.
+	 *
+	 * @param int[] $ids  Candidate ids in media order.
+	 * @param int[] $used Ids another slot already holds.
+	 * @return int|null
+	 */
+	private function first_unused( array $ids, array $used ): ?int {
+		foreach ( $ids as $id ) {
+			if ( ! in_array( (int) $id, $used, true ) ) {
+				return (int) $id;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * The first media item that is not a cut sheet (the old pos0).
+	 *
+	 * @param int[] $ids The media ids in order.
+	 * @return int|null
+	 */
+	private function first_non_cutsheet( array $ids ): ?int {
+		foreach ( $ids as $id ) {
+			if ( 'cutsheet' !== $this->media_class( (int) $id ) ) {
+				return (int) $id;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * The img element for a selected attachment: its URL, its own alt (the
+	 * product title when the attachment carries none, as the old template
+	 * fell back), the eager/lazy loading the slot had, and its real
+	 * dimensions when the attachment metadata has them.
+	 *
+	 * @param int    $id         The attachment id.
+	 * @param bool   $decorative Whether the slot is the decorative hero background.
+	 * @param string $fallback   The product title for a missing alt.
+	 * @return string
+	 */
+	private function image_element( int $id, bool $decorative, string $fallback ): string {
+		$url = (string) wp_get_attachment_image_url( $id, 'full' );
+		if ( '' === $url ) {
 			return '';
 		}
-		$product = wc_get_product( $post->ID );
-		if ( ! is_object( $product ) || ! method_exists( $product, 'get_gallery_image_ids' ) ) {
-			return '';
+		$alt = $decorative ? '' : (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
+		if ( '' === $alt && ! $decorative ) {
+			$alt = $fallback;
 		}
-		$ids = $product->get_gallery_image_ids();
-		if ( ! isset( $ids[ $offset ] ) ) {
-			return '';
+		$metadata = wp_get_attachment_metadata( $id );
+		$width    = is_array( $metadata ) ? (int) ( $metadata['width'] ?? 0 ) : 0;
+		$height   = is_array( $metadata ) ? (int) ( $metadata['height'] ?? 0 ) : 0;
+
+		$element  = sprintf( '<img src="%s" alt="%s"', esc_url( $url ), esc_attr( $alt ) );
+		$element .= $decorative ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
+		if ( $width > 0 && $height > 0 ) {
+			$element .= sprintf( ' width="%d" height="%d"', $width, $height );
 		}
-		$url = (string) wp_get_attachment_image_url( (int) $ids[ $offset ], 'full' );
-		return esc_url( $url );
+		return $element . '>';
 	}
 
 	/**

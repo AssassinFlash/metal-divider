@@ -26,6 +26,40 @@ if ( ! class_exists( 'WP_Post' ) ) {
 	}
 }
 
+if ( ! class_exists( 'WP_Term' ) ) {
+	class WP_Term {
+		/**
+		 * WordPress's constructor takes the term row object; the double
+		 * accepts and ignores it.
+		 *
+		 * @param object|null $term The term row.
+		 */
+		public function __construct( $term = null ) {
+			unset( $term );
+		}
+		/** @var int */
+		public $term_id = 0;
+		/** @var string */
+		public $name = '';
+		/** @var string */
+		public $slug = '';
+		/** @var int */
+		public $term_group = 0;
+		/** @var int */
+		public $term_taxonomy_id = 0;
+		/** @var string */
+		public $taxonomy = '';
+		/** @var string */
+		public $description = '';
+		/** @var int */
+		public $parent = 0;
+		/** @var int */
+		public $count = 0;
+		/** @var string */
+		public $filter = 'raw';
+	}
+}
+
 if ( ! class_exists( 'WP_CLI' ) ) {
 	class WP_CLI {
 		/** @var array<string, object> The commands add_command registered. */

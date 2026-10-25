@@ -55,6 +55,29 @@ final class Catalog {
 	private const OPEN_AREA_ON_REQUEST = 'On request';
 
 	/**
+	 * The nine series cards' hero images: product_cat term slug → the
+	 * old site's source file name, from the image-slot map's §4.7 table
+	 * (docs/research/2026-10-25-image-slot-map.md). The migrator recorded
+	 * that source name on the imported attachment's `_md_source_url`, so
+	 * the write resolves the attachment by provenance, not by uploads
+	 * path. Gradient is the one series the old site had no card for: its
+	 * card carries the wide installed scene of its own Skyfall pattern
+	 * (`...Privacy-Screen-3`, the 1000×565 tier) — the new series has no
+	 * old-site hero, and this is its own already-imported image.
+	 */
+	private const SERIES_HERO_SOURCES = array(
+		'pattern-abstract'        => 'our-aurum-suite-circle-screen-hero.webp',
+		'pattern-asian'           => 'our-shanghai-lattice-dining-hero.webp',
+		'pattern-geometric'       => 'ext-bronze-grid-panel-workshop.webp',
+		'pattern-gradient'        => 'dsdlocal__Skyfall-Gradient-Privacy-Screen-3.jpg',
+		'pattern-landscape'       => 'ext-cn-mountain-profile-screen.webp',
+		'pattern-moroccan-arabic' => 'Moroccan_Love_Scene.webp',
+		'pattern-organic'         => 'Leaf_Vines.webp',
+		'pattern-perforated'      => 'ext-pp-hero-perforated-facade.webp',
+		'pattern-vintage-retro'   => 'our-xiamen-bronze-fret-hero.webp',
+	);
+
+	/**
 	 * Registers the shortcodes and the query filter.
 	 */
 	public function register(): void {
@@ -62,6 +85,69 @@ final class Catalog {
 		\add_shortcode( self::PAGINATION, array( $this, 'pagination' ) );
 		\add_shortcode( self::SUMMARY, array( $this, 'summary' ) );
 		\add_action( 'pre_get_posts', array( $this, 'filter_query' ), 20 );
+	}
+
+	/**
+	 * Writes the nine series cards' `hero_image` term meta from the
+	 * attachments the migrator imported, keyed by the source file each
+	 * series card used on the old site (SERIES_HERO_SOURCES). The meta
+	 * stores the attachment URL, which is what `[md_series_grid]` renders
+	 * and what the term API returns.
+	 *
+	 * Idempotent by value: a second run finds every term already holding
+	 * its URL and writes nothing, so the command reports 0 written / 9
+	 * unchanged. A missing term or a missing attachment is reported, never
+	 * invented (the callers turn the report into a non-zero exit).
+	 *
+	 * @return array{written: int, unchanged: int, missing: list<string>}
+	 */
+	public function apply_series_hero_images(): array {
+		$report = array(
+			'written'   => 0,
+			'unchanged' => 0,
+			'missing'   => array(),
+		);
+		foreach ( self::SERIES_HERO_SOURCES as $slug => $source ) {
+			$term = \get_term_by( 'slug', $slug, 'product_cat' );
+			if ( ! $term instanceof \WP_Term ) {
+				$report['missing'][] = "term {$slug}";
+				continue;
+			}
+			$attachments = \get_posts(
+				array(
+					'post_type'   => 'attachment',
+					'post_status' => 'inherit',
+					'numberposts' => 1,
+					'fields'      => 'ids',
+					'orderby'     => 'ID',
+					'order'       => 'ASC',
+					'meta_query'  => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- one lookup per series, nine in a manual command.
+						array(
+							'key'     => '_md_source_url',
+							'value'   => $source,
+							'compare' => 'LIKE',
+						),
+					),
+				)
+			);
+			if ( array() === $attachments ) {
+				$report['missing'][] = "image {$source}";
+				continue;
+			}
+			$url = (string) \wp_get_attachment_url( (int) $attachments[0] );
+			if ( '' === $url ) {
+				$report['missing'][] = "url {$source}";
+				continue;
+			}
+			$term_id = (int) $term->term_id;
+			if ( (string) \get_term_meta( $term_id, 'hero_image', true ) === $url ) {
+				++$report['unchanged'];
+				continue;
+			}
+			\update_term_meta( $term_id, 'hero_image', $url );
+			++$report['written'];
+		}
+		return $report;
 	}
 
 	/**

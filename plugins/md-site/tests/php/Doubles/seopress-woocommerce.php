@@ -38,3 +38,38 @@ if ( ! function_exists( 'wc_get_product' ) ) {
 		return $GLOBALS['md_wc_product_double'] ?? false;
 	}
 }
+
+if ( ! class_exists( 'FakeGalleryProduct' ) ) {
+	/**
+	 * A WooCommerce product double with a gallery: the ids the shortcode
+	 * fixtures declare. A real class, not a closure property — the
+	 * shortcode guards with method_exists(), which a property would fail.
+	 */
+	final class FakeGalleryProduct {
+
+		/**
+		 * The gallery attachment ids.
+		 *
+		 * @var int[]
+		 */
+		private array $gallery;
+
+		/**
+		 * Sets the gallery ids.
+		 *
+		 * @param int[] $gallery The gallery attachment ids.
+		 */
+		public function __construct( array $gallery ) {
+			$this->gallery = $gallery;
+		}
+
+		/**
+		 * The gallery attachment ids.
+		 *
+		 * @return int[]
+		 */
+		public function get_gallery_image_ids(): array {
+			return $this->gallery;
+		}
+	}
+}

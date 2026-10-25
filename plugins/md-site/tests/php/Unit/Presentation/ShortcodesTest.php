@@ -31,6 +31,14 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
+	 * Removes the gallery product double.
+	 */
+	public function tearDown(): void {
+		unset( $GLOBALS['md_wc_product_double'] );
+		parent::tearDown();
+	}
+
+	/**
 	 * The register() method adds every shortcode the templates reference.
 	 */
 	public function test_register_adds_every_shortcode(): void {
@@ -196,6 +204,435 @@ final class ShortcodesTest extends TestCase {
 		$this->assertStringContainsString( 'class="pdp-related-card gs-reveal"', $cards );
 		$this->assertStringContainsString( '<h3>Zelda</h3>', $cards );
 		$this->assertStringNotContainsString( ' style=', $cards, 'zero inline styles (AGENTS.md §5)' );
+	}
+
+	/**
+	 * The hero background is the first scene, with the attachment's real
+	 * dimensions and the decorative empty alt the old theme used.
+	 */
+	public function test_image_hero_is_the_first_scene_with_its_real_dimensions(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role'   => 'finish preview',
+					'alt'    => 'Akira finish preview',
+					'width'  => 400,
+					'height' => 800,
+				),
+				102 => array(
+					'role'   => 'accent render',
+					'alt'    => 'Akira accent render',
+					'width'  => 3000,
+					'height' => 1700,
+				),
+				103 => array(
+					'role'   => 'installed screen scene',
+					'alt'    => 'Akira installed screen scene',
+					'width'  => 1353,
+					'height' => 820,
+				),
+				104 => array(
+					'role'   => 'official installation scene',
+					'alt'    => 'Akira official installation scene 2',
+					'width'  => 1000,
+					'height' => 563,
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'hero-bg' ) );
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/103.webp"', $image );
+		$this->assertStringContainsString( 'alt=""', $image, 'the hero is the decorative background' );
+		$this->assertStringContainsString( 'width="1353" height="820"', $image );
+		$this->assertStringContainsString( 'loading="eager"', $image );
+	}
+
+	/**
+	 * The plate is the first detail, ahead of a finish.
+	 */
+	public function test_image_plate_prefers_the_first_detail(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role'   => 'installed screen scene',
+					'alt'    => 'Akira installed screen scene',
+					'width'  => 1353,
+					'height' => 820,
+				),
+				102 => array(
+					'role'   => 'finish preview',
+					'alt'    => 'Akira finish preview',
+					'width'  => 400,
+					'height' => 800,
+				),
+				103 => array(
+					'role'   => 'detail reference',
+					'alt'    => 'Akira pattern detail reference',
+					'width'  => 1000,
+					'height' => 1998,
+				),
+				104 => array(
+					'role'   => 'accent render',
+					'alt'    => 'Akira accent render',
+					'width'  => 1500,
+					'height' => 850,
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'plate' ) );
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/103.webp"', $image );
+		$this->assertStringContainsString( 'alt="Akira pattern detail reference"', $image );
+		$this->assertStringContainsString( 'width="1000" height="1998"', $image );
+		$this->assertStringContainsString( 'loading="lazy"', $image );
+	}
+
+	/**
+	 * Without a detail, the plate falls back to the first finish.
+	 */
+	public function test_image_plate_falls_back_to_the_first_finish(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'finish preview',
+					'alt'  => 'Akira finish preview',
+				),
+				103 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render',
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'plate' ) );
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/102.webp"', $image );
+	}
+
+	/**
+	 * The square is the second scene, not the first (which is the hero).
+	 */
+	public function test_image_square_is_the_second_scene(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'official installation scene',
+					'alt'  => 'Akira official installation scene 2',
+				),
+				103 => array(
+					'role' => 'finish preview',
+					'alt'  => 'Akira finish preview',
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'square' ) );
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/102.webp"', $image );
+		$this->assertStringContainsString( 'alt="Akira official installation scene 2"', $image );
+	}
+
+	/**
+	 * Without a second scene, the square falls back to the first accent.
+	 */
+	public function test_image_square_falls_back_to_the_first_accent(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'finish preview',
+					'alt'  => 'Akira finish preview',
+				),
+				103 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render',
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'square' ) );
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/103.webp"', $image );
+	}
+
+	/**
+	 * The wide slot takes the first accent only when no other slot used it.
+	 */
+	public function test_image_wide_is_the_first_accent_only_when_unused(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'official installation scene',
+					'alt'  => 'Akira official installation scene 2',
+				),
+				103 => array(
+					'role' => 'finish preview',
+					'alt'  => 'Akira finish preview',
+				),
+				104 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/104.webp"', $shortcodes->image( array( 'slot' => 'wide' ) ) );
+	}
+
+	/**
+	 * When the first accent is already the square, wide is hidden.
+	 */
+	public function test_image_wide_is_hidden_when_the_first_accent_is_taken(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'finish preview',
+					'alt'  => 'Akira finish preview',
+				),
+				103 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render',
+				),
+			)
+		);
+
+		$this->assertSame( '', ( new Shortcodes() )->image( array( 'slot' => 'wide' ) ) );
+	}
+
+	/**
+	 * A two-image pattern (scene + render) fills the hero only: plate and
+	 * square return nothing, so the template emits no empty src.
+	 */
+	public function test_image_two_image_pattern_hides_the_empty_slots(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Pebble Creek installed screen scene',
+				),
+				102 => array(
+					'role' => 'pattern render',
+					'alt'  => 'Pebble Creek pattern render',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/101.webp"', $shortcodes->image( array( 'slot' => 'hero-bg' ) ) );
+		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'plate' ) ) );
+		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'square' ) ) );
+		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'wide' ) ) );
+	}
+
+	/**
+	 * The eleven-word role vocabulary does not cover every old alt: the
+	 * sixty "pattern installation scene visualization" images are unknown
+	 * roles whose alt the old substring classifier reads as a scene.
+	 */
+	public function test_image_unknown_role_falls_back_to_the_old_alt_classification(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'unknown',
+					'alt'  => 'Zelda pattern installation scene visualization',
+				),
+				102 => array(
+					'role' => 'accent render',
+					'alt'  => 'Zelda accent render',
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'hero-bg' ) );
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/101.webp"', $image );
+	}
+
+	/**
+	 * A pattern render whose alt carries "room divider" is a scene under
+	 * the old classifier (the Winderoo case), so it can fill the hero.
+	 */
+	public function test_image_pattern_render_with_a_room_divider_alt_is_a_scene(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'pattern render',
+					'alt'  => 'Winderoo Decorative Room Divider pattern render',
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'hero-bg' ) );
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/101.webp"', $image );
+	}
+
+	/**
+	 * Without any scene the hero is hidden; the plate still takes the old
+	 * pos0 and the square stays hidden (the no-hero fallback).
+	 */
+	public function test_image_without_a_scene_hides_the_hero(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'finish preview',
+					'alt'  => 'Akira finish preview',
+				),
+				102 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'hero-bg' ) ) );
+		$this->assertStringContainsString( 'src="https://site.test/uploads/101.webp"', $shortcodes->image( array( 'slot' => 'plate' ) ) );
+		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'square' ) ) );
+	}
+
+	/**
+	 * Unknown dimensions are omitted rather than invented.
+	 */
+	public function test_image_omits_dimensions_when_the_attachment_has_none(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'hero-bg' ) );
+
+		$this->assertStringNotContainsString( 'width=', $image );
+		$this->assertStringNotContainsString( 'height=', $image );
+	}
+
+	/**
+	 * A missing attachment alt falls back to the product title, as the old
+	 * template did (hero stays decorative and keeps the empty alt).
+	 */
+	public function test_image_plate_falls_back_to_the_product_title_for_a_missing_alt(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'detail reference',
+					'alt'  => '',
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'plate' ) );
+
+		$this->assertStringContainsString( 'alt="Akira | Architectural Metal Screen Pattern"', $image );
+	}
+
+	/**
+	 * The three photographic slots never share one attachment.
+	 */
+	public function test_image_slots_never_share_an_attachment(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'official installation scene',
+					'alt'  => 'Akira official installation scene 2',
+				),
+				103 => array(
+					'role' => 'finish preview',
+					'alt'  => 'Akira finish preview',
+				),
+				104 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+		$sources    = array();
+		foreach ( array( 'hero-bg', 'plate', 'square', 'wide' ) as $slot ) {
+			if ( preg_match( '/src="([^"]+)"/', $shortcodes->image( array( 'slot' => $slot ) ), $matches ) ) {
+				$sources[] = $matches[1];
+			}
+		}
+
+		$this->assertSame( $sources, array_values( array_unique( $sources ) ), 'no image fills two slots' );
+	}
+
+	/**
+	 * One product media fixture, keyed by attachment id in media order:
+	 * the first id is the featured image, the rest the gallery. Each entry
+	 * carries the attachment's `_md_role`, alt and real dimensions.
+	 *
+	 * @param array<int, array<string, mixed>> $media The attachment fixtures.
+	 */
+	private function mock_media_product( array $media ): void {
+		$ids       = array_keys( $media );
+		$thumbnail = (int) $ids[0];
+		$gallery   = array_map( 'intval', array_slice( $ids, 1 ) );
+
+		$post            = new \stdClass();
+		$post->ID        = 7;
+		$post->post_type = 'product';
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $post );
+		WP_Mock::userFunction( 'get_the_title' )->zeroOrMoreTimes()->andReturn( 'Akira | Architectural Metal Screen Pattern' );
+		WP_Mock::userFunction( 'get_post_thumbnail_id' )->zeroOrMoreTimes()->andReturn( $thumbnail );
+		$GLOBALS['md_wc_product_double'] = new \FakeGalleryProduct( $gallery ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- the shared WooCommerce double's global (tests/php/Doubles/seopress-woocommerce.php).
+		WP_Mock::userFunction( 'get_post_meta' )->zeroOrMoreTimes()->andReturnUsing(
+			static function ( int $id, string $key ) use ( $media ) {
+				if ( '_md_role' === $key ) {
+					return (string) ( $media[ $id ]['role'] ?? '' );
+				}
+				if ( '_wp_attachment_image_alt' === $key ) {
+					return (string) ( $media[ $id ]['alt'] ?? '' );
+				}
+				return '';
+			}
+		);
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( int $id ): string => "https://site.test/uploads/{$id}.webp"
+		);
+		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->zeroOrMoreTimes()->andReturnUsing(
+			static function ( int $id ) use ( $media ) {
+				$width  = (int) ( $media[ $id ]['width'] ?? 0 );
+				$height = (int) ( $media[ $id ]['height'] ?? 0 );
+				return ( $width > 0 && $height > 0 ) ? array(
+					'width'  => $width,
+					'height' => $height,
+				) : array();
+			}
+		);
 	}
 
 	/**

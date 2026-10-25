@@ -26,4 +26,28 @@ namespace {
 	 * @return object|false The product, false when absent.
 	 */
 	function wc_get_product( $the_product = false ) {}
+
+	/**
+	 * The shape of the runtime product double (tests/php/Doubles/
+	 * seopress-woocommerce.php, which the test bootstrap loads): the
+	 * shortcode tests build it with their media fixture's gallery ids.
+	 * Declared here because PHPStan excludes the runtime Doubles from
+	 * analysis and scans this file for the symbols instead.
+	 */
+	final class FakeGalleryProduct {
+
+		/**
+		 * The gallery attachment ids.
+		 *
+		 * @param int[] $gallery The gallery attachment ids.
+		 */
+		public function __construct( array $gallery ) {}
+
+		/**
+		 * The gallery attachment ids.
+		 *
+		 * @return int[]
+		 */
+		public function get_gallery_image_ids(): array {}
+	}
 }
