@@ -1,0 +1,198 @@
+/* metal-divider visual baseline — ticket #66 (decision #64, path C, root-10).
+ *
+ * The conversion pipeline indexes rules by class token and reads only
+ * shopify-section wrappers, so it dropped the old site's class-less baseline
+ * and the old <head> :root (#62 C2/C3); it also carried rem values out of a
+ * 10px-rem site into a 16px-rem one (#62 C4). This volume restores that
+ * context. Every rule and value is copied from the old site — nothing here is
+ * invented:
+ *   - rules: metalpartition.com theme assets/main.css, the base block
+ *     (html font-size, the body font, the h1–h6 reset, a, img, #xo-root,
+ *     xo-container). The body line-height is the old build's computed 24px
+ *     (1.5, inherited from its Tailwind preflight), not main.css's unused
+ *     1.8 value;
+ *   - tokens: the rendered <head> :root of metalpartition.com
+ *     (snippets/settings-adapter.liquid), values read in real Chrome
+ *     (1440x900, 2026-10-26).
+ * Front-end only: WindPress enqueues the compiled cache under !is_admin()
+ * (windpress/src/Core/Runtime.php:66), so the 10px root cannot reach
+ * wp-admin, and the plugin never enqueues this file itself.
+ *
+ * Dark bands are untouched: they set --bg-color or a Tailwind background
+ * utility, and the utilities layer beats this file's components layer. The
+ * :root color scheme below is the light scheme the old .xo-section fallback
+ * resolved to; the new site's dark canvas stays (tokens.css color-scheme).
+ */
+
+:root {
+  /* Old <head> design tokens — typography scale */
+  --heading-hero: 56px;
+  --heading-xl: 42px;
+  --heading-lg: 32px;
+  --heading-md: 24px;
+  --heading-sm: 20px;
+  --text-base: 16px;
+  --text-sm: 14px;
+  --text-xs: 13px;
+
+  /* Spacing */
+  --section-py: 80px;
+  --section-px: 20px;
+  --content-max-w: 1200px;
+  --grid-gap: 24px;
+
+  /* Brand colors (unified with landing page) */
+  --color-gold: #c9a962;
+  --color-gold-light: #d4b878;
+  --color-gold-dark: #a88a4a;
+  --color-gold-accent: #d4af37;
+  --color-surface-light: #faf9f7;
+  --color-surface-dark: #1a1a1a;
+  --color-surface-card: #141414;
+  --color-text-primary: #000;
+  --color-text-muted: rgba(0, 0, 0, 0.75);
+  --color-text-on-dark: #fff;
+  --color-text-muted-dark: rgba(255, 255, 255, 0.75);
+
+  /* Components */
+  --radius-card: 8px;
+  --radius-btn: 4px;
+  --transition-base: 0.3s ease;
+  --divider-w: 60px;
+  --divider-h: 3px;
+
+  /* Fonts and scale. "san-serif" is the old head's literal fallback text
+     (sic) — the family is Inter / Playfair Display and the fallback never
+     applies while the self-hosted faces load. */
+  --font-body-desktop-size: 1.6rem;
+  --font-body-mobile-size: 1.5rem;
+  --font-body-family: Inter, san-serif;
+  --font-body-style: ;
+  --font-body-weight: 400;
+  --font-body-weight-bold: 400;
+  --font-heading-family: "Playfair Display", san-serif;
+  --font-heading-style: ;
+  --font-heading-weight: 600;
+  --font-body-scale: 1.0;
+  --font-heading-scale: 1.4;
+  --font-body-line-height: calc(1 + 0.8 / var(--font-body-scale));
+  --font-custom-family: Montserrat, san-serif;
+
+  /* Old <head> color scheme 1 — the :root scheme. Only the three the carried
+     volumes consume are restored here; the other scheme colors have no
+     consumer outside the header wrapper (see #62 C3). */
+  --color-background: 255,255,255;
+  --color-foreground: 0,0,0;
+  --color-accent: 212,175,55;
+
+  /* Old <head> section spacing (0px) — breadcrumb.css's .section + .section
+     rule consumes these. */
+  --spacing-sections-desktop: 0px;
+  --spacing-sections-mobile: 0px;
+
+  /* Top-bar menu variables: the old <head> does not define them and the old
+     header-v1 topbar settings are empty strings, so the carried
+     var(--background-menu) / var(--text-menu) declarations were
+     invalid-at-computed-value-time and the topbar rendered transparent with
+     inherited text (old live computed 2026-10-26: rgba(0,0,0,0) /
+     rgba(0,0,0,.75)). These values resolve to the same computed values
+     instead of failing; a section that sets them per-instance still wins. */
+  --background-menu: transparent;
+  --text-menu: currentColor;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --heading-hero: 42px;
+    --heading-xl: 32px;
+    --heading-lg: 24px;
+    --heading-md: 20px;
+    --heading-sm: 18px;
+    --section-py: 50px;
+    --section-px: 16px;
+    --grid-gap: 16px;
+  }
+}
+
+/* The old site's rem base: 1rem = 10px (main.css:335). Restores the meaning of
+   the 856 rem values the carried volumes inherited from the old build. */
+html {
+  font-size: 62.5%;
+}
+
+/* Old body rule (main.css:339-354), font family served by the site's own Inter
+   stack (tokens.css --md-font-sans). The font-size pair is load-bearing: at a
+   62.5% root the body would otherwise inherit 10px and every unstyled run of
+   text would shrink. Old computed 1440x900: 16px / 24px. */
+body {
+  font-family: var(--md-font-sans);
+  font-size: var(--font-body-size, var(--font-body-mobile-size, 1.5rem));
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: var(--font-body-size, var(--font-body-desktop-size, 1.6rem));
+  }
+}
+
+/* Old heading reset (main.css:1294-1305): the UA margins measured 48.24px on
+   the new site's h1, 0px on the old one. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+}
+
+/* Old link rules (main.css:361-366). */
+.link,
+a {
+  text-decoration: none;
+}
+
+a:not([href]) {
+  cursor: default;
+}
+
+/* Old image rule (main.css:461-466): images cannot overflow. */
+img {
+  max-width: 100%;
+  height: auto;
+  border: 0;
+  vertical-align: top;
+}
+
+/* Old page root (main.css:405-424). */
+#xo-root {
+  overflow: hidden;
+  overflow: clip;
+  display: flow-root;
+  padding-left: var(--page-side-margin-mobile, var(--page-side-margin, 0));
+  padding-right: var(--page-side-margin-mobile, var(--page-side-margin, 0));
+}
+
+@media (min-width: 768px) {
+  #xo-root {
+    padding-left: var(--page-side-margin, 0);
+    padding-right: var(--page-side-margin, 0);
+  }
+}
+
+/* Old container (main.css:419-433). max-width 1400px + 20px inline padding is
+   the old computed 1440 layout: the container box starts at x=20 and content
+   at x=40, i.e. the 40px gutter of the chrome spec. The 20px is the old rule's
+   own value, not the 40px effective gutter. */
+xo-container {
+  display: block;
+  max-width: var(--xo-container-width, 1400px);
+  margin: auto;
+  padding-left: var(--xo-container-gap, 20px);
+  padding-right: var(--xo-container-gap, 20px);
+}
+
+xo-container[xo-fluid]:not([xo-fluid=false]) {
+  max-width: 100%;
+}
