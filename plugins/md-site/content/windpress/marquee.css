@@ -116,7 +116,7 @@ align-items: start;
 /* 左侧信息 */
 #patterns-template--22465876033789__patterns_marquee_hqqfqz .panel-info {
 position: sticky;
-top: 100px;
+top: calc(var(--md-header-h, 113px) + 16px);
 }
 #patterns-template--22465876033789__patterns_marquee_hqqfqz .info-category {
 color: #d4af37;
@@ -510,6 +510,15 @@ height: 100vh;
 @media (prefers-reduced-motion: reduce) {
 .pattern-lightbox,
 .pattern-lightbox-dialog {
+transition: none;
+}
+/* The panel switch animates a 10px slide and a fade; with reduced motion
+requested the panel simply appears (the home page's tab strip carries the
+same rule for its own transition). */
+#patterns-template--22465876033789__patterns_marquee_hqqfqz .tab-panel.active {
+animation: none;
+}
+#patterns-template--22465876033789__patterns_marquee_hqqfqz .tab-button {
 transition: none;
 }
 }

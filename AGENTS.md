@@ -30,6 +30,8 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 
 ## 2. 业主裁定(事实,按日期)
 
+- 2026-10-26(Woo 唯一资料源):**商品与关联资料只在 WooCommerce 维护,Woo 的当前发布状态约束所有客户可见页面与工具**。模板、配置、JSON、迁移产物或索引不得成为可独立维护、独立放行商品的第二数据源;一次性迁移与可重建的派生副本可以存在,但必须由 Woo 自动生成、更新与失效,日常维护不得要求分别同步。下架保留草稿与原件,不等于删除。
+- 2026-10-26(现代化升级与旧站边界):旧站是复刻参照,不是质量上限;其 HTML/CSS/JS 遗留缺陷和不良交互应按证据主动修复。现代化设计仍落在 Woo 原生机制、LiveCanvas 模板与 WindPress 管线内,不另建设计或数据体系;sticky header 已由业主明确批准为升级,升级项与 parity 差异分别记账并实测。
 - 2026-10-25(切换执行模式):**cutover 全程由代理代操,业主零点击**——hPanel、DNS、Cloudflare、GSC、Shopify 后台一律代理经浏览器自动化/API 完成(业主明示"不可能解约shopify(自己操作),不可能搞DNS(自己操作)",即面板操作全部归代理);hPanel 凭据在 ~/Downloads/wp-admin.txt(仅代理读取使用,永不入库入日志)。
 - 2026-10-25(DNS 终版,业主明令):**DNS 永驻原处——任何 NS/DNS 迁移一律不做**;配置**照抄 de-linker 实测**(dig+headers 证据 2026-10-25):de-linker=阿里云解析 A→Hostinger IP+LiteSpeed 裸服务+**无任何前置 CDN/Cloudflare**;metal-divider 对应=**Hostinger 默认区直写 A→HOST_IP+LiteSpeed,无前置 CDN**(hPanel 自带一键 CDN 先不开,慢了再说)。Cloudflare 唯一身份=Turnstile 挂件(账号级,零 DNS)。原栈裁定中「Cloudflare 免费档 DNS+CDN+WAF」作废;GSC 验证 TXT 写 hPanel 区;部署窗口协议里的 CF Dev Mode 等项作废。
 - 2026-10-25(终版裁定,推翻 runbook 后半):**Shopify 侧为绝对禁区,永不触碰**——metalpartition.com 的域名、DNS、商店、订阅一概不动、不解约、不迁移、不做旧域 301,旧站原样继续跑。**metal-divider.com 完全自主**。新站独立上线,GSC 只建新属性,无地址变更。runbook 的 §4(T2)/§5(T3)/§6(T4)/§7(T5)作废;§3(T1)按 DNS 终版执行(hPanel 区直写,无 CF NS);执行序列:T0(照旧)→ T1(hPanel DNS+SSL+邮箱+Turnstile 挂件)→ 生产 verify+询盘实走 → 上线。
@@ -83,6 +85,7 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 
 - 客户可见面的实现顺序:① LiveCanvas 原生 tag ② WooCommerce 原生机制(产品、属性、meta、tabs、模板函数)③ WindPress 管线(Tailwind 类与 tokens)。自定义代码是最后手段,须在规格文档留逐项穷尽证明。
 - PHP 只做数据装配:输出语义标记 + 类名的数据片段,零内联样式、零设计决策;任何视觉差距的修复落点只能是 LiveCanvas 模板或 WindPress 样式。禁止 PHP 页面类/布局模板。
+- **卡片与瓦片的标记住在 partial 里,不在 PHP 字符串里。**`content/livecanvas/partials/` 的 HTML 文件是唯一真相,`wp md-site present` 把它部署成 `lc_partial`(与其它页面模板同一条管线,数据库副本会被覆盖,`present --check` 报告分歧)。**在 LiveCanvas 里改 partial 不会存活到下一次 present**——要改就改仓库文件。渲染时优先读已发布的部署副本,是为了让"访客看到的"与"WindPress 编译工具类所依据的"是同一份;该副本缺失或未发布时回退到仓库文件,让站点在 present 之前也画得出卡片。数据经值短代码注入(`[md_pattern_code]` 等,见 `Presentation\PatternFacts` / `PartialFields`),组合用 `[md_partial]`、`[md_each]`、`[md_if]`。判据可执行:partial 里放设计,值短代码里放值。两条硬约束——`class` 属性内不得出现短代码(那是把类名交给 PHP,并会让 WindPress 去编译一个伪工具类);无图商品整卡不渲染,不输出 `src=""`;模板里不留占位假值(`src=""`、写死的 `1 / 1`、写死的宽高),初始状态必须是服务端真值。
 - 禁止经 Code Snippets 通道加代码:代码只进仓库(插件、子主题、mu-plugins),实例 snippets 表不动。
 - 插件对站点页面零 CSS:插件输出语义 HTML 继承主题与设计体系,样式一律经 WindPress 编译进缓存,不建第二条 Tailwind 构建。
 

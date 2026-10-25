@@ -19,7 +19,7 @@
 **已就绪**(main 分支实态):
 
 - dev 实例全量:146 图案、1063 媒体终稿、13 内容页、SEO 配置面(IMP-9 验收记录)、LC 模板 25 面、WindPress 卷全量。
-- `tools/deploy` 全套(dev/staging/prod 三 target、drill、verify、contract、media、backup、rollback、maintenance、windpress-compile/check);`tools/migrate` 五阶段 + reconcile(支持 `--wp` 经 SSH 打任意实例);`tools/pixel-check`(url-map 182 URL,掩膜台账制)。
+- `tools/deploy` 全套(dev/staging/prod 三 target、drill、verify、contract、media、backup、rollback、maintenance、windpress-compile/check);`tools/migrate` 五阶段 + reconcile(支持 `--wp` 经 SSH 打任意实例);`tools/pixel-check`(url-map 182 目标 = 170 比对 / 12 退役,掩膜台账制)。
 - `docs/deploy/checklist.md`、`docs/deploy/gsc-migration.md` 已在 main。
 
 **尚不存在、由本 runbook 逐步创建**:主机侧两站点与库、SSH 别名、Cloudflare 账号与两区、GSC 两属性、info@ 邮箱与三防记录、旧域 301 的源站承载、域名迁出、解约。
@@ -89,7 +89,7 @@ gsc T4 监控期(≥30 天)── 与 T4/T5 并行,不阻塞解约
 
 | # | 动作 | 执行者 | 验收标准 | 回滚方法 |
 |---|---|---|---|---|
-| 1 | **像素门全跑**:`just pixel-check dev`(dev 为权威跑——评审站在口令保护后 check.mjs 无 httpCredentials 支持;评审站的视觉等价性由「同一部署产物 + 同一导入管线」+ probe 内容断言承载。如需评审站直跑,先给 check.mjs 加凭据支持,单列小改,默认不做) | 代理 | url-map 全部 active 页型(170/182;12 retired 不入拍)× 双视口,**掩膜外差异数 = 0**;掩膜(M1 动态/M2 修复/M3 升级)逐项台账行**报业主过目**;报告存档 | N/A(读);fail 即修复重跑 |
+| 1 | **像素门全跑**:`just pixel-check dev`(dev 为权威跑——评审站在口令保护后 check.mjs 无 httpCredentials 支持;评审站的视觉等价性由「同一部署产物 + 同一导入管线」+ probe 内容断言承载。如需评审站直跑,先给 check.mjs 加凭据支持,单列小改,默认不做) | 代理 | url-map 全部 active 页型(170/182;12 retired 不入拍,其中 `collections/pattern-gradient` 是无基线可比、非跳转)× 双视口,**掩膜外差异数 = 0**;掩膜(M1 动态/M2 修复/M3 升级)逐项台账行**报业主过目**;报告存档 | N/A(读);fail 即修复重跑 |
 | 2 | **询盘链实走(测试模式,评审站)**:浏览 → 图案清单 → 询盘提交 → 通知与确认 → WhatsApp 路由(AGENTS §5 路径) | ★业主(按业主路径)+ 代理 | 表单提交 303;评审站 wp_mail 落盘零真发;通知路由断言 = 队列收件人数据(sales@sunriverinverter.com 主 / info@ 备),**不多封实发**;WhatsApp 链接 = +85264731687 | N/A(评审站零真信) |
 | 3 | 评审站内容走查(业主人眼过全部页型) | ★业主 | 业主认可 | 修内容后重走 |
 

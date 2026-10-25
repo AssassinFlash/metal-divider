@@ -16,7 +16,8 @@ use WP_Mock;
 /**
  * Tests for FieldGroups: the smoke of the registration path and the shape of
  * the four groups the pattern data model fixes (spec 06 §2.2/§4: 4 groups,
- * 17 fields, the provenance group out of REST, the series group on the
+ * 19 fields — the seventeen of the spec plus the old PDP's `notable_effect` and
+ * `style_blurb` — the provenance group out of REST, the series group on the
  * product_cat term).
  *
  * @covers \MetalDivider\Site\Fields\FieldGroups
@@ -97,9 +98,13 @@ final class FieldGroupsTest extends TestCase {
 	}
 
 	/**
-	 * The four groups of the pattern data model, seventeen fields in all.
+	 * The four groups of the pattern data model, nineteen fields in all.
+	 *
+	 * Seventeen of spec 06 §2.2 plus `notable_effect` (the old PDP's
+	 * design-intent second paragraph, carried 146/146) and `style_blurb`
+	 * (its first paragraph, one sentence per series on the term).
 	 */
-	public function test_groups_are_four_with_seventeen_fields(): void {
+	public function test_groups_are_four_with_nineteen_fields(): void {
 		$groups = FieldGroups::groups();
 
 		$this->assertCount( 4, $groups );
@@ -108,7 +113,7 @@ final class FieldGroupsTest extends TestCase {
 			array_map( static fn( array $group ): string => (string) $group['key'], $groups ),
 			'the group keys are the ones the ACF-free instance test registered under'
 		);
-		$this->assertCount( 17, array_merge( ...array_map( self::names_of( ... ), $groups ) ) );
+		$this->assertCount( 19, array_merge( ...array_map( self::names_of( ... ), $groups ) ) );
 	}
 
 	/**
@@ -147,6 +152,29 @@ final class FieldGroupsTest extends TestCase {
 	}
 
 	/**
+	 * Group B carries the pattern's own prose, including the old PDP's
+	 * design-intent second line.
+	 *
+	 * `notable_effect` is retained product data, not one of the dropped
+	 * metafields: the old site rendered it as the block's second paragraph
+	 * (146/146 patterns), and the migration plans it. It is a plain text
+	 * field so an editor changes one short phrase, and it answers REST like
+	 * its siblings.
+	 */
+	public function test_pattern_copy_carries_the_notable_effect(): void {
+		$group = $this->groups_by_key()['group_md_pattern_copy'];
+
+		$this->assertSame( array( 'summary', 'inspiration', 'notable_effect' ), self::names_of( $group ) );
+
+		$fields = array();
+		foreach ( self::fields_of( $group ) as $field ) {
+			$fields[ (string) ( $field['name'] ?? '' ) ] = $field;
+		}
+		$this->assertSame( 'text', $fields['notable_effect']['type'], 'one short phrase, edited on the product screen' );
+		$this->assertNotSame( '', (string) ( $fields['notable_effect']['key'] ?? '' ) );
+	}
+
+	/**
 	 * Groups A, B and D answer the REST API; the provenance group never does.
 	 */
 	public function test_provenance_group_stays_out_of_rest(): void {
@@ -171,7 +199,7 @@ final class FieldGroupsTest extends TestCase {
 		$this->assertSame( 'product_cat', self::location_value( $by_key['group_md_series_meta'] ) );
 
 		$series = $by_key['group_md_series_meta'];
-		$this->assertSame( array( 'accent_color', 'difficulty_level', 'typical_applications', 'bottom_content' ), self::names_of( $series ) );
+		$this->assertSame( array( 'accent_color', 'difficulty_level', 'typical_applications', 'bottom_content', 'style_blurb' ), self::names_of( $series ) );
 		$this->assertSame( '#c9a962', self::fields_of( $series )[0]['default'], 'the gold accent every series shares is the default, not a stored copy' );
 	}
 
@@ -187,8 +215,8 @@ final class FieldGroupsTest extends TestCase {
 				$names[] = (string) ( $field['name'] ?? '' );
 			}
 		}
-		$this->assertCount( 17, array_unique( $keys ), 'field keys are unique' );
-		$this->assertCount( 17, array_unique( $names ), 'field names are unique' );
+		$this->assertCount( 19, array_unique( $keys ), 'field keys are unique' );
+		$this->assertCount( 19, array_unique( $names ), 'field names are unique' );
 	}
 
 	/**

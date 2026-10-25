@@ -196,13 +196,11 @@ final class SeoCommandTest extends TestCase {
 		$blog        = 103;
 		$thank_you   = 104;
 		$faqs        = 105;
-		$shell       = 106;
 		$sample_page = 107;
 		$s_product   = 201;
 		$s_faq       = 202;
 		$s_article   = 203;
 		$redirect    = 301;
-		$retired     = 302;
 		$config      = new Config();
 		$page_metas  = $config->page_metas( '' );
 
@@ -226,11 +224,6 @@ final class SeoCommandTest extends TestCase {
 				'id'    => $thank_you,
 				'type'  => 'page',
 				'title' => 'Inquiry thank you',
-			),
-			'pages'             => array(
-				'id'    => $shell,
-				'type'  => 'page',
-				'title' => 'Pages',
 			),
 			'sample-page'       => array(
 				'id'    => $sample_page,
@@ -264,7 +257,6 @@ final class SeoCommandTest extends TestCase {
 			$privacy     => $page_metas['privacy'],
 			$blog        => $page_metas['blog'],
 			$thank_you   => $page_metas['inquiry/thank-you'],
-			$shell       => $page_metas['pages'],
 			$sample_page => $page_metas['sample-page'],
 			$s_product   => array(
 				'_seopress_pro_rich_snippets_type'         => 'products',
@@ -327,13 +319,7 @@ final class SeoCommandTest extends TestCase {
 				'_seopress_redirections_enabled'       => 'yes',
 				'_seopress_redirections_type'          => '301',
 				'_seopress_redirections_value'         => '/',
-				'_seopress_redirections_logged_status' => 'both',
-				'_seopress_redirections_enabled_regex' => '',
-			),
-			$retired     => array(
-				'_seopress_redirections_enabled'       => 'yes',
-				'_seopress_redirections_type'          => '301',
-				'_seopress_redirections_value'         => '/shop/',
+				'_seopress_redirections_param'         => 'without_param',
 				'_seopress_redirections_logged_status' => 'both',
 				'_seopress_redirections_enabled_regex' => '',
 			),
@@ -343,8 +329,7 @@ final class SeoCommandTest extends TestCase {
 			'posts'     => $posts,
 			'meta'      => $meta,
 			'redirects' => array(
-				'pages'                        => $redirect,
-				'collections/pattern-gradient' => $retired,
+				'pages' => $redirect,
 			),
 		);
 	}

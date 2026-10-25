@@ -197,6 +197,13 @@ def test_the_whole_stack(stack: Stack) -> None:
     assert "picostrap5" in stack.wp("theme", "list", "--field=name")
     assert stack.wp("option", "get", "stylesheet") == "md-child"
 
+    # The URL scheme: journal articles under /blog/<slug>/, categories under
+    # /category/<slug>/. Two options, so provisioning writes them and refresh
+    # repairs them (md_local.permalinks) — the same two values the deploy keeps
+    # on staging and production.
+    assert stack.wp("option", "get", "permalink_structure") == "/blog/%postname%/"
+    assert stack.wp("option", "get", "category_base") == "category"
+
     # The isolation headers, and a page that answers.
     home = request(instance.port, "/")
     assert home.status == 200
@@ -249,6 +256,25 @@ def test_the_whole_stack(stack: Stack) -> None:
         assert stack.wp("option", "get", "seopress_pro_license_status") == "valid"
         assert stack.wp("option", "get", "lc_apikey") != ""
     assert request(instance.port, "/").headers["X-Robots-Tag"] == "noindex, nofollow"
+    # `reset` provisions the URL scheme too, and `up` repairs it: the two
+    # options are database state, so a checkout that changes them or a
+    # database imported from another site would otherwise keep drift that no
+    # file deploy can carry away. Drift them by hand, then prove `up` repairs
+    # them and a second `up` writes nothing (apply() is idempotent by
+    # readback, tools/local/tests/test_permalinks.py).
+    stack.wp("option", "update", "permalink_structure", "/%postname%/")
+    stack.wp("option", "update", "category_base", "")
+    assert stack.wp("option", "get", "permalink_structure") == "/%postname%/"
+
+    stack.cli("up", NAME)
+    assert stack.wp("option", "get", "permalink_structure") == "/blog/%postname%/"
+    assert stack.wp("option", "get", "category_base") == "category"
+
+    # A second `up` on a repaired site writes nothing, and says so.
+    again = stack.cli("up", NAME).stdout
+    assert "permalinks /blog/%postname%/ categories category (already set)" in again, (
+        again
+    )
 
 
 def test_a_bare_instance_is_wordpress_without_the_plugin_face(stack: Stack) -> None:

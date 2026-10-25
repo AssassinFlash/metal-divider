@@ -159,6 +159,58 @@ def _write_manifest(manifest: Manifest, directory: str) -> str:
     return f"printf '%s' {shlex.quote(json.dumps(asdict(manifest)))} > {temporary}\nmv -f {temporary} {path}"
 
 
+def _phase_notes_path(directory: str) -> str:
+    return str(Path(directory) / "phase-notes.json")
+
+
+def write_phase_notes(target: Target, directory: str, notes: list[str]) -> None:
+    """Record the switch-time notes beside the manifest.
+
+    `deploy()` reports its phase notes to its own process, and `finish_deploy`
+    combines them with verify's. A batch whose verify failed, or whose reply
+    was interrupted, is later finished by `resume-deploy` — a *separate*
+    process that never ran those phases and so has no other way to know one
+    left a note. Without this file the resumed run would archive a batch whose
+    switch reported a problem, and the notes would vanish with the process
+    that made them.
+
+    Written once per batch and left in place: the archived directory is
+    private evidence, and a second `deploy` cannot reuse another batch's
+    directory because the id names it.
+    """
+    if not notes:
+        return
+    path = shlex.quote(_phase_notes_path(directory))
+    temporary = shlex.quote(_phase_notes_path(directory) + ".next")
+    payload = shlex.quote(json.dumps(list(notes)))
+    target.shell(f"printf '%s' {payload} > {temporary}\nmv -f {temporary} {path}")
+
+
+def read_phase_notes(target: Target, directory: str) -> list[str]:
+    """The notes `write_phase_notes` recorded for this batch, or none.
+
+    A batch that recorded nothing — the normal case — has no file: absent and
+    empty mean the same thing here, so the resumed run's result is unchanged.
+    """
+    raw = target.shell(
+        f"if [ -f {shlex.quote(_phase_notes_path(directory))} ]; then "
+        f"cat {shlex.quote(_phase_notes_path(directory))}; fi"
+    ).strip()
+    if not raw:
+        return []
+    try:
+        decoded = json.loads(raw)
+    except ValueError as error:
+        raise DeployError(
+            f"invalid phase notes in {_phase_notes_path(directory)}"
+        ) from error
+    if not isinstance(decoded, list) or not all(
+        isinstance(item, str) for item in decoded
+    ):
+        raise DeployError(f"invalid phase notes in {_phase_notes_path(directory)}")
+    return decoded
+
+
 def latest_manifest(target: Target) -> tuple[str, Manifest]:
     """Load the most recent deployment record; no glob can mix backup batches."""
     root = backup_root(target)

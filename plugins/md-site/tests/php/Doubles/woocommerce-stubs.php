@@ -39,9 +39,11 @@ namespace {
 		/**
 		 * The gallery attachment ids.
 		 *
-		 * @param int[] $gallery The gallery attachment ids.
+		 * @param int[]         $gallery The gallery attachment ids.
+		 * @param callable|null $on_read Called on every gallery read, so a test
+		 *                               can count them (the memoization fixtures).
 		 */
-		public function __construct( array $gallery ) {}
+		public function __construct( array $gallery, ?callable $on_read = null ) {}
 
 		/**
 		 * The gallery attachment ids.

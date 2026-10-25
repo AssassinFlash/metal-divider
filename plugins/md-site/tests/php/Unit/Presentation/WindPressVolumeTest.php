@@ -94,7 +94,6 @@ final class WindPressVolumeTest extends TestCase {
 	 * the Tailwind v4 theme/utilities imports — the compiler's utility
 	 * definitions (#58: an entry without them compiles no utility class at
 	 * all, and an unlayered volume import lets the carried old-site utility
-	 * rules beat the freshly built ones).
 	 * rules beat the freshly built ones) — and whose tail carries the
 	 * old-site px type scale (#66: the v4 rem defaults rendered 5xl/7xl at
 	 * 48px/72px against the old 42px/56px).
@@ -114,8 +113,6 @@ final class WindPressVolumeTest extends TestCase {
 		$this->assertStringNotContainsString( '@import "./tokens.css";', $entry, 'no unlayered twin of the volume import remains' );
 		$this->assertLessThan( strpos( $entry, '@import "./tokens.css" layer(components);' ), strpos( $entry, '@import "tailwindcss/utilities.css"' ), 'the head precedes the volume imports' );
 		$this->assertStringContainsString( '@import "./base.css" layer(components);', $entry, 'the baseline volume import is layered' );
-		$this->assertStringNotContainsString( '@import "./tokens.css";', $entry, 'no unlayered twin of the volume import remains' );
-		$this->assertLessThan( strpos( $entry, '@import "./tokens.css" layer(components);' ), strpos( $entry, '@import "tailwindcss/utilities.css"' ), 'the head precedes the volume imports' );
 
 		$this->assertStringContainsString( '@theme static {', $entry, 'the entry carries the @theme px type scale (#66)' );
 		$this->assertStringContainsString( '--text-5xl: 42px;--text-5xl--line-height: inherit;', $entry );
@@ -150,7 +147,6 @@ final class WindPressVolumeTest extends TestCase {
 		$this->assertStringNotContainsString( "\"./tokens.css\";\n", $updated, 'the bare import does not survive beside the layered one' );
 		$this->assertSame( "@import \"./tokens.css\";\n", (string) file_get_contents( $entry . '.bak' ), 'the headless entry is kept for rollback' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local test file, not a remote URL.
 		$this->assertStringContainsString( '@theme static {', $updated, 'the repaired entry also carries the #66 px type scale' );
-		$this->assertSame( "@import \"./tokens.css\";\n", (string) file_get_contents( $entry . '.bak' ), 'the headless entry is kept for rollback' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local test file, not a remote URL.
 	}
 
 	/**
@@ -253,11 +249,10 @@ final class WindPressVolumeTest extends TestCase {
 	}
 
 	/**
-	 * The drift() method is empty against a freshly installed volume, and reports a
-	 * missing file, a drifted copy, a missing import and an entry without the
-	 * Tailwind head each as its own row.
-	 * missing file, a drifted copy, a missing import, an entry without the
-	 * Tailwind head and an entry without the #66 @theme scale each as its own row.
+	 * The drift() method is empty against a freshly installed volume, and
+	 * reports a missing file, a drifted copy, a missing import, an entry
+	 * without the Tailwind head and an entry without the #66 @theme scale
+	 * each as its own row.
 	 */
 	public function test_drift_reads_the_volume_against_the_exports(): void {
 		$volume = new WindPressVolume();

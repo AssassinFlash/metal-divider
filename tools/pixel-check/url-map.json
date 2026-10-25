@@ -1,16 +1,16 @@
 {
   "ticket": "AssassinFlash/metal-divider#30",
-  "generated_at": "2026-10-25T02:29:05.514Z",
+  "generated_at": "2026-10-25T21:31:16.605Z",
   "sources": {
     "baseline_manifest": "../../data/pixel-baseline/manifest.json",
-    "baseline_manifest_sha256": "8db2b28af6a64ce8d9d8b43a97e2e1f08d7e9512b7876b54601d3185feeacb14",
+    "baseline_manifest_sha256": "a9e8432e55b7eb1698368e82965e4a202806e387cf4c4475a15587d90583fac7",
     "shopify_public_sha256": {
       "pages": "43c21333cedb493071e2ba19b65d1753f3e17737fb65835e090e9219d8835260",
       "collections": "3d4e31a4a85013c9efb99e49e660e2518cc050780d872f663ed39a35326fb90a",
       "products": "3f19c439fdb1da8c662abe837596fc2c67a135eea8988c089fb000e47f006f0c"
     }
   },
-  "rules": "spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /shop/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7/D8",
+  "rules": "spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /shop/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7; collections/pattern-gradient retired from this map only (issue #25 cancelled D8 — the series is live with no 301 — and the old empty collection has no comparable baseline)",
   "summary": {
     "total": 182,
     "active": 170,
@@ -1420,8 +1420,8 @@
       "type": "collections",
       "slug": "pattern-gradient",
       "status": "retired",
-      "ledger": "D8",
-      "reason": "empty collection, 301 -> /shop/ (spec 08 D8)",
+      "ledger": "D8/#25",
+      "reason": "Issue #25 cancelled D8 (the series is live, no 301); the old collection HAS a baseline but it is an empty-content one — the captured page is an empty state (\"Showing 0 patterns\", 0 /products/ links), so there is no product grid to compare against",
       "baseline_url": "https://metalpartition.com/collections/pattern-gradient"
     },
     {

@@ -26,7 +26,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
-from md_local import archives, downloads, licenses, secret, server, versions
+from md_local import archives, downloads, licenses, permalinks, secret, server, versions
 from md_local.checkout import Checkout
 from md_local.instance import Instance
 from md_local.mysql import USER, MySQL
@@ -78,11 +78,6 @@ ADMIN_USER = "local-admin"
 # .test is reserved and never resolves to a real mailbox (RFC 6761 §6.2).
 ADMIN_EMAIL = "local-admin@example.test"
 TABLE_PREFIX = "wp_"
-# Journal articles live under the blog's base (/blog/<slug>/), the URL scheme
-# of the blog IA (ticket #5 §3.2) and the route the blog face's article links
-# and the visual census expect. Pages and Woo's product/category bases are
-# separate rewrite rules, so this changes post URLs only.
-PERMALINKS = "/blog/%postname%/"
 
 SALTS = (
     "AUTH_KEY",
@@ -172,13 +167,21 @@ def provision(
         _link_our_themes(instance, checkout, wp, say)
 
     _link_our_plugins(instance, checkout, wp, say)
-    # The explicit category base keeps category archives at /category/<slug>/:
-    # with an empty category_base WordPress prepends the permalink front
-    # (/blog) to the taxonomy permastruct, which would move every blog
-    # category under /blog/category/ (WP_Rewrite::with_front in
-    # wp-includes/taxonomy.php).
-    wp.run("rewrite", "structure", PERMALINKS, "--category-base=category")
+    _apply_permalinks(wp, say)
     instance.provisioned_marker.write_text(datetime.now(UTC).isoformat() + "\n")
+
+
+def _apply_permalinks(wp: WpCli, say: Say) -> None:
+    """Apply the URL scheme options (`md_local.permalinks`) and say what happened.
+
+    The scheme is two options, so it is data: apply() reads them first and
+    writes only on drift, and its readback after a write is the proof. Both
+    `provision()` and `refresh()` go through here, so a fresh instance and an
+    existing one are configured by one code path.
+    """
+    applied, wrote = permalinks.apply(wp.run)
+    scheme = f"{applied.structure} categories {applied.category_base}"
+    say(f"permalinks {scheme}" + ("" if wrote else " (already set)"))
 
 
 def _install_plugin_face(wp: WpCli, say: Say) -> None:
@@ -200,11 +203,18 @@ def _install_plugin_face(wp: WpCli, say: Say) -> None:
 
 
 def refresh(instance: Instance, php: Path, checkout: Checkout, say: Say) -> None:
-    """Bring a built instance to this checkout: php.ini, router, mu-plugins, plugin links.
+    """Bring a built instance to this checkout: files, then the option planes it owns.
+
+    The files: php.ini, router, mu-plugins, the plugin and theme links.
+    Then the two option planes, both idempotent so `up` is a safe rerun: the
+    licences (the isolated instance cannot activate online) and the URL
+    scheme (`md_local.permalinks`, which writes only on drift). A fresh
+    instance has the scheme from `provision()`, so this matters after a
+    database import or a checkout that changed it.
 
     An instance is never recycled between checkouts or tickets: it keeps its
-    database; the plugin links follow whichever checkout runs `up`; a ticket
-    that needs a clean database takes `just reset`.
+    database and its options; the files follow whichever checkout runs `up`;
+    a ticket that needs a clean database takes `just reset`.
     """
     installed = versions_of(instance)
     drift = ", ".join(
@@ -221,6 +231,7 @@ def refresh(instance: Instance, php: Path, checkout: Checkout, say: Say) -> None
     _link_our_themes(instance, checkout, wp, say)
     say("licences")
     licenses.apply(wp, say)
+    _apply_permalinks(wp, say)
 
 
 def linked_checkout(instance: Instance) -> Path | None:

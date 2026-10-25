@@ -16,6 +16,8 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		/** @var string */
 		public $post_content = '';
 		/** @var string */
+		public $post_excerpt = '';
+		/** @var string */
 		public $post_type = '';
 		/** @var string */
 		public $post_name = '';
@@ -23,6 +25,8 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		public $post_title = '';
 		/** @var string */
 		public $post_status = '';
+		/** @var int */
+		public $menu_order = 0;
 	}
 }
 
@@ -57,6 +61,25 @@ if ( ! class_exists( 'WP_Term' ) ) {
 		public $count = 0;
 		/** @var string */
 		public $filter = 'raw';
+	}
+}
+
+if ( ! class_exists( 'WP_Query' ) ) {
+	/**
+	 * WordPress's main-query object, as far as the catalog reads it: the two
+	 * counts its pager, summary and empty state share. `$GLOBALS['wp_query']`
+	 * is the real one on a live request; a test installs one of these there
+	 * and the data arms answer from it, which is why the properties are public
+	 * and assignable rather than constructor arguments — WordPress's own class
+	 * has none of these as constructor arguments either.
+	 */
+	class WP_Query {
+		/** @var int The number of posts the query matched. */
+		public $found_posts = 0;
+		/** @var int The number of pages those posts span. */
+		public $max_num_pages = 0;
+		/** @var list<object> The posts, one per card the loop renders. */
+		public $posts = array();
 	}
 }
 

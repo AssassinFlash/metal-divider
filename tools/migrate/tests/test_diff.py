@@ -14,6 +14,7 @@ def current_product(item: dict[str, Any], **changes: Any) -> dict[str, Any]:
     back, with the named fields changed."""
     current = {
         "id": 7,
+        "sku": item["sku"],
         **{
             name: item[name]
             for name in ("title", "slug", "content", "excerpt", "series")
@@ -206,6 +207,76 @@ def test_media_diff_imports_binds_and_fills() -> None:
         }
     ]
     assert change["bind"] == {"gallery": ["https://cdn/b"]}
+
+
+def test_media_diff_rewrites_a_stale_alt() -> None:
+    """An attachment imported before the material-word correction still
+    carries "Corten": the plan's corrected alt is written over it, while an
+    attachment whose alt already matches gets no fill at all."""
+    module = migrate()
+    product = {
+        "sku": "Aztec",
+        "handle": "aztec",
+        "media": [
+            {
+                "master_src": "https://cdn/a",
+                "role": "detail reference",
+                "alt": "Aztec pattern detail reference",
+                "sha256": "sha-a",
+                "seq": 1,
+                "variants": [],
+            }
+        ],
+    }
+    stale = {
+        "attachments": {
+            "https://cdn/a": {
+                "id": 11,
+                "alt": "Aztec Corten pattern detail reference",
+                "role": "detail reference",
+                "sha256": "sha-a",
+                "variants": [{"w": 480, "f": "a-480.webp"}],
+            }
+        },
+        "thumbnail": "https://cdn/a",
+        "gallery": [],
+    }
+    change = module.media_product_diff(product, stale)
+    assert change["fill"] == [
+        {"master_src": "https://cdn/a", "alt": "Aztec pattern detail reference"}
+    ]
+    assert not change["import"] and not change["bind"]
+
+    matching = {
+        "attachments": {
+            "https://cdn/a": {
+                "id": 11,
+                "alt": "Aztec pattern detail reference",
+                "role": "detail reference",
+                "sha256": "sha-a",
+                "variants": [{"w": 480, "f": "a-480.webp"}],
+            }
+        },
+        "thumbnail": "https://cdn/a",
+        "gallery": [],
+    }
+    change = module.media_product_diff(product, matching)
+    assert not change["fill"], "an alt already at the plan's text writes nothing"
+
+
+def test_diff_product_reports_a_sku_rename() -> None:
+    """A product whose SKU still carries the source's material word is the
+    same pattern, renamed — not a create, and not identical. The diff is the
+    only place that decision is made, so it has to name the field."""
+    module = migrate()
+    item = module.build_products_plan(fixtures.export())["products"][0]
+    current = current_product(item, sku="Agave Corten")
+    differs, set_map = module.diff_product(item, current)
+    assert differs
+    assert set_map["sku"] == item["sku"] == "Agave"
+    # Everything else is already at the plan's value, so the rename is the
+    # only write the row needs.
+    assert set(set_map) == {"sku"}, "a rename writes the SKU and nothing else"
 
 
 def test_media_diff_refuses_a_replaced_file() -> None:

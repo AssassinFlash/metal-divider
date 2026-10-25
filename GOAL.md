@@ -34,7 +34,7 @@
 
 - [x] **`/inquiry/thank-you/` 404** — 生产已返回 200(2026-10-25 复核);dev 亦 200
 - [x] **`/privacy/` 404** — 生产已返回 200(2026-10-25 复核);dev 亦 200
-- [x] **FAQPage JSON-LD 缺失** — 根因二连:页面查找仍用 `/pages/faqs`(实际 `/faqs/`),且抽取正则绑定已被改写的 `openFaq` 表达式。两处已修,dev `/faqs/` 已输出 FAQPage;待生产部署
+- [x] **FAQPage JSON-LD 缺失** — 根因二连:页面查找仍用 `/pages/faqs`(实际 `/faqs/`),且抽取正则绑定已被改写的 `openFaq` 表达式。两处已修;dev 与**生产**均已输出 FAQPage(2026-10-26 复核:生产 `https://metal-divider.com/faqs/` 200,JSON-LD 内 **40** 问)
 - [ ] **GSC 属性未建**:Hostinger API 写 TXT 的路径已验通(PUT 追加模式),等 GSC 建 URL 前缀属性拿 token 后一条写入;顺带:hPanel 区无 SPF/_dmarc TXT(邮件三防,归 T1 邮件面)
 
 ## 工作法(每轮)
@@ -68,7 +68,9 @@
 
 **客户视角终检(clean profile,2026-10-25)**:7 页型 × 390/320 两视口,HTTP 全 200、**横向溢出全 0**、控制台错误全 0;触达目标从每页 19–30 项降到 5–16 项(余下为正文内联链接、轮播圆点等 WCAG 2.5.8 豁免项,以及 honeypot 的 1×1 离屏输入)。首页 20 条图片"溢出"均为 overflow 轨道内的轮播图,非缺陷。
 
-**仍待办**:GSC 属性;CookieYes 尚未安装(栈内项;当前零非必要 cookie,严格必要类是否上线需按合规口径定);`windpress-anchors` 命令(部署检查仍如实报缺)。
+**仍待办**:GSC 属性;CookieYes 尚未安装(栈内项;当前零非必要 cookie,严格必要类是否上线需按合规口径定)。
+
+**已收口(2026-10-26 读回,原列于上一条"仍待办"的 `windpress-anchors`)**:命令已实现并接进部署检查——`plugins/md-site/includes/Presentation/WindPressAnchors.php`(锚集:模板静态 `class` 里的任意值类 + `tokens.css` 的 `--md-*` 声明)、`includes/Cli/WindPressAnchorsCommand.php`(在 `Plugin.php` 注册),`tools/deploy` 的 `windpress-check` 按 `wp md-site windpress-anchors --format=json` 解析其输出。dev 实测(2026-10-26 重跑):`--format=json` → `[]`;表格模式 → `windpress anchors: 508 present in the compiled cache`(锚集构成 493 任意值类 + 15 token,来自 15 个文件);`just deploy windpress-check --target dev` → `anchor classes present`。**这个数字跟着仓库模板走**,不是常量:锚集由 `template_files()` 扫 `content/livecanvas/*.html` 与 `partials/*.html` 得到,模板增删类即变(此前记为 505,是更早那次读回的值;当前实测 508)。同理缓存 mtime 每次编译都变,只作"编译确实落盘且比 `--before` 新"的判据,不写死。单测 `phpunit --filter WindPressAnchors` → 18 项全过(`Cli/WindPressAnchorsCommandTest` + `WindPressAnchorsTest`)。**生产尚未带此命令**:`just deploy windpress-check --target prod` 只读到 `windpress cache mtime: 1792939056`,锚类断言按设计报"需要 md-site 自己的检查器且它没有回答";SSH 直读该实例给出同一事实的正面证据——`Error: 'windpress-anchors' is not a registered subcommand of 'md-site'`(生产插件是上一次部署的版本)。随下一次代码部署生效,不是实现缺口。
 
 ### 2026-10-25 移动端视觉审计(阶段二·第一轮:390×844 / 320×568)
 

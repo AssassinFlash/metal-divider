@@ -34,6 +34,14 @@ final class TemplateFunctionsTest extends TestCase {
 	}
 
 	/**
+	 * WordPress's escaping functions return their argument.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+		$this->plain_text();
+	}
+
+	/**
 	 * The name LiveCanvas calls resolves in the global namespace.
 	 */
 	public function test_the_global_function_exists(): void {
@@ -44,16 +52,51 @@ final class TemplateFunctionsTest extends TestCase {
 	 * A product in pattern-abstract renders the series word, not the slug.
 	 */
 	public function test_it_returns_the_series_word(): void {
-		WP_Mock::userFunction( 'get_post' )->once()->andReturn(
-			(object) array(
-				'ID'        => 44,
-				'post_type' => 'product',
-			)
-		);
-		WP_Mock::userFunction( 'get_the_terms' )->once()->andReturn(
-			array( (object) array( 'slug' => 'pattern-abstract' ) )
-		);
+		$post            = new \WP_Post( new \stdClass() );
+		$post->ID        = 44;
+		$post->post_type = 'product';
+		WP_Mock::userFunction( 'get_post' )->once()->andReturn( $post );
+		$term       = new \WP_Term( (object) array() );
+		$term->slug = 'pattern-abstract';
+		WP_Mock::userFunction( 'get_the_terms' )->once()->andReturn( array( $term ) );
 
 		$this->assertSame( 'abstract', \md_pdp_style() );
+	}
+
+	/**
+	 * The design-intent guard the template's [lc_if] asks before it draws
+	 * a paragraph: a slot WooCommerce holds no prose for answers false, so
+	 * the empty `.pdp-body` never reaches the DOM.
+	 */
+	public function test_the_design_intent_predicate_exists_in_the_global_namespace(): void {
+		$this->assertTrue( function_exists( 'md_pdp_has_design_intent' ) );
+	}
+
+	/**
+	 * Outside a product there is no prose to print, so the guard is false
+	 * and the template renders the same file on any face.
+	 */
+	public function test_the_design_intent_predicate_is_false_outside_a_product(): void {
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( null );
+
+		$this->assertFalse( \md_pdp_has_design_intent( 'lead' ) );
+	}
+
+	/**
+	 * The slot predicate the template's [lc_if] asks: LiveCanvas resolves
+	 * `condition` with call_user_func(), so this name has to be global too.
+	 */
+	public function test_the_slot_predicate_exists_in_the_global_namespace(): void {
+		$this->assertTrue( function_exists( 'md_pdp_slot_has_image' ) );
+	}
+
+	/**
+	 * Outside a product the predicate is false, so no frame is drawn —
+	 * the template renders the same file on any face.
+	 */
+	public function test_the_slot_predicate_is_false_outside_a_product(): void {
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( null );
+
+		$this->assertFalse( \md_pdp_slot_has_image( 'plate' ) );
 	}
 }

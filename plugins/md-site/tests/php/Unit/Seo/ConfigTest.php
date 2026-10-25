@@ -181,13 +181,61 @@ final class ConfigTest extends TestCase {
 	public function test_page_metas_table(): void {
 		$metas = ( new Config() )->page_metas( '' );
 		$this->assertSame(
-			array( 'inquiry', 'privacy', 'blog', 'inquiry/thank-you', 'pages', 'sample-page' ),
+			array( 'inquiry', 'privacy', 'blog', 'inquiry/thank-you', 'sample-page' ),
 			array_keys( $metas )
 		);
 		$this->assertSame( 'Request a Quote %%sep%% %%sitetitle%%', $metas['inquiry']['_seopress_titles_title'] );
 		$this->assertSame( 'Privacy Policy %%sep%% %%sitetitle%%', $metas['privacy']['_seopress_titles_title'] );
 		$this->assertSame( 'Blog %%sep%% %%sitetitle%% %%current_pagination%%', $metas['blog']['_seopress_titles_title'] );
 		$this->assertSame( 'yes', $metas['inquiry/thank-you']['_seopress_robots_index'] );
+		$this->assertSame( 'yes', $metas['sample-page']['_seopress_robots_index'] );
+	}
+
+	/**
+	 * Every noindex row stores SEOPress's checkbox value, never the string
+	 * `noindex`: `seopress_titles_noindex_post_option()` reads only `yes`,
+	 * so storing `noindex` in the meta silently drops the noindex instead of
+	 * moving it (measured on dev, where the page became `index, follow`).
+	 *
+	 * The canonical is kept by normalizing the bypass return value at render
+	 * time (`Seo\MetaNoindex`), not by changing this meta. This test exists
+	 * so a later "tidy-up" of the string cannot undo that.
+	 */
+	public function test_noindex_rows_use_the_checkbox_value_not_the_bypass_string(): void {
+		$metas = ( new Config() )->page_metas( '' );
+		$rows  = array_filter( $metas, static fn( array $m ): bool => isset( $m['_seopress_robots_index'] ) );
+		$this->assertNotEmpty( $rows, 'the site has noindex pages to guard' );
+		foreach ( $rows as $slug => $m ) {
+			$this->assertSame(
+				'yes',
+				$m['_seopress_robots_index'],
+				"{$slug} must store the checkbox value; 'noindex' there removes the noindex"
+			);
+		}
+	}
+
+	/**
+	 * The /pages shell carries no meta target, because it is not a page:
+	 * issue #4 makes it a URL prefix that 301s home, and the migration
+	 * writes the content pages at the site root. A row for it asks the
+	 * site for a page that must never exist — `apply()` can only report
+	 * it pending and `check()` can only report it missing, forever, on a
+	 * correct site.
+	 *
+	 * The shell's non-indexability is the redirect's job, so this test
+	 * holds both halves: no meta row for it, and the redirect that makes
+	 * the row unnecessary.
+	 */
+	public function test_the_pages_shell_is_a_redirect_not_a_meta_target(): void {
+		$metas = ( new Config() )->page_metas( '' );
+		$this->assertArrayNotHasKey( 'pages', $metas, 'the shell must not be demanded as a page' );
+
+		$reflection = new \ReflectionClass( Config::class );
+		$this->assertSame(
+			array( 'pages' => '/' ),
+			$reflection->getConstant( 'REDIRECT_TARGETS' ),
+			'the shell is expressed as the 301 that keeps it out of the index'
+		);
 	}
 
 	/**
@@ -237,9 +285,90 @@ final class ConfigTest extends TestCase {
 		$this->assertStringContainsString( 'schema md-schema-article (articles): created', $joined );
 		$this->assertStringContainsString( 'schema faq: /faqs/ is not installed', $joined );
 		$this->assertStringContainsString( 'redirect /pages → /: created', $joined );
-		$this->assertStringContainsString( 'redirect /collections/pattern-gradient → /shop/: created', $joined, 'the retired series keeps its URL as a 301 (VC-040)' );
+		$this->assertStringNotContainsString( 'redirect /collections/pattern-gradient', $joined, 'the gradient series is live (issue #25): no 301 may take its visitors away' );
 		$this->assertStringContainsString( 'page inquiry: not installed', $joined );
 		$this->assertStringContainsString( 'page inquiry/thank-you: not installed', $joined );
+		$this->assertStringNotContainsString( 'page pages:', $joined, 'the shell is a redirect, never a page the apply waits on' );
 		$this->assertStringContainsString( 'no logo attachment yet', $joined );
+	}
+
+	/**
+	 * The surviving redirect ignores the query string. SEOPress reads an
+	 * empty `_seopress_redirections_param` as `exact_match` and only fires
+	 * when the mode is *not* `exact_match`, so without this field
+	 * `/pages?utm_source=…` is a 404 while `/pages` redirects.
+	 */
+	public function test_apply_redirect_carries_the_without_param_mode(): void {
+		$this->store = array();
+		WP_Mock::userFunction( 'home_url' )->andReturnUsing( static fn( string $path = '/' ) => 'http://site.test' . $path );
+		WP_Mock::userFunction( 'get_option' )->andReturn( false );
+		WP_Mock::userFunction( 'update_option' )->andReturn( true );
+		WP_Mock::userFunction( 'is_wp_error' )->zeroOrMoreTimes()->andReturn( false );
+		WP_Mock::userFunction( 'get_page_by_path' )->andReturn( null );
+		WP_Mock::userFunction( 'wp_get_attachment_url' )->never();
+		$made = 0;
+		WP_Mock::userFunction( 'wp_insert_post' )->andReturnUsing(
+			static function () use ( &$made ) {
+				return ++$made;
+			}
+		);
+		$metas = array();
+		WP_Mock::userFunction( 'update_post_meta' )->andReturnUsing(
+			static function ( int $id, string $key, $value ) use ( &$metas ): bool {
+				$metas[ $id ][ $key ] = $value;
+				return true;
+			}
+		);
+		WP_Mock::userFunction( 'wp_slash' )->andReturnUsing( static fn( $value ) => $value );
+		WP_Mock::userFunction( 'get_posts' )->andReturn( array() );
+
+		( new Config() )->apply();
+
+		$redirect = null;
+		foreach ( $metas as $id => $row ) {
+			if ( '/' === ( $row['_seopress_redirections_value'] ?? null ) ) {
+				$redirect = $row;
+				break;
+			}
+		}
+		$this->assertNotNull( $redirect, 'the /pages redirect was written' );
+		$this->assertSame( 'without_param', $redirect['_seopress_redirections_param'] );
+	}
+
+	/**
+	 * The drift check reads the query-string mode too: a site whose
+	 * redirect predates the field is stale and repaired by apply.
+	 */
+	public function test_check_reports_a_redirect_without_the_param_mode(): void {
+		WP_Mock::userFunction( 'home_url' )->andReturn( 'http://site.test/' );
+		WP_Mock::userFunction( 'get_option' )->andReturnUsing(
+			fn( string $name ) => match ( $name ) {
+				Config::TITLES  => Config::titles(),
+				Config::SITEMAP => Config::sitemap(),
+				Config::SOCIAL  => Config::social( '' ),
+				Config::PRO     => Config::pro( 'http://site.test/' ),
+				default         => false,
+			}
+		);
+		WP_Mock::userFunction( 'get_page_by_path' )->andReturn( null );
+		WP_Mock::userFunction( 'is_wp_error' )->andReturn( false );
+		$post     = new \WP_Post( new \stdClass() );
+		$post->ID = 42;
+		WP_Mock::userFunction( 'get_posts' )->andReturn( array( $post ) );
+		// The redirect post exists with every field but the mode.
+		$stored = array(
+			'_seopress_redirections_enabled'       => 'yes',
+			'_seopress_redirections_type'          => '301',
+			'_seopress_redirections_value'         => '/',
+			'_seopress_redirections_logged_status' => 'both',
+			'_seopress_redirections_enabled_regex' => '',
+		);
+		WP_Mock::userFunction( 'get_post_meta' )->andReturnUsing(
+			static fn( int $id, string $key ) => $stored[ $key ] ?? ''
+		);
+
+		$rows = ( new Config() )->check();
+
+		$this->assertContains( 'redirect /pages → /: missing or stale', $rows );
 	}
 }

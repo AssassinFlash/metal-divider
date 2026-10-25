@@ -26,8 +26,23 @@ final class Assets {
 
 	/**
 	 * The plugin version these files ship with (the cache-busting query).
+	 *
+	 * Read from the plugin header rather than repeated as a literal: the two
+	 * used to be maintained separately and had drifted (header 0.2.0 against a
+	 * hard-coded 0.3.2), so a release could bump one and silently leave asset
+	 * URLs cache-busting on a stale string. The header is the single source.
 	 */
-	public const VERSION = '0.3.0';
+	public static function version(): string {
+		static $version = null;
+		if ( null === $version ) {
+			if ( ! \function_exists( 'get_file_data' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+			$header  = \get_file_data( dirname( __DIR__, 2 ) . '/md-site.php', array( 'Version' => 'Version' ) );
+			$version = ! empty( $header['Version'] ) ? (string) $header['Version'] : '0';
+		}
+		return $version;
+	}
 
 	/**
 	 * Adds the front-end hook.
@@ -94,7 +109,7 @@ final class Assets {
 	public function enqueue(): void {
 		$base = \plugin_dir_url( dirname( __DIR__, 2 ) . '/md-site.php' ) . 'assets/js/';
 
-		\wp_enqueue_script( 'md-chrome', $base . 'md-chrome.js', array(), self::VERSION, true );
+		\wp_enqueue_script( 'md-chrome', $base . 'md-chrome.js', array(), self::version(), true );
 		\wp_enqueue_script( 'md-alpine-collapse', $base . 'alpine-collapse.min.js', array(), '3.17.5', true );
 		\wp_enqueue_script( 'md-alpine-focus', $base . 'alpine-focus.min.js', array(), '3.17.5', true );
 		\wp_enqueue_script( 'md-alpine', $base . 'alpine-csp.min.js', array( 'md-chrome', 'md-alpine-collapse', 'md-alpine-focus' ), '3.17.5', true );

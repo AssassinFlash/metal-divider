@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from md_local import permalinks
 from md_local import versions as local_versions
 
 from md_deploy import atomic, plan
@@ -257,18 +258,201 @@ def _prepared(
     return artifact
 
 
-def deployment_id(repository: Path) -> str:
-    """UTC time plus the source commit: one id for one batch."""
-    git = subprocess.run(
+def deployment_id(repository: Path, state: SourceState | None = None) -> str:
+    """UTC time plus what the bytes actually are: the commit, or the commit and its dirty content.
+
+    A clean shipped tree is the commit, and the commit is the whole story of
+    where the bytes came from. A dirty one is not: naming only the commit
+    would attribute a batch to source that does not contain it, and a
+    manifest or a rollback audit would then be wrong about the one thing it
+    is for. The dirty form names the commit the tree was built on AND a
+    digest of the files that differ from it, so two different states never
+    share an id — while staying inside the id alphabet `atomic._check_id`
+    accepts.
+    """
+    state = state or source_state(repository)
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+    if not state.dirty:
+        return f"{stamp}-{state.commit}"
+    return f"{stamp}-{state.commit}-dirty-{state.digest}"
+
+
+@dataclass(frozen=True)
+class SourceState:
+    """What a deploy's bytes are: the commit, and the shipped files that differ from it."""
+
+    commit: str
+    # Repo-relative paths that would ship and are not the commit's version.
+    dirty: tuple[str, ...]
+    # A digest over those files' content; '' when nothing differs.
+    digest: str
+
+
+def source_state(repository: Path) -> SourceState:
+    """The checkout's commit, and the shipped paths whose bytes the commit does not have.
+
+    Only the paths that actually ship count. A dirty test file, a `vendor/`
+    tree or a PHPCS config changes no deployed byte (`DEPLOY_EXCLUDES` drops
+    them from the staged tree), so counting them would refuse a deploy over a
+    file that never leaves this Mac — and would make the local workflow
+    depend on a clean repository for no reason.
+    """
+    commit = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"],
         cwd=repository,
         capture_output=True,
         text=True,
         check=False,
     )
-    if git.returncode:
+    if commit.returncode:
         raise DeployError("the deployment source must be a git checkout")
-    return datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ") + "-" + git.stdout.strip()
+    dirty = _dirty_shipped_paths(repository)
+    return SourceState(
+        commit=commit.stdout.strip(),
+        dirty=tuple(dirty),
+        digest=_dirty_digest(repository, dirty) if dirty else "",
+    )
+
+
+def _dirty_shipped_paths(repository: Path) -> list[str]:
+    """The repo-relative paths under a shipped tree that differ from HEAD, sorted.
+
+    Type changes and renames are included: a rename leaves bytes at a path
+    the commit does not have. Untracked files count too — rsync copies them,
+    so they ship.
+    """
+    roots = _shipped_roots(repository)
+    if not roots:
+        return []
+    # -z: paths come through NUL-separated, so a space or a newline in a name
+    # cannot be mistaken for the status columns.
+    status = subprocess.run(
+        [
+            "git",
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+            "--",
+            *roots,
+        ],
+        cwd=repository,
+        capture_output=True,
+        check=False,
+    )
+    if status.returncode:
+        raise DeployError(
+            "cannot read the deployment source's status: "
+            + status.stderr.decode("utf-8", "replace").strip()
+        )
+    entries = status.stdout.decode("utf-8", "surrogateescape").split("\0")
+    dirty: list[str] = []
+    index = 0
+    while index < len(entries):
+        entry = entries[index]
+        index += 1
+        if len(entry) < 4:
+            continue
+        path = entry[3:]
+        if entry[0] in ("R", "C"):
+            # A rename/copy reports the destination at this index and the
+            # origin in the next NUL field; the destination is what ships.
+            index += 1
+        relative = _artifact_relative(path, roots)
+        if relative is None or not _ships(relative):
+            continue
+        dirty.append(path)
+    return sorted(dirty)
+
+
+def _shipped_roots(repository: Path) -> list[str]:
+    """The repository paths the deploy's inventory is built from.
+
+    Read from the plan's own inventory rather than spelled out here, so a
+    tree added to the deploy cannot silently escape the dirty check.
+    """
+    roots = [f"{plan.MU_PLUGINS_REPO}/*.php", f"{plan.THEMES_REPO}/{plan.CHILD_THEME}"]
+    roots += [
+        f"{plan.REPO}/{slug}"
+        for slug in plan.PLANNED_PLUGINS
+        if _plugin_landed(repository, slug)
+    ]
+    return roots
+
+
+def _plugin_landed(repository: Path, slug: str) -> bool:
+    """Whether the plugin's source tree is in this checkout (`landed_plugins`, one slug)."""
+    return (Path(repository) / plan.REPO / slug / f"{slug}.php").is_file()
+
+
+def _artifact_relative(path: str, roots: list[str]) -> str | None:
+    """The path as it appears inside a staged tree (the form DEPLOY_EXCLUDES matches)."""
+    for root in roots:
+        if root.endswith("/*.php"):
+            # `mu-plugins/*.php` is that directory's top-level files only:
+            # `deployment_artifacts` globs exactly those, and a nested file
+            # under it does not ship.
+            directory = root.removesuffix("/*.php")
+            if Path(path).parent.as_posix() == directory and path.endswith(".php"):
+                return path
+            continue
+        if path == root:
+            return ""
+        if path.startswith(root + "/"):
+            return path.removeprefix(root + "/")
+    return None
+
+
+def _ships(relative: str) -> bool:
+    """Whether a staged tree keeps this path — the inverse of `plan.DEPLOY_EXCLUDES`.
+
+    rsync's exclude patterns match a name at any depth (`tests/` keeps out
+    every `tests` directory), so the test is per path component, not on the
+    whole relative path.
+    """
+    parts = relative.split("/")
+    for pattern in plan.DEPLOY_EXCLUDES:
+        if pattern.rstrip("/") in parts:
+            return False
+    return True
+
+
+def _dirty_digest(repository: Path, dirty: list[str]) -> str:
+    """A short digest over the dirty files' content: two states, two ids."""
+    digest = hashlib.sha256()
+    for path in dirty:
+        absolute = Path(repository) / path
+        digest.update(path.encode("utf-8"))
+        digest.update(b"\0")
+        # A deleted path is its own state, and must not read as an empty file.
+        digest.update(
+            hashlib.sha256(absolute.read_bytes()).digest()
+            if absolute.is_file()
+            else b"-"
+        )
+    return digest.hexdigest()[:8]
+
+
+def _refuse_dirty_remote(state: SourceState, target: Target) -> None:
+    """Stop a deploy that would ship working-tree bytes under a commit's name.
+
+    A remote deploy must ship what a commit contains: the batch's id names
+    that commit, and the manifest and the rollback are read later to answer
+    "which source is live?". Bytes from somebody's working tree answer it
+    wrongly, and nothing downstream can tell. The local instance is exempt
+    because it is where those bytes are being developed — and there the id
+    carries the dirty content's digest (`deployment_id`), so it stays true.
+    """
+    if target.rsync_remote is None or not state.dirty:
+        return
+    listed = ", ".join(state.dirty[:8])
+    if len(state.dirty) > 8:
+        listed += f" and {len(state.dirty) - 8} more"
+    raise DeployError(
+        f"{target.label} must deploy a commit, and {len(state.dirty)} shipped "
+        f"path(s) differ from {state.commit}: {listed}. Commit or stash them "
+        "(the local instance deploys them as they are: `just deploy dev --write`)."
+    )
 
 
 def full_backup_reminder(home: Path, *, now: datetime | None = None) -> str | None:
@@ -363,6 +547,36 @@ def contract(target: Target) -> Result:
     return Result("contract", actions, notes)
 
 
+def apply_data_plane(target: Target, actions: list[str]) -> None:
+    """Install md-site's data plane: templates, seeds, SEO configuration.
+
+    These steps are data, not files, so the atomic code switch cannot carry
+    them; without them a switched target keeps the previous WindPress volume
+    and the previous seed state while running the new templates.
+
+    The order matters and is asserted by the tests:
+
+    * ``present`` first — the templates and the volume the pages render from.
+    * ``seed-series`` — the hub's card images and copy, which a clean target
+      has as empty WooCommerce term fields.
+    * ``seed-tiles`` — the custom-screens panels' order, which is WooCommerce's
+      ``menu_order``; a clean target has every product at 0, so the page would
+      render no tiles at all.
+    * ``seo`` last — it reads the terms the two seeds have just filled.
+
+    Both seeds mark what they handled and never touch a maintained record
+    again, so deploying onto a site someone has been editing is a no-op.
+    """
+    for step in (plan.PRESENT, plan.SEED_SERIES, plan.SEED_TILES, plan.SEO):
+        print(f"deploy: {step[1]}", flush=True)
+        started = time.monotonic()
+        target.wp(*step, "--user=1")
+        print(
+            f"deploy: {step[1]} done in {time.monotonic() - started:.1f}s", flush=True
+        )
+        actions.append("wp " + " ".join(step) + " --user=1")
+
+
 def deploy(
     target: Target,
     *,
@@ -380,9 +594,18 @@ def deploy(
     that the atomic switch does not keep. Verification and private archiving
     follow in `finish_deploy`; keeping that phase separate lets the drill run
     the same code and leave the site out of maintenance before verify.
+
+    The source is checked before the snapshot: a remote deploy must ship a
+    commit (`_refuse_dirty_remote`), because the batch's id names that commit
+    and the manifest and the rollback are read later to answer "which source
+    is live?". The local instance deploys its working tree as it stands — that
+    is where those bytes are being written — and there the id carries the
+    dirty content's digest, so it stays a true statement about the bytes.
     """
     home = snapshot_home or backup_module.DATA_HOME
     remote = target.rsync_remote is not None
+    source = source_state(Path(repository))
+    _refuse_dirty_remote(source, target)
     if remote:
         # The version contract is part of the remote deploy (spec 20 §2.2:
         # 装完读回比对,不一致即失败); locally the stack builds from the same
@@ -414,7 +637,7 @@ def deploy(
     receipt = atomic.publish(
         target,
         prepared,
-        deploy_id=deploy_id or deployment_id(repository),
+        deploy_id=deploy_id or deployment_id(repository, source),
         on_switch=on_switch,
         after_switch=opcache_reset_script(target),
     )
@@ -423,6 +646,11 @@ def deploy(
         f"database snapshot {taken.path} ({taken.size} bytes, sha256 {taken.sha256[:16]}…); "
         f"restore with `just deploy restore-snapshot {taken.name}`"
     ]
+    # The switch has already happened, so a note here is a report, not a
+    # refusal: the post-switch steps that find the site wrong record it, and
+    # the CLI turns any note into a non-zero exit (a window must not read a
+    # switched-but-wrong site as a pass).
+    notes: list[str] = []
     actions += [f"deployed {item.relative} by rename" for item in artifacts]
     if absent:
         actions.append(
@@ -444,32 +672,21 @@ def deploy(
     # a deploy keeps the previous volume, and a page whose fragment changed
     # renders unstyled. Idempotent; present keeps its own rollback copy.
     if "md-site" in shipped:
-        print("deploy: present (templates and the WindPress volume)", flush=True)
-        started_present = time.monotonic()
-        target.wp(*plan.PRESENT, "--user=1")
-        print(
-            f"deploy: present done in {time.monotonic() - started_present:.1f}s",
-            flush=True,
-        )
-        actions.append("wp " + " ".join(plan.PRESENT) + " --user=1")
-        # The SEO configuration rides the same DB plane (spec 22 §9: the
-        # runbook's config surface reaches staging and production through
-        # the deploy, not by hand): templates, noindex faces, sitemap,
-        # robots.txt, schema builder posts. Its report notes the pages
-        # that are still pending; that is a report, not a failure.
-        print("deploy: seo (SEOPress configuration)", flush=True)
-        started_seo = time.monotonic()
-        target.wp(*plan.SEO, "--user=1")
-        print(
-            f"deploy: seo done in {time.monotonic() - started_seo:.1f}s",
-            flush=True,
-        )
-        actions.append("wp " + " ".join(plan.SEO) + " --user=1")
+        apply_data_plane(target, actions)
     else:
         actions.append(
             "present skipped: md-site has not landed yet (its ticket ships the "
             "templates and the volume)"
         )
+    # The URL scheme is options, not files, so the switch cannot carry it: a
+    # database imported from a site configured otherwise answers at URLs no
+    # link, template or sitemap entry names. It sits outside the md-site
+    # branch because it belongs to no plugin — every target gets it, present
+    # or not. Idempotent by readback, so a second deploy writes nothing.
+    print("deploy: url-scheme (the permalink options)", flush=True)
+    scheme = url_scheme(target)
+    actions += scheme.actions
+    notes += scheme.notes
     # The switch-time reset covers the rename itself; present and the plugin
     # activation run afterwards, and a request can still meet a tree the
     # workers compiled before them. A second reset at the end leaves every
@@ -493,7 +710,7 @@ def deploy(
     if reminder:
         # Last, so it is the line the log ends on and never shifts the others.
         actions.append(reminder)
-    return Result("deploy", actions, [], receipt)
+    return Result("deploy", actions, notes, receipt)
 
 
 def windpress_instructions(target: Target) -> list[str]:
@@ -521,6 +738,41 @@ def windpress_instructions(target: Target) -> list[str]:
     ]
 
 
+def url_scheme(target: Target, *, write: bool = True) -> Result:
+    """The site's URL scheme options: apply them (`write`), or only read them back.
+
+    The scheme is `md_local.permalinks` — the local stack's own definition, so
+    the deploy cannot hold a second copy of a URL scheme the dev instance was
+    built with. It is two `wp_options` rows, and files cannot carry it: a
+    database imported from a site configured otherwise answers at URLs no
+    link, template or sitemap entry names.
+
+    Idempotent by readback, and the readback is the proof in both directions:
+    `wp rewrite structure` exits 0 whether or not the options it wrote are the
+    ones that came back, and a note is what stops the deploy from archiving its
+    backups (`finish_deploy`). No `--hard`: the write is the two options and
+    the `rewrite_rules` refresh, never `.htaccess` (host setup, spec 20 §2.1).
+    """
+    actions: list[str] = []
+    notes: list[str] = []
+    try:
+        if write:
+            applied, wrote = permalinks.apply(target.wp)
+            outcome = "written and read back" if wrote else "already applied"
+        else:
+            applied, outcome = permalinks.read(target.wp), "read back"
+    except permalinks.PermalinkError as error:
+        return Result("url-scheme", actions, [str(error)])
+    scheme = f"{applied.structure} / categories {applied.category_base}"
+    actions.append(f"url scheme {scheme} {outcome}")
+    if not write and applied != permalinks.SCHEME:
+        notes.append(
+            f"the url scheme is {scheme}, the site's should be "
+            f"{permalinks.SCHEME.structure} / categories {permalinks.SCHEME.category_base}"
+        )
+    return Result("url-scheme", actions, notes)
+
+
 def windpress_cache_mtime(target: Target) -> int:
     """The WindPress cache file's mtime on the target (0 when it does not exist)."""
     # wp_upload_dir()['basedir'] has no trailing slash; the relative path is
@@ -539,9 +791,11 @@ def windpress_check(target: Target, *, before: int | None = None) -> Result:
     """The checks after a WindPress compile: the cache exists and is newer.
 
     The anchor-class half of the assertion (spec 17 §5.4) is the presentation
-    plugin's own checker, reached through `wp md-site windpress-anchors`;
-    until that plugin lands the check says so instead of inventing its
-    answer.
+    plugin's own checker, reached through `wp md-site windpress-anchors
+    --format=json`: it prints the anchors the compiled cache does not carry,
+    `[]` when it carries them all. A stream that is not a JSON array means the
+    checker did not answer at all — the cache is missing, or the plugin is not
+    active — and that is said as a note rather than read as a pass.
     """
     actions: list[str] = []
     notes: list[str] = []
@@ -562,7 +816,8 @@ def windpress_check(target: Target, *, before: int | None = None) -> Result:
     else:
         notes.append(
             "the anchor-class check needs md-site's own checker "
-            "(wp md-site windpress-anchors); the plugin has not landed yet"
+            "(wp md-site windpress-anchors) and it printed no answer: "
+            "the compiled cache is missing or the plugin is inactive"
         )
     return Result("windpress-check", actions, notes)
 
@@ -578,10 +833,15 @@ def verify(target: Target, *, cache_buster: str) -> Result:
     production, the page-cache contract is asserted on the response headers:
     two anonymous GETs of the home page, miss then hit (spec 20 §4.1;
     staging's page cache is off by ruling, and the dev instance has no
-    LiteSpeed server at all).
+    LiteSpeed server at all). The URL scheme options are read back here too:
+    they are what the entry-point paths resolve through, so a drifted scheme
+    becomes its own note instead of a scatter of 404s.
     """
     actions: list[str] = []
     notes: list[str] = []
+    scheme = url_scheme(target, write=False)
+    actions += scheme.actions
+    notes += scheme.notes
     status, _ = target.http(plan.HOME_PATH, cache_buster=cache_buster)
     actions.append(f"GET {plan.HOME_PATH} -> {status}")
     if status != 200:
@@ -659,12 +919,30 @@ def _page_cache_check(target: Target) -> tuple[list[str], list[str]]:
 
 
 def finish_deploy(
-    target: Target, receipt: atomic.Receipt, *, cache_buster: str
+    target: Target,
+    receipt: atomic.Receipt,
+    *,
+    cache_buster: str,
+    phase_notes: list[str] | None = None,
 ) -> Result:
-    """Only a passing verify allows backups to leave the web root."""
+    """Only a passing verify allows backups to leave the web root.
+
+    `phase_notes` carries what the switch-time steps reported (`deploy()`'s
+    own notes — the URL scheme's readback, say): those ran before verify, so
+    they are part of "did this deploy land correctly", and a batch that left
+    one must keep its rollback copies where `rollback-deploy` finds them.
+    Verify still runs and is still reported; the notes are combined.
+
+    The notes are also written beside the manifest before verify runs, so a
+    batch that fails verify — or whose reply never arrives — can still be
+    finished by `resume-deploy`, which runs in a separate process and would
+    otherwise have no way to learn what the switch phases reported.
+    """
+    atomic.write_phase_notes(target, receipt.backup_directory, list(phase_notes or []))
     checked = verify(target, cache_buster=cache_buster)
-    if checked.notes:
-        return Result("deploy-verify", checked.actions, checked.notes)
+    notes = [*(phase_notes or []), *checked.notes]
+    if notes:
+        return Result("deploy-verify", checked.actions, notes)
     atomic.archive(target, receipt)
     return Result(
         "deploy-verify",
@@ -678,15 +956,23 @@ def finish_deploy(
 
 
 def resume_deploy(target: Target, *, repository: Path, cache_buster: str) -> Result:
-    """Verify/archive a pending batch after an interrupted reply or failed verify."""
+    """Verify/archive a pending batch after an interrupted reply or failed verify.
+
+    The switch-time notes are read back from the batch's own record rather
+    than defaulted to none: this process never ran those phases, and losing
+    the notes here would archive a batch whose switch reported a problem —
+    exactly the state `finish_deploy`'s own contract forbids.
+    """
     relatives = _manifest_relatives(target)
     receipt = atomic.pending_receipt(target, relatives)
-    checked = finish_deploy(target, receipt, cache_buster=cache_buster)
-    return Result(
-        "resume-deploy",
-        [f"deploy id: {receipt.deploy_id}", *checked.actions],
-        checked.notes,
+    phase_notes = atomic.read_phase_notes(target, receipt.backup_directory)
+    checked = finish_deploy(
+        target, receipt, cache_buster=cache_buster, phase_notes=phase_notes
     )
+    actions = [f"deploy id: {receipt.deploy_id}", *checked.actions]
+    if phase_notes:
+        actions.append(f"switch-time notes recovered: {len(phase_notes)}")
+    return Result("resume-deploy", actions, checked.notes)
 
 
 def _manifest_relatives(target: Target) -> list[str]:

@@ -38,4 +38,25 @@
   --md-font-display: "Playfair Display", Georgia, serif;
   --md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --md-container: 1400px;
+  /* The sticky header band's real height, and therefore the offset every
+     sticky rail, in-page anchor and scroll target must clear. Measured in
+     real Chrome on the dev instance 2026-10-26, at 9 widths (320…1440): the
+     band has three tiers, because the 37px notification strip only appears
+     at 1200px and up while the header grid itself shrinks below 991px.
+     chrome.css derives the band from this same token, so the two cannot
+     drift; consumers read it instead of hard-coding a guess (the rails used
+     an 80px fallback, and the catalog anchors 96px, against a 113px band). */
+  --md-header-h: 73px;
+}
+
+@media (min-width: 991px) {
+  :root {
+    --md-header-h: 76px;
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --md-header-h: 113px;
+  }
 }

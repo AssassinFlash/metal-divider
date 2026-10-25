@@ -226,12 +226,19 @@ padding: 0 20px;
 box-sizing: border-box;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
-min-height: 76px;
+min-height: var(--md-header-h, 76px);
 display: grid;
 grid-template-columns: auto 1fr auto;
 align-items: center;
 gap: 28px;
 padding: 0;
+}
+/* The band the token names is this grid plus the 37px strip the >=1200
+   tier adds, so the grid takes the remainder there. */
+@media (min-width: 1200px){
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
+min-height: calc(var(--md-header-h, 113px) - 37px);
+}
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo{
 display: flex;
@@ -392,17 +399,25 @@ transform: none;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub{
 padding: 0 15px;
-font-family: "Playfair Display", serif;
+/* Sub-menu rows: the old site's computed values, read in real Chrome
+   (metalpartition.com, 2026-10-26, 1280 and 1440): Inter 15px / 22.5px,
+   weight 500, row 33px tall, label padding 5px 0, menu 95px.
+   The conversion had left these on Playfair 15px/19px, which made every row
+   29px and the menu 88px — a 4px row and 7px menu drift, and the wrong
+   typeface for a utility menu. The panel's own card titles keep Playfair;
+   only the plain row list is Inter. */
+font-family: "Inter", sans-serif;
 font-size: 15px;
 font-weight: 500;
+line-height: 22.5px;
 color: #000;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub .xo-menu-horizontal-v1__label{
 padding: 5px 0;
-font-family: "Playfair Display", serif;
+font-family: "Inter", sans-serif;
 font-size: 15px;
 font-weight: 500;
-line-height: 19px;
+line-height: 22.5px;
 text-transform: none;
 white-space: normal;
 color: #000;
@@ -424,7 +439,7 @@ color: #000;
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
 grid-template-columns: auto 1fr auto;
 gap: 14px;
-min-height: 73px;
+min-height: var(--md-header-h, 73px);
 padding: 0;
 }
 #HeaderV9-sections--21844031144189__header_v1_main xo-container{ padding: 0 20px; }
@@ -466,8 +481,54 @@ Desktop：一屏显示（不滚动）
 --color-background: 255, 255, 255;
 --color-accent: 201, 169, 98;
 background: #fff;
+/* The old panel's section carried .mmv2 alone, with no section rhythm; the
+   conversion merged in .xo-section, whose 50px --pt/--pb made every dropdown
+   100px taller than the old one (old panel 337px, ours 437px). The panel
+   hangs off the header's bottom edge, so the page rhythm is not part of it.
+   Both the variables and the properties are zeroed: the properties alone
+   would depend on where this rule sits relative to .xo-section's media
+   query. */
+--pt: 0;
+--pb: 0;
+padding-top: 0;
+padding-bottom: 0;
 }
 [data-id^="sections--21844031144189__mega_menu_v2_"] xo-container{ display: block; }
+/* Font-metric normalisation, shared by BOTH mega panels (2026-10-26).
+   The old site's Playfair cut is ~1.6% narrower than the one this repo
+   self-hosts, which moved the wrap point at 1280: the old panel measured
+   336.8 / card 310.8 with every title on one line, ours measured 356 / 330
+   with two titles on two lines.
+   Measured advances for "Laser-Cut & Geometric Metal Screens" at 800/15px in
+   the same 265px box: old 261.37 (3.63px of slack), ours 265.59 (0.59 over).
+   "Outdoor Privacy & Landscape Screens": old 263.49, ours 268.85.
+   font-optical-sizing and every 'opsz' value leave the advance unchanged (all
+   measured 265.55), so this is the file, not a variable-font axis. Re-sourcing
+   the font is not an option (one font source only), so a hairline negative
+   tracking reclaims the 4px: -0.008em = 0.12px/char, ~4.0px over a 33-character
+   title. That restores 336.8/310.8 at 1280 and leaves 1024 untouched, where
+   two-line wrapping is the OLD site's own behaviour (355.5/329.5).
+   Scoped to the container prefix, not one panel's data-id: the conversion
+   emitted the same card rules twice (HEAtbw and x7pRC4), and applying the
+   tracking to only one left the two mega panels rendering identically-role
+   titles at different tracking.
+   NOT text-wrap:balance: an in-page A/B (same DOM, only the declaration
+   flipped) showed identical link heights [48,29,29,48] and identical panel and
+   card heights with balance, with wrap, and with the clamp removed entirely.
+   balance only moves where a two-line break falls; it never changes the count,
+   so it could neither cause nor fix the extra line, and it shifted the break
+   away from the old site's at 1024 where the wrap is authentic. */
+[data-id^="sections--21844031144189__mega_menu_v2_"] .mmv2__link{ letter-spacing: -0.008em; }
+/* The card titles are h4s. The old theme's h4 rule (Playfair Display, 16px,
+   19.4286px = 16 x calc(1 + 0.3 / 1.4)) set both, and .mmv2__link inherits
+   the family from its h4. This site's base.css only zeroes heading margins,
+   so the h4 falls back to the body's Inter/24px and long titles wrap an extra
+   line (at 992 a 4-card panel measured 703px against the old 666px). Scoped
+   to the panels: the site's own heading scale is a separate decision. */
+[data-id^="sections--21844031144189__mega_menu_v2_"] .mmv2__title{
+font-family: "Playfair Display", serif;
+line-height: 1.2142857;
+}
 [data-id="sections--21844031144189__mega_menu_v2_HEAtbw"]{
 --mm-gap: 18px;
 --mm-radius: 18px;
@@ -876,8 +937,46 @@ xo-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,
 xo-modal.is-open{display:block}
 xo-modal[xo-placement="top-left"]{background:rgba(0,0,0,.55)}
 xo-tabs-pane{display:block}
-xo-tabs-pane[hidden]{display:none !important}
 xo-tabs-trigger{cursor:pointer}
+
+/* The desktop mega panel. The markup ships an empty <xo-mega-menu> in every
+   nav item plus the panel's content in a <template>; md-chrome.js clones the
+   content in, and these rules give the result the dropdown's presentation.
+   The styling lives here rather than in the runtime so the closed state is
+   honest without JavaScript: an opacity-0 panel that is merely
+   pointer-events:none still takes Tab. `visibility` removes the links from
+   the tab order and the accessibility tree, and its transition delay lets
+   the fade finish before it goes.
+
+   The item becomes a pass-through (static) so the full-width panel lays out
+   against the header band instead of the 16px-tall menu row — `:has()`
+   states that dependency, and the id prefix outranks the parity rule's
+   `position: relative` on the item. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item:has(> .xo-menu-horizontal-v1__mega-menu:not(:empty)){position:static}
+.xo-menu-horizontal-v1__mega-menu:not(:empty) ~ .xo-menu-horizontal-v1__sub-menu{display:none}
+.xo-menu-horizontal-v1__mega-menu:not(:empty){
+position:absolute;
+top:100%;
+left:0;
+width:100%;
+z-index:60;
+opacity:0;
+pointer-events:none;
+visibility:hidden;
+transform:translateY(10px);
+transition:opacity .3s ease,transform .3s ease,visibility 0s linear .3s;
+}
+.xo-menu-horizontal-v1__item.md-mega-open > .xo-menu-horizontal-v1__mega-menu:not(:empty){
+opacity:1;
+pointer-events:auto;
+visibility:visible;
+transform:none;
+transition:opacity .3s ease,transform .3s ease,visibility 0s;
+}
+@media (prefers-reduced-motion: reduce){
+.xo-menu-horizontal-v1__mega-menu:not(:empty),
+.xo-menu-horizontal-v1__item.md-mega-open > .xo-menu-horizontal-v1__mega-menu:not(:empty){ transition:none; transform:none; }
+}
 
 /* The mobile menu drawer (old theme's hamburger, ported to plain values:
    the legacy --color-foreground variables are not defined on this site). */
@@ -904,6 +1003,12 @@ xo-tabs-trigger{cursor:pointer}
 .xo-menu-hamburger-style1__arrow{padding:0 0 0 12px;line-height:normal;pointer-events:none}
 .xo-menu-hamburger-style1__arrow svg{vertical-align:middle}
 .xo-menu-hamburger-style1__mega-menu:empty{display:none}
+/* A filled drawer panel is the accordion's content: it replaces the row list
+   the drawer prints beside it, because both list the same destinations. The
+   old theme stated this as markup-time JS; with the panel filled by the
+   runtime the sibling rule says the same thing in CSS. */
+.xo-menu-hamburger-style1__mega-menu:not(:empty){display:block}
+.xo-menu-hamburger-style1__mega-menu:not(:empty) ~ .xo-menu-hamburger-style1__link{display:none}
 
 /* The search sheet */
 .xo-modal-content{display:flex;min-height:100dvh;padding:15px;box-sizing:border-box}
@@ -1068,3 +1173,54 @@ color: rgba(255,255,255,.75);
    row's `md:grid-cols-[1fr_auto]` + `justify-self-end`), exactly as the old
    section places it. Do not absolutely position it here: that collapsed the
    row to zero height and floated the card over the hero. */
+
+/* =========================
+   Sticky host (OWNER-APPROVED UPGRADE 2026-10-26, ledger 升级-1)
+   The header band sticks to the top. The old site's header scrolled away;
+   the owner ruled that defect fixed. This is that upgrade's host contract,
+   and it is CSS, not script: LiveCanvas wraps the header partial in
+   <header id="lc-header">, which is the <body> child whose full height is the
+   band, so a direct-child selector names it exactly.
+
+   The runtime used to find this element by climbing from <xo-sticky> until a
+   parent was taller than the band ("pass-through" heuristic, +40px slack).
+   That was a guess about wrapper heights: any theme or template wrapper of
+   near-band height moved the sticky host. The selector states the same fact —
+   the element that owns the band sticks — and the runtime keeps a no-op
+   fallback for a markup shape that lacks the id.
+
+   z-index 100 is the band's own layer: below the modals (1000), above page
+   sections (9) and the first-party floats (900). The band must NOT be
+   opaque itself: the mega panels are its absolutely positioned children and
+   hang below its bottom edge, so anything that clips or paints over them
+   would hide the dropdown.
+   ========================= */
+body > header#lc-header:has(> #HeaderV9-sections--21844031144189__header_v1_main){
+position: sticky;
+top: 0;
+z-index: 100;
+}
+
+/* Anchor and scroll offsets: every in-page target must clear the sticky band.
+   `scroll-padding-top` on the scroll container is the one place that covers
+   fragment navigation, `scrollIntoView()`, and the browser's scroll-to-focus,
+   so pages do not each need their own scroll-margin. The 16px gap keeps a
+   focused heading off the band's shadow edge. */
+html{
+scroll-padding-top: calc(var(--md-header-h, 113px) + 16px);
+}
+@media (prefers-reduced-motion: reduce){
+html{ scroll-behavior: auto; }
+}
+
+/* The one sticky-rail offset. Every page's sticky column (FAQ sidebars, the
+   home FAQ image, the family spec rails, the PDP applications lead) takes its
+   top from this class instead of a Tailwind `lg:top-24`/`lg:top-10` literal:
+   those resolved to 60–72px against a 73–113px band, so the rail's own first
+   lines sat under the header. `top` is inert while the element is static
+   below the `lg`/`750px` breakpoints, so the class is safe at every width.
+   In the components layer and not a utility, so no layer fight with a
+   `top-*` class — the templates drop theirs in favour of this one. */
+.md-sticky-rail{
+top: calc(var(--md-header-h, 113px) + 16px);
+}

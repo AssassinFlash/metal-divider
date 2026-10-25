@@ -25,7 +25,11 @@ final class TemplatesTest extends TestCase {
 	/**
 	 * Every face the spec names (25 templates, spec 19 §3) exists as a
 	 * repository file: the page-type files, the per-page files, and the
-	 * four partials.
+	 * partials — the five PDP/chrome partials plus the cards' eleven markup
+	 * partials: the editorial, catalog and tile faces, the PDP's related card
+	 * and gallery-slot image, and the hub's series card and its image.
+	 * Deploying them is what puts their utilities into WindPress's compile and
+	 * makes the repository file the copy the site renders.
 	 */
 	public function test_every_face_has_its_file(): void {
 		$reflection = new \ReflectionClass( Templates::class );
@@ -46,7 +50,7 @@ final class TemplatesTest extends TestCase {
 		}
 		$this->assertCount( 7, $reflection->getConstant( 'FILES' ) );
 		$this->assertCount( 18, $reflection->getConstant( 'PAGES' ) );
-		$this->assertCount( 5, $reflection->getConstant( 'PARTIALS' ) );
+		$this->assertCount( 16, $reflection->getConstant( 'PARTIALS' ) );
 	}
 
 	/**
@@ -110,6 +114,368 @@ final class TemplatesTest extends TestCase {
 		$source = (string) file_get_contents( Templates::path( 'series-archive' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
 		$this->assertMatchesRegularExpression( '/<h1[^>]*>\s*\[lc_the_archive_title\b[^\]]*\]/', $source, 'the heading is LiveCanvas\'s native archive title' );
 		$this->assertDoesNotMatchRegularExpression( '/<h1[^>]*>\s*Organic Patterns\s*<\/h1>/i', $source, 'the heading is not the representative collection literal' );
+	}
+
+	/**
+	 * The series archive's own position — the breadcrumb item and the
+	 * catalog sidebar — names no series: one shared template renders all
+	 * nine archives, so a literal series name there would print the same
+	 * collection on every URL. The shipped template hardcoded Organic in
+	 * both, so every archive told the visitor they were on Organic while
+	 * the H1 (already term-driven) said otherwise. The editorial guide
+	 * sections below the catalog legitimately name series as content;
+	 * this test scopes to the two position-bearing blocks.
+	 */
+	public function test_the_series_archive_position_names_no_series(): void {
+		$source = (string) file_get_contents( Templates::path( 'series-archive' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+		$breadcrumb_start = strpos( $source, "class='breadcrumb'" );
+		$this->assertNotFalse( $breadcrumb_start, 'the breadcrumb is in the template' );
+		$breadcrumb = substr( $source, $breadcrumb_start, strlen( "<nav class='breadcrumb' role='navigation' aria-label='breadcrumb'>" ) + 1200 );
+		$this->assertStringContainsString( '[md_series_current_url]', $breadcrumb, 'the breadcrumb item links the current term' );
+		$this->assertStringContainsString( '[md_series_current_label]', $breadcrumb, 'the breadcrumb item is labelled by the current term' );
+
+		$nav_start = strpos( $source, 'class="pattern-catalog__nav"' );
+		$this->assertNotFalse( $nav_start, 'the sidebar nav is in the template' );
+		$nav_end = strpos( $source, '</nav>', $nav_start );
+		$this->assertNotFalse( $nav_end, 'the sidebar nav closes' );
+		$nav = substr( $source, $nav_start, $nav_end - $nav_start );
+
+		$this->assertStringContainsString( '[md_series_nav]', $nav, 'the series links are rendered from the terms' );
+		$this->assertDoesNotMatchRegularExpression( '/Organic|Geometric|Gradient|Perforated|Landscape|Abstract|Moroccan|Asian|Vintage/i', $nav, 'the sidebar names no series' );
+		$this->assertStringNotContainsString( 'is-active', $nav, 'the active state is not a literal class in the template' );
+		$this->assertStringContainsString( 'href="/shop/"', $nav, 'the all-patterns link is the shop, not /collections/all' );
+	}
+
+	/**
+	 * Each catalog face declares the face it is, because the sidebar
+	 * arm cannot infer it without a WooCommerce conditional no unit test
+	 * can reach: the archive marks the queried term, the shop lists the
+	 * series unmarked under its own "All Patterns" link. Dropping the
+	 * attribute from the shop template would leave the shop's sidebar
+	 * empty instead of failing loudly.
+	 */
+	public function test_the_catalog_faces_declare_which_face_renders_the_nav(): void {
+		$archive = (string) file_get_contents( Templates::path( 'series-archive' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+		$shop    = (string) file_get_contents( Templates::path( 'shop' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+		$this->assertStringContainsString( '[md_series_nav]', $archive, 'the archive marks its queried term' );
+		$this->assertStringNotContainsString( '[md_series_nav face=', $archive, 'the archive must not claim the shop face' );
+		$this->assertStringContainsString( '[md_series_nav face="shop"]', $shop, 'the shop declares its own face' );
+	}
+
+	/**
+	 * The two catalog tools submit to the archive's base address, never to
+	 * `action=""`.
+	 *
+	 * An empty action is resolved by the browser to the address of the page
+	 * the visitor is on, page number included. A search submitted from
+	 * `/shop/page/2/` then asks for `/shop/page/2/?pattern_search=…`, and
+	 * WordPress resolves that page number against the narrowed result set: a
+	 * search matching one pattern has no page 2, so the visitor gets a 404
+	 * instead of their result. Both faces carried the empty action on both
+	 * forms, so the scan is per form and per face — one template fixed and
+	 * the other forgotten is exactly the state this test fails on.
+	 *
+	 * The state the two forms carry each other is asserted here too: the
+	 * action is the base, so every parameter the submission keeps has to
+	 * come from a field, not from the URL it was standing on.
+	 */
+	public function test_the_catalog_tools_submit_to_the_archive_base_not_the_current_page(): void {
+		foreach ( array( 'shop', 'series-archive' ) as $face ) {
+			$source = (string) file_get_contents( Templates::path( $face ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+			preg_match_all( '/<form[^>]*class="pattern-catalog__(search|sort)"[^>]*>/', $source, $forms );
+			$this->assertCount( 2, $forms[0], "{$face} carries both tools" );
+			foreach ( $forms[0] as $form ) {
+				$this->assertStringContainsString( 'action="[md_archive_form_action]"', $form, "{$face}: the tool submits to the archive base" );
+				$this->assertStringNotContainsString( 'action=""', $form, "{$face}: an empty action submits to the current page, page number included" );
+				$this->assertStringContainsString( 'method="get"', $form, "{$face}: both tools are GET forms" );
+			}
+
+			// Each tool carries the other's state as a field, because the
+			// address no longer does.
+			$this->assertMatchesRegularExpression(
+				'/<form[^>]*pattern-catalog__search[^>]*>.*?\[md_preserve_param name="sort_by" except="pattern_search"\]/s',
+				$source,
+				"{$face}: the search form carries the order"
+			);
+			$this->assertMatchesRegularExpression(
+				'/<form[^>]*pattern-catalog__sort[^>]*>.*?\[md_preserve_param name="pattern_search" except="sort_by"\]/s',
+				$source,
+				"{$face}: the sort form carries the search"
+			);
+			$this->assertSame( 3, substr_count( $source, '[md_sort_selected value=' ), "{$face}: each option asks the data arm whether it is the one in force" );
+			$this->assertStringContainsString( '[md_search_value]', $source, "{$face}: the search box keeps its term" );
+		}
+	}
+
+	/**
+	 * The header's search is the site-wide one; the contextual search is each
+	 * catalog face's own tool. The split is the old site's and is deliberate.
+	 *
+	 * Both catalog faces render a search box, and both submit to their own base
+	 * (`[md_archive_form_action]`): searching inside Organic stays in Organic.
+	 * The header's box is a different control with a different job — it is
+	 * rendered on every page, so it cannot know which series the visitor was
+	 * browsing, and the old site's header posted to Shopify's global `/search`
+	 * carrying no collection context at all (its theme settings carry no
+	 * scoped-search option either). "Search from a series" was therefore never
+	 * an affordance this UX offered, and making the header contextual would be
+	 * a new feature needing new state, not a fix.
+	 *
+	 * This test exists so that decision is visible to whoever next wonders why
+	 * the header does not preserve the series: it fails if the header acquires
+	 * the catalog's term-aware action, which would mean someone changed the
+	 * behaviour without deciding to.
+	 */
+	public function test_the_header_search_stays_site_wide_while_the_catalog_tools_are_contextual(): void {
+		$header = (string) file_get_contents( Templates::path( 'partials/header.html', true ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+		$forms = array();
+		preg_match_all( "/<form action='([^']*)' method='get' role='search' class='search'>/", $header, $forms );
+		$this->assertCount( 1, $forms[0], 'the header carries exactly one site-wide search form' );
+		$this->assertSame(
+			'/shop/',
+			$forms[1][0],
+			'the header search submits to the shop: it is rendered on every page and has no series to preserve'
+		);
+
+		// Comments are prose about the code, not attributes a browser parses —
+		// the same rule the placeholder guard follows. The comment beside the
+		// form names the catalog action while explaining why the header does
+		// not use it, and matching that would make this guard refuse its own
+		// documentation.
+		$markup = (string) preg_replace( '/<!--.*?-->/s', '', $header );
+		$this->assertStringNotContainsString(
+			'md_archive_form_action',
+			$markup,
+			'the header must not borrow the catalog faces\' term-aware action'
+		);
+
+		// The contextual search is the catalog tools', and both faces use it.
+		foreach ( array( 'shop', 'series-archive' ) as $face ) {
+			$source = (string) file_get_contents( Templates::path( $face ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$this->assertStringContainsString(
+				'class="pattern-catalog__search" action="[md_archive_form_action]"',
+				$source,
+				"{$face}: the face's own search is the contextual one"
+			);
+		}
+	}
+
+	/**
+	 * No LiveCanvas template links a retired or non-canonical path:
+	 * `/pages/…` was the old site's shell prefix (every page moved to the
+	 * root level, `contact` retired to /inquiry/), and `/collections/all`
+	 * is Shopify's handle for the shop, which is /shop/ here. Both would
+	 * send visitors through a redirect — or, for /pages/contact, to a 404.
+	 */
+	public function test_no_template_links_a_retired_or_non_canonical_path(): void {
+		$dir   = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
+		foreach ( $files as $file ) {
+			$source   = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$relative = basename( (string) $file );
+			$this->assertStringNotContainsString( '/pages/', $source, "{$relative} links the retired /pages/ prefix" );
+			$this->assertStringNotContainsString( '/collections/all', $source, "{$relative} links -> /shop/" );
+			$this->assertStringNotContainsString( '/blogs/', $source, "{$relative} links the old blog handle; the blog index is /blog/" );
+		}
+	}
+
+	/**
+	 * No customer-visible material word outside the owner's single ruling
+	 * (2026-10-24 revision 6: Stainless Steel 304 / 316 is the only
+	 * material the site names; the old five-material lists are bad data,
+	 * not migrated).
+	 *
+	 * The scan reads the templates' *text* — tag contents with every
+	 * attribute removed — because the ruling is about what a visitor
+	 * reads. Asset paths legitimately carry source filenames
+	 * (`our-paris-lounge-brass-screen-hero-2048w.webp`) and the media
+	 * pipeline owns those names; masking them here would either fail on
+	 * every rename or push the copy fix out of view. `alt` text is kept
+	 * inside the scan: it is read aloud and indexed.
+	 *
+	 * "Bronze", "gold" and "champagne" are finish names (PVD colours in
+	 * the approved copy), not materials, so they are not in the set.
+	 */
+	public function test_no_template_names_a_material_outside_the_single_ruling(): void {
+		$forbidden = 'brass|copper|aluminium|aluminum|corten|mild\s+steel';
+		$dir       = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files     = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
+		$scanned   = 0;
+		foreach ( $files as $file ) {
+			$source = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			// Keep alt text (it is customer-visible), drop every other attribute.
+			preg_match_all( '/\balt=(["\'])(.*?)\1/s', $source, $alts );
+			$visible = implode( "\n", array_map( 'html_entity_decode', $alts[2] ) )
+				. "\n" . preg_replace( '/<[^>]*>/s', "\n", $source );
+			preg_match_all( '/\b(' . $forbidden . ')\b/i', $visible, $hits );
+			$relative = str_replace( $dir . '/', '', (string) $file );
+			$this->assertSame(
+				array(),
+				$hits[0],
+				"{$relative} names a material outside the Stainless Steel (304 / 316) ruling: " . implode( ', ', array_unique( $hits[0] ) )
+			);
+			++$scanned;
+		}
+		$this->assertGreaterThan( 20, $scanned, 'the scan walks the template inventory' );
+	}
+
+	/**
+	 * The ruling's positive half: the two faces that discuss materials
+	 * at length name the sanctioned wording, so removing a forbidden word
+	 * cannot quietly leave the page saying nothing about material.
+	 */
+	public function test_the_material_faces_name_the_sanctioned_material(): void {
+		foreach ( array( 'family-stainless-steel', 'faqs' ) as $face ) {
+			$source = (string) file_get_contents( Templates::path( $face ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$this->assertMatchesRegularExpression( '/\b304\b/', $source, "{$face} names 304" );
+			$this->assertMatchesRegularExpression( '/\b316\b/', $source, "{$face} names 316" );
+		}
+	}
+
+	/**
+	 * No family or FAQ face quotes a price, a discount tier, or a cart
+	 * transaction. The business model is inquiry-only and WooCommerce
+	 * carries every product fact (owner ruling 2026-10-26), so a figure
+	 * printed on a marketing face is a second, unstamped source for the
+	 * same commercial fact — and the sourcing pages contradicted each
+	 * other: "MOQ from 1 sqm" on two faces, "10 pieces" and "5 pieces"
+	 * on a third, "50–100 sqm" in the FAQs, none of them backed by an
+	 * owner decision or a Woo field.
+	 *
+	 * The scan reads visible text, as the material guard above does,
+	 * because the defect is what a visitor reads. It is deliberately
+	 * *not* run across the whole tree: `privacy.html` names "no
+	 * checkout, no payment" as the site's own disclosure, and
+	 * `custom-screens.html` says "PVD Inventory" about stocked sheet.
+	 * Both are true statements the pattern would misread, so the scope
+	 * is the commercial faces where a price claim would be a defect.
+	 */
+	public function test_no_commercial_face_quotes_a_price_or_a_cart_transaction(): void {
+		$faces     = array(
+			'family-laser-cut-geometric',
+			'family-glass-hybrid',
+			'family-outdoor-privacy',
+			'family-chinese-style',
+			'family-stainless-steel',
+			'family-laser-cut-panels',
+			'family-perforated-panels',
+			'family-expanded-metal',
+			'manufacturing',
+			'custom-screens',
+			'faqs',
+		);
+		$forbidden = array(
+			'currency'         => '/\$\s?\d|\bUSD\b|\bUS\s?\$/i',
+			'discount'         => '/\d+\s*%\s*off\b|\boff list\b|\blist price\b|\bvolume discount\b/i',
+			'cart'             => '/\bcart\b|\bcheckout\b|\badd to cart\b|\bin stock\b|\bout of stock\b/i',
+			// An MOQ followed within a sentence by a figure is the
+			// commercial term the faces contradicted each other on
+			// ("1 sqm" vs "10 pieces" vs "50–100 sqm"). The bare
+			// category heading "Pricing & MOQ" carries no figure and
+			// is not one of these.
+			'minimum-quantity' => '/\bMOQ\b[^.\n]{0,60}?\b\d|\bminimum\s+order\b/i',
+		);
+		foreach ( $faces as $face ) {
+			$source = (string) file_get_contents( Templates::path( $face ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			// Keep alt text (customer-visible), drop every other attribute.
+			preg_match_all( '/\balt=(["\'])(.*?)\1/s', $source, $alts );
+			$visible = implode( "\n", array_map( 'html_entity_decode', $alts[2] ) )
+				. "\n" . preg_replace( '/<[^>]*>/s', "\n", $source );
+			foreach ( $forbidden as $kind => $pattern ) {
+				preg_match_all( $pattern, html_entity_decode( $visible ), $hits );
+				$this->assertSame(
+					array(),
+					array_values( array_unique( $hits[0] ) ),
+					"{$face} carries a {$kind} claim the inquiry-only model contradicts: " . implode( ', ', array_unique( $hits[0] ) )
+				);
+			}
+		}
+	}
+
+	/**
+	 * The inquiry-only model's positive half, on the same reasoning as
+	 * the material test above: a face that used to answer a cost
+	 * question still answers it, by explaining what shapes the quote.
+	 * Deleting the price tables without this would leave the FAQ silent
+	 * on the question a buyer asks first.
+	 */
+	public function test_the_pricing_faces_explain_how_the_quote_is_built(): void {
+		foreach ( array( 'family-expanded-metal', 'family-perforated-panels', 'family-laser-cut-geometric' ) as $face ) {
+			$source = (string) file_get_contents( Templates::path( $face ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$this->assertMatchesRegularExpression( '/how .{0,80}quoted|what shapes the quote|line-item quote/i', $source, "{$face} still explains how a quote is built" );
+		}
+	}
+
+	/**
+	 * No customer-visible template calls a pattern a "product" (owner
+	 * ruling 2026-10-24 revision 5: the customer-facing vocabulary is
+	 * "pattern" on every surface — copy, spec tables, breadcrumbs,
+	 * calls to action, alt text — while WooCommerce's internal
+	 * mechanisms and the admin keep their own names).
+	 *
+	 * The scan is built so it needs no allow-list. It reads the
+	 * *rendered* text — `alt` text kept, because it is announced and
+	 * indexed, every other attribute dropped, HTML comments dropped —
+	 * and that structurally excludes the three places `product` is
+	 * legitimate here:
+	 *
+	 * - `#product-catalog` anchors and `data-psd-url` values, which are
+	 *   attribute values and in-page link targets, not text;
+	 * - `post_type`/`product_cat`/schema `@type: Product`, which live in
+	 *   PHP and JSON-LD, not in these templates;
+	 * - the header's inert `data-locales` JSON map, likewise an
+	 *   attribute value.
+	 *
+	 * A second, deliberate exclusion is the word "products" in the
+	 * sense of *goods*, not patterns: the FAQ's cleaning advice tells a
+	 * reader to avoid abrasive pads and scouring cleaners. That
+	 * sentence was rewritten away from the ambiguity when this guard
+	 * landed; the pattern below flags it again if it returns, which is
+	 * intended — the face can say "cleaners" and be both correct and
+	 * unambiguous.
+	 */
+	public function test_no_customer_template_calls_a_pattern_a_product(): void {
+		$dir   = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
+		foreach ( $files as $file ) {
+			$source = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+			// The visible text: comments out, attributes out, tags out,
+			// entities decoded — plus the alt text, which lives inside an
+			// attribute but is read aloud and indexed. Group 2 is the alt
+			// value; group 1 is only the quote character.
+			preg_match_all( '/\balt=(["\'])(.*?)\1/s', $source, $alts );
+			$text = preg_replace( '/<!--.*?-->/s', "\n", $source );
+			$text = preg_replace( '/<[^>]*>/s', "\n", (string) $text );
+			$text = html_entity_decode( implode( "\n", $alts[2] ) . "\n" . html_entity_decode( (string) $text ) );
+
+			preg_match_all( '/\b(products?)\b/i', $text, $hits );
+			$relative = str_replace( $dir . '/', '', (string) $file );
+			$this->assertSame(
+				array(),
+				array_values( array_unique( array_map( 'strtolower', $hits[0] ) ) ),
+				"{$relative} calls a pattern a product in customer-visible text: " . implode( ', ', array_unique( $hits[0] ) )
+			);
+		}
+	}
+
+	/**
+	 * The vocabulary ruling's positive half, on the same reasoning as
+	 * the material and pricing guards: the faces a visitor reaches by
+	 * browsing must still *say* pattern, so a future edit cannot pass by
+	 * deleting the word instead of using it. The shop and its archives
+	 * are where the catalogue vocabulary is set.
+	 */
+	public function test_the_catalogue_faces_speak_of_patterns(): void {
+		foreach ( array( 'shop', 'series-archive' ) as $face ) {
+			$source = (string) file_get_contents( Templates::path( $face ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$this->assertMatchesRegularExpression( '/\bPatterns\b/', $source, "{$face} names the catalogue in pattern words" );
+			$this->assertMatchesRegularExpression( '/pattern detail page|pattern pages|pattern link/i', $source, "{$face} links to pattern pages, not product pages" );
+		}
 	}
 
 	/**

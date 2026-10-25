@@ -162,8 +162,3 @@ height: calc(100dvh - var(--header-height, 80px));
 .md-t5790ffba { display: none }
 .md-tecede96f { background-color: #141414 }
 .md-t16705960 { aspect-ratio:9/14;background-color:#0a0a0a }
-/* 390 overflow (VC-061): the quality-document images carry width="760" and
- * the document is narrower than that at 390. The global image max-width reset
- * is outside this page's layer, so the constraint is scoped to this face's
- * paper stack; measured document scrollWidth 760 → 390 with this rule. */
-.mfg-quality__doc-image img { display: block; max-width: 100%; height: auto; }

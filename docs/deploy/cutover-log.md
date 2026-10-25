@@ -29,6 +29,6 @@
 
 ## 待办(阶段一尾)
 
-- [ ] pixel-check 对生产(170 页型×双视口,M3 掩膜台账)
+- [ ] pixel-check 对生产(170 页型×双视口,M3 掩膜台账;url-map 182 目标中 12 退役不入拍)
 - [ ] Turnstile 挂件注册(表单 fail-closed 兜底中)
 - [ ] GSC 新属性(TXT 写 hPanel 区)

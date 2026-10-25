@@ -236,11 +236,31 @@ final class Config {
 	/**
 	 * The per-page metas of the SEO-owned pages (spec 22 §2.2 T9/T10/
 	 * T11/T6): the inquiry and privacy titles, the blog index's title,
-	 * the thank-you page's noindex — plus the two URL-scaffolding pages
-	 * that must stay out of the index and the sitemap: the /pages/ shell
-	 * (a URL prefix that 301s home, #4's ruling) and the install's
-	 * sample page (deleted by the content plane whenever it lands; until
-	 * then it is at least invisible).
+	 * the thank-you page's noindex, and the install's sample page
+	 * (deleted by the content plane whenever it lands; until then it is
+	 * at least invisible).
+	 *
+	 * The two noindex pages store `yes`, not `noindex`, and that is not a
+	 * cosmetic choice: `_seopress_robots_index` is SEOPress's checkbox, and
+	 * `seopress_titles_noindex_post_option()` returns a value only for
+	 * `=== 'yes'` — storing `noindex` there removes the noindex entirely
+	 * (measured on dev: the page became `index, follow`). The value that
+	 * decides whether the canonical survives is the *bypass* return, not
+	 * this meta, so `Seo\MetaNoindex` normalizes `yes` → `noindex` at
+	 * render time and both pages keep a self-referencing canonical.
+	 *
+	 * The `/pages` shell is deliberately absent. Issue #4 rules that
+	 * `/pages` is a URL prefix, not a page: the migration writes the
+	 * content pages at the site root (`post_parent` 0 on every one of
+	 * them) and nothing creates a `pages` page. A row here demanded a
+	 * page that must not exist, and no write could ever satisfy it —
+	 * `apply()` only writes metas, so it reported "meta is pending the
+	 * page" on every run and `check()` reported permanent drift on a
+	 * correct site. The shell needs no meta anyway: `REDIRECT_TARGETS`
+	 * sends the prefix home with a 301, which SEOPress fires on
+	 * `template_redirect` before any page at that path could render, so
+	 * there is nothing to keep out of the index (measured: `/pages`,
+	 * `/pages/` and `/pages?utm_source=…` all 301 to `/`).
 	 *
 	 * @param string $home The site's home URL (unused here, kept for the table's symmetry).
 	 * @return array<string, array<string, string>> Page path → meta key → value.
@@ -258,9 +278,6 @@ final class Config {
 				'_seopress_titles_title' => 'Blog %%sep%% %%sitetitle%% %%current_pagination%%',
 			),
 			'inquiry/thank-you' => array(
-				'_seopress_robots_index' => 'yes',
-			),
-			'pages'             => array(
 				'_seopress_robots_index' => 'yes',
 			),
 			'sample-page'       => array(
@@ -307,9 +324,9 @@ final class Config {
 		if ( '' === $this->logo_url() ) {
 			$lines[] = 'social: no logo attachment yet — Organization logo and the default og:image stay unset until the chrome logo lands';
 		}
-		$lines   = array_merge( $lines, $this->apply_builder_posts() );
-		$lines   = array_merge( $lines, $this->apply_redirects() );
-		$lines   = array_merge( $lines, $this->apply_page_metas() );
+		$lines = array_merge( $lines, $this->apply_builder_posts() );
+		$lines = array_merge( $lines, $this->apply_redirects() );
+		$lines = array_merge( $lines, $this->apply_page_metas() );
 		return $lines;
 	}
 
@@ -535,17 +552,32 @@ final class Config {
 	 * The redirects this plane owns: SEOPress redirection post title (the path
 	 * it matches) => 301 target.
 	 *
-	 * `pages` is the shell prefix (spec 22 F1 via #4). The retired
-	 * `pattern-gradient` series (#25: the old collection is empty on the new
-	 * catalog and the pixel url-map retires it) keeps its URL alive as a 301
-	 * to the shop instead of resolving to an empty archive.
+	 * `pages` is the shell prefix (spec 22 F1 via #4). It is the only one:
+	 * `collections/pattern-gradient` is a live series, not a retired one —
+	 * issue #25 restored it with its three real patterns (La Pente, Nara,
+	 * Skyfall; data/shopify-admin-export/products.json, and
+	 * build_terms_plan() expects one member in the fixtures), so a 301 there
+	 * would send the series' own visitors away from a page that exists.
 	 *
 	 * @var array<string, string>
 	 */
 	private const REDIRECT_TARGETS = array(
-		'pages'                        => '/',
-		'collections/pattern-gradient' => '/shop/',
+		'pages' => '/',
 	);
+
+	/**
+	 * The redirection's query-string mode: `without_param` matches the
+	 * origin whatever query string rides on it (SEOPress's own option,
+	 * `_seopress_redirections_param`). Without it the stored value is
+	 * empty, and the plugin reads an empty value as `exact_match`
+	 * (wp-seopress-pro/src/Services/Redirection.php: an empty
+	 * `$query_param` becomes `'exact_match'`, and the redirect only fires
+	 * when the mode is *not* `exact_match`) — so `/pages?utm_source=…`
+	 * would fall through to a 404 while `/pages` redirected. The shell
+	 * prefix collects stray paths, and those arrive with campaign
+	 * parameters on them.
+	 */
+	private const REDIRECT_PARAM = 'without_param';
 
 	/**
 	 * The redirects' install: one line per redirect.
@@ -581,8 +613,7 @@ final class Config {
 	 *
 	 * @param string $title  The redirection's post title (the path it matches).
 	 * @param string $target The 301 target.
-	 * @return string 'created', 'synced', or 'refused (…)'. The 'pages' shell
-	 *                keeps its dedicated report line above.
+	 * @return string 'created', 'synced', or 'refused (…)'.
 	 */
 	private function apply_redirect( string $title, string $target ): string {
 		$post = $this->post_by_title( self::REDIRECTS, $title );
@@ -601,6 +632,7 @@ final class Config {
 		update_post_meta( (int) $made, '_seopress_redirections_enabled', 'yes' );
 		update_post_meta( (int) $made, '_seopress_redirections_type', '301' );
 		update_post_meta( (int) $made, '_seopress_redirections_value', $target );
+		update_post_meta( (int) $made, '_seopress_redirections_param', self::REDIRECT_PARAM );
 		update_post_meta( (int) $made, '_seopress_redirections_logged_status', 'both' );
 		update_post_meta( (int) $made, '_seopress_redirections_enabled_regex', '' );
 		return null === $post ? 'created' : 'synced';
@@ -655,15 +687,17 @@ final class Config {
 	}
 
 	/**
-	 * Whether the /pages redirect post already carries this target.
+	 * Whether a redirect post already carries this target.
 	 *
-	 * @param int $id The redirect post's ID.
+	 * @param int    $id     The redirect post's ID.
+	 * @param string $target The expected destination.
 	 * @return bool True when every redirect field matches.
 	 */
 	private function redirect_is_current( int $id, string $target ): bool {
 		return 'yes' === (string) get_post_meta( $id, '_seopress_redirections_enabled', true )
 			&& '301' === (string) get_post_meta( $id, '_seopress_redirections_type', true )
-			&& $target === (string) get_post_meta( $id, '_seopress_redirections_value', true )
+			&& (string) get_post_meta( $id, '_seopress_redirections_value', true ) === $target
+			&& self::REDIRECT_PARAM === (string) get_post_meta( $id, '_seopress_redirections_param', true )
 			&& 'both' === (string) get_post_meta( $id, '_seopress_redirections_logged_status', true )
 			&& '' === (string) get_post_meta( $id, '_seopress_redirections_enabled_regex', true );
 	}

@@ -55,10 +55,12 @@ overflow-x: hidden;
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-inner { position: relative; z-index: 1; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-grid-cols { display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 7fr); gap: 48px; align-items: center; padding: 48px 0 56px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-solo { grid-template-columns: 1fr; }
-/* The image slot shortcode returns nothing when the media carries no
- * qualifying image (ticket #68): hide the empty frame, and give the grid
- * the solo layout the old template's Liquid condition used to add. The
- * converted markup lost that condition; :has restores it from the DOM. */
+/* The slot's frame is drawn only when the slot resolves to an image
+ * (ticket #68, fixed): [lc_if condition="md_pdp_slot_has_image"] in the
+ * template keeps an empty frame out of the DOM, so `:has()` below reads
+ * the real state and the grid takes the solo layout the old template's
+ * Liquid condition used to add. A frame that does reach the DOM without
+ * an image (an unprocessed shortcode, a cached page) is still hidden. */
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-plate:empty { display: none; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-grid-cols:not(:has(.pdp-hero-plate)) { grid-template-columns: 1fr; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero h1 { font-size: clamp(40px, 5vw, 68px); line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 20px; }
@@ -78,9 +80,12 @@ overflow-x: hidden;
 /* Panel 2 */
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-split { display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); gap: 56px; align-items: start; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-split-solo { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
-/* Same empty-slot rule for the identity square (ticket #68). */
+/* Same conditional frame for the identity square (ticket #68, fixed), and
+ * the solo split only for the identity panel: #specify's split carries no
+ * square either, and the bare `.pdp-split` selector shrank it to 760px in
+ * one column (measured on dev, 1440). */
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-square:empty { display: none; }
-#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-split:not(:has(.pdp-square)) { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+#cinematic-pdp-template--22148302078205__pattern_product_cinematic #identity .pdp-split:not(:has(.pdp-square)) { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-square { aspect-ratio: 1 / 1; border-radius: 16px; overflow: hidden; border: 1px solid var(--cp-border); background: var(--cp-panel); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-square img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-square:hover img { transform: scale(1.05); }
@@ -91,7 +96,7 @@ overflow-x: hidden;
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-finish-note { margin-top: 14px; font-size: 14px; line-height: 1.6; color: var(--cp-muted); }
 /* Panel 3 */
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-apps { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: start; }
-#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-apps-lead { position: sticky; top: 96px; }
+#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-apps-lead { position: sticky; top: calc(var(--md-header-h, 113px) + 16px); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-open-figure { margin-top: 28px; border-top: 1px solid var(--cp-border); padding-top: 20px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-open-value { display: block; font-family: 'Playfair Display', serif; font-size: clamp(44px, 4.5vw, 64px); line-height: 1; color: var(--cp-accent); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-open-label { display: block; margin-top: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cp-muted); }

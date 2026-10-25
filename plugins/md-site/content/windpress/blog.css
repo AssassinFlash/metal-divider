@@ -10,12 +10,6 @@
  * so the three-column reference remains a reading page on wide screens.
  */
 #md-blog-single { color: var(--md-bg-deep); background: #f7f8f8; font-family: var(--md-font-sans); font-weight: 400; }
-/* The site base carries no box-sizing reset, and the mobile reader layout's
- * percentage widths are paired with padding: content-box made the two asides
- * 390px + their padding wide and pushed the document to 438px at a 390px
- * viewport. Scope the border-box model to this face. */
-#md-blog-single .reader-layout,
-#md-blog-single .reader-layout * { box-sizing: border-box; }
 #md-blog-single :is(h1,h2,h3,p,ul,figure) { margin: 0; }
 #md-blog-single a { color: var(--md-gold-dark); text-decoration: none; }
 #md-blog-single :is(a,button,summary):focus-visible { outline: 2px solid var(--md-gold); outline-offset: 2px; }

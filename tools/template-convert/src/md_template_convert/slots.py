@@ -109,19 +109,23 @@ def slot_pdp(html: str, sample: dict[str, str]) -> str:
         # Best fit: the ACF key rendered as its display word.
         ("<dd>" + sample["best_fit"] + "</dd>", "<dd>[md_pdp_best_fit]</dd>"),
         # The hero description and the identity block's two paragraphs:
-        # the phrase-group assembly (the groups are approved copy under
-        # docs/copy/, the shortcode is the assembly alone).
+        # the design-intent assembly, which resolves the prose from the
+        # product's own Woo/ACF fields (no copy file in the checkout is a
+        # source). The identity paragraphs carry [lc_if] guards because a
+        # pattern whose prose nobody has written yet must leave no empty
+        # .pdp-body in the DOM; the hero sentence is always present (it is
+        # the site-wide wording), so it needs none.
         (
             '<p class="pdp-hero-desc">' + sample["hero_desc"] + "</p>",
             '<p class="pdp-hero-desc">[md_pdp_design_intent slot="hero"]</p>',
         ),
         (
             '<p class="pdp-body">' + sample["identity_lead"] + "</p>",
-            '<p class="pdp-body">[md_pdp_design_intent slot="lead"]</p>',
+            '[lc_if condition="md_pdp_has_design_intent" param="lead"]<p class="pdp-body">[md_pdp_design_intent slot="lead"]</p>[/lc_if]',
         ),
         (
             '<p class="pdp-body">' + sample["identity_supplemental"] + "</p>",
-            '<p class="pdp-body">[md_pdp_design_intent slot="supplemental"]</p>',
+            '[lc_if condition="md_pdp_has_design_intent" param="supplemental"]<p class="pdp-body">[md_pdp_design_intent slot="supplemental"]</p>[/lc_if]',
         ),
         # The three per-product images: the Woo gallery through the
         # assembly shortcode (LiveCanvas has no per-gallery-image tag).

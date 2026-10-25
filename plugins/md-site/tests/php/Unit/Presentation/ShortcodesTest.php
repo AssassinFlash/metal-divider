@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace MetalDivider\Site\Tests\Unit\Presentation;
 
 use MetalDivider\Site\Presentation\Shortcodes;
+use MetalDivider\Site\Tests\GalleryReadCounter;
 use MetalDivider\Site\Tests\TestCase;
 use WP_Mock;
 
@@ -23,34 +24,68 @@ use WP_Mock;
 final class ShortcodesTest extends TestCase {
 
 	/**
-	 * Sets up translation and escaping.
+	 * Sets up translation, escaping, WordPress's error predicate, and a clean
+	 * slot memo — the last is per request in production, but this suite runs
+	 * many "requests" in one PHP process and every fixture reuses post 7.
 	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->plain_text();
+		WP_Mock::userFunction( 'is_wp_error' )->zeroOrMoreTimes()->andReturn( false );
+		Shortcodes::flush();
+		\MetalDivider\Site\Catalog::reset_visible_counts();
+		// The related and series cards are rendered from partials now, so the
+		// renderer and its value shortcodes have to be live for those cases —
+		// the same wiring `md-site.php` does, and without it a case would
+		// assert against raw `[md_media_url]` text instead of a card.
+		shortcode_tags_reset();
+		\MetalDivider\Site\Presentation\PartialFields::forget();
+		\MetalDivider\Site\Presentation\Partials::forget();
+		\MetalDivider\Site\Presentation\PatternFacts::forget();
+		// `add_shortcode()` is WordPress's and WP_Mock stands in for it; the
+		// default writes into the real registry so any case may call
+		// `register()`. The one case that asserts the registration *count*
+		// re-declares this mock with `times()`, and Mockery replaces the
+		// earlier expectation's callback for the same function.
+		WP_Mock::userFunction( 'add_shortcode' )->zeroOrMoreTimes()->andReturnUsing(
+			static function ( string $tag, callable $callback ): void {
+				$GLOBALS['shortcode_tags'][ $tag ] = $callback;
+			}
+		);
+		\MetalDivider\Site\Presentation\PartialFields::shared()->register();
+		\MetalDivider\Site\Presentation\Partials::shared()->register();
 	}
 
 	/**
-	 * Removes the gallery product double.
+	 * Removes the gallery double and the multi-product fixture's globals.
 	 */
 	public function tearDown(): void {
-		unset( $GLOBALS['md_wc_product_double'] );
+		unset(
+			$GLOBALS['md_wc_product_double'],
+			$GLOBALS['md_wc_products'],
+			$GLOBALS['md_current_post'],
+			$GLOBALS['md_hub_visible']
+		);
+		Shortcodes::flush();
+		\MetalDivider\Site\Catalog::reset_visible_counts();
 		parent::tearDown();
 	}
 
+
 	/**
-	 * The register() method adds every shortcode the templates reference.
+	 * The register() method adds every shortcode the templates reference, and
+	 * nothing else.
+	 *
+	 * Asserted against WordPress's own registry rather than against a call
+	 * count on `add_shortcode()`: the registry is what the templates resolve
+	 * their tags from, so it is the thing whose shape matters — a registration
+	 * that reached the mock but not the registry would render raw shortcode
+	 * text to a visitor while a count-based test passed.
 	 */
 	public function test_register_adds_every_shortcode(): void {
-		$shortcodes = new Shortcodes();
-		$added      = array();
-		WP_Mock::userFunction( 'add_shortcode' )->times( 7 )->andReturnUsing(
-			static function ( string $tag, callable $callback ) use ( &$added ): void {
-				$added[ $tag ] = $callback;
-			}
-		);
+		$GLOBALS['shortcode_tags'] = array();
 
-		$shortcodes->register();
+		( new Shortcodes() )->register();
 
 		$this->assertSame(
 			array(
@@ -62,7 +97,7 @@ final class ShortcodesTest extends TestCase {
 				Shortcodes::RELATED,
 				Shortcodes::SERIES_GRID,
 			),
-			array_keys( $added ),
+			array_keys( $GLOBALS['shortcode_tags'] ),
 			'every shortcode registers, and nothing else'
 		);
 	}
@@ -101,19 +136,28 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
-	 * The design-intent hero slot fills the phrase groups' hero phrase
-	 * with the pattern's own best-fit word.
+	 * The design-intent hero slot is the site-wide sentence with the
+	 * pattern's own best-fit word — the one PDP line that is not
+	 * per-product data.
 	 */
 	public function test_design_intent_hero_slot_fills_the_best_fit(): void {
-		$post            = new \stdClass();
-		$post->ID        = 7;
-		$post->post_type = 'product';
-		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $post );
 		$this->mock_product_meta( 'best_fit', 'decorative-screening' );
-		WP_Mock::userFunction( 'get_the_title' )->zeroOrMoreTimes()->andReturn( 'Akira | Architectural Metal Screen Pattern' );
 
 		$this->assertSame(
 			'Built for light behavior, privacy, and surface impact in Decorative screening.',
+			( new Shortcodes() )->design_intent( array( 'slot' => 'hero' ) )
+		);
+	}
+
+	/**
+	 * A pattern without a best-fit field still gets the sentence, not a
+	 * dangling "in .".
+	 */
+	public function test_design_intent_hero_slot_without_a_best_fit_reads_whole(): void {
+		$this->mock_product_meta( 'best_fit', '' );
+
+		$this->assertSame(
+			'Built for light behavior, privacy, and surface impact.',
 			( new Shortcodes() )->design_intent( array( 'slot' => 'hero' ) )
 		);
 	}
@@ -123,14 +167,12 @@ final class ShortcodesTest extends TestCase {
 	 * summary (spec 08 D2: the forty-three summaries are an asset).
 	 */
 	public function test_design_intent_lead_prefers_the_summary(): void {
-		$post            = new \stdClass();
-		$post->ID        = 7;
-		$post->post_type = 'product';
-		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $post );
-		WP_Mock::userFunction( 'get_post_meta' )->zeroOrMoreTimes()->andReturnUsing(
-			static function ( int $id, string $key ) {
-				return 'summary' === $key ? 'A carried-over summary sentence.' : '';
-			}
+		$this->mock_pattern(
+			array(
+				'summary' => 'A carried-over summary sentence.',
+				'excerpt' => 'The short description.',
+				'term'    => 'A series description nobody should see here.',
+			)
 		);
 
 		$this->assertSame(
@@ -140,33 +182,241 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
-	 * The design-intent slot falls back to the series group when the
-	 * pattern carries no summary, with the attribute slots filled.
+	 * The lead is the series' style blurb — the first paragraph the old
+	 * PDP rendered — ahead of any pattern-specific field.
+	 *
+	 * This is the parity repair: the blurb is series-level editorial copy
+	 * (one sentence per family, measured identical for all 146 members),
+	 * so the term carries it and the product does not. Leading with
+	 * `summary` instead made 103 of 146 patterns read differently from the
+	 * old page.
 	 */
-	public function test_design_intent_lead_falls_back_to_the_series_group(): void {
-		$post            = new \stdClass();
-		$post->ID        = 7;
-		$post->post_type = 'product';
-		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $post );
-		$meta = array(
-			'summary'         => '',
-			'best_fit'        => 'architectural-screening',
-			'_sku'            => 'Alhambra',
-			'open_area'       => '28',
-			'repeat_behavior' => 'repeating',
+	public function test_design_intent_lead_is_the_series_style_blurb(): void {
+		$this->mock_pattern(
+			array(
+				'blurb'   => 'Abstract geometry gives this screen its project read.',
+				'summary' => 'A carried-over summary sentence.',
+				'excerpt' => 'The short description.',
+				'term'    => 'A series description nobody should see here.',
+			)
 		);
-		WP_Mock::userFunction( 'get_post_meta' )->zeroOrMoreTimes()->andReturnUsing(
-			static function ( int $id, string $key ) use ( $meta ) {
-				return $meta[ $key ] ?? '';
-			}
-		);
-		$term       = new \stdClass();
-		$term->slug = 'pattern-moroccan-arabic';
-		WP_Mock::userFunction( 'get_the_terms' )->zeroOrMoreTimes()->andReturn( array( $term ) );
 
-		$assembled = ( new Shortcodes() )->design_intent( array( 'slot' => 'lead' ) );
-		$this->assertStringContainsString( 'Alhambra', $assembled );
-		$this->assertStringContainsString( 'mashrabiya', $assembled );
+		$this->assertSame(
+			'Abstract geometry gives this screen its project read.',
+			( new Shortcodes() )->design_intent( array( 'slot' => 'lead' ) ),
+			'the series blurb leads, exactly as the old PDP rendered it'
+		);
+	}
+
+	/**
+	 * The two paragraphs the old page showed: the series blurb, then the
+	 * pattern's own notable effect. This is the whole block's contract.
+	 */
+	public function test_design_intent_renders_the_old_two_paragraph_block(): void {
+		$this->mock_pattern(
+			array(
+				'blurb'   => 'Abstract geometry gives this screen its project read.',
+				'notable' => 'Filtered light and pattern shadow',
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$this->assertSame(
+			array(
+				'Abstract geometry gives this screen its project read.',
+				'Filtered light and pattern shadow',
+			),
+			array(
+				$shortcodes->design_intent( array( 'slot' => 'lead' ) ),
+				$shortcodes->design_intent( array( 'slot' => 'supplemental' ) ),
+			)
+		);
+	}
+
+	/**
+	 * A series with no blurb falls back to the pattern's own copy, so a
+	 * partially seeded site still says something true rather than nothing.
+	 */
+	public function test_design_intent_lead_falls_back_to_the_summary_without_a_blurb(): void {
+		$this->mock_pattern(
+			array(
+				'blurb'   => '',
+				'summary' => 'A carried-over summary sentence.',
+				'excerpt' => 'The short description.',
+				'term'    => 'A series description nobody should see here.',
+			)
+		);
+
+		$this->assertSame(
+			'A carried-over summary sentence.',
+			( new Shortcodes() )->design_intent( array( 'slot' => 'lead' ) )
+		);
+	}
+
+	/**
+	 * Without a summary the lead takes the product's own short
+	 * description — the same value in WooCommerce's native carrier.
+	 */
+	public function test_design_intent_lead_falls_back_to_the_product_excerpt(): void {
+		$this->mock_pattern(
+			array(
+				'summary' => '',
+				'excerpt' => 'The short description.',
+				'term'    => 'A series description nobody should see here.',
+			)
+		);
+
+		$this->assertSame(
+			'The short description.',
+			( new Shortcodes() )->design_intent( array( 'slot' => 'lead' ) )
+		);
+	}
+
+	/**
+	 * A pattern with no copy of its own takes its series' term
+	 * description, and the supplemental slot then stays empty rather than
+	 * printing the same paragraph twice.
+	 */
+	public function test_design_intent_lead_falls_back_to_the_series_and_the_supplemental_stays_out(): void {
+		$this->mock_pattern(
+			array(
+				'summary' => '',
+				'excerpt' => '',
+				'term'    => 'Abstract decorative screen designs — flowing curves.',
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$this->assertSame(
+			'Abstract decorative screen designs — flowing curves.',
+			$shortcodes->design_intent( array( 'slot' => 'lead' ) )
+		);
+		$this->assertSame( '', $shortcodes->design_intent( array( 'slot' => 'supplemental' ) ) );
+	}
+
+	/**
+	 * A pattern with its own copy adds the series' line as the
+	 * supplemental paragraph, so the block reads "this pattern" then
+	 * "this family".
+	 */
+	public function test_design_intent_supplemental_is_the_series_line(): void {
+		$this->mock_pattern(
+			array(
+				'summary' => 'A carried-over summary sentence.',
+				'excerpt' => '',
+				'term'    => 'Abstract decorative screen designs — flowing curves.',
+			)
+		);
+
+		$this->assertSame(
+			'Abstract decorative screen designs — flowing curves.',
+			( new Shortcodes() )->design_intent( array( 'slot' => 'supplemental' ) )
+		);
+	}
+
+	/**
+	 * The supplemental paragraph is the pattern's own notable effect — the
+	 * old PDP's design-intent second line — ahead of the series line, so
+	 * the block reads as one pattern's copy rather than its family's.
+	 * The migration carries this field 146/146; dropping it cost 103 of
+	 * 146 patterns their second paragraph.
+	 */
+	public function test_design_intent_supplemental_is_the_patterns_own_notable_effect(): void {
+		$this->mock_pattern(
+			array(
+				'summary' => 'A carried-over summary sentence.',
+				'excerpt' => '',
+				'notable' => 'Filtered light and pattern shadow',
+				'term'    => 'Abstract decorative screen designs — flowing curves.',
+			)
+		);
+
+		$this->assertSame(
+			'Filtered light and pattern shadow',
+			( new Shortcodes() )->design_intent( array( 'slot' => 'supplemental' ) ),
+			'the pattern’s own effect wins over the series line'
+		);
+	}
+
+	/**
+	 * A pattern with its own copy but no effect of its own falls back to
+	 * the series line, so the paragraph is never invented and never
+	 * silently dropped while the family has something to say.
+	 */
+	public function test_design_intent_supplemental_falls_back_to_the_series_line(): void {
+		$this->mock_pattern(
+			array(
+				'summary' => 'A carried-over summary sentence.',
+				'excerpt' => '',
+				'notable' => '',
+				'term'    => 'Abstract decorative screen designs — flowing curves.',
+			)
+		);
+
+		$this->assertSame(
+			'Abstract decorative screen designs — flowing curves.',
+			( new Shortcodes() )->design_intent( array( 'slot' => 'supplemental' ) )
+		);
+	}
+
+	/**
+	 * A pattern with no prose anywhere in Woo renders nothing: the
+	 * honest answer, and never a sentence invented to fill the slot.
+	 */
+	public function test_design_intent_is_empty_when_woo_holds_no_prose(): void {
+		$this->mock_pattern(
+			array(
+				'summary' => '',
+				'excerpt' => '',
+				'term'    => '',
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$this->assertSame( '', $shortcodes->design_intent( array( 'slot' => 'lead' ) ) );
+		$this->assertSame( '', $shortcodes->design_intent( array( 'slot' => 'supplemental' ) ) );
+	}
+
+	/**
+	 * No assembly reads a repository file at render time (owner ruling
+	 * 2026-10-26: published WooCommerce data is the only daily
+	 * maintenance source). The defect this guards: the design-intent
+	 * prose was read from docs/copy/pdp-series-phrases.json, a file the
+	 * deploy never ships, so production rendered three empty paragraphs.
+	 */
+	public function test_no_assembly_reads_a_repository_file_at_render_time(): void {
+		$source = (string) file_get_contents( (string) ( new \ReflectionClass( Shortcodes::class ) )->getFileName() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+		$this->assertStringNotContainsString( 'file_get_contents', $source, 'the assemblies hold no file read' );
+		$this->assertStringNotContainsString( 'docs/copy', $source, 'no copy file in the checkout is a prose source' );
+		$this->assertStringNotContainsString( 'dirname( __DIR__', $source, 'no path is resolved out of the plugin at render time' );
+	}
+
+	/**
+	 * The template's `[lc_if]` guard asks this predicate before it draws a
+	 * paragraph, so an empty slot leaves no `.pdp-body` (and its margin)
+	 * in the DOM. The predicate must answer exactly where design_intent()
+	 * renders — the two are one resolution, not two.
+	 */
+	public function test_has_design_intent_agrees_with_the_rendered_slots(): void {
+		$this->mock_pattern(
+			array(
+				'summary' => 'A carried-over summary sentence.',
+				'excerpt' => '',
+				'term'    => '',
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		foreach ( array( 'hero', 'lead', 'supplemental' ) as $slot ) {
+			$this->assertSame(
+				'' !== $shortcodes->design_intent( array( 'slot' => $slot ) ),
+				$shortcodes->has_design_intent( $slot ),
+				"{$slot}: the guard and the paragraph agree"
+			);
+		}
+		$this->assertTrue( $shortcodes->has_design_intent( 'lead' ) );
+		$this->assertFalse( $shortcodes->has_design_intent( 'supplemental' ), 'nothing left to add: the paragraph stays out of the DOM' );
 	}
 
 	/**
@@ -174,26 +424,173 @@ final class ShortcodesTest extends TestCase {
 	 * the eyebrow and the spec bar's Style cell.
 	 */
 	public function test_style_comes_from_the_term_slug_tail(): void {
-		$post            = new \stdClass();
-		$post->ID        = 7;
-		$post->post_type = 'product';
-		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $post );
-		$term       = new \stdClass();
-		$term->slug = 'pattern-vintage-retro';
-		WP_Mock::userFunction( 'get_the_terms' )->zeroOrMoreTimes()->andReturn( array( $term ) );
+		$this->mock_pattern(
+			array(
+				'summary' => '',
+				'excerpt' => '',
+				'term'    => '',
+				'slug'    => 'pattern-vintage-retro',
+			)
+		);
 
 		$this->assertSame( 'vintage-retro', Shortcodes::style() );
 	}
+
+	/**
+	 * A product with no series term has no style word: the assembly
+	 * answers nothing rather than a bare slug.
+	 */
+	public function test_style_is_empty_without_a_series(): void {
+		$this->mock_pattern(
+			array(
+				'summary' => '',
+				'excerpt' => '',
+				'term'    => '',
+				'slug'    => '',
+			)
+		);
+
+		$this->assertSame( '', Shortcodes::style() );
+	}
+
+	/**
+	 * The hub's series cards read WooCommerce's own term fields: the
+	 * `thumbnail_id` the category screen writes, and the term
+	 * description. The defect this guards: the cards read a bespoke
+	 * `hero_image` URL meta nothing but a repository command wrote, so
+	 * every card rendered an empty media box on production.
+	 */
+	public function test_series_grid_renders_the_native_term_thumbnail_and_description(): void {
+		$term              = new \WP_Term( (object) array() );
+		$term->term_id     = 18;
+		$term->slug        = 'pattern-abstract';
+		$term->name        = 'Abstract';
+		$term->description = 'Abstract decorative screen designs.';
+
+		WP_Mock::userFunction( 'get_terms' )->once()->andReturnUsing(
+			static function ( array $args ) use ( $term ): array {
+				// The visibility filter is the caller's: series_grid asks for
+				// every term and then keeps the ones with a catalog-visible
+				// pattern (Catalog::series_visible_counts()), because
+				// `hide_empty` decides in SQL against a count column that
+				// disagrees with WooCommerce's cached product_count meta.
+				\PHPUnit\Framework\Assert::assertFalse(
+					(bool) $args['hide_empty'],
+					'the hub does not delegate visibility to hide_empty'
+				);
+				return array( $term );
+			}
+		);
+		WP_Mock::userFunction( 'get_term_link' )->once()->andReturn( 'https://site.test/collections/pattern-abstract/' );
+		WP_Mock::userFunction( 'get_term_meta' )->once()->with( 18, 'thumbnail_id', true )->andReturn( '1502' );
+		// The hub's membership filter: Catalog::series_visible_counts() reads
+		// the catalog-visible products once for the whole page, then their
+		// product_cat terms.
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( array $args = array() ): array => 'ids' === ( $args['fields'] ?? '' ) ? array( 7, 9 ) : array()
+		);
+		WP_Mock::userFunction( 'wp_get_object_terms' )->zeroOrMoreTimes()->andReturn( array( $term ) );
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1502, 'full' )->andReturn( 'https://site.test/uploads/aurum-2048w.webp' );
+		WP_Mock::userFunction( 'get_post_meta' )->once()->with( 1502, '_wp_attachment_image_alt', true )->andReturn( 'Aurum circle screen' );
+		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->once()->with( 1502 )->andReturn(
+			array(
+				'width'  => 2048,
+				'height' => 2048,
+			)
+		);
+
+		$cards = ( new Shortcodes() )->series_grid();
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/aurum-2048w.webp"', $cards );
+		$this->assertStringContainsString( 'alt="Aurum circle screen"', $cards, 'the attachment’s own alt wins' );
+		$this->assertStringContainsString( 'width="2048" height="2048"', $cards, 'the numbers are the drawn file’s own' );
+		$this->assertStringContainsString( '<p class="cph__card-copy">Abstract decorative screen designs.</p>', $cards );
+		$this->assertStringContainsString( '<h3 class="cph__card-title">Abstract</h3>', $cards );
+		$this->assertStringNotContainsString( ' style=', $cards, 'zero inline styles (AGENTS.md §5)' );
+	}
+
+	/**
+	 * A term with no `thumbnail_id` renders the empty media box the card
+	 * CSS styles, and the term name stands in for a missing attachment
+	 * alt — no placeholder image is invented.
+	 */
+	public function test_series_grid_without_a_thumbnail_renders_no_image(): void {
+		$term              = new \WP_Term( (object) array() );
+		$term->term_id     = 19;
+		$term->slug        = 'pattern-asian';
+		$term->name        = 'Asian Inspired';
+		$term->description = '';
+
+		WP_Mock::userFunction( 'get_terms' )->once()->andReturn( array( $term ) );
+		WP_Mock::userFunction( 'get_term_link' )->once()->andReturn( 'https://site.test/collections/pattern-asian/' );
+		$this->mock_hub_membership( $term );
+		WP_Mock::userFunction( 'get_term_meta' )->once()->with( 19, 'thumbnail_id', true )->andReturn( '' );
+
+		$cards = ( new Shortcodes() )->series_grid();
+
+		$this->assertStringContainsString( '<div class="cph__media"></div>', $cards );
+		$this->assertStringNotContainsString( '<img', $cards );
+	}
+
+	/**
+	 * A term whose attachment has no alt text falls back to the term
+	 * name, as the card's own copy would read it aloud.
+	 */
+	public function test_series_grid_falls_back_to_the_term_name_for_a_missing_alt(): void {
+		$term          = new \WP_Term( (object) array() );
+		$term->term_id = 20;
+		$term->slug    = 'pattern-geometric';
+		$term->name    = 'Geometric';
+
+		WP_Mock::userFunction( 'get_terms' )->once()->andReturn( array( $term ) );
+		WP_Mock::userFunction( 'get_term_link' )->once()->andReturn( 'https://site.test/collections/pattern-geometric/' );
+		$this->mock_hub_membership( $term );
+		WP_Mock::userFunction( 'get_term_meta' )->once()->with( 20, 'thumbnail_id', true )->andReturn( '1503' );
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1503, 'full' )->andReturn( 'https://site.test/uploads/grid-2048w.webp' );
+		WP_Mock::userFunction( 'get_post_meta' )->once()->with( 1503, '_wp_attachment_image_alt', true )->andReturn( '' );
+		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->once()->with( 1503 )->andReturn( array() );
+
+		$cards = ( new Shortcodes() )->series_grid();
+
+		$this->assertStringContainsString( 'alt="Geometric"', $cards, 'the term name stands in for a missing alt' );
+		$this->assertStringNotContainsString( 'width=', $cards, 'dimensions are omitted when the metadata has none' );
+	}
+
+	/**
+	 * A term whose thumbnail attachment is gone renders no image at all —
+	 * never a `src=""` — and the rest of the grid still renders.
+	 */
+	public function test_series_grid_skips_an_unresolvable_attachment(): void {
+		$gone          = new \WP_Term( (object) array() );
+		$gone->term_id = 22;
+		$gone->slug    = 'pattern-landscape';
+		$gone->name    = 'Landscape';
+
+		WP_Mock::userFunction( 'get_terms' )->once()->andReturn( array( $gone ) );
+		WP_Mock::userFunction( 'get_term_link' )->once()->andReturn( 'https://site.test/collections/pattern-landscape/' );
+		$this->mock_hub_membership( $gone );
+		WP_Mock::userFunction( 'get_term_meta' )->once()->with( 22, 'thumbnail_id', true )->andReturn( '1601' );
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1601, 'full' )->andReturn( false );
+
+		$cards = ( new Shortcodes() )->series_grid();
+
+		$this->assertStringContainsString( '<div class="cph__media"></div>', $cards );
+		$this->assertStringNotContainsString( 'src=""', $cards );
+		$this->assertStringContainsString( '<h3 class="cph__card-title">Landscape</h3>', $cards, 'the card still carries its title' );
+	}
+
 
 	/**
 	 * The related cards render the WooCommerce related products in the
 	 * replica's card markup.
 	 */
 	public function test_related_renders_the_cards(): void {
-		$post            = new \stdClass();
-		$post->ID        = 7;
-		$post->post_type = 'product';
-		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $post );
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $this->product_post() );
+		// No partial is deployed in a unit run, so the renderer takes the
+		// repository file — the fallback `present` exists to make unnecessary.
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( array $args = array() ): array => 'ids' === ( $args['fields'] ?? '' ) ? array() : array()
+		);
 		WP_Mock::userFunction( 'wc_get_related_products' )->once()->andReturn( array( 11 ) );
 		WP_Mock::userFunction( 'get_permalink' )->andReturn( 'https://site.test/pattern/zelda-architectural-metal-screen-pattern/' );
 		WP_Mock::userFunction( 'get_the_post_thumbnail_url' )->andReturn( 'https://site.test/wp-content/uploads/zelda.jpg' );
@@ -447,6 +844,131 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
+	 * The template's frames ask this predicate, so it must answer exactly
+	 * where image() draws — the two are one resolution, not two.
+	 */
+	public function test_has_image_agrees_with_the_drawn_slots(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Pebble Creek installed screen scene',
+				),
+				102 => array(
+					'role' => 'detail reference',
+					'alt'  => 'Pebble Creek pattern detail reference',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		foreach ( array( 'hero-bg', 'plate', 'square', 'wide' ) as $slot ) {
+			$this->assertSame(
+				'' !== $shortcodes->image( array( 'slot' => $slot ) ),
+				$shortcodes->has_image( $slot ),
+				"{$slot}: the frame predicate and the drawn element agree"
+			);
+		}
+		$this->assertTrue( $shortcodes->has_image( 'plate' ) );
+		$this->assertFalse( $shortcodes->has_image( 'square' ), 'no second scene, no accent: the square frame stays out of the DOM' );
+	}
+
+	/**
+	 * An unknown slot and a non-product context draw nothing, so neither
+	 * may claim a frame.
+	 */
+	public function test_has_image_is_false_without_a_slot_or_a_product(): void {
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( null );
+
+		$shortcodes = new Shortcodes();
+		$this->assertFalse( $shortcodes->has_image( 'plate' ) );
+		$this->assertFalse( $shortcodes->has_image( 'nonsense' ) );
+	}
+
+	/**
+	 * The template's guard and its element resolve the slot once, not once
+	 * each — on different objects, which is how LiveCanvas actually calls
+	 * them.
+	 *
+	 * The PDP asks `[lc_if condition="md_pdp_slot_has_image" param="plate"]`
+	 * and then renders `[md_pdp_image slot="plate"]`. The guard goes through
+	 * the global function, which builds its own Shortcodes instance, so an
+	 * instance property would memoize nothing. This counts the underlying
+	 * reads: the gallery once per product, and each attachment's role/alt
+	 * once however many slots ask.
+	 */
+	public function test_the_guard_and_the_element_resolve_a_slot_once(): void {
+		Shortcodes::flush();
+		$fixture = $this->mock_products(
+			array(
+				7 => array(
+					101 => array(
+						'role' => 'installed screen scene',
+						'alt'  => 'Akira installed screen scene',
+					),
+					102 => array(
+						'role' => 'detail reference',
+						'alt'  => 'Akira pattern detail reference',
+					),
+				),
+			)
+		);
+
+		// Every slot twice, each pair on a fresh instance: guard, then element.
+		foreach ( array( 'hero-bg', 'plate', 'square', 'wide' ) as $slot ) {
+			( new Shortcodes() )->has_image( $slot );
+			( new Shortcodes() )->image( array( 'slot' => $slot ) );
+		}
+
+		$this->assertSame( 1, $fixture['counts']->gallery, 'the gallery is read once for the product, however many slots ask' );
+		$this->assertSame(
+			count( $fixture['media'] ),
+			$fixture['counts']->class_reads,
+			'each attachment is classified once, not once per slot that asks about it'
+		);
+	}
+
+	/**
+	 * Two products rendered in one request keep their own slots: the memo is
+	 * keyed by product id, so a second product can never answer for the
+	 * first.
+	 */
+	public function test_the_slot_memo_does_not_leak_between_products(): void {
+		Shortcodes::flush();
+		$fixture = $this->mock_products(
+			array(
+				7 => array(
+					101 => array(
+						'role' => 'installed screen scene',
+						'alt'  => 'First installed screen scene',
+					),
+				),
+				8 => array(
+					201 => array(
+						'role' => 'installed screen scene',
+						'alt'  => 'Second installed screen scene',
+					),
+				),
+			)
+		);
+
+		$shortcodes = new Shortcodes();
+
+		foreach ( array( array( 7, '101' ), array( 8, '201' ), array( 7, '101' ) ) as $case ) {
+			$GLOBALS['md_current_post'] = $fixture['posts'][ $case[0] ]; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- the fixture's own global, named after the plugin prefix.
+			$this->assertStringContainsString(
+				"uploads/{$case[1]}.webp",
+				$shortcodes->image( array( 'slot' => 'hero-bg' ) ),
+				"product {$case[0]} resolves its own hero"
+			);
+			$this->assertTrue( $shortcodes->has_image( 'hero-bg' ) );
+		}
+		// The gallery is read once per product, and the first product's
+		// answer is reused rather than recomputed on its second visit.
+		$this->assertSame( 2, $fixture['counts']->gallery );
+	}
+
+	/**
 	 * The eleven-word role vocabulary does not cover every old alt: the
 	 * sixty "pattern installation scene visualization" images are unknown
 	 * roles whose alt the old substring classifier reads as a scene.
@@ -602,12 +1124,17 @@ final class ShortcodesTest extends TestCase {
 		$thumbnail = (int) $ids[0];
 		$gallery   = array_map( 'intval', array_slice( $ids, 1 ) );
 
-		$post            = new \stdClass();
-		$post->ID        = 7;
-		$post->post_type = 'product';
-		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $post );
+		// Every mock hands out a WP_Post (the WordPress contract), never a
+		// bare stdClass: a bare object silently omits the members the
+		// production code is entitled to read, and the next reader added to
+		// the assembly turns that omission into a fatal in the suite.
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $this->product_post() );
 		WP_Mock::userFunction( 'get_the_title' )->zeroOrMoreTimes()->andReturn( 'Akira | Architectural Metal Screen Pattern' );
 		WP_Mock::userFunction( 'get_post_thumbnail_id' )->zeroOrMoreTimes()->andReturn( $thumbnail );
+		// The slot image is a partial now, and no lc_partial is installed in
+		// the unit suite, so the renderer reads the repository file — the same
+		// fallback a site before `wp md-site present` takes.
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturn( array() );
 		$GLOBALS['md_wc_product_double'] = new \FakeGalleryProduct( $gallery ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- the shared WooCommerce double's global (tests/php/Doubles/seopress-woocommerce.php).
 		WP_Mock::userFunction( 'get_post_meta' )->zeroOrMoreTimes()->andReturnUsing(
 			static function ( int $id, string $key ) use ( $media ) {
@@ -636,20 +1163,183 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
+	 * The hub's membership read: series_grid keeps a term by asking
+	 * Catalog::series_visible_counts(), which projects the catalog-visible
+	 * products once for the page and then their product_cat terms.
+	 *
+	 * @param \WP_Term $term The term the page's visible products belong to.
+	 */
+	private function mock_hub_membership( \WP_Term $term ): void {
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( array $args = array() ): array => 'ids' === ( $args['fields'] ?? '' ) ? array( 7 ) : array()
+		);
+		WP_Mock::userFunction( 'wp_get_object_terms' )->zeroOrMoreTimes()->andReturn( array( $term ) );
+	}
+
+	/**
+	 * One or more products with their own media, for the tests that render
+	 * several products in one process.
+	 *
+	 * `get_post()` answers whichever product `$GLOBALS['md_current_post']`
+	 * names, so a test switches products the way the template's loop does.
+	 * The returned `counts` object is live: its `gallery` and `class_reads`
+	 * keep counting as the test runs, which is what the memoization tests
+	 * assert on.
+	 *
+	 * @param non-empty-array<int, array<int, array<string, mixed>>> $products Media by product id, then attachment id.
+	 * @return array{counts: GalleryReadCounter, posts: array<int, \WP_Post>, media: array<int, mixed>}
+	 */
+	private function mock_products( array $products ): array {
+		$posts  = array();
+		$media  = array();
+		$by_id  = array();
+		$counts = new GalleryReadCounter();
+
+		foreach ( $products as $post_id => $attachments ) {
+			$ids               = array_keys( $attachments );
+			$posts[ $post_id ] = $this->product_post( array(), $post_id );
+			foreach ( $attachments as $id => $data ) {
+				$media[ $id ] = $data;
+			}
+			// One double per product, holding that product's own gallery —
+			// the real WooCommerce model: a product object answers for one
+			// catalog row.
+			$by_id[ $post_id ] = new \FakeGalleryProduct(
+				array_map( 'intval', array_slice( $ids, 1 ) ),
+				static function () use ( $counts ): void {
+					++$counts->gallery;
+				}
+			);
+		}
+		$GLOBALS['md_current_post'] = reset( $posts ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- the fixture's own global, named after the plugin prefix.
+		$GLOBALS['md_wc_products']  = $by_id; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- the shared WooCommerce double's per-id map (tests/php/Doubles/seopress-woocommerce.php).
+
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn() => $GLOBALS['md_current_post'] ?? null
+		);
+		// The slot image renders from a partial, and no lc_partial is
+		// installed in the unit suite: the renderer reads the repository file.
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturn( array() );
+		WP_Mock::userFunction( 'get_the_title' )->zeroOrMoreTimes()->andReturnUsing(
+			static function ( int|\WP_Post $post = 0 ): string {
+				$id = $post instanceof \WP_Post ? (int) $post->ID : (int) $post;
+				return "Pattern {$id} | Architectural Metal Screen Pattern";
+			}
+		);
+		WP_Mock::userFunction( 'get_post_thumbnail_id' )->zeroOrMoreTimes()->andReturnUsing(
+			static function ( int $post_id ) use ( $products ) {
+				$ids = array_keys( $products[ $post_id ] ?? array() );
+				return array() === $ids ? 0 : (int) $ids[0];
+			}
+		);
+		WP_Mock::userFunction( 'get_post_meta' )->zeroOrMoreTimes()->andReturnUsing(
+			static function ( int $id, string $key ) use ( $media, $counts ) {
+				if ( '_md_role' === $key ) {
+					++$counts->class_reads;
+					return (string) ( $media[ $id ]['role'] ?? '' );
+				}
+				if ( '_wp_attachment_image_alt' === $key ) {
+					++$counts->alt_reads;
+					return (string) ( $media[ $id ]['alt'] ?? '' );
+				}
+				return '';
+			}
+		);
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( int $id ): string => "https://site.test/uploads/{$id}.webp"
+		);
+		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->zeroOrMoreTimes()->andReturn( array() );
+
+		return array(
+			'counts' => $counts,
+			'posts'  => $posts,
+			'media'  => $media,
+		);
+	}
+
+	/**
 	 * One product meta read, mocked: the product post plus the one key.
 	 *
 	 * @param string $key   The field name.
 	 * @param string $value The value the meta read returns.
 	 */
 	private function mock_product_meta( string $key, string $value ): void {
-		$post            = new \stdClass();
-		$post->ID        = 7;
-		$post->post_type = 'product';
-		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $post );
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $this->product_post() );
 		WP_Mock::userFunction( 'get_post_meta' )->zeroOrMoreTimes()->andReturnUsing(
 			static function ( int $id, string $asked ) use ( $key, $value ) {
 				return $asked === $key ? $value : '';
 			}
 		);
+	}
+
+	/**
+	 * One pattern fixture: its product screen fields (`summary`,
+	 * `excerpt`, `notable`), its series term (`blurb` style blurb, `term`
+	 * description, `slug`).
+	 *
+	 * @param array<string, string> $fields The fixture.
+	 */
+	private function mock_pattern( array $fields ): void {
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn(
+			$this->product_post( array( 'post_excerpt' => (string) ( $fields['excerpt'] ?? '' ) ) )
+		);
+		WP_Mock::userFunction( 'get_the_title' )->zeroOrMoreTimes()->andReturn( 'Akira | Architectural Metal Screen Pattern' );
+		WP_Mock::userFunction( 'get_post_meta' )->zeroOrMoreTimes()->andReturnUsing(
+			static function ( int $id, string $key ) use ( $fields ) {
+				return match ( $key ) {
+					'summary'        => (string) ( $fields['summary'] ?? '' ),
+					'notable_effect' => (string) ( $fields['notable'] ?? '' ),
+					default          => '',
+				};
+			}
+		);
+
+		$slug  = (string) ( $fields['slug'] ?? '' );
+		$blurb = (string) ( $fields['blurb'] ?? '' );
+		// A blurb is a reason to have a term even when the fixture names no
+		// slug or description: it lives on the term, so the term must exist.
+		if ( '' === $slug && '' === (string) ( $fields['term'] ?? '' ) && '' === $blurb ) {
+			WP_Mock::userFunction( 'get_the_terms' )->zeroOrMoreTimes()->andReturn( false );
+			return;
+		}
+		$term              = new \WP_Term( (object) array() );
+		$term->term_id     = 18;
+		$term->slug        = '' === $slug ? 'pattern-abstract' : $slug;
+		$term->name        = 'Abstract';
+		$term->description = (string) ( $fields['term'] ?? '' );
+		WP_Mock::userFunction( 'get_the_terms' )->zeroOrMoreTimes()->andReturn( array( $term ) );
+		// The series' own ACF fields: the style blurb is the PDP lead, and a
+		// fixture that omits it must read as "the term carries none".
+		WP_Mock::userFunction( 'get_term_meta' )->zeroOrMoreTimes()->andReturnUsing(
+			static function ( int $term_id, string $key ) use ( $blurb ) {
+				return 'style_blurb' === $key ? $blurb : '';
+			}
+		);
+	}
+
+	/**
+	 * The current product, as WordPress hands it to a template: the
+	 * shared WP_Post double (tests/php/Doubles/wordpress.php), which
+	 * carries every member the real class does. Fixtures build on it
+	 * rather than on a bare stdClass so a member the production code
+	 * gains later is present by default instead of fatal.
+	 *
+	 * The row object is passed the way WordPress's own constructor takes
+	 * it (`__construct($post)`): an empty object, since the plugin reads
+	 * the members, not the constructor's argument. The runtime double
+	 * ignores it, so the double's defaults stand.
+	 *
+	 * @param array<string, mixed> $fields  Members to override.
+	 * @param int                  $post_id The product id (post 7 by default).
+	 * @return \WP_Post The product post.
+	 */
+	private function product_post( array $fields = array(), int $post_id = 7 ): \WP_Post {
+		$post            = new \WP_Post( new \stdClass() );
+		$post->ID        = max( 0, $post_id );
+		$post->post_type = 'product';
+		foreach ( $fields as $name => $value ) {
+			$post->{$name} = $value;
+		}
+		return $post;
 	}
 }

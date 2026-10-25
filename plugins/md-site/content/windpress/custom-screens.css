@@ -2,6 +2,32 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
+
+/* The landing face's rem base. Every other carried face was captured from
+ * an old page whose theme set `html { font-size: 62.5% }` (1rem = 10px,
+ * base.css carries the same rule); the landing page alone ran at the
+ * browser's 16px — measured on the old page 2026-10-26: `3rem` = 48px
+ * there against 30px here. The capture kept each face's own computed
+ * values, so this face's rem-based utilities (`.h-12` 48px, `.h-14` 56px,
+ * the section padding) are all sized for a 16px root and were rendering
+ * 0.625x small: the footer logo box 30px against the old site's 48px, the
+ * hero `h1` box 293x297 against 469x178.
+ *
+ * Scoped by `#landing-nav`, which only this face's template emits; the
+ * WindPress cache is one stylesheet for the whole site, so the guard is
+ * what keeps the other faces on their 62.5% root. `body` is pinned to 1rem
+ * because base.css sizes it in rem (1.6rem) — without the pin the root
+ * change would inflate body text to 25.6px, while the old landing page's
+ * body computed 16px. Verified against the old page: text sizes are
+ * unchanged by this block; the `h1` box and the footer height land exactly
+ * on the old values. */
+html:has(#landing-nav) {
+font-size: 100%;
+}
+html:has(#landing-nav) body {
+font-size: 1rem;
+}
+
 .-top-20 { top:-5rem }
 .-top-48 { top:-12rem }
 .animate-ping { animation:ping 1s cubic-bezier(0,0,.2,1) infinite }
@@ -1728,10 +1754,10 @@ border: 1px solid rgba(255, 255, 255, 0.08);
 .md-tdd67a31a { color: #c9a962 }
 .md-t8f01581a { font-family: 'Playfair Display', serif }
 .md-t60237345 { background-color: #c9a962;box-shadow: 0 0 8px #c9a962 }
-.md-te6492a4d { background-image: url('//metalpartition.com/cdn/shop/files/hero-hotel-lobby-gold.webp?v=1769670336&width=100') }
-.md-t56aa3c7c { background-image: url('//metalpartition.com/cdn/shop/files/our-expanded-facade-shading-hero.webp?v=1783605097&width=100') }
-.md-teee77d3d { background-image: url('//metalpartition.com/cdn/shop/files/ext-gold-lattice-restaurant-screen.webp?v=1783564252&width=100') }
-.md-t92a06a3b { background-image: url('//metalpartition.com/cdn/shop/files/our-shanghai-villa-rosegold-partition-detail.webp?v=1783606885&width=100') }
+.md-te6492a4d { background-image: url('/wp-content/uploads/2026/10/hero-hotel-lobby-gold-480w.webp') }
+.md-t56aa3c7c { background-image: url('/wp-content/uploads/2026/10/our-expanded-facade-shading-hero-480w.webp') }
+.md-teee77d3d { background-image: url('/wp-content/uploads/2026/10/ext-gold-lattice-restaurant-screen-480w.webp') }
+.md-t92a06a3b { background-image: url('/wp-content/uploads/2026/10/our-shanghai-villa-rosegold-partition-detail-480w.webp') }
 .md-ta8a90353 { position: relative }
 .md-t77a6142d { position: absolute;top: -80px;left: 0;width: 100%;height: 0;pointer-events: none }
 .md-t4a700851 { background-color: #0c0c0c;color: #ffffff }
