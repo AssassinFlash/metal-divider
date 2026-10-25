@@ -57,6 +57,11 @@ final class Plugin {
 		$this->schemas->register();
 		$this->assets->register();
 		$this->catalog->register();
+		// SEOPress prints an unlayered `.breadcrumb li{display:inline-block}` +
+		// ' - ' separator into wp_head; unlayered author CSS outranks the
+		// WindPress volume layer and broke the replica's breadcrumb row. The
+		// site renders its own breadcrumb, so the generic stylesheet goes.
+		add_filter( 'seopress_pro_breadcrumbs_css', '__return_empty_string' );
 		add_action( 'cli_init', array( $this, 'register_cli' ) );
 	}
 
