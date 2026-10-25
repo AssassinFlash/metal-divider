@@ -60,7 +60,7 @@ function md_site_guards_header_lines(): array {
 		'X-Frame-Options: SAMEORIGIN',
 		'X-Content-Type-Options: nosniff',
 		'Referrer-Policy: strict-origin-when-cross-origin',
-		"Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://cdn-cookieyes.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn-cookieyes.com; font-src 'self'; connect-src 'self' https://*.cookieyes.com https://cdn-cookieyes.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+		"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com https://cdn-cookieyes.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn-cookieyes.com; font-src 'self'; connect-src 'self' https://*.cookieyes.com https://cdn-cookieyes.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
 	);
 }
 

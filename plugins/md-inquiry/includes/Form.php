@@ -303,7 +303,7 @@ final class Form {
 	 * @return string
 	 */
 	private function honeypot(): string {
-		return '<p class="md-inquiry-honeypot"><label class="md-inquiry-field__label" for="md-inquiry-website">' . \esc_html__( 'Leave this field empty', 'md-inquiry' ) . '</label><input class="md-inquiry-field__input" type="text" id="md-inquiry-website" name="website" autocomplete="off" tabindex="-1"></p>';
+		return '<p class="md-inquiry-honeypot" aria-hidden="true"><label class="md-inquiry-field__label" for="md-inquiry-website">' . \esc_html__( 'Leave this field empty', 'md-inquiry' ) . '</label><input class="md-inquiry-field__input" type="text" id="md-inquiry-website" name="website" autocomplete="off" tabindex="-1"></p>';
 	}
 
 	/**

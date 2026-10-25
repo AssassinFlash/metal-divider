@@ -57,3 +57,34 @@ add_action( 'after_setup_theme', 'md_child_retire_parent_preload_hint' );
  * might have needed one went with the dequeued bundle. A flag nothing
  * consumes is dead code (spec 17 §6.3: measure, then only add what is used).
  */
+
+/**
+ * The catalog's front end does not carry WooCommerce's UI: patterns are
+ * rendered by the LC templates and the inquiry chain is md-inquiry's own.
+ * The spec's asset gates make that explicit — one external stylesheet (the
+ * WindPress cache, CHECK-3) and a frozen script whitelist (LC runtime,
+ * Turnstile, the inquiry plugin, CHECK-4) — so the Woo styles and scripts
+ * (and their inline configuration, which the CSP blocks) go on the front
+ * end. Admin keeps everything: the catalog is managed there.
+ */
+function md_child_retire_woocommerce_frontend_assets(): void {
+	if ( is_admin() ) {
+		return;
+	}
+	foreach ( array( 'woocommerce-layout', 'woocommerce-smallscreen', 'woocommerce-general', 'photoswipe', 'photoswipe-default-skin' ) as $style ) {
+		wp_dequeue_style( $style );
+	}
+	foreach ( array( 'woocommerce', 'wc-add-to-cart', 'wc-jquery-blockui', 'wc-zoom', 'wc-flexslider', 'wc-photoswipe', 'wc-photoswipe-ui-default', 'wc-single-product', 'wc-js-cookie', 'sourcebuster-js', 'wc-order-attribution' ) as $script ) {
+		wp_dequeue_script( $script );
+	}
+}
+add_action( 'wp_enqueue_scripts', 'md_child_retire_woocommerce_frontend_assets', 320 );
+
+/**
+ * Hostinger's Reach embed is a marketing script outside the whitelist and
+ * outside the CSP; it would only ever fail on the page.
+ */
+function md_child_retire_hostinger_embed(): void {
+	wp_dequeue_script( 'hostinger-reach-embed-js' );
+}
+add_action( 'wp_enqueue_scripts', 'md_child_retire_hostinger_embed', 320 );
