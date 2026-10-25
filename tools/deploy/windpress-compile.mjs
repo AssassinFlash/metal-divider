@@ -89,6 +89,9 @@ try {
 	await page.evaluate(() => {
 		const region = document.querySelector('[role="region"][aria-label*="Notification"]');
 		if ( region ) region.remove();
+		// Hostinger Agent's greeting is a separate fixed overlay on production;
+		// it intercepts Generate even after WindPress's own prompt is dismissed.
+		document.querySelectorAll('#vue-app .first-greeting').forEach((element) => element.remove());
 	});
 
 	const waitMs = Number(process.env.WINDPRESS_COMPILE_WAIT_MS ?? 300_000);
