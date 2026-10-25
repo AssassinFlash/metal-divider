@@ -1,0 +1,234 @@
+<!doctype html>
+<!-- MetalDivider Journal — single post prototype (wayfinder #11, 2026-10-24).
+     Structure after de-linker blog_single: reader topbar, contents rail,
+     reading sheet (title, cover, measured prose), share + related rail,
+     prev/next. Article uses real catalog data: open area 6.0–85.48%, median
+     35.0, 146 patterns in 9 series. Static HTML only. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Area Explained · Blog · Metal Divider</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="blog.css">
+</head>
+<body>
+<article id="mdj-single" class="mdj">
+
+  <div class="reader-topbar">
+    <a class="reader-back" href="index.html"><span aria-hidden="true">←</span>Back to blog</a>
+    <form class="mdj-search reader-search" role="search" action="#" onsubmit="return false">
+      <label for="reader-search" class="mdj-sr">Search the journal</label>
+      <input id="reader-search" type="search" placeholder="Search the journal">
+      <button type="submit" aria-label="Search">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      </button>
+    </form>
+  </div>
+
+  <div class="reader-layout">
+
+    <aside class="reader-left">
+      <details class="reader-toc" open>
+        <summary>On this page</summary>
+        <nav class="reader-map" aria-label="Post sections">
+          <a href="#overview">Overview</a>
+          <a href="#what-is-open-area">What is open area?</a>
+          <a href="#ranges">What ranges do patterns come in?</a>
+          <a href="#privacy">How does it affect privacy?</a>
+          <a href="#light-airflow">Light and airflow</a>
+          <a href="#specify">Specifying open area</a>
+          <a href="#faq">Frequently asked questions</a>
+          <a href="#related">Related reading</a>
+        </nav>
+      </details>
+    </aside>
+
+    <div class="reader-main">
+      <header class="reader-head">
+        <div class="reader-title">
+          <div class="reader-cats"><a href="category.html">Manufacturing</a></div>
+          <h1>Open Area Explained: Choosing Perforation Density for Privacy, Light and Airflow</h1>
+          <div class="reader-byline">
+            <span>MetalDivider Team</span>
+            <span>Sep 15, 2026</span>
+            <span>7 min read</span>
+          </div>
+        </div>
+        <div class="reader-cover"><span class="ph ph--perf" aria-hidden="true"></span></div>
+      </header>
+
+      <section class="reader-body">
+        <div class="mdj-prose">
+
+          <div id="overview">
+            <p class="lede">Open area is the single number that most changes how a metal screen behaves. Across the 146 patterns in our catalog, open area ranges from 6.0% to 85.48%, with a median of 35.0% — and every step along that range trades privacy against light, airflow, and visual weight. This guide explains what the number means, how to read it, and how to choose the right band for your project.</p>
+          </div>
+
+          <div class="mdj-stats" aria-label="Catalog open-area figures">
+            <div class="mdj-stat"><b>6.0–85.48%</b><span>Open-area range across the catalog</span></div>
+            <div class="mdj-stat"><b>35.0%</b><span>Median open area across 146 patterns</span></div>
+            <div class="mdj-stat"><b>9</b><span>Pattern series, from perforated to moroccan-arabic</span></div>
+          </div>
+
+          <h2 id="what-is-open-area">What is open area?</h2>
+          <p>Open area is the percentage of a panel's surface that is cut away — holes, slots, or laser-cut openings — relative to the total panel area. A panel with 40% open area is 40% open space and 60% solid metal. It is calculated from the pattern geometry: for perforated patterns, from hole size and pitch (the center-to-center hole spacing); for laser-cut patterns, from the drawn cut lines themselves.</p>
+          <p>Two patterns can look similar at a glance and differ by 30 percentage points of open area. That difference decides whether a screen reads as a wall or as a veil — which is why open area, not the motif, is the first specification an experienced buyer asks about.</p>
+
+          <h2 id="ranges">What open-area ranges do screen patterns come in?</h2>
+          <p>Our pattern library spans 6.0% to 85.48% open area. In practice, patterns cluster into three working bands:</p>
+          <table>
+            <thead>
+              <tr><th>Open-area band</th><th>Character</th><th>Typical uses</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>6–20% · Low</strong></td><td>Reads as near-solid; maximum privacy, minimal light and air passage.</td><td>Facade accents, privacy walls, splashbacks</td></tr>
+              <tr><td><strong>20–50% · Mid</strong></td><td>Balanced privacy with daylight and airflow; the catalog median of 35.0% sits here.</td><td>Room dividers, railing infills, reception screens</td></tr>
+              <tr><td><strong>50–85.48% · High</strong></td><td>Predominantly open; light-dominant, little visual blocking.</td><td>Decorative overlays, ceiling panels, sunshade layers</td></tr>
+            </tbody>
+          </table>
+          <p>The bands are descriptive, not prescriptive. The exact open area of any pattern — catalog or custom — is confirmed per drawing before production.</p>
+
+          <h2 id="privacy">How does open area affect privacy?</h2>
+          <p>Privacy tracks open area, but not perfectly — hole size matters as much as percentage. At the catalog median of 35.0%, silhouettes blur beyond a few meters while daylight passes freely. Below 20%, a screen reads as near-solid from most viewing angles. Above roughly 60%, treat the screen as a visual texture rather than a privacy barrier.</p>
+          <p>Hole geometry explains the exceptions: a pattern with many small perforations can reach a high open-area figure while still diffusing detail, while a pattern with a few large openings at the same percentage shows whatever stands behind it. When privacy is the priority, specify <strong>small holes, mid open area</strong> — the combination the perforated series in our catalog is built around.</p>
+
+          <h2 id="light-airflow">How does open area change light and airflow?</h2>
+          <p>Light transmission and airflow both scale roughly with the open fraction. A 35% open panel admits about a third of the incident light; at 85% open area, the panel is closer to a frame than a filter. In interior projects that difference sets how a space feels behind the screen — from dappled and intimate to bright and connected.</p>
+          <p>Outdoors, higher open area also lets wind pass through rather than push on the panel, which reduces the load the fixings have to carry. And the shadow a screen casts is a design feature in its own right: the denser the pattern, the stronger the projected geometry on floors and walls — a frequent reason lobby and facade projects choose mid-band patterns over open ones.</p>
+
+          <h2 id="specify">How do I specify open area when ordering?</h2>
+          <p>Three numbers define a perforated pattern: hole geometry (diameter or slot size), pitch (hole spacing), and the resulting open area. For laser-cut patterns, open area follows from the artwork. To keep a specification tight:</p>
+          <ul>
+            <li>Start from the effect you want — privacy, daylight, shadow pattern — and work back to a band, not a single number.</li>
+            <li>Fine holes at tight pitch give an even texture; large openings give a graphic pattern.</li>
+            <li>Confirm the open area on the pattern specification before production; every value is confirmed per drawing.</li>
+            <li>For exterior installations, mention the mounting context when you inquire — open area interacts with wind behavior and the fixing plan.</li>
+          </ul>
+
+          <div class="mdj-invite">
+            <div><strong>Shortlisting patterns by open area?</strong> Collect candidates in the pattern list and send one inquiry — we confirm open area, material route, and panel dimensions per drawing.</div>
+            <a class="btn btn-gold" href="#">Open the pattern list <span aria-hidden="true">→</span></a>
+          </div>
+
+          <section class="mdj-faq" id="faq" aria-label="Frequently asked questions">
+            <h2>Frequently asked questions</h2>
+            <h3>What open area is best for privacy screens?</h3>
+            <p>Most privacy applications land between 20% and 45%. The catalog median of 35.0% is a reliable starting point: outlines blur at conversation distance, daylight passes, and the screen keeps its visual weight low.</p>
+            <h3>Does a higher open area weaken the panel?</h3>
+            <p>Stiffness depends on the combination of open area, pattern geometry, material, and sheet thickness — not on open area alone. Structural requirements are reviewed and confirmed per drawing before production.</p>
+            <h3>Can open area be customized?</h3>
+            <p>Yes. Catalog patterns cover 6.0% to 85.48%, and custom patterns are cut from your drawing — the open area follows the artwork.</p>
+            <h3>How is open area calculated?</h3>
+            <p>Open area = total area of all openings ÷ total panel area × 100. For perforated patterns it derives from hole size and pitch; for laser-cut patterns, from the cut geometry.</p>
+          </section>
+
+        </div>
+
+        <div class="reader-meta">
+          <span>Published: Sep 15, 2026</span>
+          <span>Category: <a href="category.html">Manufacturing</a></span>
+        </div>
+
+        <section class="reader-actions">
+          <a class="btn btn-gold" href="#">Send an inquiry <span aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="index.html">Back to blog</a>
+        </section>
+
+        <nav class="reader-adjacent" aria-label="More posts">
+          <div>
+            <span>Previous post</span>
+            <a href="post.html">What Is PVD Coating on Stainless Steel?</a>
+          </div>
+          <div>
+            <span>Next post</span>
+            <a href="post.html">Hotel Lobby Screens: 10 Design Directions with Metal Patterns</a>
+          </div>
+        </nav>
+      </section>
+    </div>
+
+    <aside class="reader-right">
+      <div class="reader-share">
+        <h2>Share</h2>
+        <ul class="reader-share-links">
+          <li><a href="#" aria-label="Share on X" title="Share on X">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg>
+          </a></li>
+          <li><a href="#" aria-label="Share on LinkedIn" title="Share on LinkedIn">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M8 10.5V17M8 7.5v.1M12 17v-3.4a2.3 2.3 0 0 1 4.6 0V17"/></svg>
+          </a></li>
+          <li><a href="#" aria-label="Share on WhatsApp" title="Share on WhatsApp">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.3-1.1A8.5 8.5 0 1 0 12 3.5Z"/><path d="M9.2 8.6c.4 2.7 3.5 5.8 6.2 6.2l.9-1.8-2-1-1 .9c-.7-.4-1.6-1.3-2-2l.9-1-1-2-1 .7Z"/></svg>
+          </a></li>
+          <li><a href="#" aria-label="Copy link" title="Copy link">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.5 12.8 4.7a3.8 3.8 0 0 1 5.4 5.4L16.5 12"/><path d="m13 17.5-1.8 1.8a3.8 3.8 0 0 1-5.4-5.4L7.5 12"/></svg>
+          </a></li>
+        </ul>
+      </div>
+
+      <section id="related" aria-label="Related reading">
+        <h2>Related reading</h2>
+        <div class="related-grid">
+          <a class="related-card" href="post.html">
+            <span class="related-image"><span class="ph ph--diag" aria-hidden="true"></span></span>
+            <div>
+              <h3>Laser Cut vs Perforated vs Expanded Metal: Which Process Fits Your Project</h3>
+              <span class="related-date">Oct 4, 2026</span>
+            </div>
+          </a>
+          <a class="related-card" href="post.html">
+            <span class="related-image"><span class="ph ph--grid" aria-hidden="true"></span></span>
+            <div>
+              <h3>How to Choose Decorative Metal Screens: The Complete B2B Buying Guide</h3>
+              <span class="related-date">Oct 20, 2026</span>
+            </div>
+          </a>
+          <a class="related-card" href="post.html">
+            <span class="related-image"><span class="ph ph--brushed" aria-hidden="true"></span></span>
+            <div>
+              <h3>304 vs 316 Stainless Steel for Architectural Screens</h3>
+              <span class="related-date">Sep 28, 2026</span>
+            </div>
+          </a>
+        </div>
+        <a class="reader-all" href="index.html">All posts <span aria-hidden="true">↗</span></a>
+      </section>
+    </aside>
+
+  </div>
+  <p class="mdj-proto-note">Static prototype — blog faces, wayfinder #11 · structure after the de-linker journal, tokens from the MetalDivider design system · 2026-10-24</p>
+</article>
+
+<script>
+(function () {
+  var toc = document.querySelector('.reader-toc');
+  if (!toc) return;
+  var desktop = window.matchMedia('(min-width:1000px)');
+  function sizeDisclosure() { toc.open = desktop.matches; }
+  sizeDisclosure();
+  desktop.addEventListener('change', sizeDisclosure);
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('.reader-map a[href^="#"]'));
+  var targets = links
+    .map(function (a) { return document.querySelector(a.hash); })
+    .filter(function (t) { return t && t.closest('.reader-main'); });
+  if (!targets.length) return;
+  function docTop(t) { return t.getBoundingClientRect().top + window.scrollY; }
+  function markCurrent() {
+    var y = window.scrollY + 140, current = targets[0];
+    targets.forEach(function (t) { if (docTop(t) <= y) current = t; });
+    links.forEach(function (a) {
+      if (a.hash === '#' + current.id) a.setAttribute('aria-current', 'location');
+      else a.removeAttribute('aria-current');
+    });
+  }
+  markCurrent();
+  window.addEventListener('hashchange', markCurrent);
+  window.addEventListener('scroll', markCurrent, { passive: true });
+})();
+</script>
+</body>
+</html>

@@ -78,7 +78,7 @@ class="xo-container--wide"
   class="overflow-hidden bg-[#141414] text-white"
   data-source-page="faqs"
   data-section-name="faqs-download"
-  x-data="{ openFaq: '', activeFaqCategory: 'Project Start' }"
+  x-data="mdFaq"
 >
   <div class="relative bg-gradient-to-b from-[#1a1a1a] to-[#141414]">
     <div class="pointer-events-none absolute inset-0 opacity-[0.03]" aria-hidden="true" class="md-t2a320089"></div>
@@ -380,7 +380,7 @@ class="xo-container--wide"
         <nav class="mt-12 space-y-4" aria-label="FAQ categories"><button
                 type="button"
                 class="flex min-h-[44px] w-full items-center gap-4 text-left text-base font-semibold leading-tight transition duration-200 md:text-lg"
-                x-on:click="activeFaqCategory = 'Project Start'; openFaq = ''"
+                x-on:click="selectCategory('Project Start')"
                 x-bind:class="activeFaqCategory === 'Project Start' ? 'text-white' : 'text-white/75 hover:text-white'"
               >
                 <span class="h-px w-8 bg-[#c9a962] transition duration-200" x-bind:class="activeFaqCategory === 'Project Start' ? 'opacity-100' : 'opacity-0'"></span>
@@ -388,7 +388,7 @@ class="xo-container--wide"
               </button><button
                 type="button"
                 class="flex min-h-[44px] w-full items-center gap-4 text-left text-base font-semibold leading-tight transition duration-200 md:text-lg"
-                x-on:click="activeFaqCategory = 'Pricing &amp; MOQ'; openFaq = ''"
+                x-on:click="selectCategory('Pricing &amp; MOQ')"
                 x-bind:class="activeFaqCategory === 'Pricing &amp; MOQ' ? 'text-white' : 'text-white/75 hover:text-white'"
               >
                 <span class="h-px w-8 bg-[#c9a962] transition duration-200" x-bind:class="activeFaqCategory === 'Pricing &amp; MOQ' ? 'opacity-100' : 'opacity-0'"></span>
@@ -396,7 +396,7 @@ class="xo-container--wide"
               </button><button
                 type="button"
                 class="flex min-h-[44px] w-full items-center gap-4 text-left text-base font-semibold leading-tight transition duration-200 md:text-lg"
-                x-on:click="activeFaqCategory = 'Materials &amp; Finishes'; openFaq = ''"
+                x-on:click="selectCategory('Materials &amp; Finishes')"
                 x-bind:class="activeFaqCategory === 'Materials &amp; Finishes' ? 'text-white' : 'text-white/75 hover:text-white'"
               >
                 <span class="h-px w-8 bg-[#c9a962] transition duration-200" x-bind:class="activeFaqCategory === 'Materials &amp; Finishes' ? 'opacity-100' : 'opacity-0'"></span>
@@ -404,7 +404,7 @@ class="xo-container--wide"
               </button><button
                 type="button"
                 class="flex min-h-[44px] w-full items-center gap-4 text-left text-base font-semibold leading-tight transition duration-200 md:text-lg"
-                x-on:click="activeFaqCategory = 'Custom Design &amp; Drawings'; openFaq = ''"
+                x-on:click="selectCategory('Custom Design &amp; Drawings')"
                 x-bind:class="activeFaqCategory === 'Custom Design &amp; Drawings' ? 'text-white' : 'text-white/75 hover:text-white'"
               >
                 <span class="h-px w-8 bg-[#c9a962] transition duration-200" x-bind:class="activeFaqCategory === 'Custom Design &amp; Drawings' ? 'opacity-100' : 'opacity-0'"></span>
@@ -412,7 +412,7 @@ class="xo-container--wide"
               </button><button
                 type="button"
                 class="flex min-h-[44px] w-full items-center gap-4 text-left text-base font-semibold leading-tight transition duration-200 md:text-lg"
-                x-on:click="activeFaqCategory = 'Manufacturing &amp; Sizing'; openFaq = ''"
+                x-on:click="selectCategory('Manufacturing &amp; Sizing')"
                 x-bind:class="activeFaqCategory === 'Manufacturing &amp; Sizing' ? 'text-white' : 'text-white/75 hover:text-white'"
               >
                 <span class="h-px w-8 bg-[#c9a962] transition duration-200" x-bind:class="activeFaqCategory === 'Manufacturing &amp; Sizing' ? 'opacity-100' : 'opacity-0'"></span>
@@ -420,7 +420,7 @@ class="xo-container--wide"
               </button><button
                 type="button"
                 class="flex min-h-[44px] w-full items-center gap-4 text-left text-base font-semibold leading-tight transition duration-200 md:text-lg"
-                x-on:click="activeFaqCategory = 'Installation &amp; Delivery'; openFaq = ''"
+                x-on:click="selectCategory('Installation &amp; Delivery')"
                 x-bind:class="activeFaqCategory === 'Installation &amp; Delivery' ? 'text-white' : 'text-white/75 hover:text-white'"
               >
                 <span class="h-px w-8 bg-[#c9a962] transition duration-200" x-bind:class="activeFaqCategory === 'Installation &amp; Delivery' ? 'opacity-100' : 'opacity-0'"></span>
@@ -428,7 +428,7 @@ class="xo-container--wide"
               </button><button
                 type="button"
                 class="flex min-h-[44px] w-full items-center gap-4 text-left text-base font-semibold leading-tight transition duration-200 md:text-lg"
-                x-on:click="activeFaqCategory = 'Quality &amp; Documents'; openFaq = ''"
+                x-on:click="selectCategory('Quality &amp; Documents')"
                 x-bind:class="activeFaqCategory === 'Quality &amp; Documents' ? 'text-white' : 'text-white/75 hover:text-white'"
               >
                 <span class="h-px w-8 bg-[#c9a962] transition duration-200" x-bind:class="activeFaqCategory === 'Quality &amp; Documents' ? 'opacity-100' : 'opacity-0'"></span>
@@ -436,7 +436,7 @@ class="xo-container--wide"
               </button><button
                 type="button"
                 class="flex min-h-[44px] w-full items-center gap-4 text-left text-base font-semibold leading-tight transition duration-200 md:text-lg"
-                x-on:click="activeFaqCategory = 'Care &amp; Performance'; openFaq = ''"
+                x-on:click="selectCategory('Care &amp; Performance')"
                 x-bind:class="activeFaqCategory === 'Care &amp; Performance' ? 'text-white' : 'text-white/75 hover:text-white'"
               >
                 <span class="h-px w-8 bg-[#c9a962] transition duration-200" x-bind:class="activeFaqCategory === 'Care &amp; Performance' ? 'opacity-100' : 'opacity-0'"></span>
@@ -452,7 +452,7 @@ class="xo-container--wide"
               </div>
 
               <div class="divide-y divide-white/10"><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_01' ? '' : 'faq_01'" x-bind:aria-expanded="openFaq === 'faq_01'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_01">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_01')" x-bind:aria-expanded="openFaq === 'faq_01'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_01">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How do I get a quote?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_01' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -461,7 +461,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_01" x-show="openFaq === 'faq_01'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>Send the application, approximate dimensions, quantity, preferred material, finish, and any drawings or reference images. We reply with method recommendation, production notes, lead time, and pricing.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_02' ? '' : 'faq_02'" x-bind:aria-expanded="openFaq === 'faq_02'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_02">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_02')" x-bind:aria-expanded="openFaq === 'faq_02'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_02">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Can I use my own pattern design?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_02' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -471,7 +471,7 @@ class="xo-container--wide"
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_02" x-show="openFaq === 'faq_02'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>Yes. Send a sketch, CAD file, DXF, AI file, photo, or reference image. We convert it into a manufacturable pattern and return a production drawing for approval.</p>
 <p>Simple adaptations of existing patterns are usually handled inside the quote. Fully custom engineering is confirmed before we begin.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_03' ? '' : 'faq_03'" x-bind:aria-expanded="openFaq === 'faq_03'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_03">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_03')" x-bind:aria-expanded="openFaq === 'faq_03'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_03">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Can you fully customize partition patterns and dimensions? Which drawing formats do you support?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_03' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -480,7 +480,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_03" x-show="openFaq === 'faq_03'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>Yes. We provide full custom metal partition fabrication, from complex geometric patterns to unique ornamental designs, using high-precision CNC laser cutting. For the fastest review and production workflow, please send vector files in DXF, DWG, AI, EPS, or PDF format.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_04' ? '' : 'faq_04'" x-bind:aria-expanded="openFaq === 'faq_04'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_04">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_04')" x-bind:aria-expanded="openFaq === 'faq_04'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_04">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Can I send my own pattern design?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_04' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -501,7 +501,7 @@ class="xo-container--wide"
               </div>
 
               <div class="divide-y divide-white/10"><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_05' ? '' : 'faq_05'" x-bind:aria-expanded="openFaq === 'faq_05'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_05">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_05')" x-bind:aria-expanded="openFaq === 'faq_05'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_05">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What is the minimum order quantity?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_05' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -510,7 +510,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_05" x-show="openFaq === 'faq_05'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>Standard patterns usually start from 30 sqm. Custom patterns usually start from 50 sqm. Sample panels can be made before production so you can confirm material, finish, and pattern scale.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_06' ? '' : 'faq_06'" x-bind:aria-expanded="openFaq === 'faq_06'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_06">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_06')" x-bind:aria-expanded="openFaq === 'faq_06'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_06">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What drives the cost of custom stainless steel screens?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_06' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -522,7 +522,7 @@ class="xo-container--wide"
 <p>A budget quote should include the screen type, grade, thickness, finish, panel dimensions, mounting approach, and packing method. For procurement teams, this makes quote comparison clearer than a loose material-only estimate.</p>
 <p>Send dimensions, quantity, finish target, and installation location to receive a project-specific price band.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_07' ? '' : 'faq_07'" x-bind:aria-expanded="openFaq === 'faq_07'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_07">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_07')" x-bind:aria-expanded="openFaq === 'faq_07'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_07">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How much do laser-cut stainless steel screens cost?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_07' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -535,7 +535,7 @@ class="xo-container--wide"
 <ul><li><strong>Pattern complexity</strong> — linear grid is most economical; intricate carving or fine lattice adds 30–60%</li><li><strong>Material thickness</strong> — 0.8–1.2mm is standard; 2–3mm adds 20–30%</li><li><strong>PVD finish</strong> — brushed/mirror is baseline; antique bronze or custom color matching adds $40–$80/sqm</li><li><strong>Quantity</strong> — unit cost drops significantly above 50 sqm</li></ul>
 <p>Send your project scope → we return a line-item quote within 24 hours.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_08' ? '' : 'faq_08'" x-bind:aria-expanded="openFaq === 'faq_08'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_08">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_08')" x-bind:aria-expanded="openFaq === 'faq_08'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_08">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How much will perforated panels cost for my project?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_08' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -549,7 +549,7 @@ class="xo-container--wide"
 <ul><li><strong>Material</strong> — Aluminum is cheapest; stainless steel is 2–3× the cost</li><li><strong>Open area</strong> — >50% reduces material yield but slightly increases processing cost</li><li><strong>Thickness</strong> — Each additional 1mm adds 15–25%</li><li><strong>Finish</strong> — Powder coat is most economical; PVD / anodized is premium</li><li><strong>Panel size & customization</strong> — Standard 1.2×2.4m is most cost-effective; oversized or shaped panels add 20–40%</li><li><strong>Volume</strong> — >500m² qualifies for 15–25% discount</li></ul>
 <p>Share your drawings and specs — we return a precise quote within 24 hours to balance budget and performance.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_09' ? '' : 'faq_09'" x-bind:aria-expanded="openFaq === 'faq_09'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_09">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_09')" x-bind:aria-expanded="openFaq === 'faq_09'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_09">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What is the minimum order quantity and how does pricing scale?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_09' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -572,7 +572,7 @@ class="xo-container--wide"
               </div>
 
               <div class="divide-y divide-white/10"><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_10' ? '' : 'faq_10'" x-bind:aria-expanded="openFaq === 'faq_10'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_10">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_10')" x-bind:aria-expanded="openFaq === 'faq_10'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_10">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What stainless steel grades do you use?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_10' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -582,7 +582,7 @@ class="xo-container--wide"
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_10" x-show="openFaq === 'faq_10'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>304 stainless steel works for most interior screens, partitions, wall panels, and protected exterior areas. 316 stainless steel is better for coastal, marine, poolside, and high-humidity environments.</p>
 <p>Send the installation location and exposure level with your drawing. We will recommend the grade before quoting.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_11' ? '' : 'faq_11'" x-bind:aria-expanded="openFaq === 'faq_11'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_11">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_11')" x-bind:aria-expanded="openFaq === 'faq_11'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_11">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What is the difference between 304 and 316 stainless steel for architectural screens?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_11' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -594,7 +594,7 @@ class="xo-container--wide"
 <ul><li><strong>Use 304</strong> when the screen is indoors or protected from chloride exposure.</li><li><strong>Use 316</strong> when the screen sits near salt air, pools, spas, or exterior weather.</li></ul>
 <p>Send the project location, indoor/outdoor condition, and cleaning environment with the inquiry. The quote can then lock the grade, finish, and maintenance expectation before samples are made.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_12' ? '' : 'faq_12'" x-bind:aria-expanded="openFaq === 'faq_12'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_12">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_12')" x-bind:aria-expanded="openFaq === 'faq_12'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_12">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What finishes are available?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_12' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -611,7 +611,7 @@ class="xo-container--wide"
 </tbody>
 </table></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_13' ? '' : 'faq_13'" x-bind:aria-expanded="openFaq === 'faq_13'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_13">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_13')" x-bind:aria-expanded="openFaq === 'faq_13'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_13">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What materials and surface finishes are commonly used for interior metal partitions?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_13' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -620,7 +620,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_13" x-show="openFaq === 'faq_13'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>Our most common materials are 304 and 316 stainless steel, with optional aluminum, brass, and copper depending on design goals. Finish options include hairline, mirror-polished, sandblasted, and PVD color coating (such as titanium gold, rose gold, and bronze), with optional anti-fingerprint protection.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_14' ? '' : 'faq_14'" x-bind:aria-expanded="openFaq === 'faq_14'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_14">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_14')" x-bind:aria-expanded="openFaq === 'faq_14'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_14">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What PVD finishes are available? Will they fade indoors?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_14' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -633,7 +633,7 @@ class="xo-container--wide"
 <ul><li><strong>Bonding</strong> — molecular-level deposition, not a surface layer</li><li><strong>Lifespan</strong> — 10–15 years indoors with zero color shift</li><li><strong>AFP option</strong> — anti-fingerprint nano coating reduces smudges by 80% in high-touch areas</li></ul>
 <p><em>Custom color matching available. Send a Pantone reference — we'll produce a test chip.</em></p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_15' ? '' : 'faq_15'" x-bind:aria-expanded="openFaq === 'faq_15'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_15">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_15')" x-bind:aria-expanded="openFaq === 'faq_15'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_15">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What materials and finishes are available for architectural metal screens?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_15' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -659,7 +659,7 @@ class="xo-container--wide"
               </div>
 
               <div class="divide-y divide-white/10"><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_16' ? '' : 'faq_16'" x-bind:aria-expanded="openFaq === 'faq_16'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_16">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_16')" x-bind:aria-expanded="openFaq === 'faq_16'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_16">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Which manufacturing method is right for my project — laser cutting, perforation, or expanded metal?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_16' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -677,7 +677,7 @@ class="xo-container--wide"
 </table>
 <p>Send your drawing for a specific method recommendation — our engineers review each project against manufacturing feasibility within 24 hours.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_17' ? '' : 'faq_17'" x-bind:aria-expanded="openFaq === 'faq_17'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_17">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_17')" x-bind:aria-expanded="openFaq === 'faq_17'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_17">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Which stainless screen type should I choose for my project?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_17' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -689,7 +689,7 @@ class="xo-container--wide"
 <p>Laser-cut sheets offer the most direct path for flat panels and repeat patterns. Glass-hybrid systems add a second material layer when partial enclosure, reflection, or light diffusion matters. Outdoor screens need grade, frame, drainage, and fixing details checked as one system.</p>
 <p>Share the scene, size, and desired privacy level. The team can route the project to the right stainless screen format before quoting.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_18' ? '' : 'faq_18'" x-bind:aria-expanded="openFaq === 'faq_18'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_18">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_18')" x-bind:aria-expanded="openFaq === 'faq_18'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_18">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What&#39;s the technical difference between the three pattern directions?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_18' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -701,7 +701,7 @@ class="xo-container--wide"
 <p><strong>Quick decision guide:</strong></p>
 <ol><li><strong>Space needs structure, not decoration?</strong> → Linear Grid. Clean lines, premium presence.</li><li><strong>Space needs a signature piece?</strong> → Decorative. Intricate patterns guests remember.</li><li><strong>Space needs cultural atmosphere?</strong> → New Chinese Lattice. Heritage warmth in durable steel.</li></ol></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_19' ? '' : 'faq_19'" x-bind:aria-expanded="openFaq === 'faq_19'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_19">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_19')" x-bind:aria-expanded="openFaq === 'faq_19'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_19">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Can you perforate custom patterns or logos?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_19' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -718,7 +718,7 @@ class="xo-container--wide"
 <ul><li>All patterns must maintain structural integrity (open area typically ≤60%)</li><li>Avoid sharp corners that create stress concentration</li><li>Minimum bridge width ≥ sheet thickness</li><li>Ultra-high-density micro-holes (<0.5mm) or highly irregular free-floating patterns are not supported</li></ul>
 <p>Submit your pattern files — we return a technical feasibility report and sample recommendation within 48 hours.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_20' ? '' : 'faq_20'" x-bind:aria-expanded="openFaq === 'faq_20'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_20">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_20')" x-bind:aria-expanded="openFaq === 'faq_20'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_20">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How does open area affect privacy, light, and airflow?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_20' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -738,7 +738,7 @@ class="xo-container--wide"
               </div>
 
               <div class="divide-y divide-white/10"><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_21' ? '' : 'faq_21'" x-bind:aria-expanded="openFaq === 'faq_21'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_21">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_21')" x-bind:aria-expanded="openFaq === 'faq_21'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_21">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How large can a single laser-cut panel be?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_21' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -751,7 +751,7 @@ class="xo-container--wide"
 <ul><li>Split into <strong>matched modules</strong> that read as one continuous surface</li><li>Joint lines engineered to be <strong>invisible at viewing distance</strong></li><li>Split logic optimized for <strong>transport safety and site access</strong></li></ul>
 <p>Send your opening dimensions (W × H) → we'll propose the optimal panel count and split strategy.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_22' ? '' : 'faq_22'" x-bind:aria-expanded="openFaq === 'faq_22'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_22">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_22')" x-bind:aria-expanded="openFaq === 'faq_22'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_22">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Can you fully customize pattern, open area, and panel size?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_22' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -765,7 +765,7 @@ class="xo-container--wide"
 <ul><li>Hole diameter ≥ sheet thickness (recommend 1.2:1)</li><li>Edge distance ≥ thickness × 1.5</li><li>Maximum open area recommend ≤60% to maintain strength</li><li>Minimum feature size depends on sheet thickness</li></ul>
 <p>Submit your design files — we return a feasibility assessment and optimization recommendations within 48 hours for zero-risk customization.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_23' ? '' : 'faq_23'" x-bind:aria-expanded="openFaq === 'faq_23'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_23">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_23')" x-bind:aria-expanded="openFaq === 'faq_23'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_23">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What thickness options are available?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_23' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -774,7 +774,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_23" x-show="openFaq === 'faq_23'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>0.8mm to 3.0mm for decorative panels. Up to 6.0mm for structural applications like railings and gates. We match thickness to the panel size and application.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_24' ? '' : 'faq_24'" x-bind:aria-expanded="openFaq === 'faq_24'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_24">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_24')" x-bind:aria-expanded="openFaq === 'faq_24'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_24">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How much do the panels weigh, and are there any structural load considerations?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_24' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -783,7 +783,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_24" x-show="openFaq === 'faq_24'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>As a reference, a 1.0 mm SS304 partition panel is about 8 kg per square meter. Most interior metal partitions are non-load-bearing. For single panels above 3 square meters, we usually recommend or design additional reinforcement to maintain stiffness and flatness.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_25' ? '' : 'faq_25'" x-bind:aria-expanded="openFaq === 'faq_25'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_25">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_25')" x-bind:aria-expanded="openFaq === 'faq_25'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_25">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What are typical lead times for samples and bulk production?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_25' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -807,7 +807,7 @@ class="xo-container--wide"
               </div>
 
               <div class="divide-y divide-white/10"><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_26' ? '' : 'faq_26'" x-bind:aria-expanded="openFaq === 'faq_26'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_26">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_26')" x-bind:aria-expanded="openFaq === 'faq_26'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_26">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How long does production take?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_26' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -816,7 +816,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_26" x-show="openFaq === 'faq_26'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>Samples usually take 7–12 working days. Standard production usually takes 15–20 working days. Custom finishes, larger quantities, and complex fabrication can take longer.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_27' ? '' : 'faq_27'" x-bind:aria-expanded="openFaq === 'faq_27'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_27">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_27')" x-bind:aria-expanded="openFaq === 'faq_27'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_27">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Do you ship worldwide?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_27' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -825,7 +825,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_27" x-show="openFaq === 'faq_27'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>Yes. We ship by sea freight or air freight depending on timeline and order size. Panels are protected with film, separated with EPE foam, labeled, and packed in reinforced plywood crates.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_28' ? '' : 'faq_28'" x-bind:aria-expanded="openFaq === 'faq_28'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_28">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_28')" x-bind:aria-expanded="openFaq === 'faq_28'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_28">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How are perforated panels installed? Do I need a specialist contractor?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_28' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -839,7 +839,7 @@ class="xo-container--wide"
 <ul><li>Wind load calculated per local code (ASCE 7 or GB 50009)</li><li>Large panels (>1.5m span) require stiffeners to prevent vibration / deformation</li><li>All fixings need corrosion-resistant gaskets</li><li>Perforated panels are lightweight but high wind suction demands sufficient anchorage</li></ul>
 <p>We provide complete installation detail drawings and BOM lists. We recommend certified curtain wall teams to ensure first-pass project acceptance.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_29' ? '' : 'faq_29'" x-bind:aria-expanded="openFaq === 'faq_29'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_29">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_29')" x-bind:aria-expanded="openFaq === 'faq_29'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_29">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How do you pack laser-cut panels for international shipping?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_29' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -851,7 +851,7 @@ class="xo-container--wide"
 <p><strong>Logistics options:</strong></p>
 <ul><li><strong>Sea freight</strong> (most economical for >50 sqm): FOB Foshan / CIF destination</li><li><strong>Air freight</strong> (samples or urgent): DDP door-to-door</li><li>Each crate <strong>labeled by zone and install sequence</strong></li><li>Pre-shipment <strong>photos and video</strong> of packed goods</li><li>100% <strong>insurance coverage</strong> during transit</li></ul></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_30' ? '' : 'faq_30'" x-bind:aria-expanded="openFaq === 'faq_30'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_30">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_30')" x-bind:aria-expanded="openFaq === 'faq_30'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_30">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Do installation methods always require drilling into the floor or ceiling?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_30' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -868,7 +868,7 @@ class="xo-container--wide"
               </div>
 
               <div class="divide-y divide-white/10"><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_31' ? '' : 'faq_31'" x-bind:aria-expanded="openFaq === 'faq_31'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_31">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_31')" x-bind:aria-expanded="openFaq === 'faq_31'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_31">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What quality control and certifications do you provide?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_31' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -885,7 +885,7 @@ class="xo-container--wide"
 </ul>
 <p>Request our full quality manual with your inquiry.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_32' ? '' : 'faq_32'" x-bind:aria-expanded="openFaq === 'faq_32'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_32">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_32')" x-bind:aria-expanded="openFaq === 'faq_32'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_32">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">What quality documentation do you provide?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_32' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -894,7 +894,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_32" x-show="openFaq === 'faq_32'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>Every order ships with mill test certificates, salt spray reports for PVD finishes, dimensional inspection reports, and packing photos.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_33' ? '' : 'faq_33'" x-bind:aria-expanded="openFaq === 'faq_33'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_33">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_33')" x-bind:aria-expanded="openFaq === 'faq_33'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_33">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Can I see a sample before ordering?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_33' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -909,7 +909,7 @@ class="xo-container--wide"
 <ul><li><strong>3–7 working days</strong> from spec confirmation to sample</li><li>Sample size typically 300×300mm or 500×500mm</li><li>Sample fee <strong>80–250 USD/pc</strong> (complexity dependent)</li><li>Fully credited against production PO for orders ≥50m²</li></ul>
 <p>A physical sample is the most reliable decision tool for architects and designers. Contact us to arrange yours.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_34' ? '' : 'faq_34'" x-bind:aria-expanded="openFaq === 'faq_34'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_34">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_34')" x-bind:aria-expanded="openFaq === 'faq_34'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_34">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Can I request samples before placing a bulk order?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_34' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -926,7 +926,7 @@ class="xo-container--wide"
               </div>
 
               <div class="divide-y divide-white/10"><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_35' ? '' : 'faq_35'" x-bind:aria-expanded="openFaq === 'faq_35'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_35">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_35')" x-bind:aria-expanded="openFaq === 'faq_35'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_35">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Will perforated panels rust or fade outdoors?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_35' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -942,7 +942,7 @@ class="xo-container--wide"
 <ul><li><strong>304</strong> — Prone to "tea staining" (edge pitting) in coastal salt; requires periodic maintenance</li><li><strong>316</strong> — Contains 2–3% molybdenum, 3–5× better pitting resistance; perforated edges show virtually no rust risk for long-term exposure</li></ul>
 <p><em>Common misconception: "All stainless steel is rust-proof" — material grade must match the environment.</em> Share your site climate data and we recommend the optimal solution with a 10–20 year warranty.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_36' ? '' : 'faq_36'" x-bind:aria-expanded="openFaq === 'faq_36'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_36">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_36')" x-bind:aria-expanded="openFaq === 'faq_36'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_36">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Should indoor and outdoor stainless screens be specified differently?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_36' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -954,7 +954,7 @@ class="xo-container--wide"
 <p>Outdoor screens also need local wind condition, substrate, and fixing points reviewed before fabrication. This is especially important for terraces, pool zones, and landscape boundaries.</p>
 <p>Include climate, site photos, and mounting surface details when asking for an outdoor stainless screen quote.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_37' ? '' : 'faq_37'" x-bind:aria-expanded="openFaq === 'faq_37'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_37">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_37')" x-bind:aria-expanded="openFaq === 'faq_37'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_37">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How durable are PVD finishes on stainless steel screens?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_37' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -966,7 +966,7 @@ class="xo-container--wide"
 <p>PVD is well suited to hotel lobbies, restaurant screens, feature walls, and glass-hybrid dividers because it gives color while preserving the stainless substrate. High-touch public areas should use samples to check fingerprint visibility, reflection, and cleaning tolerance under the actual lighting.</p>
 <p>Request finish swatches before final approval. The same PVD color can read very differently under warm hotel lighting, daylight, and wall-wash fixtures.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_38' ? '' : 'faq_38'" x-bind:aria-expanded="openFaq === 'faq_38'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_38">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_38')" x-bind:aria-expanded="openFaq === 'faq_38'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_38">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Do metal partitions show fingerprints, and how should they be cleaned?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_38' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -975,7 +975,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_38" x-show="openFaq === 'faq_38'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>For high-touch zones, we recommend hairline finishes (naturally better fingerprint resistance) or optional PVD anti-fingerprint coating (AFP). Daily cleaning is simple: use a soft damp cloth. For tougher stains, use a mild cleaner and avoid abrasive pads or scouring products.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_39' ? '' : 'faq_39'" x-bind:aria-expanded="openFaq === 'faq_39'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_39">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_39')" x-bind:aria-expanded="openFaq === 'faq_39'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_39">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">Will PVD color coatings fade in interior environments?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_39' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>
@@ -984,7 +984,7 @@ class="xo-container--wide"
                       </button>
                       <div id="faq-download-answer-template--21844278411517__faqs_download-faq_39" x-show="openFaq === 'faq_39'" x-collapse class="fd-answer max-w-[920px] pb-10 text-base leading-relaxed text-white/80 md:text-lg"><p>No. PVD (Physical Vapor Deposition) is not standard paint; it forms a bonded coating layer on the metal surface. In normal interior use, PVD finishes can last more than 15 years without fading or peeling.</p></div>
                     </article><article >
-                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="openFaq = openFaq === 'faq_40' ? '' : 'faq_40'" x-bind:aria-expanded="openFaq === 'faq_40'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_40">
+                      <button type="button" class="flex w-full items-start justify-between gap-8 py-9 text-left md:py-11" x-on:click="toggle('faq_40')" x-bind:aria-expanded="openFaq === 'faq_40'" aria-controls="faq-download-answer-template--21844278411517__faqs_download-faq_40">
                         <span class="max-w-[860px] text-lg font-semibold leading-[1.35] text-white md:text-xl">How do I maintain stainless steel screens after installation?</span>
                         <span class="relative mt-1 h-8 w-8 shrink-0 text-white/75 transition-transform duration-300" x-bind:class="openFaq === 'faq_40' ? 'rotate-45 text-[#c9a962]' : ''" aria-hidden="true">
                           <span class="absolute left-1/2 top-1/2 h-[2px] w-7 -translate-x-1/2 -translate-y-1/2 bg-current"></span>

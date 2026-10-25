@@ -124,18 +124,13 @@ drill *args:
 # compile that exists (Tailwind v4 has no server-side build): one-time login,
 # WindPress → Settings → Performance → Generate, the stored cache must be
 # newer than the one before, and the deploy's windpress-check follows.
-# Needs plugins/md-inquiry (the plugin that carries the node tooling, ticket
-# #27); until it lands this recipe says so and the compile runs by hand.
+# The driver is tools/deploy/windpress-compile.mjs on the shared real-Chrome
+# Playwright install (AGENTS §7: never the bundled Chromium).
 [positional-arguments]
 windpress-compile name="dev":
     #!/usr/bin/env bash
     set -euo pipefail
     repo="{{ justfile_directory() }}"
-    if [ ! -f "$repo/plugins/md-inquiry/package.json" ]; then
-        echo "windpress-compile: plugins/md-inquiry has not landed yet (ticket #27);" >&2
-        echo "drive the compile through the admin by hand, then: just deploy windpress-check --target {{ name }}" >&2
-        exit 1
-    fi
     before="$(PHP={{ php }} {{ md_local }} wp "{{ name }}" eval 'echo (int) @filemtime( wp_upload_dir()["basedir"] . "/windpress/cache/tailwind.css" );' | tail -n 1)"
     user="$(PHP={{ php }} {{ md_local }} wp "{{ name }}" user list --role=administrator --field=user_login | tail -n 1 | head -n 1)"
     if [ -z "$user" ]; then
@@ -144,7 +139,6 @@ windpress-compile name="dev":
     fi
     login_url="$(PHP={{ php }} {{ md_local }} login "{{ name }}" --user="$user" | tail -n 1)"
     echo "windpress: compiling through the admin (user: $user, cache mtime before: $before)"
-    (cd "$repo/plugins/md-inquiry" && npx playwright install chromium)
     node "$repo/tools/deploy/windpress-compile.mjs" "$login_url" "$before"
     after="$(PHP={{ php }} {{ md_local }} wp "{{ name }}" eval 'echo (int) @filemtime( wp_upload_dir()["basedir"] . "/windpress/cache/tailwind.css" );' | tail -n 1)"
     if [ -z "$after" ] || [ "$after" -le "$before" ]; then

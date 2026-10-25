@@ -28,13 +28,17 @@ final class FaqSchema {
 	 */
 	public static function pairs( string $html ): array {
 		$pairs = array();
-		if ( preg_match_all( '/openFaq = openFaq === \'(faq_[0-9a-z_-]+)\'/', $html, $buttons, PREG_SET_ORDER ) < 1 ) {
+		if ( preg_match_all( '/x-on:click="toggle\(\'(faq_[0-9a-z_-]+)\'\)"/', $html, $buttons, PREG_SET_ORDER ) < 1 ) {
 			return $pairs;
 		}
 		foreach ( $buttons as $button ) {
 			$id = $button[1];
-			// The question span sits inside the same button as the toggle id.
-			if ( 1 !== preg_match( '/openFaq = openFaq === \'' . preg_quote( $id, '/' ) . '\'[^<]*<span[^>]*>(.*?)<\/span>/s', $html, $question ) ) {
+			// The button block carrying this toggle; its first span is the
+			// question (the second is the plus/minus icon).
+			if ( 1 !== preg_match( '/toggle\(\'' . preg_quote( $id, '/' ) . '\'\)[^>]*>(.*?)<\/button>/s', $html, $block ) ) {
+				continue;
+			}
+			if ( 1 !== preg_match( '/<span[^>]*>(.*?)<\/span>/s', $block[1], $question ) ) {
 				continue;
 			}
 			// The answer div's id ends with the same toggle id; the replica's

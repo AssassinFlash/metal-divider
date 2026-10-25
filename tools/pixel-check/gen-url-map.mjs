@@ -116,7 +116,7 @@ for (const t of manifest.targets) {
     const retired = RETIRED_PAGES[t.slug];
     row = retired
       ? { type: t.type, slug: t.slug, status: 'retired', ledger: retired.ledger, reason: retired.reason }
-      : { type: t.type, slug: t.slug, status: 'active', path: `/pages/${t.slug}`, ledger: 'L5-L17' };
+      : { type: t.type, slug: t.slug, status: 'active', path: `/${t.slug}`, ledger: 'L5-L17' };
   } else {
     fail(`${key}: unknown target type in baseline manifest`);
   }

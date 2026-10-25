@@ -110,7 +110,7 @@ async function main() {
     pwVersion = JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url), 'utf8')).dependencies.playwright;
   } catch {}
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const results = new Map(); // target index -> per-viewport result
   targets.forEach((t) => results.set(t, {}));
   const masks = new Map(); // selector -> [pages]

@@ -104,7 +104,7 @@ final class SeoCommandTest extends TestCase {
 	private function given_provisioned_site( array $options = array(), bool $installed = true ): void {
 		$this->state = array();
 		WP_Mock::userFunction( 'home_url' )->zeroOrMoreTimes()->andReturnUsing( static fn( string $path = '/' ) => 'http://site.test' . $path );
-		WP_Mock::userFunction( 'get_permalink' )->zeroOrMoreTimes()->andReturn( 'http://site.test/pages/faqs/' );
+		WP_Mock::userFunction( 'get_permalink' )->zeroOrMoreTimes()->andReturn( 'http://site.test/faqs/' );
 		WP_Mock::passthruFunction( 'wp_strip_all_tags', true );
 		WP_Mock::passthruFunction( 'untrailingslashit', true );
 		WP_Mock::userFunction( 'wp_json_encode' )->zeroOrMoreTimes()->andReturnUsing(
@@ -136,7 +136,7 @@ final class SeoCommandTest extends TestCase {
 
 		$faqs_ld = FaqSchema::json_ld(
 			\MetalDivider\Site\Presentation\Templates::read( \MetalDivider\Site\Presentation\Templates::path( 'faqs' ) ),
-			'http://site.test/pages/faqs/'
+			'http://site.test/faqs/'
 		);
 		$metas   = $this->target_metas( $faqs_ld );
 		$next    = 10;
@@ -236,7 +236,7 @@ final class SeoCommandTest extends TestCase {
 				'type'  => 'page',
 				'title' => 'Sample Page',
 			),
-			'pages/faqs'        => array(
+			'faqs'              => array(
 				'id'    => $faqs,
 				'type'  => 'page',
 				'title' => 'FAQs & Downloads',

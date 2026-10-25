@@ -16,7 +16,7 @@ use MetalDivider\Site\Presentation\Templates;
  * title/description templates (the fallback layer under the 146
  * migrated per-pattern metas), the noindex faces, the sitemap, the
  * robots.txt virtual file, the Knowledge Graph fields, the structured
- * data builder posts (Product without offers, FAQPage on /pages/faqs
+ * data builder posts (Product without offers, FAQPage on /faqs/
  * only, BlogPosting), the /pages shell's 301, and the per-page metas
  * of the SEO-owned pages. Every write is idempotent; `check` reports
  * the drift between the site and this target.
@@ -375,7 +375,7 @@ final class Config {
 	 * The three structured data builder posts (spec 22 §3.1): Product
 	 * on every pattern (no offers — the filter layer carries material,
 	 * the ACF properties and the QuoteAction), the FAQPage on
-	 * /pages/faqs only, and BlogPosting on journal posts.
+	 * /faqs/ only, and BlogPosting on journal posts.
 	 *
 	 * @return array<int, array{slug: string, type: string, title: string, rules: array<int, array<int, array<string, string>>>, metas: array<string, string>}> The builder targets.
 	 */
@@ -412,13 +412,13 @@ final class Config {
 				'_seopress_pro_rich_snippets_product_negative_notes' => 'none',
 			),
 		);
-		$faqs    = get_page_by_path( 'pages/faqs' );
+		$faqs    = get_page_by_path( 'faqs' );
 		$faq_ld  = null === $faqs ? '' : FaqSchema::json_ld( Templates::read( Templates::path( 'faqs' ) ), (string) get_permalink( $faqs ) );
 		if ( '' !== $faq_ld ) {
 			$posts[] = array(
 				'slug'  => 'md-schema-faq',
 				'type'  => 'custom',
-				'title' => 'FAQPage — /pages/faqs',
+				'title' => 'FAQPage — /faqs/',
 				'rules' => array(
 					array(
 						array(
@@ -487,9 +487,9 @@ final class Config {
 			}
 			$lines[] = sprintf( 'schema %s (%s): %s', $target['slug'], $target['type'], null === $post ? 'created' : 'synced' );
 		}
-		$faqs = get_page_by_path( 'pages/faqs' );
+		$faqs = get_page_by_path( 'faqs' );
 		if ( null === $faqs ) {
-			$lines[] = 'schema faq: /pages/faqs is not installed — the FAQPage schema is pending the page';
+			$lines[] = 'schema faq: /faqs/ is not installed — the FAQPage schema is pending the page';
 		}
 		return $lines;
 	}
@@ -501,7 +501,7 @@ final class Config {
 	 */
 	private function check_builder_posts(): array {
 		$rows   = array();
-		$faqs   = get_page_by_path( 'pages/faqs' );
+		$faqs   = get_page_by_path( 'faqs' );
 		$expect = $this->builder_posts();
 		if ( null === $faqs ) {
 			$expect = array_values(
@@ -512,7 +512,7 @@ final class Config {
 					}
 				)
 			);
-			$rows[] = 'schema faq: /pages/faqs is not installed — the FAQPage schema is pending the page';
+			$rows[] = 'schema faq: /faqs/ is not installed — the FAQPage schema is pending the page';
 		}
 		foreach ( $expect as $target ) {
 			$post = get_page_by_path( $target['slug'], OBJECT, self::SCHEMAS );

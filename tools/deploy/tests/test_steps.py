@@ -84,6 +84,19 @@ def test_the_contract_passes_on_the_pinned_face(tmp_path: Path) -> None:
     assert result.notes == []
 
 
+def test_the_windpress_mtime_reads_the_cache_inside_uploads(tmp_path: Path) -> None:
+    """basedir has no trailing slash: the PHP path must carry it (ticket #55)."""
+    site = _site(tmp_path)
+    site.eval_answers[
+        'echo (int) @filemtime( wp_upload_dir()["basedir"] . '
+        '"/windpress/cache/tailwind.css" );'
+    ] = "1700000000"
+
+    assert steps.windpress_cache_mtime(site) == 1700000000
+    php = site.wp_calls[-1][1]
+    assert '"/windpress/cache/tailwind.css"' in php
+
+
 def test_the_windpress_check_reports_a_missing_cache_and_plugin(tmp_path: Path) -> None:
     """Both halves of the assertion say what is missing instead of passing quietly."""
     site = _site(tmp_path, eval_answers={"anchors": ""})

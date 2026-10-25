@@ -12,10 +12,9 @@
  *
  * Usage: node tools/deploy/windpress-compile.mjs <one-time-login-url> [before-mtime]
  *
- * Playwright resolves from plugins/md-inquiry/node_modules (the plugin that
- * will carry the node tooling, ticket #27) via createRequire; until that
- * plugin lands, `just windpress-compile` says so and the compile runs through
- * the admin by hand.
+ * Playwright resolves from the shared real-Chrome driver install
+ * (MD_PLAYWRIGHT_ROOT, default /tmp/md-chrome) — real Chrome only (AGENTS §7),
+ * reused rather than re-installed per tool.
  */
 
 import { createRequire } from 'node:module';
@@ -25,7 +24,9 @@ import { fileURLToPath } from 'node:url';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 // Playwright resolves from the shared real-Chrome driver install (reused, per
 // the storage rules — never re-installed per tool).
-const { chromium } = createRequire('/tmp/md-share-fetch/package.json')('playwright');
+const { chromium } = createRequire(
+	(process.env.MD_PLAYWRIGHT_ROOT || '/tmp/md-chrome') + '/package.json'
+)('playwright');
 
 const [loginUrl, beforeArg] = process.argv.slice(2);
 if (!loginUrl && !process.env.MD_WP_SITE) {

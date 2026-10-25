@@ -179,37 +179,7 @@ class="xo-container--wide"
 
 <section
   id="chinese-space-applications-template--21873710498045__chinese_space_applications"
-  x-data="{
-    activeTab: 'restaurant',
-    isDesktopHover: false,
-    hoverTimer: null,
-    init() {
-      const mediaQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
-      this.isDesktopHover = mediaQuery.matches;
-      const updateHoverMode = (event) => {
-        this.isDesktopHover = event.matches;
-        this.clearQueuedTab();
-      };
-      if (mediaQuery.addEventListener) {
-        mediaQuery.addEventListener('change', updateHoverMode);
-      } else {
-        mediaQuery.addListener(updateHoverMode);
-      }
-    },
-    setTab(tabId) {
-      clearTimeout(this.hoverTimer);
-      if (this.activeTab === tabId) return;
-      this.activeTab = tabId;
-    },
-    queueTab(tabId) {
-      if (!this.isDesktopHover) return;
-      clearTimeout(this.hoverTimer);
-      this.hoverTimer = setTimeout(() => this.setTab(tabId), 120);
-    },
-    clearQueuedTab() {
-      clearTimeout(this.hoverTimer);
-    }
-  }"
+  x-data="mdHoverTabs('restaurant')"
   class="relative overflow-hidden text-white md-taf2adc0d"
 >
   <div class="max-w-[1400px] mx-auto px-5 md:px-10">
@@ -939,7 +909,7 @@ class="xo-container--wide"
   id="chinese-mid-cta-template--21873710498045__chinese_mid_cta"
   class="relative overflow-hidden md-tcc07631f"
 >
-  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" loading="lazy"><source src="//metalpartition.com/cdn/shop/videos/c/vp/00af6f1ec2da47bfbb8e296ba63de4f1/00af6f1ec2da47bfbb8e296ba63de4f1.HD-720p-3.0Mbps-68262742.mp4?v=0" type="video/mp4"><img src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"></video>
+  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-hd-720p-3-0mbps-68262742.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"></video>
 <div class="absolute inset-0 bg-black/55"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(201,169,98,0.12)_0%,_rgba(20,20,20,0.25)_40%,_rgba(20,20,20,0.82)_100%)]"></div>
     <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,20,20,0.28)_0%,rgba(20,20,20,0.72)_100%)]"></div>
@@ -966,7 +936,7 @@ class="xo-container--wide"
             >
               Request Your Spec
             </a><a
-              href="https://wa.me/8613068660047"
+              href="https://wa.me/85264731687"
               target="_blank"
               rel="noopener noreferrer"
               data-source-page="chinese-style-artistic-screens"
@@ -1308,7 +1278,7 @@ class="xo-container--wide"
   id="chinese-manufacturing-stats-template--21873710498045__chinese_manufacturing_stats"
   class="overflow-hidden text-white md-t4d66bb95"
   x-data="chineseMfgStatsMarquee()"
-  x-init="init()"
+ 
 >
   <div class="mx-auto max-w-[1400px] px-6">
     <div class="mx-auto mb-12 max-w-[1200px] text-center md:mb-16">
@@ -1400,7 +1370,7 @@ class="xo-container--wide"
 
     
       <div class="lcm-marquee-wrapper relative mb-10 overflow-hidden border-y border-white/10 py-8 md:mb-14 md:py-10 md-t80e98d4a" data-marquee x-ref="marquee" x-on:mouseenter="paused = true" x-on:mouseleave="resume()">
-        <div class="lcm-marquee-track flex w-max gap-4 will-change-transform md:gap-6" data-marquee-track x-ref="track" :style="`transform: translate3d(${offset}px, 0, 0)`">
+        <div class="lcm-marquee-track flex w-max gap-4 will-change-transform md:gap-6" data-marquee-track x-ref="track" :style="'transform: translate3d(' + offset + 'px, 0, 0)'">
           
             
               
@@ -1552,27 +1522,7 @@ class="xo-container--wide"
 
 <section
   id="chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes"
-  x-data="{
-    activeSteps: ['1'],
-    isOpen(step) {
-      return this.activeSteps.includes(step);
-    },
-    toggle(step) {
-      this.activeSteps = this.isOpen(step)
-        ? this.activeSteps.filter((item) => item !== step)
-        : [...this.activeSteps, step];
-      this.syncVideos();
-    },
-    syncVideos() {
-      this.$nextTick(() => {
-        this.$root.querySelectorAll('[data-ccm-video]').forEach((video) => {
-          video.muted = true;
-          video.playsInline = true;
-          video.play().catch(() => {});
-        });
-      });
-    }
-  }"
+  x-data="mdVideoSteps('[data-ccm-video]')"
   class="relative w-full overflow-hidden text-white md-taf2adc0d"
 >
   <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(201,169,98,0.03)_0%,_transparent_64%)]" aria-hidden="true"></div>
@@ -1657,7 +1607,7 @@ class="xo-container--wide"
               <div>
                 <div class="relative aspect-[1.08/1] overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_18px_48px_rgba(0,0,0,0.28)]">
                   <template x-if="isOpen('1')">
-                    <div class="h-full w-full" x-init="$nextTick(() => { const video = $el.querySelector('[data-ccm-video]'); if (video) video.play().catch(() => {}); })"><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="auto" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="//metalpartition.com/cdn/shop/videos/c/vp/aa6c9f5ed26e4e199234d89d3f1480e1/aa6c9f5ed26e4e199234d89d3f1480e1.HD-1080p-3.3Mbps-68939592.mp4?v=0" type="video/mp4"><img src="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-small-56w.webp"></video>
+                    <div class="h-full w-full" ><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="auto" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-hd-1080p-3-3mbps-68939592.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-small-56w.webp"></video>
 </div>
                   </template>
                 </div>
@@ -1729,7 +1679,7 @@ class="xo-container--wide"
               <div>
                 <div class="relative aspect-[1.08/1] overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_18px_48px_rgba(0,0,0,0.28)]">
                   <template x-if="isOpen('2')">
-                    <div class="h-full w-full" x-init="$nextTick(() => { const video = $el.querySelector('[data-ccm-video]'); if (video) video.play().catch(() => {}); })"><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="none" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="//metalpartition.com/cdn/shop/videos/c/vp/09254a60368d4d1e87ddf4bec24378d8/09254a60368d4d1e87ddf4bec24378d8.HD-1080p-3.3Mbps-68943975.mp4?v=0" type="video/mp4"><img src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-small-56w.webp"></video>
+                    <div class="h-full w-full" ><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="none" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-hd-1080p-3-3mbps-68943975.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-small-56w.webp"></video>
 </div>
                   </template>
                 </div>
@@ -1801,7 +1751,7 @@ class="xo-container--wide"
               <div>
                 <div class="relative aspect-[1.08/1] overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_18px_48px_rgba(0,0,0,0.28)]">
                   <template x-if="isOpen('3')">
-                    <div class="h-full w-full" x-init="$nextTick(() => { const video = $el.querySelector('[data-ccm-video]'); if (video) video.play().catch(() => {}); })"><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="none" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="//metalpartition.com/cdn/shop/videos/c/vp/63ec62970a9a4ffebeaa1befe9ace3c8/63ec62970a9a4ffebeaa1befe9ace3c8.HD-1080p-3.3Mbps-68944534.mp4?v=0" type="video/mp4"><img src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-small-56w.webp"></video>
+                    <div class="h-full w-full" ><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="none" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-hd-1080p-3-3mbps-68944534.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-small-56w.webp"></video>
 </div>
                   </template>
                 </div>
@@ -1873,7 +1823,7 @@ class="xo-container--wide"
               <div>
                 <div class="relative aspect-[1.08/1] overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_18px_48px_rgba(0,0,0,0.28)]">
                   <template x-if="isOpen('4')">
-                    <div class="h-full w-full" x-init="$nextTick(() => { const video = $el.querySelector('[data-ccm-video]'); if (video) video.play().catch(() => {}); })"><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="none" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="//metalpartition.com/cdn/shop/videos/c/vp/09254a60368d4d1e87ddf4bec24378d8/09254a60368d4d1e87ddf4bec24378d8.HD-1080p-3.3Mbps-68943975.mp4?v=0" type="video/mp4"><img src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-small-56w.webp"></video>
+                    <div class="h-full w-full" ><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="none" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-hd-1080p-3-3mbps-68943975.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-small-56w.webp"></video>
 </div>
                   </template>
                 </div>
@@ -1945,7 +1895,7 @@ class="xo-container--wide"
               <div>
                 <div class="relative aspect-[1.08/1] overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_18px_48px_rgba(0,0,0,0.28)]">
                   <template x-if="isOpen('5')">
-                    <div class="h-full w-full" x-init="$nextTick(() => { const video = $el.querySelector('[data-ccm-video]'); if (video) video.play().catch(() => {}); })"><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="none" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="//metalpartition.com/cdn/shop/videos/c/vp/9163b183271e41c698d020c9412e2945/9163b183271e41c698d020c9412e2945.HD-1080p-3.3Mbps-68944847.mp4?v=0" type="video/mp4"><img src="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-small-56w.webp"></video>
+                    <div class="h-full w-full" ><video playsinline="true" autoplay="autoplay" muted="muted" loop="loop" preload="none" class="h-full w-full object-cover" data-ccm-video="" poster="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-small-56w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-hd-1080p-3-3mbps-68944847.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-small-56w.webp"></video>
 </div>
                   </template>
                 </div>
@@ -1998,7 +1948,7 @@ class="xo-container--wide"
               preload="none"
               class="absolute inset-0 w-full h-full object-cover"
             >
-              <source src="/cdn/shop/videos/c/vp/6b7e0c5457f1445dbbfd88f00cd2465c/6b7e0c5457f1445dbbfd88f00cd2465c.HD-1080p-4.8Mbps-68978841.mp4?v=0" type="video/mp4">
+              <source src="/wp-content/uploads/2026/10/6b7e0c5457f1445dbbfd88f00cd2465c-hd-1080p-4-8mbps-68978841.mp4" type="video/mp4">
             </video></div>
       </div>
 
@@ -2343,7 +2293,7 @@ class="xo-section xo-section--template--21873710498045__chinese_contact md-t156d
               <h3 class="m-0 text-lg font-serif text-white">Prefer WhatsApp?</h3>
             </div>
             <p class="mb-4 text-sm text-white/75">Share layout and quantity. Feasibility check in minutes.</p>
-            <a href="https://wa.me/8613068660047" target="_blank" rel="noopener noreferrer" data-source-page="chinese-style-artistic-screens" data-source-module="contact" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#22c55e]">
+            <a href="https://wa.me/85264731687" target="_blank" rel="noopener noreferrer" data-source-page="chinese-style-artistic-screens" data-source-module="contact" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#22c55e]">
               Chat on WhatsApp
             </a>
           </div>

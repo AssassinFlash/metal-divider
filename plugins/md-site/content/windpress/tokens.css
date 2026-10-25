@@ -1,23 +1,15 @@
-@font-face{font-family:"Inter";font-style:normal;font-weight:300;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-300.woff2") format("woff2")}
-@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-400.woff2") format("woff2")}
-@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-500.woff2") format("woff2")}
-@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-600.woff2") format("woff2")}
-@font-face{font-family:"Inter";font-style:normal;font-weight:700;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-700.woff2") format("woff2")}
-@font-face{font-family:"Playfair Display";font-style:normal;font-weight:400;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/playfair-display-400.woff2") format("woff2")}
-@font-face{font-family:"Playfair Display";font-style:normal;font-weight:500;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/playfair-display-500.woff2") format("woff2")}
-@font-face{font-family:"Playfair Display";font-style:normal;font-weight:600;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/playfair-display-600.woff2") format("woff2")}
-@font-face{font-family:"Playfair Display";font-style:normal;font-weight:700;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/playfair-display-700.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/inter-var.woff2") format("woff2")}
+@font-face{font-family:"Playfair Display";font-style:normal;font-weight:400 900;font-display:swap;src:url("/wp-content/plugins/md-site/assets/fonts/playfair-display-var.woff2") format("woff2")}
 /* md-site design tokens (spec 17 §4, branch research/spec-theme-base).
    Values: the old project's P1 authority, design-system/metaldivider/MASTER.md
    (2026-04-16, read-only reference — never copied into this repository).
    Consumption model (de-linker production evidence, spec 17 F7): var() lives
    in volume rules only; the templates' Tailwind classes carry zero var()
    references; there is no @theme here — utility classes and variables each
-   take their own path. Self-hosted fonts: the @font-face block above points
-   at this plugin's assets/fonts/; the woff2 files are placeholders until the
-   final-asset pipeline delivers them (both families are SIL OFL, so the
-   repository may redistribute them), and until then the fallback stacks in
-   the two font variables carry the rendering.
+   take their own path. Self-hosted fonts: the two woff2 files above are the
+   real variable faces (Google Fonts latin subsets: Inter wght 100-900,
+   Playfair Display wght 400-900; both SIL OFL, so the repository may
+   redistribute them), served from this plugin's assets/fonts/.
 
    Not cast as variables, by that spec's own ruling:
    - The white-on-dark opacity ladder (/90 body, /80 secondary, /75 the floor

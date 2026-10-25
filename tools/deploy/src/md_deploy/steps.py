@@ -523,10 +523,12 @@ def windpress_instructions(target: Target) -> list[str]:
 
 def windpress_cache_mtime(target: Target) -> int:
     """The WindPress cache file's mtime on the target (0 when it does not exist)."""
-    php = (
-        'echo (int) @filemtime( wp_upload_dir()["basedir"] . '
-        f'"{plan.WINDPRESS_CACHE.removeprefix("wp-content/uploads/")}" );'
-    )
+    # wp_upload_dir()['basedir'] has no trailing slash; the relative path is
+    # built with one, or the concatenation lands beside the uploads directory
+    # and filemtime() answers false for a file that exists (ticket #55: the
+    # check reported 0 while SSH showed the compiled cache).
+    relative = plan.WINDPRESS_CACHE.removeprefix("wp-content/uploads/")
+    php = f'echo (int) @filemtime( wp_upload_dir()["basedir"] . "/{relative}" );'
     answer = target.wp("eval", php, check=False).strip().splitlines()[-1:]
     if not answer or not answer[0].isdigit():
         return 0

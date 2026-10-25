@@ -215,7 +215,7 @@ final class ConfigTest extends TestCase {
 		WP_Mock::userFunction( 'get_page_by_path' )->andReturn( null );
 		WP_Mock::userFunction( 'wp_get_attachment_url' )->never();
 		// The two builder posts that do not need a page (the FAQPage
-		// needs /pages/faqs) insert once each; the redirect posts too.
+		// needs /faqs/) insert once each; the redirect posts too.
 		$made = 0;
 		WP_Mock::userFunction( 'wp_insert_post' )->andReturnUsing(
 			static function () use ( &$made ) {
@@ -235,7 +235,7 @@ final class ConfigTest extends TestCase {
 		$joined = implode( "\n", $lines );
 		$this->assertStringContainsString( 'schema md-schema-product (products): created', $joined );
 		$this->assertStringContainsString( 'schema md-schema-article (articles): created', $joined );
-		$this->assertStringContainsString( 'schema faq: /pages/faqs is not installed', $joined );
+		$this->assertStringContainsString( 'schema faq: /faqs/ is not installed', $joined );
 		$this->assertStringContainsString( 'redirect /pages → /: created', $joined );
 		$this->assertStringContainsString( 'page inquiry: not installed', $joined );
 		$this->assertStringContainsString( 'page inquiry/thank-you: not installed', $joined );

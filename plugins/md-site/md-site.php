@@ -26,5 +26,7 @@ require_once __DIR__ . '/includes/Presentation/template-functions.php';
 ( new Plugin(
 	new Fields\FieldGroups(),
 	new Presentation\Shortcodes(),
-	new Seo\SchemaFilters()
+	new Seo\SchemaFilters(),
+	new Presentation\Assets(),
+	new Catalog()
 ) )->register();

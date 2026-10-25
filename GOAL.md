@@ -30,6 +30,13 @@
 - [ ] 禁用 JS 时的布局退化
 - [ ] 首屏加载体积与速度基线(测,再优化,不许拍脑袋)
 
+### SEO 验证不通过项(2026-10-25 生产实测,证据 docs/deploy/seo-verification.md)
+
+- [ ] **`/inquiry/thank-you/` 404**:生产 page 表无此页(md-inquiry 链路断在成单致谢步;`/pages/custom-metal-divider-screens-thank-you` 的 301 也落进这个 404)
+- [ ] **`/privacy/` 404**:privacy-policy 页停留在 draft;页脚法务链与 `/policies/privacy-policy` 301 均落 404
+- [ ] **FAQPage JSON-LD 缺失**:`/faqs/` HTML 有 40 对 Q&A,但生产 `seopress_schemas` CPT 只有 Product/BlogPosting 两条(dev 验收 ×3 中的 FAQPage 未落生产)
+- [ ] **GSC 属性未建**:Hostinger API 写 TXT 的路径已验通(PUT 追加模式),等 GSC 建 URL 前缀属性拿 token 后一条写入;顺带:hPanel 区无 SPF/_dmarc TXT(邮件三防,归 T1 邮件面)
+
 ## 工作法(每轮)
 
 1. 真 Chrome 截图审计(复用 /tmp/md-share-fetch 的 playwright+真 Chrome 方式)——每页型×视口
@@ -41,3 +48,32 @@
 ## 进度记录
 
 (每轮追加,最新在上)
+
+### 2026-10-25 移动端视觉审计(阶段二·第一轮:390×844 / 320×568)
+
+**范围**:7 页 × 2 视口 = 14 组合(首页、/shop/、/collections/pattern-abstract、/pattern/apiary-architectural-metal-screen-pattern、/faqs、/about-us、/inquiry/),全部 HTTP 200。真 Chrome(channel:'chrome' + ~/metal-divider-local/md-admin-profile),程序化检测(溢出/字号/触达/图片)+ 截图视觉复核。截图:`data/pixel-reports/mobile-audit/`(14 张全页 + 14 张菜单开态 + 26 张区块图,`<页>-<视口>[-menu|-sN].png` 命名)。**除标注外,以下布局类问题均待 #58(WindPress 任意值类未编译)修复后复验。**
+
+**P0(阻断)**
+
+1. **Woo 商店页对匿名访客返回 coming-soon 占位页**:/shop/、/collections/pattern-abstract、/pattern/apiary-… 三页渲染完全相同的 "Great things are on the horizon" 占位页(Woo 9 默认文案);匿名 curl 无 UA 依赖同样命中,桌面同病——非移动端特有。核心链路(图案浏览→PDP→询盘)对真实访客不可达。若非刻意的 pre-launch 状态即为最高级缺陷。证据:`shop-320x568.png`、`pattern-390x844.png`(两文件 MD5 相同)。
+2. **移动菜单闭态裸渲染(全页×两视口)**:`xo-menu-hamburger-style1__modal` 以 `display:inline`、无遮罩无定位直接渲染进页面流——闭态即可见一串默认蓝色下划线菜单链接+被截断的跑马灯 "…ion expe";开态无面板、无关闭按钮,链接行仅 ~18-24px 高。320 下 `.xo-header-actions`(330px)/`.mobile-menu-trigger`(170px)造成**全站统一 57px 水平溢出**;390 下不溢出但同样裸露。证据:`home-320x568-menu.png`、`home-390x844-menu.png`、`inquiry-320x568.png` 顶部。
+
+**P1(严重)**
+
+3. **头部+底部 logo 全 404**:`metal-divider-primary-logo--120w.webp`、`metal-divider-icon-logo--80w.webp`、`stainless-steel-screen-logo--100w.png` 均 404(naturalWidth=0,断图+alt 文字裸露);`--Nw` 后缀疑为 srcset 文件名生成错误。与视口无关。证据:`inquiry-320x568.png`。
+4. **询盘表单字段高仅 21px**(320 下输入框 153×21、提交按钮 90×21、菜单内搜索框 21px,行距 8-14px)——远低于 44px 触达标准,疑 `min-h-[44px]` 类未编译(#58)。390 同测 21px。证据:`inquiry-320x568.png`。
+5. **询盘页 honeypot 可见**:"Leave this field empty" 标签+输入框在 320 截图中对用户可见,反爬失效风险(390 待复验)。证据:`inquiry-320x568.png`。
+6. **FAQ 手风琴分类行 26px 高**(<44px),8 个分类,两视口同测。
+
+**P2(一般)**
+
+7. 首页 proof 轮播分类 chips(`.emt-nav-btn`)38×16px;进度点 35×6px(轮播点属常见例外,列观察)。证据:`home-320x568-s2.png` 区域。
+8. 头部 "Request a Quote" 按钮(`.xo-btn-quote`)30px 高,全页两视口。
+9. 页脚内容缺陷:"Phone:" 值为空;邮箱用旧域 `projects@metalpartition.com`(客户面应为 `info@metal-divider.com`);页脚链接默认蓝下划线(#58)。
+10. 观察:首页 hero 首屏(320)无可见 CTA;轮播卡组无边缘 peek 提示。
+
+**通过项**:无 <12px 计算字号;图片无拉伸变形(首页"溢出"图片均位于 overflow-hidden 轮播轨道内,非缺陷);about/faqs 主体区块 320 下布局干净;390 无页面级水平溢出。
+
+### 2026-10-25 SEO 上线验证(GOAL 阶段二)
+
+生产 https://metal-divider.com 九项一手核查,原始输出 [docs/deploy/seo-verification.md](docs/deploy/seo-verification.md)。通过 6 项:robots.txt(七行+Sitemap 逐字)、sitemap(147 产品+1063 图、/sitemap.xml 301→/sitemaps.xml)、首页/PDP meta+canonical+OG、noindex 面(搜索/作者/附件)、llms.txt、hreflang 零输出、301 六抽全绿(含 /products/→/pattern/ regex、/pages/contact→/inquiry/)。不通过 4 项已入上方清单(thank-you 404、/privacy/ 404、FAQPage schema 缺、GSC 待建)。附:Hostinger OAuth token 过期已刷新回写 ~/.config/hostinger-mcp。

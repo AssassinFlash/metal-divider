@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Apiary | Architectural Metal Screen Pattern — Inquiry prototype</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231a1a1a'/%3E%3Crect x='4' y='4' width='8' height='8' fill='%23c9a962'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1a1a1a; --bg-deep:#141414; --bg-darkest:#0a0a0a;
+    --gold:#c9a962; --gold-light:#d4b878; --gold-dark:#a88a4a;
+    --wa:#25D366;
+    --border:rgba(255,255,255,.10); --border-subtle:rgba(255,255,255,.08); --border-accent:rgba(255,255,255,.12);
+    --font-head:'Playfair Display',Georgia,serif; --font-body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:rgba(255,255,255,.9);font-family:var(--font-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  img{display:block;max-width:100%}
+  button{font-family:inherit;cursor:pointer}
+  a{color:inherit}
+  [hidden]{display:none!important}
+
+  .container{max-width:1400px;margin:0 auto;padding:0 20px}
+  .container-narrow{max-width:1040px;margin:0 auto;padding:0 20px}
+  @media(min-width:750px){.container,.container-narrow{padding:0 40px}}
+
+  /* ---------- prototype bar ---------- */
+  .proto-bar{background:var(--bg-darkest);border-bottom:1px solid var(--border);font-size:13px;color:rgba(255,255,255,.75)}
+  .proto-bar .container{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-top:8px;padding-bottom:8px;min-height:40px}
+  .proto-bar .tag{color:var(--gold);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+  .proto-bar button{background:none;border:1px solid var(--border-accent);color:rgba(255,255,255,.75);font-size:13px;padding:3px 10px;border-radius:6px}
+  .proto-bar button:hover{border-color:rgba(201,169,98,.4);color:#fff}
+
+  /* ---------- header + breadcrumb ---------- */
+  .site-header{position:sticky;top:0;z-index:40;background:rgba(20,20,20,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+  .site-header .container{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;letter-spacing:.04em;text-decoration:none}
+  .brand span{color:var(--gold)}
+  .header-note{font-size:13px;color:rgba(255,255,255,.75)}
+  .crumbs{background:var(--bg-deep);border-bottom:1px solid var(--border-subtle)}
+  .crumbs .container{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:9px;padding-bottom:9px;font-size:13px;color:rgba(255,255,255,.75)}
+  .crumbs a{color:rgba(255,255,255,.75);text-decoration:none}
+  .crumbs a:hover{color:#fff}
+  .crumbs .sep{color:var(--gold);margin:0 8px}
+  .crumbs .batch-note{color:rgba(255,255,255,.75)}
+  .crumbs .path,.path{color:var(--gold)}
+
+  /* ---------- PDP hero ---------- */
+  .pdp{padding:40px 0 64px;background:linear-gradient(180deg,var(--bg) 0%,var(--bg-deep) 100%)}
+  @media(min-width:750px){.pdp{padding:56px 0 88px}}
+  .pdp-grid{display:grid;gap:36px}
+  .pdp-grid > div{min-width:0}   /* let tracks shrink; thumbs scroll internally */
+  @media(min-width:990px){.pdp-grid{grid-template-columns:minmax(0,7fr) minmax(0,6fr);gap:56px;align-items:start}}
+
+  /* gallery — pure CSS placeholders */
+  .gallery-main{aspect-ratio:4/5;border:1px solid var(--border);border-radius:16px;overflow:hidden;position:relative;max-height:640px}
+  @media(max-width:989px){.gallery-main{max-height:none}}
+  .gallery-caption{position:absolute;left:0;right:0;bottom:0;padding:26px 16px 10px;background:linear-gradient(180deg,transparent,rgba(10,10,10,.85));font-size:13px;color:rgba(255,255,255,.85)}
+  .gallery-caption b{color:var(--gold);font-weight:600;margin-right:8px}
+  .ph{width:100%;height:100%;background-color:#141414}
+  .ph::after{content:attr(data-i);position:absolute;top:12px;left:14px;font-size:13px;font-weight:600;letter-spacing:.14em;color:rgba(201,169,98,.55)}
+  .ph-1{background-image:repeating-linear-gradient(45deg,rgba(201,169,98,.10) 0 2px,transparent 2px 26px),repeating-linear-gradient(-45deg,rgba(201,169,98,.06) 0 2px,transparent 2px 26px),radial-gradient(ellipse at 30% 20%,rgba(201,169,98,.08),transparent 60%)}
+  .ph-2{background-image:radial-gradient(rgba(201,169,98,.16) 2.5px,transparent 3px);background-size:34px 34px}
+  .ph-3{background-image:repeating-linear-gradient(90deg,rgba(201,169,98,.10) 0 1px,transparent 1px 22px),radial-gradient(circle at 70% 65%,rgba(201,169,98,.12),transparent 55%)}
+  .ph-4{background-image:repeating-conic-gradient(from 0deg at 50% 50%,rgba(201,169,98,.07) 0deg 12deg,transparent 12deg 30deg)}
+  .ph-5{background-image:repeating-linear-gradient(-45deg,rgba(201,169,98,.10) 0 3px,transparent 3px 30px),radial-gradient(circle at 25% 75%,rgba(201,169,98,.10),transparent 50%)}
+  .ph-6{background-image:linear-gradient(180deg,rgba(201,169,98,.05),transparent 40%),repeating-linear-gradient(0deg,rgba(201,169,98,.10) 0 1px,transparent 1px 18px)}
+  .ph-7{background-image:radial-gradient(rgba(201,169,98,.13) 1.8px,transparent 2.4px);background-size:19px 19px;box-shadow:inset 0 0 90px rgba(0,0,0,.55)}
+  .ph-8{background-image:conic-gradient(from 45deg at 50% 50%,rgba(201,169,98,.08),transparent 25%,rgba(201,169,98,.06) 50%,transparent 75%,rgba(201,169,98,.08))}
+  .thumbs{display:flex;gap:10px;margin-top:12px;overflow-x:auto;padding-bottom:4px}
+  .thumb-btn{flex:none;width:64px;height:64px;border-radius:10px;border:1px solid var(--border);overflow:hidden;position:relative;background:#141414;transition:border-color .15s}
+  .thumb-btn:hover{border-color:rgba(201,169,98,.4)}
+  .thumb-btn.active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+  .thumb-btn .ph{background-size:9px 9px}
+
+  /* right column */
+  .tag-chip{display:inline-block;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(201,169,98,.3);background:rgba(201,169,98,.07);border-radius:999px;padding:4px 14px}
+  h1{font-family:var(--font-head);font-size:36px;font-weight:700;line-height:1.12;letter-spacing:-.02em;color:#fff;margin:16px 0 10px}
+  @media(min-width:750px){h1{font-size:46px}}
+  h1 .h1-sub{display:block;font-size:20px;font-weight:500;color:rgba(255,255,255,.8);letter-spacing:0;margin-top:6px}
+  @media(min-width:750px){h1 .h1-sub{font-size:22px}}
+  .intro{color:rgba(255,255,255,.8);max-width:56ch}
+  .cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:26px 0 8px}
+  .prefer-email{font-size:14px;color:rgba(255,255,255,.75)}
+  .prefer-email a{color:var(--gold);text-decoration:underline;text-underline-offset:3px}
+
+  /* spec strip */
+  .spec-strip{display:flex;flex-wrap:wrap;border:1px solid var(--border-subtle);border-radius:14px;background:rgba(255,255,255,.02);margin-top:22px}
+  .spec{flex:1 1 auto;min-width:150px;padding:14px 18px;border-right:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)}
+  .spec.wide{flex:5 1 100%}
+  .spec dt{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.75)}
+  .spec dd{font-size:15px;font-weight:500;color:rgba(255,255,255,.92);margin-top:3px}
+
+  /* ---------- buttons ---------- */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;font-size:15px;font-weight:600;padding:12px 22px;border:none;text-decoration:none;text-align:center;transition:filter .15s,border-color .15s,background .15s}
+  .btn-primary{background:linear-gradient(90deg,var(--gold),var(--gold-light));color:#1a1a1a}
+  .btn-primary:hover{filter:brightness(1.06)}
+  .btn-secondary{background:none;border:1px solid rgba(255,255,255,.2);color:#fff}
+  .btn-secondary:hover{border-color:rgba(201,169,98,.4)}
+  .btn-whatsapp{background:none;border:1px solid rgba(37,211,102,.45);color:var(--wa)}
+  .btn-whatsapp:hover{border-color:var(--wa);background:rgba(37,211,102,.08)}
+  .btn[disabled]{opacity:.35;cursor:not-allowed;pointer-events:none}
+  .btn svg{width:17px;height:17px;flex:none}
+
+  /* ---------- sections ---------- */
+  section.block{padding:56px 0}
+  @media(min-width:750px){section.block{padding:80px 0}}
+  .bg-a{background:linear-gradient(180deg,var(--bg-deep),var(--bg))}
+  .bg-b{background:linear-gradient(180deg,var(--bg),var(--bg-deep))}
+  .eyebrow{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.16em;color:var(--gold)}
+  h2.sec{font-family:var(--font-head);font-size:28px;font-weight:700;line-height:1.15;letter-spacing:-.01em;color:#fff;margin-top:12px}
+  @media(min-width:750px){h2.sec{font-size:36px}}
+  .sec-sub{color:rgba(255,255,255,.75);margin-top:10px;max-width:70ch}
+  .gold-divider{height:2px;width:64px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:18px 0 34px}
+
+  /* design intent */
+  .intent h3{font-size:19px;font-weight:600;color:#fff;margin-bottom:8px}
+  .intent p{color:rgba(255,255,255,.85);max-width:72ch}
+  .intent .sub-line{margin-top:14px;color:var(--gold);font-size:14px;letter-spacing:.04em}
+
+  /* where it works */
+  .stat-row{display:flex;align-items:baseline;gap:18px;margin-bottom:30px}
+  .stat-num{font-size:52px;font-weight:700;color:var(--gold);line-height:1}
+  @media(min-width:750px){.stat-num{font-size:64px}}
+  .stat-label{font-size:15px;color:rgba(255,255,255,.75)}
+  .app-grid{display:grid;gap:20px;grid-template-columns:1fr}
+  @media(min-width:750px){.app-grid{grid-template-columns:1fr 1fr;gap:24px}}
+  @media(min-width:1100px){.app-grid{grid-template-columns:repeat(4,1fr)}}
+  .app-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;padding:24px}
+  .app-card .icon{width:40px;height:40px;border-radius:12px;background:rgba(201,169,98,.1);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .app-card .icon svg{width:20px;height:20px;stroke:var(--gold);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .app-card h3{font-size:17px;font-weight:600;color:#fff;margin-bottom:6px}
+  .app-card p{font-size:14px;color:rgba(255,255,255,.8)}
+
+  /* FAQ accordion */
+  .faq{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.02)}
+  .faq-item + .faq-item{border-top:1px solid var(--border-subtle)}
+  .faq-q{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;background:none;border:none;color:#fff;font-size:16px;font-weight:600;text-align:left;padding:20px 24px}
+  .faq-q .chev{flex:none;width:22px;height:22px;border-radius:50%;border:1px solid rgba(201,169,98,.4);display:flex;align-items:center;justify-content:center;transition:transform .25s}
+  .faq-q .chev svg{width:12px;height:12px;stroke:var(--gold);stroke-width:2.2;fill:none;stroke-linecap:round}
+  .faq-item.open .chev{transform:rotate(45deg)}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .faq-a p{padding:0 24px 20px;color:rgba(255,255,255,.8);font-size:15px;max-width:80ch}
+
+  /* discuss CTA */
+  .discuss{border:1px solid rgba(201,169,98,.25);border-radius:20px;background:radial-gradient(ellipse at 20% 0%,rgba(201,169,98,.06),transparent 55%),var(--bg-deep);padding:32px;text-align:center}
+  @media(min-width:750px){.discuss{padding:48px}}
+  .discuss p{color:rgba(255,255,255,.8);max-width:64ch;margin:12px auto 26px}
+  .discuss .cta-row{justify-content:center;margin:0 0 10px}
+  .discuss .prefer-email{display:block}
+
+  /* ---------- quote form (in-page, collapsible) ---------- */
+  .quote-panel{border:1px solid var(--border);border-radius:20px;background:rgba(255,255,255,.03);overflow:hidden;scroll-margin-top:84px}
+  .quote-panel.pulse{animation:pulseGold 1.4s ease}
+  @keyframes pulseGold{0%,100%{border-color:var(--border)}35%{border-color:var(--gold)}}
+  .quote-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;background:none;border:none;padding:22px 26px;text-align:left}
+  .quote-head .t{font-family:var(--font-head);font-size:22px;font-weight:700;color:#fff}
+  .quote-head .s{display:block;font-family:var(--font-body);font-size:13px;font-weight:400;color:rgba(255,255,255,.75);margin-top:3px}
+  .quote-head .chev{flex:none;width:26px;height:26px;border-radius:50%;border:1px solid rgba(201,169,98,.4);display:flex;align-items:center;justify-content:center;transition:transform .25s}
+  .quote-head .chev svg{width:13px;height:13px;stroke:var(--gold);stroke-width:2.2;fill:none;stroke-linecap:round}
+  .quote-panel.open .quote-head .chev{transform:rotate(45deg)}
+  .quote-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+  .quote-inner{padding:6px 26px 28px}
+  @media(min-width:750px){.quote-inner{padding:6px 32px 34px}}
+  .ref-line{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--gold);background:rgba(201,169,98,.08);border:1px solid rgba(201,169,98,.25);border-radius:8px;padding:4px 12px;margin-bottom:16px}
+  .ref-line em{font-style:normal;color:rgba(255,255,255,.75)}
+  .pattern-context{display:flex;gap:14px;align-items:center;border:1px solid var(--border-subtle);border-radius:12px;background:rgba(255,255,255,.02);padding:14px 16px;margin-bottom:6px}
+  .pattern-context .ph-mini{width:44px;height:58px;border-radius:8px;background:#141414;background-image:repeating-linear-gradient(45deg,rgba(201,169,98,.10) 0 2px,transparent 2px 14px);flex:none;position:relative;overflow:hidden}
+  .pattern-context .name{font-size:16px;font-weight:600;color:#fff}
+  .pattern-context .code{font-size:13px;color:var(--gold);margin-top:2px}
+  .pattern-context .facts{font-size:13px;color:rgba(255,255,255,.75);margin-top:3px}
+  .field{margin-top:18px}
+  .field label{display:block;font-size:14px;font-weight:600;color:#fff;margin-bottom:8px}
+  .field label .opt{color:rgba(255,255,255,.75);font-weight:400}
+  .field input,.field textarea{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:12px;color:#fff;font-family:inherit;font-size:15px;padding:12px 14px;outline:none;transition:border-color .15s}
+  .field input:focus,.field textarea:focus{border-color:rgba(201,169,98,.6)}
+  .field textarea{min-height:110px;resize:vertical}
+  .field .hint{font-size:13px;color:rgba(255,255,255,.75);margin-top:6px}
+  .field .err{font-size:13px;color:var(--gold-light);margin-top:6px;font-weight:500}
+  .field.invalid input,.field.invalid textarea{border-color:rgba(201,169,98,.7)}
+  .turnstile{margin-top:22px;border:1px dashed rgba(201,169,98,.45);border-radius:12px;min-height:64px;display:flex;align-items:center;justify-content:center;gap:10px;color:rgba(255,255,255,.75);font-size:13px;background:rgba(255,255,255,.015)}
+  .turnstile svg{width:16px;height:16px;stroke:var(--gold);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .form-actions{display:flex;gap:14px;margin-top:24px;flex-wrap:wrap}
+  .form-actions .btn{flex:1;min-width:200px}
+  .form-note{font-size:13px;color:rgba(255,255,255,.75);margin-top:12px}
+
+  /* in-page 303 thank-you state (replaces the form) */
+  .ty{text-align:center;padding:30px 10px 16px}
+  .ty .check{width:56px;height:56px;border-radius:50%;background:rgba(201,169,98,.12);border:1px solid rgba(201,169,98,.45);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+  .ty .check svg{width:26px;height:26px;stroke:var(--gold);stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .ty h3{font-family:var(--font-head);font-size:26px;font-weight:700;color:#fff}
+  .ty p{color:rgba(255,255,255,.8);max-width:52ch;margin:10px auto 0}
+  .ty .ty-contacts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:22px 0 8px}
+  .ty .again{background:none;border:none;color:var(--gold);font-size:14px;text-decoration:underline;text-underline-offset:3px;margin-top:6px}
+  .ty .sim{font-size:13px;color:rgba(255,255,255,.75);margin-top:14px}
+
+  /* ---------- related patterns ---------- */
+  .related-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+  .view-catalog{font-size:14px;color:var(--gold)}
+  .related-grid{display:grid;gap:20px;grid-template-columns:repeat(3,1fr);margin-top:24px}
+  @media(max-width:749px){.related-grid{grid-template-columns:1fr}}
+  .related-card{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.03);transition:border-color .2s}
+  .related-card:hover{border-color:rgba(201,169,98,.4)}
+  .related-card .ph-box{aspect-ratio:16/9;position:relative;overflow:hidden}
+  .related-card .cap{padding:14px 16px}
+  .related-card .cap b{display:block;font-size:15px;font-weight:600;color:#fff}
+  .related-card .cap span{font-size:13px;color:rgba(255,255,255,.75)}
+
+  /* ---------- footer ---------- */
+  footer{background:var(--bg-darkest);border-top:1px solid var(--border);padding:44px 0 28px}
+  footer .tagline{color:rgba(255,255,255,.75);max-width:64ch;margin-top:10px;font-size:15px}
+  footer .contacts{display:flex;gap:22px;flex-wrap:wrap;margin:18px 0 26px;font-size:14px}
+  footer .contacts a{color:var(--gold);text-decoration:none}
+  footer .contacts a:hover{text-decoration:underline;text-underline-offset:3px}
+  footer .fine{font-size:13px;color:rgba(255,255,255,.75);border-top:1px solid var(--border-subtle);padding-top:18px}
+
+  /* ---------- floating whatsapp ---------- */
+  .wa-float{position:fixed;right:20px;bottom:20px;z-index:45;width:56px;height:56px;border-radius:50%;background:var(--wa);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.4);transition:transform .15s}
+  .wa-float:hover{transform:scale(1.06)}
+  .wa-float svg{width:28px;height:28px;fill:#fff}
+
+  /* ---------- toast ---------- */
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,16px);background:var(--bg-darkest);border:1px solid rgba(201,169,98,.4);color:#fff;font-size:14px;padding:11px 20px;border-radius:10px;z-index:60;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:calc(100vw - 40px);text-align:center}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<!-- ======= prototype bar (not part of the product UI) ======= -->
+<div class="proto-bar">
+  <div class="container">
+    <span><span class="tag">Prototype</span> — pattern PDP inquiry · Apiary as template · submission is simulated</span>
+    <span class="actions"><button type="button" id="demoReset">Reset</button></span>
+  </div>
+</div>
+
+<!-- ======= header ======= -->
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="#">METAL<span>DIVIDER</span></a>
+    <span class="header-note">Custom metal divider screens · quote by inquiry</span>
+  </div>
+</header>
+
+<!-- ======= breadcrumb ======= -->
+<div class="crumbs">
+  <div class="container">
+    <nav aria-label="Breadcrumb"><a href="/" class="crumb-link">Home</a><span class="sep">/</span><a href="/pattern/apiary-architectural-metal-screen-pattern" class="crumb-link" title="/pattern/apiary-architectural-metal-screen-pattern">Apiary</a></nav>
+    <span class="batch-note">One of 146 pattern pages · <span class="path">/pattern/apiary-architectural-metal-screen-pattern</span></span>
+  </div>
+</div>
+
+<main>
+  <!-- ======= PDP hero ======= -->
+  <section class="pdp">
+    <div class="container pdp-grid">
+
+      <div>
+        <div class="gallery-main">
+          <div class="ph ph-1" data-i="01"></div>
+          <div class="gallery-caption"><b id="capIdx">01</b><span id="capText">Apiary finish preview</span></div>
+        </div>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+
+      <div>
+        <span class="tag-chip">abstract pattern</span>
+        <h1>Apiary<span class="h1-sub">| Architectural Metal Screen Pattern</span></h1>
+        <p class="intro">Built for light behavior, privacy, and surface impact in Architectural screening.</p>
+
+        <div class="cta-row">
+          <button type="button" class="btn btn-primary" data-quote-cta="hero">Request Quote</button>
+          <a class="btn btn-whatsapp" id="waHeroBtn" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 0 1 12 4zm-3.1 4.2c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.9 4.4 3.9 2.2.9 2.6.7 3.1.7.5-.1 1.6-.7 1.8-1.3.2-.6.2-1.2.2-1.3 0-.1-.2-.2-.5-.3l-1.7-.8c-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-.7-.3-1.4-.7-2-1.3-.5-.5-.9-1.1-1.3-1.7-.1-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5L9.6 8.7c-.2-.4-.4-.5-.7-.5z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+        <p class="prefer-email">Prefer email? <a href="mailto:info@metal-divider.com">info@metal-divider.com</a></p>
+
+        <dl class="spec-strip">
+          <div class="spec"><dt>Pattern code</dt><dd>APIARY</dd></div>
+          <div class="spec"><dt>Style</dt><dd>abstract</dd></div>
+          <div class="spec"><dt>Open area</dt><dd>33%</dd></div>
+          <div class="spec"><dt>Material</dt><dd>Stainless Steel (304 / 316)</dd></div>
+          <div class="spec" style="border-right:none"><dt>Best fit</dt><dd>Architectural screening</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ======= design intent ======= -->
+  <section class="block bg-a intent">
+    <div class="container-narrow">
+      <p class="eyebrow">Design intent</p>
+      <h2 class="sec">Visual rhythm and light behavior</h2>
+      <div class="gold-divider"></div>
+      <p>Abstract geometry gives this screen its project read: density, repeat, and shadow change as the viewing distance changes.</p>
+      <p class="sub-line">Filtered light and pattern shadow</p>
+    </div>
+  </section>
+
+  <!-- ======= where this pattern works ======= -->
+  <section class="block bg-b">
+    <div class="container">
+      <p class="eyebrow">Applications</p>
+      <h2 class="sec">Where this pattern works</h2>
+      <p class="sec-sub">One cut pattern covers four families of use. Open area decides how it behaves in each.</p>
+      <div class="gold-divider"></div>
+      <div class="stat-row">
+        <span class="stat-num">33%</span>
+        <span class="stat-label">open area — sets shade, airflow and privacy before any other spec</span>
+      </div>
+      <div class="app-grid">
+        <div class="app-card">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>
+          <h3>Exterior facades</h3>
+          <p>Reads at building scale. Open area sets shade, airflow, and how shadow travels across the elevation.</p>
+        </div>
+        <div class="app-card">
+          <div class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/><path d="M11 12h2"/></svg></div>
+          <h3>Interior dividers</h3>
+          <p>Separates zones without closing the room. Privacy shifts with viewing angle and distance.</p>
+        </div>
+        <div class="app-card">
+          <div class="icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></div>
+          <h3>Feature walls</h3>
+          <p>Turns a lobby edge or reception backdrop into a metal surface with depth and repeatable logic.</p>
+        </div>
+        <div class="app-card">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-5"/><path d="M5 4h14v16l-7 3-7-3z"/></svg></div>
+          <h3>Code and site review</h3>
+          <p>Opening size, anti-climb needs, grade, drainage, and fixing detail get checked as one system before release.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= technical FAQ ======= -->
+  <section class="block bg-a" id="faq">
+    <div class="container-narrow">
+      <p class="eyebrow">Technical FAQ</p>
+      <h2 class="sec">Before you specify</h2>
+      <div class="gold-divider"></div>
+      <div class="faq" id="faqList">
+        <div class="faq-item open">
+          <button type="button" class="faq-q">Can this pattern be adjusted to fit my opening?<span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
+          <div class="faq-a"><p>Yes. Scale, repeat, orientation, and open area can be adjusted before cutting so the final panel fits the project drawing.</p></div>
+        </div>
+        <div class="faq-item">
+          <button type="button" class="faq-q">Can I request a physical sample?<span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
+          <div class="faq-a"><p>Yes. Samples confirm pattern scale, finish direction, reflection, and edge quality before full production.</p></div>
+        </div>
+        <div class="faq-item">
+          <button type="button" class="faq-q">Which files make quoting faster?<span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
+          <div class="faq-a"><p>CAD, PDF elevations, rough dimensions, quantity, finish direction, and site photos give the fastest path to a useful quote.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= discuss your project (second entry, source_module=faq) ======= -->
+  <section class="block bg-b">
+    <div class="container-narrow">
+      <div class="discuss">
+        <p class="eyebrow">Next step</p>
+        <h2 class="sec">Discuss your project</h2>
+        <p>Send the opening, finish direction, and drawing references. The team reviews material route and panel logic, then returns the next quote step.</p>
+        <div class="cta-row">
+          <button type="button" class="btn btn-primary" data-quote-cta="faq">Request Quote</button>
+          <a class="btn btn-whatsapp" id="waFaqBtn" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 0 1 12 4zm-3.1 4.2c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.9 4.4 3.9 2.2.9 2.6.7 3.1.7.5-.1 1.6-.7 1.8-1.3.2-.6.2-1.2.2-1.3 0-.1-.2-.2-.5-.3l-1.7-.8c-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-.7-.3-1.4-.7-2-1.3-.5-.5-.9-1.1-1.3-1.7-.1-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5L9.6 8.7c-.2-.4-.4-.5-.7-.5z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+        <span class="prefer-email">or email <a href="mailto:info@metal-divider.com">info@metal-divider.com</a></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= in-page quote form ======= -->
+  <section class="block bg-a" id="quote">
+    <div class="container-narrow">
+      <div class="quote-panel" id="quotePanel">
+        <button type="button" class="quote-head" id="quoteHead" aria-expanded="false">
+          <span><span class="t">Request your quote</span><span class="s">Apiary · reply within one business day</span></span>
+          <span class="chev"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+        </button>
+        <div class="quote-body" id="quoteBody">
+          <div class="quote-inner">
+
+            <!-- form state -->
+            <div id="formState">
+              <p class="ref-line" id="refLine"></p>
+              <div class="pattern-context">
+                <div class="ph-mini"></div>
+                <div>
+                  <div class="name">Pattern: Apiary <span style="color:var(--gold)">(APIARY)</span></div>
+                  <div class="code">abstract · open area 33% · Architectural screening</div>
+                  <div class="facts">Attached automatically from this pattern page.</div>
+                </div>
+              </div>
+
+              <form id="inquiryForm" novalidate>
+                <div class="field" id="f-name">
+                  <label for="name">Name</label>
+                  <input type="text" id="name" name="name" maxlength="120" autocomplete="name" placeholder="Jane Chan">
+                  <p class="err" hidden>Please enter your name.</p>
+                </div>
+                <div class="field" id="f-email">
+                  <label for="email">Email</label>
+                  <input type="email" id="email" name="email" maxlength="200" autocomplete="email" placeholder="jane@studio.com">
+                  <p class="err" hidden>Please enter a valid email address.</p>
+                </div>
+                <div class="field" id="f-company">
+                  <label for="company">Company <span class="opt">(optional)</span></label>
+                  <input type="text" id="company" name="company" maxlength="160" autocomplete="organization" placeholder="Chan Design Studio">
+                </div>
+                <div class="field" id="f-message">
+                  <label for="message">Message <span class="opt">(optional — the pattern is already attached)</span></label>
+                  <textarea id="message" name="message" maxlength="5000" placeholder="Quantities, dimensions, timeline, finish preferences…"></textarea>
+                  <p class="hint">Add quantities, dimensions or finish preferences if you have them.</p>
+                </div>
+
+                <div class="turnstile">
+                  <svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/></svg>
+                  Cloudflare Turnstile · managed widget — placeholder, wired at build time
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" id="submitBtn">Send inquiry</button>
+                  <a class="btn btn-whatsapp" id="waFormBtn" href="#" target="_blank" rel="noopener">Send via WhatsApp instead</a>
+                </div>
+                <p class="form-note">Prefer chat? The WhatsApp button opens a message pre-filled with your details and this pattern — nothing is submitted through this page.</p>
+              </form>
+            </div>
+
+            <!-- in-page 303 thank-you state (hidden until submit) -->
+            <div class="ty" id="tyState" hidden>
+              <div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>
+              <h3>We've got your inquiry.</h3>
+              <p id="tySummary"></p>
+              <p>A confirmation is on its way to your inbox. Our team replies within one business day with pattern availability, material options and pricing.</p>
+              <div class="ty-contacts">
+                <a class="btn btn-whatsapp" id="tyWaBtn" href="#" target="_blank" rel="noopener">WhatsApp us</a>
+                <a class="btn btn-secondary" href="mailto:info@metal-divider.com">info@metal-divider.com</a>
+              </div>
+              <button type="button" class="again" id="tyAgain">Send another inquiry</button>
+              <p class="sim">Prototype: submission simulated — on the live site this redirects (303) to /inquiry/thank-you/.</p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= related patterns ======= -->
+  <section class="block bg-b">
+    <div class="container">
+      <div class="related-head">
+        <div>
+          <p class="eyebrow">Keep comparing</p>
+          <h2 class="sec">Adjacent patterns in this family</h2>
+        </div>
+        <span class="view-catalog">View the full catalog · <span class="path">/pattern/</span></span>
+      </div>
+      <div class="gold-divider"></div>
+      <div class="related-grid">
+        <div class="related-card">
+          <div class="ph-box"><div class="ph ph-2" data-i="ZELDA"></div></div>
+          <div class="cap"><b>Zelda</b><span>Compare density and rhythm</span></div>
+        </div>
+        <div class="related-card">
+          <div class="ph-box"><div class="ph ph-5" data-i="WINTER BRANCHES"></div></div>
+          <div class="cap"><b>Winter Branches</b><span>Compare density and rhythm</span></div>
+        </div>
+        <div class="related-card">
+          <div class="ph-box"><div class="ph ph-3" data-i="WILD SPINACH"></div></div>
+          <div class="cap"><b>Wild Spinach</b><span>Compare density and rhythm</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ======= footer ======= -->
+<footer>
+  <div class="container">
+    <a class="brand" href="#">METAL<span>DIVIDER</span></a>
+    <p class="tagline">Custom stainless steel decorative screens. Factory-direct from Foshan — laser cut, PVD coated, shipped worldwide.</p>
+    <div class="contacts">
+      <a id="footWa" href="#" target="_blank" rel="noopener">WhatsApp +852 6473 16887</a>
+      <a href="mailto:info@metal-divider.com">info@metal-divider.com</a>
+      <span class="path" style="font-size:14px">All 146 patterns · /pattern/</span>
+    </div>
+    <p class="fine">© 2026 MetalDivider — custom stainless steel screens, factory direct from Foshan, China.</p>
+  </div>
+</footer>
+
+<!-- ======= floating WhatsApp (site-wide, W1) ======= -->
+<a class="wa-float" id="waFloat" href="#" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+  <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 0 1 12 4zm-3.1 4.2c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.9 4.4 3.9 2.2.9 2.6.7 3.1.7.5-.1 1.6-.7 1.8-1.3.2-.6.2-1.2.2-1.3 0-.1-.2-.2-.5-.3l-1.7-.8c-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-.7-.3-1.4-.7-2-1.3-.5-.5-.9-1.1-1.3-1.7-.1-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5L9.6 8.7c-.2-.4-.4-.5-.7-.5z"/></svg>
+</a>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =========================================================
+   Pattern PDP inquiry prototype (owner pivot 2026-10-24:
+   one full pattern page per pattern — Apiary as the template,
+   "One of 146", URL base /pattern/<slug>, customer copy says
+   "pattern" only). In-page form with two entries (hero / faq,
+   source_module aligned with the old site), Turnstile
+   placeholder, wa.me 85264731687, simulated 303 state.
+   All images are pure-CSS placeholders. No localStorage.
+   ========================================================= */
+
+var PATTERN = { name:'Apiary', code:'APIARY', openArea:'33%', style:'abstract', bestFit:'Architectural screening' };
+var WA_NUMBER = '85264731687';   // spec #7 D3: single customer-facing number, no "+"
+var WA_W1 = "Hi, I'm interested in a custom metal divider screen project.";
+
+/* gallery: real alt texts from products.json, CSS placeholder classes */
+var GALLERY = [
+  { ph:'ph-1', alt:'Apiary finish preview' },
+  { ph:'ph-2', alt:'Apiary standard accent render' },
+  { ph:'ph-3', alt:'Apiary blue accent render' },
+  { ph:'ph-4', alt:'Apiary ochre accent render' },
+  { ph:'ph-5', alt:'Apiary burgundy accent render' },
+  { ph:'ph-6', alt:'Apiary cut sheet preview' },
+  { ph:'ph-7', alt:'Apiary installed screen scene' },
+  { ph:'ph-8', alt:'Apiary pattern accent render variant' }
+];
+
+var inquirySource = { page:'pattern-pdp', module:'hero', button:'request_quote' };  // updated by entry point
+
+/* ---------- toast ---------- */
+var toastTimer = null;
+function toast(html){
+  var t = document.getElementById('toast');
+  t.innerHTML = html; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+}
+
+/* ---------- WhatsApp builders (spec #7 D3, single-pattern) ---------- */
+function waLink(text){ return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text); }
+function waCtaText(module){
+  return WA_W1 + '\nPattern: ' + PATTERN.name + ' (' + PATTERN.code + ')' +
+         '\nRef: pattern-pdp/' + module + '/whatsapp';
+}
+function waFormText(name, company, message, src){
+  var lines = [];
+  if(name) lines.push("Hi, I'm " + name + (company ? ' (' + company + ')' : '') + '.');
+  lines.push("I'd like a quote for this pattern:");
+  lines.push(PATTERN.name + ' (' + PATTERN.code + ')');
+  if(message && message.trim()) lines.push(message.trim());
+  lines.push('Ref: ' + src.page + '/' + src.module + '/' + src.button);
+  return lines.join('\n');
+}
+document.getElementById('waHeroBtn').href = waLink(waCtaText('hero'));
+document.getElementById('waFaqBtn').href  = waLink(waCtaText('faq'));
+document.getElementById('waFloat').href   = waLink(WA_W1);
+document.getElementById('footWa').href    = waLink(WA_W1);
+document.getElementById('tyWaBtn').href   = waLink(WA_W1);
+
+/* ---------- gallery ---------- */
+function imgFallbackNoop(){}
+(function(){
+  var main = document.querySelector('.gallery-main .ph');
+  var capIdx = document.getElementById('capIdx');
+  var capText = document.getElementById('capText');
+  var strip = document.getElementById('thumbs');
+  GALLERY.forEach(function(g, i){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'thumb-btn' + (i === 0 ? ' active' : '');
+    b.title = g.alt;
+    b.setAttribute('aria-label', 'View image ' + (i + 1) + ': ' + g.alt);
+    b.innerHTML = '<div class="ph ' + g.ph + '"></div>';
+    b.addEventListener('click', function(){
+      main.className = 'ph ' + g.ph;
+      capIdx.textContent = '0' + (i + 1);
+      capText.textContent = g.alt;
+      strip.querySelectorAll('.thumb-btn').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+    });
+    strip.appendChild(b);
+  });
+})();
+
+/* ---------- FAQ accordion ---------- */
+document.querySelectorAll('.faq-item').forEach(function(item){
+  item.querySelector('.faq-q').addEventListener('click', function(){
+    var open = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(function(x){
+      x.classList.remove('open');
+      x.querySelector('.faq-a').style.maxHeight = null;
+    });
+    if(!open){
+      item.classList.add('open');
+      var a = item.querySelector('.faq-a');
+      a.style.maxHeight = a.scrollHeight + 'px';
+    }
+  });
+});
+function initFaqHeights(){
+  var open = document.querySelector('.faq-item.open .faq-a');
+  if(open) open.style.maxHeight = open.scrollHeight + 'px';
+}
+window.addEventListener('resize', initFaqHeights);
+initFaqHeights();
+
+/* ---------- collapsible quote panel ---------- */
+var panel = document.getElementById('quotePanel');
+var qbody = document.getElementById('quoteBody');
+function setPanel(open){
+  panel.classList.toggle('open', open);
+  document.getElementById('quoteHead').setAttribute('aria-expanded', open ? 'true' : 'false');
+  qbody.style.maxHeight = open ? qbody.scrollHeight + 1200 + 'px' : null;  // room for thank-you swap
+}
+document.getElementById('quoteHead').addEventListener('click', function(){ setPanel(!panel.classList.contains('open')); });
+
+function openQuote(module){
+  inquirySource = { page:'pattern-pdp', module: module, button:'request_quote' };   // hero | faq (old-site vocabulary)
+  renderRef();
+  setPanel(true);
+  panel.classList.remove('pulse'); void panel.offsetWidth; panel.classList.add('pulse');
+  panel.scrollIntoView({ behavior:'smooth', block:'start' });
+  setTimeout(function(){ document.getElementById('name').focus({ preventScroll:true }); }, 500);
+}
+document.querySelectorAll('[data-quote-cta]').forEach(function(btn){
+  btn.addEventListener('click', function(){ openQuote(btn.getAttribute('data-quote-cta')); });
+});
+
+function renderRef(){
+  document.getElementById('refLine').innerHTML =
+    'Ref: <em>' + inquirySource.page + ' / ' + inquirySource.module + ' / ' + inquirySource.button + '</em>';
+}
+renderRef();
+
+/* ---------- form ---------- */
+function updateWaFormBtn(){
+  document.getElementById('waFormBtn').href = waLink(waFormText(
+    document.getElementById('name').value.trim() || null,
+    document.getElementById('company').value.trim() || null,
+    document.getElementById('message').value,
+    inquirySource
+  ));
+}
+function fieldError(id, show){
+  var f = document.getElementById(id);
+  f.classList.toggle('invalid', show);
+  f.querySelector('.err').hidden = !show;
+}
+document.getElementById('inquiryForm').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var name = document.getElementById('name').value.trim();
+  var email = document.getElementById('email').value.trim();
+  var company = document.getElementById('company').value.trim();
+  var badName = !name;                                                        fieldError('f-name', badName);
+  var badEmail = !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);                fieldError('f-email', badEmail);
+  if(badName || badEmail){ toast('Please complete the highlighted fields'); return; }
+
+  // simulated submit: siteverify + CPT + emails + 303 (spec #7 D5–D7 — mocked)
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  setTimeout(function(){
+    document.getElementById('formState').hidden = true;
+    document.getElementById('tyState').hidden = false;
+    document.getElementById('tySummary').textContent =
+      'Thanks' + (name ? ', ' + name : '') + (company ? ' at ' + company : '') +
+      '. Your inquiry about ' + PATTERN.name + ' (' + PATTERN.code + ') has been received.';
+    btn.disabled = false; btn.textContent = 'Send inquiry';
+    document.getElementById('inquiryForm').reset();
+    setPanel(true);
+    panel.scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 700);
+});
+document.getElementById('tyAgain').addEventListener('click', function(){
+  document.getElementById('tyState').hidden = true;
+  document.getElementById('formState').hidden = false;
+  setPanel(true);
+  updateWaFormBtn();
+});
+['name','company','message'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', updateWaFormBtn);
+});
+updateWaFormBtn();
+
+/* ---------- prototype reset ---------- */
+/* crumb links point at production paths (/pattern/...) — keep the demo on this page */
+document.querySelectorAll('.crumb-link').forEach(function(a){
+  a.addEventListener('click', function(ev){ ev.preventDefault(); });
+});
+document.getElementById('demoReset').addEventListener('click', function(){
+  document.getElementById('tyState').hidden = true;
+  document.getElementById('formState').hidden = false;
+  document.getElementById('inquiryForm').reset();
+  ['f-name','f-email'].forEach(function(id){ fieldError(id, false); });
+  inquirySource = { page:'pattern-pdp', module:'hero', button:'request_quote' };
+  renderRef(); updateWaFormBtn(); setPanel(false);
+  window.scrollTo({ top:0, behavior:'smooth' });
+  toast('Prototype reset');
+});
+</script>
+</body>
+</html>

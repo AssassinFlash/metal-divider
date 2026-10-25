@@ -206,37 +206,7 @@ class="xo-container--wide"
 
 <section
   id="laser-cut-solutions-template--21873710563581__laser_cut_solutions"
-  x-data="{
-    activeTab: 'linear',
-    isDesktopHover: false,
-    hoverTimer: null,
-    init() {
-      const mediaQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
-      this.isDesktopHover = mediaQuery.matches;
-      const updateHoverMode = (event) => {
-        this.isDesktopHover = event.matches;
-        this.clearQueuedTab();
-      };
-      if (mediaQuery.addEventListener) {
-        mediaQuery.addEventListener('change', updateHoverMode);
-      } else {
-        mediaQuery.addListener(updateHoverMode);
-      }
-    },
-    setTab(tabId) {
-      clearTimeout(this.hoverTimer);
-      if (this.activeTab === tabId) return;
-      this.activeTab = tabId;
-    },
-    queueTab(tabId) {
-      if (!this.isDesktopHover) return;
-      clearTimeout(this.hoverTimer);
-      this.hoverTimer = setTimeout(() => this.setTab(tabId), 120);
-    },
-    clearQueuedTab() {
-      clearTimeout(this.hoverTimer);
-    }
-  }"
+  x-data="mdHoverTabs('linear')"
   class="relative overflow-hidden text-white md-taf2adc0d"
 >
   <div class="max-w-[1400px] mx-auto px-5 md:px-10">
@@ -1023,7 +993,7 @@ class="xo-container--wide"
   id="laser-cut-manufacturing-stats-template--21873710563581__laser_cut_manufacturing_stats"
   class="overflow-hidden text-white md-t4d66bb95"
   x-data="laserCutMfgStatsMarquee()"
-  x-init="init()"
+ 
 >
   <div class="mx-auto max-w-[1400px] px-6">
     <div class="mx-auto mb-12 max-w-[1200px] text-center md:mb-16">
@@ -1115,7 +1085,7 @@ class="xo-container--wide"
 
     
       <div class="lcm-marquee-wrapper relative mb-10 overflow-hidden border-y border-white/10 py-8 md:mb-14 md:py-10 md-t80e98d4a" data-marquee x-ref="marquee" x-on:mouseenter="paused = true" x-on:mouseleave="resume()">
-        <div class="lcm-marquee-track flex w-max gap-4 will-change-transform md:gap-6" data-marquee-track x-ref="track" :style="`transform: translate3d(${offset}px, 0, 0)`">
+        <div class="lcm-marquee-track flex w-max gap-4 will-change-transform md:gap-6" data-marquee-track x-ref="track" :style="'transform: translate3d(' + offset + 'px, 0, 0)'">
           
             
               
@@ -1269,7 +1239,7 @@ class="xo-container--wide"
   id="laser-cut-mid-cta-template--21873710563581__laser_cut_mid_cta"
   class="relative overflow-hidden md-tcc07631f"
 >
-  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" loading="lazy"><source src="//metalpartition.com/cdn/shop/videos/c/vp/00af6f1ec2da47bfbb8e296ba63de4f1/00af6f1ec2da47bfbb8e296ba63de4f1.HD-720p-3.0Mbps-68262742.mp4?v=0" type="video/mp4"><img src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"></video>
+  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-hd-720p-3-0mbps-68262742.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"></video>
 <div class="absolute inset-0 bg-black/55"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(201,169,98,0.12)_0%,_rgba(20,20,20,0.25)_40%,_rgba(20,20,20,0.82)_100%)]"></div>
     <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,20,20,0.28)_0%,rgba(20,20,20,0.72)_100%)]"></div>
@@ -1296,7 +1266,7 @@ class="xo-container--wide"
             >
               Get Your Custom Quote
             </a><a
-              href="https://wa.me/8613068660047"
+              href="https://wa.me/85264731687"
               target="_blank"
               rel="noopener noreferrer"
               data-source-page="laser-cut-geometric-metal-screens"
@@ -1322,7 +1292,7 @@ class="xo-container--wide"
 >
   <div
     class="mx-auto max-w-[1400px] px-5 md:px-10"
-    x-data="{ activeTab: 'step_pattern_lock' }"
+    x-data="mdHoverTabs('linear')"
   >
     <div class="text-center mb-12 md:mb-16"><p class="mb-3 font-['Inter'] text-xs font-semibold uppercase tracking-[0.22em] text-[#c9a962] md:mb-4 md:text-sm">PROJECT EXECUTION</p><h2 class="mx-auto max-w-[1120px] font-['Playfair_Display'] text-[32px] font-bold leading-[1.08] tracking-[-0.02em] text-white md:text-[42px] lg:text-[56px] md-t722f84cd">From your drawing to your site — four steps</h2>
       <p class="mx-auto mt-5 max-w-[980px] font-['Inter'] text-[15px] leading-relaxed text-white/70 md:text-[18px] md-t78970fa2">You send the pattern and dimensions. We confirm, cut, check, and ship. Here&#39;s what happens at each step — and what you control.</p>
@@ -1489,7 +1459,7 @@ class="xo-container--wide"
 
 <section
   id="laser-cut-specs-template--21873710563581__laser_cut_specs"
-  x-data="{ activeTab: 'linear' }"
+  x-data="mdHoverTabs('linear')"
   class="text-white md-tecede96f"
 >
   <div class="max-w-[1400px] mx-auto px-5 md:px-10">
@@ -1826,7 +1796,7 @@ class="xo-container--wide"
 
       <!-- Left: Video -->
       <div class="lg:w-5/12 lg:sticky lg:top-24 lg:self-start">
-        <div class="relative rounded-2xl overflow-hidden border border-white/10 aspect-[9/14] md:aspect-[9/16] lg:aspect-auto lg:h-[680px] bg-[#0a0a0a]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" controls="controls" preload="none" class="absolute inset-0 w-full h-full object-cover" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp" loading="lazy"><source src="//metalpartition.com/cdn/shop/videos/c/vp/09254a60368d4d1e87ddf4bec24378d8/09254a60368d4d1e87ddf4bec24378d8.HD-1080p-3.3Mbps-68943975.mp4?v=0" type="video/mp4"><img src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp"></video>
+        <div class="relative rounded-2xl overflow-hidden border border-white/10 aspect-[9/14] md:aspect-[9/16] lg:aspect-auto lg:h-[680px] bg-[#0a0a0a]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" controls="controls" preload="none" class="absolute inset-0 w-full h-full object-cover" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-hd-1080p-3-3mbps-68943975.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp"></video>
 </div>
       </div>
 
@@ -2143,7 +2113,7 @@ class="xo-section xo-section--template--21873710563581__laser_cut_contact md-t15
               <h3 class="m-0 text-lg font-serif text-white">Prefer WhatsApp?</h3>
             </div>
             <p class="mb-4 text-sm text-white/75">Share your layout and quantity. We can confirm feasibility quickly.</p>
-            <a href="https://wa.me/8613068660047" target="_blank" rel="noopener noreferrer" data-source-page="laser-cut-geometric-metal-screens" data-source-module="contact" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#22c55e]">
+            <a href="https://wa.me/85264731687" target="_blank" rel="noopener noreferrer" data-source-page="laser-cut-geometric-metal-screens" data-source-module="contact" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#22c55e]">
               Chat on WhatsApp
             </a>
           </div>

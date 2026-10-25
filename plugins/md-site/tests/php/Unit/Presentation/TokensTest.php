@@ -32,7 +32,7 @@ final class TokensTest extends TestCase {
 	 * the hash and re-pin it in the same diff, so the review sees a
 	 * conscious token-layer change instead of a silent transplant.
 	 */
-	private const NORMALIZED_SHA256 = '439e73c3f10ede91f082a9d2e87848d136b7e697c3a5197384f1c547ea740f8f';
+	private const NORMALIZED_SHA256 = 'ce71ed271befd383831a3f1d05175d33b40d0160d0c9dcf70ae7c9d4c9b5cd86';
 
 	/**
 	 * The exported stylesheet carries the design tokens of the MASTER.md
@@ -56,7 +56,7 @@ final class TokensTest extends TestCase {
 		$this->assertStringContainsString( '--md-font-display: "Playfair Display", Georgia, serif', $css );
 		$this->assertStringContainsString( '--md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif', $css );
 		$this->assertStringContainsString( '--md-container: 1400px', $css );
-		$this->assertStringContainsString( '/wp-content/plugins/md-site/assets/fonts/inter-400.woff2', $css, 'the fonts are self-hosted from this plugin (OFL), never a third-party CDN' );
+		$this->assertStringContainsString( '/wp-content/plugins/md-site/assets/fonts/inter-var.woff2', $css, 'the fonts are self-hosted from this plugin (OFL), never a third-party CDN' );
 
 		$stripped   = preg_replace( '/\/\*.*?\*\//s', '', $css ) ?? '';
 		$normalized = strtolower( preg_replace( '/\s+/', ' ', $stripped ) ?? '' );

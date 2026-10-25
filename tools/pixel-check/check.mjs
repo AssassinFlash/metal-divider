@@ -384,7 +384,7 @@ console.log(
     `viewports: ${args.viewportList.map((v) => v.name).join(',')}, masks: ${masks.length}, base: ${args.base}`
 );
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
 let pwVersion = 'unknown';
 try {
   pwVersion = JSON.parse(fs.readFileSync(new URL('./node_modules/playwright/package.json', import.meta.url), 'utf8')).version;

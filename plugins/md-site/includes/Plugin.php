@@ -9,7 +9,9 @@ declare( strict_types = 1 );
 
 namespace MetalDivider\Site;
 
+use MetalDivider\Site\Catalog;
 use MetalDivider\Site\Fields\FieldGroups;
+use MetalDivider\Site\Presentation\Assets;
 use MetalDivider\Site\Presentation\Shortcodes;
 use MetalDivider\Site\Seo\SchemaFilters;
 
@@ -30,11 +32,15 @@ final class Plugin {
 	 * @param FieldGroups   $fields     The ACF field groups of the pattern data model.
 	 * @param Shortcodes    $shortcodes The PDP data shortcodes.
 	 * @param SchemaFilters $schemas    The SEO schema filters (ticket #34).
+	 * @param Assets        $assets     The front-end scripts (chrome runtime + Alpine).
+	 * @param Catalog       $catalog    The pattern catalog's cards, pager and query inputs.
 	 */
 	public function __construct(
 		private readonly FieldGroups $fields,
 		private readonly Shortcodes $shortcodes,
 		private readonly SchemaFilters $schemas,
+		private readonly Assets $assets,
+		private readonly Catalog $catalog,
 	) {}
 
 	/**
@@ -49,6 +55,8 @@ final class Plugin {
 		add_action( 'init', array( $this->shortcodes, 'register' ) );
 		$this->fields->register();
 		$this->schemas->register();
+		$this->assets->register();
+		$this->catalog->register();
 		add_action( 'cli_init', array( $this, 'register_cli' ) );
 	}
 

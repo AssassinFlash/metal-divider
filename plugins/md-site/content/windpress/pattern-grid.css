@@ -506,3 +506,34 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
 grid-template-columns: 70px minmax(0, 1fr);
 }
 }
+
+/* The server-side pager (the Shopify pager's JS went with the orphan
+   script body; the shortcode prints WordPress's own links). */
+.pattern-catalog__pagination {
+display: flex;
+flex-wrap: wrap;
+gap: 8px;
+align-items: center;
+grid-column: 1 / -1;
+margin-top: 32px;
+}
+.pattern-catalog__pagination .page-numbers {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-width: 44px;
+min-height: 44px;
+padding: 0 12px;
+border: 1px solid rgba(255, 255, 255, 0.16);
+border-radius: 10px;
+color: rgba(255, 255, 255, 0.88);
+text-decoration: none;
+font-size: 14px;
+}
+.pattern-catalog__pagination .page-numbers:hover { border-color: rgba(201, 169, 98, 0.5); color: #fff; }
+.pattern-catalog__pagination .page-numbers.current {
+background: rgba(201, 169, 98, 0.22);
+border-color: rgba(201, 169, 98, 0.6);
+color: #fff;
+font-weight: 700;
+}
