@@ -196,7 +196,8 @@ class="xo-container--box"
       <div class="pattern-catalog__toolbar">
         <div>
           <span class="pattern-catalog__label">Browse</span>
-          <h1 class="pattern-catalog__title">Organic Patterns</h1>
+          <!-- md-data: the current product_cat term name (LC native archive title; the taxonomy label prefix WP adds is stripped, shared by all nine series) -->
+          <h1 class="pattern-catalog__title">[lc_the_archive_title strip_label="1"]</h1>
           
             <p class="pattern-catalog__intro">Compare pattern families, open product pages, and send the selected reference with panel size and finish target.</p>
           

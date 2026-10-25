@@ -101,6 +101,34 @@ final class TemplatesTest extends TestCase {
 	}
 
 	/**
+	 * The series archive's heading is the current term, never a hardcoded
+	 * series name: the one shared template renders all nine archives, so a
+	 * literal title would print the same collection name on every URL
+	 * (visual census VC-037).
+	 */
+	public function test_the_series_archive_heading_is_the_current_term(): void {
+		$source = (string) file_get_contents( Templates::path( 'series-archive' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+		$this->assertMatchesRegularExpression( '/<h1[^>]*>\s*\[lc_the_archive_title\b[^\]]*\]/', $source, 'the heading is LiveCanvas\'s native archive title' );
+		$this->assertDoesNotMatchRegularExpression( '/<h1[^>]*>\s*Organic Patterns\s*<\/h1>/i', $source, 'the heading is not the representative collection literal' );
+	}
+
+	/**
+	 * The four blog faces render their design source, not the source text:
+	 * every Tangible loop/field sits inside the <tangible> processing
+	 * boundary LiveCanvas renders, no de-linker plugin shortcode survives,
+	 * and the fork's tv- id family is mapped to this site's md- one.
+	 */
+	public function test_the_blog_faces_carry_no_unrendered_source(): void {
+		foreach ( array( 'blog-index', 'blog-single', 'blog-category', 'blog-search' ) as $face ) {
+			$source = (string) file_get_contents( Templates::path( $face ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$this->assertStringContainsString( '<tangible', $source, "{$face} carries the Tangible processing boundary" );
+			$this->assertStringContainsString( '</tangible>', $source, "{$face} closes the Tangible processing boundary" );
+			$this->assertStringNotContainsString( '[linker_', $source, "{$face} carries no de-linker plugin shortcode" );
+			$this->assertStringNotContainsString( 'tv-blog-', $source, "{$face} carries no source-site id family" );
+		}
+	}
+
+	/**
 	 * Zero inline styles in the templates (AGENTS.md §5, spec 19 §4.2 T2,
 	 * ticket #47): no style= attribute, no <style> block — composition in
 	 * the template, styles in the WindPress volume. The scan is the whole

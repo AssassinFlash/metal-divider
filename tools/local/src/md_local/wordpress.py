@@ -78,7 +78,11 @@ ADMIN_USER = "local-admin"
 # .test is reserved and never resolves to a real mailbox (RFC 6761 §6.2).
 ADMIN_EMAIL = "local-admin@example.test"
 TABLE_PREFIX = "wp_"
-PERMALINKS = "/%postname%/"
+# Journal articles live under the blog's base (/blog/<slug>/), the URL scheme
+# of the blog IA (ticket #5 §3.2) and the route the blog face's article links
+# and the visual census expect. Pages and Woo's product/category bases are
+# separate rewrite rules, so this changes post URLs only.
+PERMALINKS = "/blog/%postname%/"
 
 SALTS = (
     "AUTH_KEY",
@@ -168,7 +172,12 @@ def provision(
         _link_our_themes(instance, checkout, wp, say)
 
     _link_our_plugins(instance, checkout, wp, say)
-    wp.run("rewrite", "structure", PERMALINKS)
+    # The explicit category base keeps category archives at /category/<slug>/:
+    # with an empty category_base WordPress prepends the permalink front
+    # (/blog) to the taxonomy permastruct, which would move every blog
+    # category under /blog/category/ (WP_Rewrite::with_front in
+    # wp-includes/taxonomy.php).
+    wp.run("rewrite", "structure", PERMALINKS, "--category-base=category")
     instance.provisioned_marker.write_text(datetime.now(UTC).isoformat() + "\n")
 
 
