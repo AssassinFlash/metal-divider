@@ -18,6 +18,13 @@ namespace MetalDivider\Site\Presentation;
  * the compiled cache; the plugin never enqueues site CSS itself (AGENTS.md
  * presentation ruling). Today the volume carries the design tokens; the
  * component and template volumes of the page-template tickets join it here.
+ *
+ * The entry also carries the Tailwind v4 head — the layer declaration and
+ * the theme/utilities imports of WindPress's own stub entry — which is what
+ * gives the compiler its utility definitions: an entry without it compiles
+ * no utility class at all, arbitrary or standard (ticket #58, where 502
+ * unique arbitrary-value classes in the LiveCanvas templates computed to
+ * nothing because the entry imported only the volumes).
  */
 final class WindPressVolume {
 
@@ -25,6 +32,28 @@ final class WindPressVolume {
 	 * The compiler's entry stylesheet in the volume.
 	 */
 	private const ENTRY = 'main.css';
+
+	/**
+	 * The head the entry must carry, verbatim from WindPress's stub entry for
+	 * Tailwind v4 (plugins/windpress/stubs/tailwindcss-v4/main.css): the layer
+	 * order, the theme variables and the on-demand utilities. Preflight stays
+	 * commented out as in the stub — the volume rules carry the old site's
+	 * resets, and a second reset would rebase the replica pages.
+	 */
+	private const ENTRY_HEAD = '@layer theme, base, components, utilities;' . "\n\n"
+		. '@import "tailwindcss/theme.css" layer(theme) theme(static);' . "\n"
+		. '/* @import "tailwindcss/preflight.css" layer(base); */' . "\n"
+		. '@import "tailwindcss/utilities.css" layer(utilities);';
+
+	/**
+	 * The one head line whose absence is #58's failure: without the utilities
+	 * import the compiler has no utility definitions, so it builds nothing
+	 * for any utility class, arbitrary or standard. install() keys on this
+	 * line rather than on the whole head — an entry that carries it (the
+	 * WindPress stub seed, a hand-trimmed variant) is left alone instead of
+	 * growing a duplicate head.
+	 */
+	private const ENTRY_HEAD_MARK = '@import "tailwindcss/utilities.css" layer(utilities);';
 
 	/**
 	 * Directory of the exported stylesheets, relative to this plugin.
@@ -57,10 +86,22 @@ final class WindPressVolume {
 	}
 
 	/**
-	 * Adds the volume files' imports to `main.css` when missing; a changed
-	 * entry keeps its previous copy beside it. The import lines go to the
-	 * bottom, after the file's own imports — Tailwind v4 orders the cascade
-	 * by import position, and our selectors carry their own specificity.
+	 * Writes the entry the compiler needs: the Tailwind v4 head (the compiler's
+	 * utility definitions — without it no utility class compiles) and the
+	 * volume files' imports, each into the `components` layer. Layering the
+	 * volumes is load-bearing (#58): the volumes carry the old site's
+	 * compiled CSS, utility rules included, and an unlayered rule beats every
+	 * layered one — unlayered, the volumes' stale `.grid-cols-1` pinned every
+	 * responsive grid to one column while the freshly built `.md:grid-cols-3`
+	 * sat unusable in the `utilities` layer. In `components`, declared before
+	 * `utilities` by the head, the on-demand utilities win exactly the ties
+	 * the old build's own utilities won, and the volumes' custom rules keep
+	 * their specificity wins inside their layer.
+	 *
+	 * The layered form is migrated in place: a bare import of a volume file
+	 * is replaced by its layered form, never kept beside it. Otherwise
+	 * missing pieces are added and present ones left byte-identical, and a
+	 * changed entry keeps its previous copy beside it.
 	 *
 	 * @param string   $entry   Absolute path of `main.css`.
 	 * @param string[] $imports The relative paths to import.
@@ -68,30 +109,45 @@ final class WindPressVolume {
 	private function import_from_entry( string $entry, array $imports ): void {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local volume file on disk, not a remote URL.
 		$current = is_readable( $entry ) ? (string) file_get_contents( $entry ) : '';
+		$updated = $current;
+
+		if ( ! str_contains( $updated, self::ENTRY_HEAD_MARK ) ) {
+			$updated = '' === rtrim( $updated ) ? self::ENTRY_HEAD : self::ENTRY_HEAD . "\n\n" . ltrim( $updated );
+		}
+
 		$missing = array();
 		foreach ( $imports as $import ) {
-			$rule = "@import \"{$import}\";";
-			if ( ! str_contains( $current, $import ) ) {
-				$missing[] = $rule;
+			$layered = "@import \"{$import}\" layer(components);";
+			if ( ! str_contains( $updated, $layered ) ) {
+				$missing[] = $layered;
 			}
+			// The bare, unlayered form of our own import loses its cascade
+			// slot to nothing — replace it, do not keep both.
+			$bare    = "@import \"{$import}\";";
+			$updated = str_replace( $bare . "\n", '', $updated );
+			$updated = str_replace( "\n" . $bare, '', $updated );
+			$updated = str_replace( $bare, '', $updated );
 		}
-		if ( array() === $missing ) {
+		if ( array() !== $missing ) {
+			$updated = rtrim( $updated ) . "\n" . implode( "\n", $missing ) . "\n";
+		}
+		if ( $updated === $current ) {
 			return;
 		}
 		if ( '' !== $current ) {
 			copy( $entry, $entry . '.bak' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_copy -- local volume file on disk, not a remote URL.
 		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- local volume file on disk, not a remote URL.
-		file_put_contents( $entry, rtrim( $current ) . "\n" . implode( "\n", $missing ) . "\n" );
+		file_put_contents( $entry, rtrim( $updated ) . "\n" );
 	}
 
 	/**
 	 * The volume files' drift against the exported stylesheets: the read-only
 	 * twin of install(), for a deploy to assert that the volume really
 	 * carries the checkout's files. A volume file absent, or with a hash the
-	 * export does not carry, is one row; the entry's missing imports are one
-	 * more. Nothing here writes, and the volume directory is not created (a
-	 * site without WindPress has no volume to compare).
+	 * export does not carry, is one row; the entry's missing head or imports
+	 * are one row each. Nothing here writes, and the volume directory is not
+	 * created (a site without WindPress has no volume to compare).
 	 *
 	 * @return list<array{surface: string, target: string, detail: string}> Drift rows, empty when in sync.
 	 */
@@ -140,12 +196,19 @@ final class WindPressVolume {
 		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local volume file on disk, not a remote URL.
 		$entry = is_readable( $dir . '/' . self::ENTRY ) ? (string) file_get_contents( $dir . '/' . self::ENTRY ) : '';
+		if ( ! str_contains( $entry, self::ENTRY_HEAD_MARK ) ) {
+			$rows[] = array(
+				'surface' => 'windpress volume',
+				'target'  => self::ENTRY,
+				'detail'  => 'the entry does not carry the Tailwind v4 theme/utilities imports: no utility class compiles',
+			);
+		}
 		foreach ( $imports as $import ) {
-			if ( ! str_contains( $entry, $import ) ) {
+			if ( ! str_contains( $entry, "@import \"{$import}\" layer(components);" ) ) {
 				$rows[] = array(
 					'surface' => 'windpress volume',
 					'target'  => self::ENTRY,
-					'detail'  => 'the entry does not import ' . $import,
+					'detail'  => 'the entry does not import ' . $import . ' into the components layer',
 				);
 			}
 		}

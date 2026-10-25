@@ -87,15 +87,47 @@ final class WindPressVolumeTest extends TestCase {
 	}
 
 	/**
-	 * The install() method copies every export into the volume and imports it from the
-	 * entry stylesheet.
+	 * The install() method copies every export into the volume and imports it
+	 * from the entry stylesheet into the `components` layer, whose head carries
+	 * the Tailwind v4 theme/utilities imports — the compiler's utility
+	 * definitions (#58: an entry without them compiles no utility class at
+	 * all, and an unlayered volume import lets the carried old-site utility
+	 * rules beat the freshly built ones).
 	 */
 	public function test_install_copies_the_exports_and_imports_them(): void {
 		( new WindPressVolume() )->install();
 
 		$this->assertFileEquals( WindPressVolume::path() . '/tokens.css', $this->data_dir() . '/tokens.css' );
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local test file, not a remote URL.
-		$this->assertStringContainsString( '@import "./tokens.css";', (string) file_get_contents( $this->data_dir() . '/main.css' ) );
+		$entry = (string) file_get_contents( $this->data_dir() . '/main.css' );
+		$this->assertStringContainsString( '@import "tailwindcss/utilities.css" layer(utilities);', $entry, 'the entry carries the utilities import' );
+		$this->assertStringContainsString( '@import "tailwindcss/theme.css" layer(theme) theme(static);', $entry, 'the entry carries the theme import' );
+		$this->assertStringContainsString( '@import "./tokens.css" layer(components);', $entry, 'the volume import is layered' );
+		$this->assertStringNotContainsString( '@import "./tokens.css";', $entry, 'no unlayered twin of the volume import remains' );
+		$this->assertLessThan( strpos( $entry, '@import "./tokens.css" layer(components);' ), strpos( $entry, '@import "tailwindcss/utilities.css"' ), 'the head precedes the volume imports' );
+	}
+
+	/**
+	 * A pre-#58 entry — bare volume imports, no Tailwind head — is repaired:
+	 * the head is prepended, the bare imports are migrated to their layered
+	 * form (never kept beside it), and the old entry stays beside it for a
+	 * one-rename rollback.
+	 */
+	public function test_install_prepends_the_head_to_a_headless_entry(): void {
+		$entry = $this->data_dir() . '/main.css';
+		mkdir( $this->data_dir(), 0777, true );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- a local test file, not a remote URL.
+		file_put_contents( $entry, "@import \"./tokens.css\";\n" );
+
+		( new WindPressVolume() )->install();
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local test file, not a remote URL.
+		$updated = (string) file_get_contents( $entry );
+		$this->assertStringStartsWith( '@layer theme, base, components, utilities;', $updated, 'the head leads the entry' );
+		$this->assertStringContainsString( '@import "tailwindcss/utilities.css" layer(utilities);', $updated );
+		$this->assertStringContainsString( '@import "./tokens.css" layer(components);', $updated, 'the legacy import is migrated to the components layer' );
+		$this->assertStringNotContainsString( "\"./tokens.css\";\n", $updated, 'the bare import does not survive beside the layered one' );
+		$this->assertSame( "@import \"./tokens.css\";\n", (string) file_get_contents( $entry . '.bak' ), 'the headless entry is kept for rollback' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local test file, not a remote URL.
 	}
 
 	/**
@@ -139,7 +171,8 @@ final class WindPressVolumeTest extends TestCase {
 
 	/**
 	 * The drift() method is empty against a freshly installed volume, and reports a
-	 * missing file, a drifted copy and a missing import each as its own row.
+	 * missing file, a drifted copy, a missing import and an entry without the
+	 * Tailwind head each as its own row.
 	 */
 	public function test_drift_reads_the_volume_against_the_exports(): void {
 		$volume = new WindPressVolume();
@@ -172,5 +205,29 @@ final class WindPressVolumeTest extends TestCase {
 			$missing,
 			'a missing volume file is its own row; the entry still imports it, so that is no row'
 		);
+
+		$entry = $this->data_dir() . '/main.css';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- a local test file, not a remote URL.
+		file_put_contents( $entry, "@import \"./tokens.css\";\n" );
+		$headless = $volume->drift();
+		$this->assertContains(
+			array(
+				'surface' => 'windpress volume',
+				'target'  => 'main.css',
+				'detail'  => 'the entry does not carry the Tailwind v4 theme/utilities imports: no utility class compiles',
+			),
+			$headless,
+			'an entry without the Tailwind head is a drift row (#58)'
+		);
+		$this->assertContains(
+			array(
+				'surface' => 'windpress volume',
+				'target'  => 'main.css',
+				'detail'  => 'the entry does not import ./tokens.css into the components layer',
+			),
+			$headless,
+			'a bare volume import is a drift row: unlayered, the carried old-site utility rules beat the fresh build (#58)'
+		);
+		$this->assertCount( 38, $headless, 'the headless row and the not-installed row join the 36 missing-layered-import rows' );
 	}
 }
