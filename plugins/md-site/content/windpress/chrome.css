@@ -461,6 +461,7 @@ Desktop：一屏显示（不滚动）
 --color-accent: 201, 169, 98;
 background: #fff;
 }
+[data-id^="sections--21844031144189__mega_menu_v2_"] xo-container{ display: block; }
 [data-id="sections--21844031144189__mega_menu_v2_HEAtbw"]{
 --mm-gap: 18px;
 --mm-radius: 18px;
