@@ -3,8 +3,9 @@
  * with this site's tokens (the mapping lives in the fork command
  * of tools/template-convert, ticket #32).
  */
-/* The face's own rules. Search reuses journal.css and the native query loop.
- * The escaped query is allowed to wrap; no fixed heading width can clip it.
+/* The face's own rules. Search reuses the journal block in blog-index.css and
+ * the native query loop. The escaped query is allowed to wrap; no fixed
+ * heading width can clip it.
  */
 #md-blog-search .journal-feed { margin-top: 0; }
 #md-blog-search .journal-intro h1 { overflow-wrap: anywhere; }

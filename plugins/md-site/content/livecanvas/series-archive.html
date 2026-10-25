@@ -196,7 +196,8 @@ class="xo-container--box"
       <div class="pattern-catalog__toolbar">
         <div>
           <span class="pattern-catalog__label">Browse</span>
-          <h1 class="pattern-catalog__title">Organic Patterns</h1>
+          <!-- md-data: the current product_cat term name (LC native archive title; the taxonomy label prefix WP adds is stripped, shared by all nine series) -->
+          <h1 class="pattern-catalog__title">[lc_the_archive_title strip_label="1"]</h1>
           
             <p class="pattern-catalog__intro">Compare pattern families, open product pages, and send the selected reference with panel size and finish target.</p>
           
@@ -257,15 +258,15 @@ class="xo-container--box"
             
               
 
-              <article class="pattern-card">
-                <!-- md-loop: the product loop (LiveCanvas native lc_loop) -->
+              <!-- md-loop: one card per pattern (LiveCanvas native lc_loop); the loop context supplies each pattern's own values, and the PDP assemblies supply best fit and open area. -->
 [lc_loop]
-<a class="pattern-card__link" href="[lc_the_permalink]" aria-label="View Timothy&#39;s Vine specification">
+<article class="pattern-card">
+<a class="pattern-card__link" href="[lc_the_permalink]" aria-label="View [lc_the_title] specification">
                   <div class="pattern-card__media">
                     
                       <img
                         src="[lc_the_thumbnail_url]"
-                        alt="Timothy&#39;s Vine finish preview"
+                        alt="[lc_the_title] | Architectural Metal Screen Pattern finish preview"
                         loading="lazy"
                         width="400"
                         height="800"
@@ -274,25 +275,25 @@ class="xo-container--box"
                   </div>
 
                   <div class="pattern-card__body">
-                    <div class="pattern-card__specs" aria-label="Timothy&#39;s Vine pattern summary">
+                    <div class="pattern-card__specs" aria-label="[lc_the_title] pattern summary">
                       <div class="pattern-card__row">
                         <span class="pattern-card__key">Pattern</span>
-                        <span class="pattern-card__value pattern-card__value--title">Timothy's Vine</span>
+                        <span class="pattern-card__value pattern-card__value--title">[lc_the_title]</span>
                       </div>
 
                       <div class="pattern-card__row">
                         <span class="pattern-card__key">Family</span>
-                        <span class="pattern-card__value">Organic</span>
+                        <span class="pattern-card__value">[lc_the_terms taxonomy="product_cat" link="0" class=""]</span>
                       </div>
 
                       <div class="pattern-card__row">
                         <span class="pattern-card__key">Best fit</span>
-                        <span class="pattern-card__value">Architectural screening</span>
+                        <span class="pattern-card__value">[md_pdp_best_fit]</span>
                       </div>
 
                       <div class="pattern-card__row">
                         <span class="pattern-card__key">Open</span>
-                        <span class="pattern-card__value">17%</span>
+                        <span class="pattern-card__value">[md_pdp_open_area]</span>
                       </div>
                     </div>
 
@@ -305,105 +306,12 @@ class="xo-container--box"
                     </span>
                   </div>
                 </a>
+</article>
 [/lc_loop]
-        </article>
-      `;
-    };
-
-    const restoreCatalog = () => {
-      if (searchController) searchController.abort();
-      grid.innerHTML = originalGrid;
-      summary.innerHTML = originalSummary;
-      if (status) status.textContent = originalStatus;
-      if (pagination) pagination.hidden = false;
-    };
-
-    const renderEmptySearch = (query) => {
-      grid.innerHTML = `
-        <div class="pattern-catalog__empty">
-          <h3>No matching patterns</h3>
-          <p>Try another pattern name, material, or family. The catalog above remains available by category.</p>
-        </div>
-      `;
-      summary.innerHTML = `Search results for "${escapeHtml(query)}" <strong>0</strong> patterns`;
-      if (status) status.textContent = '';
-      if (pagination) pagination.hidden = true;
-    };
-
-    const runSearch = async (rawQuery) => {
-      const query = rawQuery.trim();
-      delete form.dataset.searchFallback;
-      if (!query) {
-        restoreCatalog();
-        return;
-      }
-
-      if (query.length < 2) {
-        if (status) status.textContent = 'Type at least 2 characters';
-        return;
-      }
-
-      if (searchController) searchController.abort();
-      searchController = new AbortController();
-      if (status) status.textContent = 'Searching...';
-
-      const params = new URLSearchParams();
-      params.set('q', query);
-      params.set('resources[type]', 'product');
-      params.set('resources[limit]', '10');
-      params.set('resources[limit_scope]', 'each');
-      params.set('resources[options][unavailable_products]', 'last');
-      params.set('resources[options][fields]', 'title,body,product_type,tag,vendor,variants.title,variants.sku');
-
-      try {
-        const response = await fetch(`/search/suggest.json?${params.toString()}`, {
-          headers: { Accept: 'application/json' },
-          signal: searchController.signal
-        });
-        if (!response.ok) throw new Error('Search request failed');
-
-        const payload = await response.json();
-        const products = (((payload || {}).resources || {}).results || {}).products || [];
-
-        if (products.length === 0) {
-          renderEmptySearch(query);
-          return;
-        }
-
-        grid.innerHTML = products.map(renderProductCard).join('');
-        summary.innerHTML = `Search results for "${escapeHtml(query)}" <strong>${products.length}</strong> ${
-          products.length === 1 ? 'pattern' : 'patterns'
-        }`;
-        if (status) status.textContent = products.length >= 10 ? 'Showing top matches' : '';
-        if (pagination) pagination.hidden = true;
-      } catch (error) {
-        if (error.name === 'AbortError') return;
-        form.dataset.searchFallback = 'true';
-        if (status) status.textContent = 'Search could not load. Press Enter again to use the full search page.';
-      }
-    };
-
-    input.addEventListener('input', () => {
-      delete form.dataset.searchFallback;
-      window.clearTimeout(searchTimer);
-      searchTimer = window.setTimeout(() => runSearch(input.value), 260);
-    });
-
-    input.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        input.value = '';
-        restoreCatalog();
-      }
-    });
-
-    form.addEventListener('submit', (event) => {
-      if (form.dataset.searchFallback === 'true' && input.value.trim()) return;
-      event.preventDefault();
-      window.clearTimeout(searchTimer);
-      runSearch(input.value);
-    });
-  })();
-</script>
+          </div>
+        </main>
+      </div>
+    </section>
 
 
 
