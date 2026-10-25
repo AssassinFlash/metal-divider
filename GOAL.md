@@ -49,7 +49,7 @@
 
 (每轮追加,最新在上)
 
-### 2026-10-25 阶段二·第二轮:交互层与目录真身修复(dev 全验;生产待部署授权)
+### 2026-10-25 阶段二·第二轮:交互层与目录真身修复(dev 全验 → 生产已部署并读回)
 
 **方法**:先读生产线上实物(curl/SSH/真 Chrome),不采信上一轮的记录与注释;发现与记录不符即追到根因再改。所有修复在 dev 实例用真 Chrome + HTTP 实测复验。
 
@@ -64,7 +64,9 @@
 
 **本轮已改并在 dev 复验**:上述 1–7;另含 `windpress-check` 缺斜杠(#55 根因)、windpress-compile 的假前置守卫与 `npx playwright install chromium`(违反真 Chrome 铁律)、FAQPage 抽取与 `/faqs/` 路径、移动触达(页脚链 57px、首页 chips 44px、表单 45px、头部报价键 44px+)、页脚 logo 1024px 原图造成的 634px 横向溢出(两个视口 7 页复测 overflow=0)、桌面 header 113px 与旧站一致、生产 `md-volumes.css` 外挂(H 级漂移:684KB 旧 CSS 由不在仓库的 mu-plugin 注入,桌面下拉全靠它)已由仓库内导航样式替代。
 
-**未完成/待授权**:生产部署(本轮 `just deploy prod --write` 被运行环境判定为缺少本次会话的生产授权而拒绝;需业主明确说“部署到 metal-divider.com 生产”后执行)、生产 WindPress 重编译、清理生产 `/wp-content/uploads/md-volumes.css` 与 `mu-plugins/md-volume-css.php`、GSC 属性。**生产实物仍是旧代码,本文件上述 dev 结论不可当作线上已修。**
+**生产部署(业主 2026-10-25 明确授权后执行)**:`just deploy prod --write` 两次成功(deploy id `20261025T133354099649Z-fe9effa`、`20261025T140158580405Z-bbf141c`;前者含 821c1d3 的全部修复),present/seo/verify 全绿,DB 快照留在本机。生产 WindPress 经一次性登录链接在真 Chrome 重编译(479? 以 `windpress-check` 为准,现 mtime 已更新);登录用的临时 mu-plugin 已删除并读回确认。外挂 CSS 已退役:`md-volumes.css`(684KB)与 `mu-plugins/md-volume-css.php` 先备份到 `~/metal-divider-local/retired/2026-10-25-md-volumes-css/`(sha256 记录),再删除,URL 现 404;桌面下拉改由仓库 `chrome.css` 承担。WindPress 由默认 hybrid 改 cached(数据设置,同时写进 `wp md-site present` 幂等),HTML 从 1.1–1.3MB 降到约 250KB,页面不再注入 600KB 内联 VFS;WooCommerce 前台样式/脚本与 Hostinger Reach 按 CHECK-3/4 出队,控制台 CSP 报错 7 页面 0。favicon 补齐(32/180/512 PNG)。
+
+**仍待办**:GSC 属性;`windpress-anchors` 命令(部署检查仍如实报缺);生产客户视角终检以 clean-profile 审计为准(登录态审计会带 admin bar/WindPress panel,数据不可作客户面证据)。
 
 ### 2026-10-25 移动端视觉审计(阶段二·第一轮:390×844 / 320×568)
 

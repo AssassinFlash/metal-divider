@@ -51,6 +51,9 @@ final class PresentCommandTest extends TestCase {
 		);
 		WP_Mock::userFunction( 'wp_get_custom_css' )->andReturn( '' );
 		WP_Mock::passthruFunction( 'wp_slash' );
+		WP_Mock::userFunction( 'get_option' )->zeroOrMoreTimes()->andReturn( '{}' );
+		WP_Mock::userFunction( 'update_option' )->zeroOrMoreTimes()->andReturn( true );
+		WP_Mock::userFunction( 'wp_json_encode' )->zeroOrMoreTimes()->andReturnUsing( static fn( $value ) => json_encode( $value ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
 	}
 
 	/**
