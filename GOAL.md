@@ -49,6 +49,16 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-26 Woo 唯一资料源与全站交互整合(PR #71,待 CI/合并/部署)
+
+**本批交付**:提交 `3a75a10`,分支 `integration/visual-parity`,PR #71。商品、系列与编辑精选只从当前 Woo 数据读取;PDP 两段文案、系列描述/缩略图、首页 featured 卡、定制页 `menu_order` 卡、计数和上下架联动已接通。卡片与瓦片 markup 落到仓库管理的 LiveCanvas partial,PHP 只做数据;部署依次执行 present → seed-series → seed-tiles → seo,后续 Woo 后台修改与有意移除不被 seed 回滚。
+
+**实测修复**:mega-menu 与移动抽屉、业主批准的 sticky header、键盘焦点与弹层 inert/回焦、画廊 64 图、tab、目录搜索/排序/分页及空态、PDP 图槽 solo、博客 root 尺度、FAQ/材质/报价语义、canonical/noindex、permalink 与 WindPress anchors、dev 视频 Range。多轮独立 Standards/Spec 评审发现的问题均已在本批处理并复验。
+
+**门禁**:`just check` 全绿;PHP 288 + 70 + 6 + 21 tests 通过;Python 51 + 36 + 46(+1 skip)+ 93 + 67 tests 通过;`just migrate reconcile` **13/13 PASS**,零待写。两个可重建 pytest 探测实例及数据库已回收,dev 保留且 HTTP 200。
+
+**尚未完成**:PR CI、合并和生产部署/读回尚未发生;生产仍是旧版本。全站像素门明确未通过,Gradient 只退出空内容基线对照而不做 301;性能基线、完整询盘线上实走及 GOAL 全矩阵仍是持续 goal,不以本批局部验收冒充全站完成。
+
 ### 2026-10-25 阶段二·第二轮:交互层与目录真身修复(dev 全验 → 生产已部署并读回)
 
 **方法**:先读生产线上实物(curl/SSH/真 Chrome),不采信上一轮的记录与注释;发现与记录不符即追到根因再改。所有修复在 dev 实例用真 Chrome + HTTP 实测复验。
