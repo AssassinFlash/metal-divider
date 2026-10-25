@@ -161,12 +161,12 @@ final class SeoCommandTest extends TestCase {
 			}
 		);
 		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturnUsing(
-			static function () use ( $installed, $metas ) {
+			static function ( array $args = array() ) use ( $installed, $metas ) {
 				if ( ! $installed ) {
 					return array();
 				}
 				$post     = new WP_Post( new \stdClass() );
-				$post->ID = $metas['redirect']['id'];
+				$post->ID = $metas['redirects'][ $args['title'] ?? '' ] ?? 0;
 				return array( $post );
 			}
 		);
@@ -188,7 +188,7 @@ final class SeoCommandTest extends TestCase {
 	 * builders against the real faqs template).
 	 *
 	 * @param string $faqs_ld The FAQPage payload built from the real template.
-	 * @return array{posts: array<string, array{id: int<1, max>, type: non-empty-string, title: string}>, meta: array<int, array<string, mixed>>, redirect: array{id: int<1, max>}}
+	 * @return array{posts: array<string, array{id: int<1, max>, type: non-empty-string, title: string}>, meta: array<int, array<string, mixed>>, redirects: array<string, int<1, max>>}
 	 */
 	private function target_metas( string $faqs_ld ): array {
 		$inquiry     = 101;
@@ -202,6 +202,7 @@ final class SeoCommandTest extends TestCase {
 		$s_faq       = 202;
 		$s_article   = 203;
 		$redirect    = 301;
+		$retired     = 302;
 		$config      = new Config();
 		$page_metas  = $config->page_metas( '' );
 
@@ -329,12 +330,22 @@ final class SeoCommandTest extends TestCase {
 				'_seopress_redirections_logged_status' => 'both',
 				'_seopress_redirections_enabled_regex' => '',
 			),
+			$retired     => array(
+				'_seopress_redirections_enabled'       => 'yes',
+				'_seopress_redirections_type'          => '301',
+				'_seopress_redirections_value'         => '/shop/',
+				'_seopress_redirections_logged_status' => 'both',
+				'_seopress_redirections_enabled_regex' => '',
+			),
 		);
 
 		return array(
-			'posts'    => $posts,
-			'meta'     => $meta,
-			'redirect' => array( 'id' => $redirect ),
+			'posts'     => $posts,
+			'meta'      => $meta,
+			'redirects' => array(
+				'pages'                        => $redirect,
+				'collections/pattern-gradient' => $retired,
+			),
 		);
 	}
 }

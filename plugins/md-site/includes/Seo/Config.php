@@ -308,7 +308,7 @@ final class Config {
 			$lines[] = 'social: no logo attachment yet — Organization logo and the default og:image stay unset until the chrome logo lands';
 		}
 		$lines   = array_merge( $lines, $this->apply_builder_posts() );
-		$lines[] = 'redirect /pages → /: ' . $this->apply_pages_redirect();
+		$lines   = array_merge( $lines, $this->apply_redirects() );
 		$lines   = array_merge( $lines, $this->apply_page_metas() );
 		return $lines;
 	}
@@ -352,10 +352,7 @@ final class Config {
 			}
 		}
 		$rows = array_merge( $rows, $this->check_builder_posts() );
-		$post = $this->post_by_title( self::REDIRECTS, 'pages' );
-		if ( null === $post || ! $this->redirect_is_current( (int) $post->ID ) ) {
-			$rows[] = 'redirect /pages → /: missing or stale';
-		}
+		$rows = array_merge( $rows, $this->check_redirects() );
 		foreach ( $this->page_metas( '' ) as $slug => $metas ) {
 			$page = get_page_by_path( $slug );
 			if ( null === $page ) {
@@ -535,17 +532,64 @@ final class Config {
 	}
 
 	/**
-	 * The /pages shell's 301 to the home page (the research's ruling,
-	 * spec 22 F1 via #4: the shell is a URL prefix, not a page).
+	 * The redirects this plane owns: SEOPress redirection post title (the path
+	 * it matches) => 301 target.
 	 *
-	 * @return string The report line.
+	 * `pages` is the shell prefix (spec 22 F1 via #4). The retired
+	 * `pattern-gradient` series (#25: the old collection is empty on the new
+	 * catalog and the pixel url-map retires it) keeps its URL alive as a 301
+	 * to the shop instead of resolving to an empty archive.
+	 *
+	 * @var array<string, string>
 	 */
-	private function apply_pages_redirect(): string {
-		$post = $this->post_by_title( self::REDIRECTS, 'pages' );
+	private const REDIRECT_TARGETS = array(
+		'pages'                        => '/',
+		'collections/pattern-gradient' => '/shop/',
+	);
+
+	/**
+	 * The redirects' install: one line per redirect.
+	 *
+	 * @return array<int, string> The report lines.
+	 */
+	private function apply_redirects(): array {
+		$lines = array();
+		foreach ( self::REDIRECT_TARGETS as $title => $target ) {
+			$lines[] = sprintf( 'redirect /%s → %s: %s', $title, $target, $this->apply_redirect( $title, $target ) );
+		}
+		return $lines;
+	}
+
+	/**
+	 * The drift rows of the redirects.
+	 *
+	 * @return array<int, string> The rows.
+	 */
+	private function check_redirects(): array {
+		$rows = array();
+		foreach ( self::REDIRECT_TARGETS as $title => $target ) {
+			$post = $this->post_by_title( self::REDIRECTS, $title );
+			if ( null === $post || ! $this->redirect_is_current( (int) $post->ID, $target ) ) {
+				$rows[] = sprintf( 'redirect /%s → %s: missing or stale', $title, $target );
+			}
+		}
+		return $rows;
+	}
+
+	/**
+	 * One SEOPress redirection post, created or synced to the target.
+	 *
+	 * @param string $title  The redirection's post title (the path it matches).
+	 * @param string $target The 301 target.
+	 * @return string 'created', 'synced', or 'refused (…)'. The 'pages' shell
+	 *                keeps its dedicated report line above.
+	 */
+	private function apply_redirect( string $title, string $target ): string {
+		$post = $this->post_by_title( self::REDIRECTS, $title );
 		$args = array(
 			'post_type'   => self::REDIRECTS,
 			'post_status' => 'publish',
-			'post_title'  => 'pages',
+			'post_title'  => $title,
 		);
 		if ( null !== $post ) {
 			$args['ID'] = $post->ID;
@@ -556,7 +600,7 @@ final class Config {
 		}
 		update_post_meta( (int) $made, '_seopress_redirections_enabled', 'yes' );
 		update_post_meta( (int) $made, '_seopress_redirections_type', '301' );
-		update_post_meta( (int) $made, '_seopress_redirections_value', '/' );
+		update_post_meta( (int) $made, '_seopress_redirections_value', $target );
 		update_post_meta( (int) $made, '_seopress_redirections_logged_status', 'both' );
 		update_post_meta( (int) $made, '_seopress_redirections_enabled_regex', '' );
 		return null === $post ? 'created' : 'synced';
@@ -616,10 +660,10 @@ final class Config {
 	 * @param int $id The redirect post's ID.
 	 * @return bool True when every redirect field matches.
 	 */
-	private function redirect_is_current( int $id ): bool {
+	private function redirect_is_current( int $id, string $target ): bool {
 		return 'yes' === (string) get_post_meta( $id, '_seopress_redirections_enabled', true )
 			&& '301' === (string) get_post_meta( $id, '_seopress_redirections_type', true )
-			&& '/' === (string) get_post_meta( $id, '_seopress_redirections_value', true )
+			&& $target === (string) get_post_meta( $id, '_seopress_redirections_value', true )
 			&& 'both' === (string) get_post_meta( $id, '_seopress_redirections_logged_status', true )
 			&& '' === (string) get_post_meta( $id, '_seopress_redirections_enabled_regex', true );
 	}

@@ -237,6 +237,7 @@ final class ConfigTest extends TestCase {
 		$this->assertStringContainsString( 'schema md-schema-article (articles): created', $joined );
 		$this->assertStringContainsString( 'schema faq: /faqs/ is not installed', $joined );
 		$this->assertStringContainsString( 'redirect /pages → /: created', $joined );
+		$this->assertStringContainsString( 'redirect /collections/pattern-gradient → /shop/: created', $joined, 'the retired series keeps its URL as a 301 (VC-040)' );
 		$this->assertStringContainsString( 'page inquiry: not installed', $joined );
 		$this->assertStringContainsString( 'page inquiry/thank-you: not installed', $joined );
 		$this->assertStringContainsString( 'no logo attachment yet', $joined );
