@@ -64,9 +64,11 @@
 
 **本轮已改并在 dev 复验**:上述 1–7;另含 `windpress-check` 缺斜杠(#55 根因)、windpress-compile 的假前置守卫与 `npx playwright install chromium`(违反真 Chrome 铁律)、FAQPage 抽取与 `/faqs/` 路径、移动触达(页脚链 57px、首页 chips 44px、表单 45px、头部报价键 44px+)、页脚 logo 1024px 原图造成的 634px 横向溢出(两个视口 7 页复测 overflow=0)、桌面 header 113px 与旧站一致、生产 `md-volumes.css` 外挂(H 级漂移:684KB 旧 CSS 由不在仓库的 mu-plugin 注入,桌面下拉全靠它)已由仓库内导航样式替代。
 
-**生产部署(业主 2026-10-25 明确授权后执行)**:`just deploy prod --write` 两次成功(deploy id `20261025T133354099649Z-fe9effa`、`20261025T140158580405Z-bbf141c`;前者含 821c1d3 的全部修复),present/seo/verify 全绿,DB 快照留在本机。生产 WindPress 经一次性登录链接在真 Chrome 重编译(464,613 B,mtime 1792933903;`windpress-check` 读回一致);登录用的临时 mu-plugin 已删除并读回确认。外挂 CSS 已退役:`md-volumes.css`(684KB)与 `mu-plugins/md-volume-css.php` 先备份到 `~/metal-divider-local/retired/2026-10-25-md-volumes-css/`(sha256 记录),再删除,URL 现 404;桌面下拉改由仓库 `chrome.css` 承担。WindPress 由默认 hybrid 改 cached(数据设置,同时写进 `wp md-site present` 幂等),HTML 从 1.1–1.3MB 降到约 250KB,页面不再注入 600KB 内联 VFS;WooCommerce 前台样式/脚本与 Hostinger Reach 按 CHECK-3/4 出队,控制台 CSP 报错 7 页面 0。favicon 补齐(32/180/512 PNG)。
+**生产部署(业主 2026-10-25 明确授权后执行)**:`just deploy prod --write` 四次成功(deploy id `20261025T133354099649Z-fe9effa`、`20261025T140158580405Z-bbf141c`、`20261025T141628830055Z-5f4d8a7`、`20261025T142709646574Z-25c4560`;含 821c1d3 起全部修复),present/seo/verify 全绿,DB 快照留在本机。生产 WindPress 经一次性登录链接在真 Chrome 重编译(464,835 B,mtime 1792939056;`windpress-check` 读回一致);登录用的临时 mu-plugin 已删除并读回确认。外挂 CSS 已退役:`md-volumes.css`(684KB)与 `mu-plugins/md-volume-css.php` 先备份到 `~/metal-divider-local/retired/2026-10-25-md-volumes-css/`(sha256 记录),再删除,URL 现 404;桌面下拉改由仓库 `chrome.css` 承担。WindPress 由默认 hybrid 改 cached(数据设置,同时写进 `wp md-site present` 幂等),HTML 从 1.1–1.3MB 降到约 250KB,页面不再注入 600KB 内联 VFS;WooCommerce 前台样式/脚本与 Hostinger Reach 按 CHECK-3/4 出队,控制台 CSP 报错 7 页面 0。favicon 补齐(32/180/512 PNG)。
 
-**仍待办**:GSC 属性;`windpress-anchors` 命令(部署检查仍如实报缺);生产客户视角终检以 clean-profile 审计为准(登录态审计会带 admin bar/WindPress panel,数据不可作客户面证据)。
+**客户视角终检(clean profile,2026-10-25)**:7 页型 × 390/320 两视口,HTTP 全 200、**横向溢出全 0**、控制台错误全 0;触达目标从每页 19–30 项降到 5–16 项(余下为正文内联链接、轮播圆点等 WCAG 2.5.8 豁免项,以及 honeypot 的 1×1 离屏输入)。首页 20 条图片"溢出"均为 overflow 轨道内的轮播图,非缺陷。
+
+**仍待办**:GSC 属性;C`ookieYes 尚未安装(栈内项;当前零非必要 cookie,严格必要类是否上线需按合规口径定);`windpress-anchors` 命令(部署检查仍如实报缺)。
 
 ### 2026-10-25 移动端视觉审计(阶段二·第一轮:390×844 / 320×568)
 
