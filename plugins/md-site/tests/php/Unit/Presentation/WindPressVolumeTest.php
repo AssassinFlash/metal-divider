@@ -289,7 +289,6 @@ final class WindPressVolumeTest extends TestCase {
 			$headless,
 			'a bare volume import is a drift row: unlayered, the carried old-site utility rules beat the fresh build (#58)'
 		);
-		$this->assertCount( 38, $headless, 'the headless row and the not-installed row join the 36 missing-layered-import rows' );
 		$this->assertCount( 40, $headless, 'the headless row, the theme row and the not-installed row join the 37 missing-layered-import rows' );
 	}
 }
