@@ -31,6 +31,11 @@ from md_deploy import backup as backup_module
 from md_deploy import snapshot as snapshot_module
 from md_deploy.target import DeployError, Target
 
+# The directory the opcache reset's token lives in, beside the WordPress root
+# and outside the web root. `mu-plugins/md-deploy-reset.php` computes the same
+# path from ABSPATH (DeployReset::DIRECTORY); a test pins the two together.
+RESET_DIRECTORY = ".md-deploy"
+
 
 @dataclass(frozen=True)
 class Result:
@@ -474,33 +479,47 @@ def opcache_reset_script(target: Target) -> str:
     """The after-switch step: a one-time token on the host, posted to the site.
 
     The token is made, written and posted on the machine the site runs on; it
-    is read by `mu-plugins/md-deploy-reset.php` from the same private
-    directory and deleted there. It travels in a header file, never on a
-    command line other accounts on the shared host could list. The review
-    site is password-protected (spec 20 §1.3), so its reset request carries
-    the basic-auth pair — in the script's curl line, never in a file; an
-    empty `-u` would break curl on every other target, so the flag exists
-    only when the pair does.
+    is read by `mu-plugins/md-deploy-reset.php` from the directory beside the
+    web root and deleted there. That directory is computed from the root this
+    target deploys into, which is the same `dirname( ABSPATH )` the plugin
+    computes — the two sides share a filesystem, never an environment: the
+    production web SAPI runs with no `HOME` (measured 2026-10-26), so a
+    `$HOME`-relative path written here was never found there, and every deploy
+    logged `opcache-reset=none`. It is per site, so a staging token cannot be
+    presented to production.
+
+    It travels in a header file, never on a command line other accounts on the
+    shared host could list. The review site is password-protected (spec 20
+    §1.3), so its reset request carries the basic-auth pair — in the script's
+    curl line, never in a file; an empty `-u` would break curl on every other
+    target, so the flag exists only when the pair does.
     """
     url = shlex.quote(target.base_url.rstrip("/") + "/")
+    directory = shlex.quote(str(Path(target.root).parent / RESET_DIRECTORY))
+    token = shlex.quote(
+        str(Path(target.root).parent / RESET_DIRECTORY / "opcache-reset.token")
+    )
+    header = shlex.quote(
+        str(Path(target.root).parent / RESET_DIRECTORY / "opcache-reset.header")
+    )
     marker = atomic.AFTER_SWITCH_MARKER
     auth = f"-u {shlex.quote(target.http_auth)} " if target.http_auth else ""
     return f"""(
 umask 077
-dir="$HOME/.config/metal-divider"
+dir={directory}
 mkdir -p "$dir"
 token="$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \\n')"
-printf '%s\\n' "$token" > "$dir/opcache-reset.token"
-printf 'X-MD-Opcache-Reset: %s\\n' "$token" > "$dir/opcache-reset.header"
+printf '%s\\n' "$token" > {token}
+printf 'X-MD-Opcache-Reset: %s\\n' "$token" > {header}
 outcome=none
 attempt=0
 while [ "$attempt" -lt {plan.OPCACHE_RESET_ATTEMPTS} ]; do
   attempt=$((attempt + 1))
-  answer="$(curl -sS -o /dev/null -D - --max-time 5 -X POST {auth}-H @"$dir/opcache-reset.header" {url} 2>/dev/null | tr -d '\\r' | sed -n 's/^[Xx]-[Mm][Dd]-[Oo]pcache-[Rr]eset: *//p')"
+  answer="$(curl -sS -o /dev/null -D - --max-time 5 -X POST {auth}-H @{header} {url} 2>/dev/null | tr -d '\\r' | sed -n 's/^[Xx]-[Mm][Dd]-[Oo]pcache-[Rr]eset: *//p')"
   if [ -n "$answer" ]; then outcome="$answer"; break; fi
   sleep {plan.OPCACHE_RESET_PAUSE}
 done
-rm -f "$dir/opcache-reset.token" "$dir/opcache-reset.header"
+rm -f {token} {header}
 printf '{marker}opcache-reset=%s attempts=%s\\n' "$outcome" "$attempt"
 )"""
 
