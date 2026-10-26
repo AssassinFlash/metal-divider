@@ -783,6 +783,30 @@ final class WecomNotifyTest extends TestCase {
 	}
 
 	/**
+	 * WeCom's URL ownership check returns the decrypted echo as a raw body.
+	 * The encrypted fixture and signature were generated independently with
+	 * Node.js crypto, not by the connector under test.
+	 */
+	public function testAnswersTheCallbackOwnershipVerification(): void {
+		$this->configure();
+		$GLOBALS['md_mu_test_options']['md_wecom_notify']['wecom_callback_token']   = 'callback-token';
+		$GLOBALS['md_mu_test_options']['md_wecom_notify']['wecom_callback_aes_key'] = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
+
+		$result = md_wecom_notify_callback_handle(
+			array(
+				'msg_signature' => '84c6ac355253c2f447835d04f4900aabececc642',
+				'timestamp'     => '1700000000',
+				'nonce'         => 'nonce-1',
+				'echostr'       => 'fb2IJy-yWTdpKjuBAEdBdcPrTaOUCIg5eky4udcO2u8j2XOG9sxt2AzKzl8Yamh2',
+			)
+		);
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( 'echostr-test', $result['body'] );
+		$this->assertSame( array(), $this->calls() );
+	}
+
+	/**
 	 * The connector attaches itself as one route under the site's own
 	 * namespace, with the permission left open so the 401 is the
 	 * connector's own answer.
@@ -793,12 +817,18 @@ final class WecomNotifyTest extends TestCase {
 				md_wecom_notify_register();
 			}
 		}
-		$this->assertCount( 1, $GLOBALS['md_mu_test_routes'] );
+		$this->assertCount( 2, $GLOBALS['md_mu_test_routes'] );
 		list( $namespace, $route, $args ) = $GLOBALS['md_mu_test_routes'][0];
 		$this->assertSame( 'md/v1', $namespace );
 		$this->assertSame( '/wecom/notify', $route );
 		$this->assertSame( 'md_wecom_notify_rest', $args['callback'] );
 		$this->assertSame( 'POST', $args['methods'] );
+		$this->assertSame( '__return_true', $args['permission_callback'] );
+		list( $namespace, $route, $args ) = $GLOBALS['md_mu_test_routes'][1];
+		$this->assertSame( 'md/v1', $namespace );
+		$this->assertSame( '/wecom/callback', $route );
+		$this->assertSame( 'md_wecom_notify_callback_rest', $args['callback'] );
+		$this->assertSame( 'GET', $args['methods'] );
 		$this->assertSame( '__return_true', $args['permission_callback'] );
 	}
 }

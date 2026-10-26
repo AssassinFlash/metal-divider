@@ -26,11 +26,13 @@ add_action( 'rest_api_init', 'md_wecom_notify_register' );
  */
 function md_wecom_notify_setting( string $key ): string {
 	$env_names = array(
-		'bearer_token'   => 'MD_WECOM_NOTIFY_TOKEN',
-		'lhc_api_key'    => 'MD_WECOM_LHC_API_KEY',
-		'wecom_corp_id'  => 'MD_WECOM_CORP_ID',
-		'wecom_secret'   => 'MD_WECOM_SECRET',
-		'wecom_agent_id' => 'MD_WECOM_AGENT_ID',
+		'bearer_token'           => 'MD_WECOM_NOTIFY_TOKEN',
+		'lhc_api_key'            => 'MD_WECOM_LHC_API_KEY',
+		'wecom_corp_id'          => 'MD_WECOM_CORP_ID',
+		'wecom_secret'           => 'MD_WECOM_SECRET',
+		'wecom_agent_id'         => 'MD_WECOM_AGENT_ID',
+		'wecom_callback_token'   => 'MD_WECOM_CALLBACK_TOKEN',
+		'wecom_callback_aes_key' => 'MD_WECOM_CALLBACK_AES_KEY',
 	);
 	$env       = getenv( $env_names[ $key ] ?? '' );
 	if ( false !== $env && '' !== $env ) {
@@ -466,6 +468,79 @@ function md_wecom_notify_access_token( bool $fresh = false ): ?string {
 }
 
 /**
+ * WeCom's URL ownership verification, without receiving any messages.
+ *
+ * @param array<string, mixed> $query The verification query parameters.
+ * @return array{status: int, body: string|array<string, mixed>} The raw echo or an error.
+ */
+function md_wecom_notify_callback_handle( array $query ): array {
+	$token   = md_wecom_notify_setting( 'wecom_callback_token' );
+	$aes_key = md_wecom_notify_setting( 'wecom_callback_aes_key' );
+	$corp_id = md_wecom_notify_setting( 'wecom_corp_id' );
+	if ( '' === $token || '' === $aes_key || '' === $corp_id ) {
+		return array(
+			'status' => 503,
+			'body'   => array( 'error' => array( 'code' => 'not_configured' ) ),
+		);
+	}
+
+	$fields = array( 'msg_signature', 'timestamp', 'nonce', 'echostr' );
+	foreach ( $fields as $field ) {
+		if ( ! is_scalar( $query[ $field ] ?? null ) || '' === (string) $query[ $field ] ) {
+			return array(
+				'status' => 400,
+				'body'   => array( 'error' => array( 'code' => 'bad_request' ) ),
+			);
+		}
+	}
+
+	$signature = (string) $query['msg_signature'];
+	$echostr   = (string) $query['echostr'];
+	$parts     = array( $token, (string) $query['timestamp'], (string) $query['nonce'], $echostr );
+	sort( $parts, SORT_STRING );
+	if ( ! hash_equals( hash( 'sha1', implode( '', $parts ) ), $signature ) ) {
+		return array(
+			'status' => 401,
+			'body'   => array( 'error' => array( 'code' => 'unauthorized' ) ),
+		);
+	}
+
+	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- WeCom's documented EncodingAESKey is base64, not code.
+	$key = base64_decode( $aes_key, true );
+	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- This decodes WeCom's verification payload, not code.
+	$ciphertext = base64_decode( strtr( $echostr, '-_', '+/' ), true );
+	if ( false === $key || 32 !== strlen( $key ) || false === $ciphertext ) {
+		return array(
+			'status' => 400,
+			'body'   => array( 'error' => array( 'code' => 'bad_request' ) ),
+		);
+	}
+
+	$plain = openssl_decrypt( $ciphertext, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, substr( $key, 0, 16 ) );
+	if ( false === $plain || strlen( $plain ) < 36 ) {
+		return array(
+			'status' => 400,
+			'body'   => array( 'error' => array( 'code' => 'bad_request' ) ),
+		);
+	}
+
+	$unpacked = unpack( 'Nlength', substr( $plain, 16, 4 ) );
+	$length   = is_array( $unpacked ) ? (int) $unpacked['length'] : 0;
+	$message  = substr( $plain, 20, $length );
+	if ( 0 === $length || strlen( $plain ) !== 20 + $length + strlen( $corp_id ) || ! hash_equals( $corp_id, substr( $plain, 20 + $length ) ) ) {
+		return array(
+			'status' => 400,
+			'body'   => array( 'error' => array( 'code' => 'bad_request' ) ),
+		);
+	}
+
+	return array(
+		'status' => 200,
+		'body'   => $message,
+	);
+}
+
+/**
  * The route adapter: what WordPress's REST objects become for the handler —
  * the Authorization header and the decoded JSON body in, the status and
  * body out as a REST response.
@@ -484,6 +559,22 @@ function md_wecom_notify_rest( $request ) {
 }
 
 /**
+ * Answers WeCom's GET ownership check with the raw echo it expects.
+ *
+ * @param \WP_REST_Request $request The verification request.
+ */
+function md_wecom_notify_callback_rest( $request ): void {
+	$result = md_wecom_notify_callback_handle( $request->get_query_params() );
+	if ( ! is_string( $result['body'] ) ) {
+		wp_send_json( $result['body'], $result['status'] );
+	}
+	status_header( $result['status'] );
+	header( 'Content-Type: text/plain; charset=utf-8' );
+	echo esc_html( $result['body'] );
+	exit;
+}
+
+/**
  * The route itself: the LHC webhook posts its transfer events here. The
  * permission is the bearer token inside the handler — the route's own gate
  * stays open so the 401 is the connector's answer, not REST's.
@@ -495,6 +586,15 @@ function md_wecom_notify_register(): void {
 		array(
 			'methods'             => 'POST',
 			'callback'            => 'md_wecom_notify_rest',
+			'permission_callback' => '__return_true',
+		)
+	);
+	register_rest_route(
+		'md/v1',
+		'/wecom/callback',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'md_wecom_notify_callback_rest',
 			'permission_callback' => '__return_true',
 		)
 	);
