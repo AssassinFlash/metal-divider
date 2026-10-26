@@ -1264,6 +1264,47 @@ width: 100%;
 }
 }
 
+/* Desktop heights: the card must not become the scroller. A PDP's dialog
+   (pattern row adds ~90px, Turnstile ~65px more) pushed scrollHeight to
+   1049px against an 855px card, so Send inquiry opened below the fold, and
+   the absolutely-positioned close button scrolled away with the card's
+   content (measured top -160px after scrolling). The same sheet shape the
+   ≤990px/≤740px blocks below already use — card as a fixed flex column, the
+   form as the scroll region, actions pinned to its bottom edge — keeps both
+   the primary CTA and the close button on screen at every scroll position
+   for any page's form length. */
+@media (min-width: 991px) and (min-height: 741px){
+.md-quote-modal__card{
+display: flex;
+flex-direction: column;
+overflow: hidden;
+padding: 28px 28px 0;
+}
+.md-quote-modal__card .md-inquiry-app{
+display: flex;
+flex-direction: column;
+min-height: 0;
+flex: 1 1 auto;
+overflow-y: auto;
+}
+.md-quote-modal__card .md-inquiry,
+.md-quote-modal__card .md-inquiry-form{
+display: flex;
+flex-direction: column;
+min-height: 0;
+flex: 1 1 auto;
+}
+.md-quote-modal__card .md-inquiry-actions{
+position: sticky;
+bottom: 0;
+z-index: 2;
+margin: 0 -28px;
+padding: 12px 28px 28px;
+background: rgba(20, 20, 20, 0.94);
+border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+}
+
 /* The home hero's quote card is placed by the template's own grid (the last
    row's `md:grid-cols-[1fr_auto]` + `justify-self-end`), exactly as the old
    section places it. Do not absolutely position it here: that collapsed the
