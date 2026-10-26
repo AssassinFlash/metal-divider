@@ -235,28 +235,37 @@ final class Config {
 
 	/**
 	 * The per-page metas of the SEO-owned pages (spec 22 §2.2 T9/T10/
-	 * T11/T6): the inquiry and privacy titles, the blog index's title,
-	 * the thank-you page's noindex, and the install's sample page
-	 * (deleted by the content plane whenever it lands; until then it is
-	 * at least invisible).
+	 * T11/T6): the inquiry and privacy titles, the blog index's title, and
+	 * the thank-you page's noindex.
 	 *
-	 * The two noindex pages store `yes`, not `noindex`, and that is not a
+	 * The noindex row stores `yes`, not `noindex`, and that is not a
 	 * cosmetic choice: `_seopress_robots_index` is SEOPress's checkbox, and
 	 * `seopress_titles_noindex_post_option()` returns a value only for
 	 * `=== 'yes'` — storing `noindex` there removes the noindex entirely
 	 * (measured on dev: the page became `index, follow`). The value that
 	 * decides whether the canonical survives is the *bypass* return, not
-	 * this meta, so `Seo\MetaNoindex` normalizes `yes` → `noindex` at
-	 * render time and both pages keep a self-referencing canonical.
+	 * this meta, so `Seo\PageNoindex` normalizes `yes` → `noindex` at
+	 * render time and the page keeps a self-referencing canonical.
 	 *
-	 * The `/pages` shell is deliberately absent. Issue #4 rules that
-	 * `/pages` is a URL prefix, not a page: the migration writes the
-	 * content pages at the site root (`post_parent` 0 on every one of
-	 * them) and nothing creates a `pages` page. A row here demanded a
-	 * page that must not exist, and no write could ever satisfy it —
-	 * `apply()` only writes metas, so it reported "meta is pending the
-	 * page" on every run and `check()` reported permanent drift on a
-	 * correct site. The shell needs no meta anyway: `REDIRECT_TARGETS`
+	 * Two pages are deliberately absent because they are not pages this
+	 * site owns, and demanding them made `seo --check` fail on a correct
+	 * site:
+	 *
+	 * - **The install's sample page.** It is not part of the information
+	 *   architecture and production does not publish it, so a row here
+	 *   reported "page sample-page: not installed" on every run and asked
+	 *   config to create a page the site does not want. Its noindex — which
+	 *   only matters if the page ever exists — is `Seo\PageNoindex`'s job
+	 *   at render time: no drift row, and the coverage survives a fresh
+	 *   WordPress install that ships the page.
+	 * - **The `/pages` shell.** Issue #4 rules that `/pages` is a URL
+	 *   prefix, not a page: the migration writes the content pages at the
+	 *   site root (`post_parent` 0 on every one of them) and nothing
+	 *   creates a `pages` page. A row here demanded a page that must not
+	 *   exist, and no write could ever satisfy it — `apply()` only writes
+	 *   metas, so it reported "meta is pending the page" on every run and
+	 *   `check()` reported permanent drift on a correct site. The shell
+	 *   needs no meta anyway: `REDIRECT_TARGETS`
 	 * sends the prefix home with a 301, which SEOPress fires on
 	 * `template_redirect` before any page at that path could render, so
 	 * there is nothing to keep out of the index (measured: `/pages`,
@@ -278,9 +287,6 @@ final class Config {
 				'_seopress_titles_title' => 'Blog %%sep%% %%sitetitle%% %%current_pagination%%',
 			),
 			'inquiry/thank-you' => array(
-				'_seopress_robots_index' => 'yes',
-			),
-			'sample-page'       => array(
 				'_seopress_robots_index' => 'yes',
 			),
 		);

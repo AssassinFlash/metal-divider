@@ -16,7 +16,7 @@ use MetalDivider\Site\Presentation\PartialFields;
 use MetalDivider\Site\Presentation\Partials;
 use MetalDivider\Site\Presentation\Shortcodes;
 use MetalDivider\Site\Seo\CatalogRobots;
-use MetalDivider\Site\Seo\MetaNoindex;
+use MetalDivider\Site\Seo\PageNoindex;
 use MetalDivider\Site\Seo\SchemaFilters;
 
 /**
@@ -40,7 +40,7 @@ final class Plugin {
 	 * @param Partials      $partials   The card partials and their renderer.
 	 * @param SchemaFilters $schemas    The SEO schema filters (ticket #34).
 	 * @param CatalogRobots $catalog_robots The catalog filter/search noindex rule.
-	 * @param MetaNoindex   $meta_noindex   The checkbox-noindex canonical rule.
+	 * @param PageNoindex   $page_noindex   The page-level noindex + canonical rules.
 	 * @param Assets        $assets     The front-end scripts (chrome runtime + Alpine).
 	 * @param Catalog       $catalog    The pattern catalog's cards, pager and query inputs.
 	 */
@@ -51,7 +51,7 @@ final class Plugin {
 		private readonly Partials $partials,
 		private readonly SchemaFilters $schemas,
 		private readonly CatalogRobots $catalog_robots,
-		private readonly MetaNoindex $meta_noindex,
+		private readonly PageNoindex $page_noindex,
 		private readonly Assets $assets,
 		private readonly Catalog $catalog,
 	) {}
@@ -74,7 +74,7 @@ final class Plugin {
 		$this->fields->register();
 		$this->schemas->register();
 		$this->catalog_robots->register();
-		$this->meta_noindex->register();
+		$this->page_noindex->register();
 		$this->assets->register();
 		$this->catalog->register();
 		// SEOPress prints an unlayered `.breadcrumb li{display:inline-block}` +

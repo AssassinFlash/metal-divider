@@ -181,14 +181,26 @@ final class ConfigTest extends TestCase {
 	public function test_page_metas_table(): void {
 		$metas = ( new Config() )->page_metas( '' );
 		$this->assertSame(
-			array( 'inquiry', 'privacy', 'blog', 'inquiry/thank-you', 'sample-page' ),
+			array( 'inquiry', 'privacy', 'blog', 'inquiry/thank-you' ),
 			array_keys( $metas )
 		);
 		$this->assertSame( 'Request a Quote %%sep%% %%sitetitle%%', $metas['inquiry']['_seopress_titles_title'] );
 		$this->assertSame( 'Privacy Policy %%sep%% %%sitetitle%%', $metas['privacy']['_seopress_titles_title'] );
 		$this->assertSame( 'Blog %%sep%% %%sitetitle%% %%current_pagination%%', $metas['blog']['_seopress_titles_title'] );
 		$this->assertSame( 'yes', $metas['inquiry/thank-you']['_seopress_robots_index'] );
-		$this->assertSame( 'yes', $metas['sample-page']['_seopress_robots_index'] );
+	}
+
+	/**
+	 * The install's sample page is not a meta target: it is not part of the
+	 * site's information architecture and production does not publish it, so
+	 * a row for it made `seo --check` report it missing on a correct site
+	 * and asked config to create a page the site does not want. Its noindex
+	 * belongs to the render-time rule (`Seo\PageNoindex`), which costs
+	 * nothing when the page is absent.
+	 */
+	public function test_the_sample_page_is_not_a_meta_target(): void {
+		$metas = ( new Config() )->page_metas( '' );
+		$this->assertArrayNotHasKey( 'sample-page', $metas, 'config must not demand a page the site does not publish' );
 	}
 
 	/**
@@ -198,7 +210,7 @@ final class ConfigTest extends TestCase {
 	 * moving it (measured on dev, where the page became `index, follow`).
 	 *
 	 * The canonical is kept by normalizing the bypass return value at render
-	 * time (`Seo\MetaNoindex`), not by changing this meta. This test exists
+	 * time (`Seo\PageNoindex`), not by changing this meta. This test exists
 	 * so a later "tidy-up" of the string cannot undo that.
 	 */
 	public function test_noindex_rows_use_the_checkbox_value_not_the_bypass_string(): void {

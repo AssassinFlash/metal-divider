@@ -30,7 +30,7 @@ require_once __DIR__ . '/includes/Presentation/template-functions.php';
 	Presentation\Partials::shared(),
 	new Seo\SchemaFilters(),
 	new Seo\CatalogRobots(),
-	new Seo\MetaNoindex(),
+	new Seo\PageNoindex(),
 	new Presentation\Assets(),
 	new Catalog()
 ) )->register();
