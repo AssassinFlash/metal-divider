@@ -52,7 +52,8 @@ function boot(): void {
 		new ThankYou(),
 		new RestGuard(),
 		new Cli( $config ),
-		new Mail\QueueCli( $queue )
+		new Mail\QueueCli( $queue ),
+		$queue
 	) )->register();
 }
 
