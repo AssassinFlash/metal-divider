@@ -545,3 +545,27 @@ scroll-snap-align: center;
 border-radius: 16px;
 }
 }
+
+/* The outcomes carousel's own controls (home.html: Tailwind h-11/w-11 and
+   h-1.5 against the 62.5% root). Measured 390x844, 2026-10-26: the arrows
+   render 27.5x27.5 and each progress dot a 3.75px-tall button — both under
+   the 44px tap minimum every other control on this page already meets. The
+   dots keep their 3.75px bar; only the hit area grows, via the button's own
+   ::before so the painted pixels do not change. */
+@media (max-width: 767px) {
+.home-outcomes-arrow {
+min-width: 44px;
+min-height: 44px;
+}
+[data-home-outcomes-dot] {
+position: relative;
+}
+[data-home-outcomes-dot]::before {
+content: "";
+position: absolute;
+top: -20px;
+bottom: -20px;
+left: -3px;
+right: -3px;
+}
+}
