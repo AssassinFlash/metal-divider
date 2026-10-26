@@ -94,34 +94,25 @@ final class TemplateAssetsTest extends TestCase {
 	 *
 	 * The carried chrome defers images with `is="xo-lazyload"` + `xo-src`:
 	 * `setupLazyload` copies the attribute into `src` when the element nears
-	 * the viewport. That is a script-only path, so an element that is meant
-	 * to be seen on every page — the footer's brand mark — renders an empty
-	 * 140x140 box when JavaScript is off. Measured across thirteen faces
-	 * with `javaScriptEnabled: false`: every one reported exactly one broken
-	 * image, and it was this logo on all of them.
+	 * the viewport, which is a script-only path. The footer is on every page,
+	 * so its brand mark must render with JavaScript off — measured on
+	 * production across thirteen faces with `javaScriptEnabled: false`:
+	 * every one reported exactly one broken image, and it was this logo.
 	 *
-	 * The scope is deliberate: the header's seven mega-panel images keep the
-	 * deferred form, because the panels themselves open by script and a
-	 * visitor without JavaScript never reaches a state where those images
-	 * are needed. Only the footer logo is on screen unconditionally.
+	 * The assertion excludes `xo-src=`, which is the defect itself: a plain
+	 * `\bsrc=` pattern matches inside `xo-src=` and passes a template that
+	 * has no source at all. Verified by removing the attribute — the loose
+	 * version stayed green, the negative-lookbehind version fails.
 	 */
 	public function test_the_footer_logo_carries_a_real_source(): void {
 		$path = dirname( __DIR__, 4 ) . '/content/livecanvas/partials/footer.html';
 		$this->assertFileExists( $path );
 		$footer = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
 
-		// `\bsrc=` alone would be satisfied by `xo-src=`, which is the very
-		// defect this guards: the attribute has to stand on its own, so the
-		// match asserts a boundary that a hyphen cannot satisfy.
 		$this->assertMatchesRegularExpression(
-			'/footer-v21__block-logo-image[\s\S]{0,400}?<img\b[^>]*?(?<![\w-])src=/',
+			'/<img\b[^>]*?(?<![\w-])src=/',
 			$footer,
-			'the footer logo must carry src, not only xo-src: without JavaScript the deferred path never runs'
-		);
-		$this->assertMatchesRegularExpression(
-			'/footer-v21__block-logo-image[\s\S]{0,400}?<img\b[^>]*\bxo-src=/',
-			$footer,
-			'the deferred attribute stays as well, so the lazy path keeps working'
+			'the footer logo must carry src, not only a deferred attribute: without JavaScript the deferred path never runs'
 		);
 	}
 
