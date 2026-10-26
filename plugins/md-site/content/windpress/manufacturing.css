@@ -162,3 +162,24 @@ height: calc(100dvh - var(--header-height, 80px));
 .md-t5790ffba { display: none }
 .md-tecede96f { background-color: #141414 }
 .md-t16705960 { aspect-ratio:9/14;background-color:#0a0a0a }
+
+/* The manufacturing fit-check accordion's panel widths. The old build kept
+   these in a `@media (min-width: 750px)` block of its own section styles;
+   the conversion carried the markup (`.mfg-fit-panel`, the Alpine
+   `:class="{ 'is-active': active === n }"` binding) but not the rule, so
+   the three panels fell back to `flex: 0 1 auto` on a 430px-tall flex row
+   and collapsed to 2px wide each — three facility images effectively
+   invisible at every desktop width. Restored verbatim from the old page
+   (measured there 2026-10-26): `flex: 1` on each panel, `flex: 2.7` on the
+   hovered/active one. */
+@media (min-width: 750px) {
+#manufacturing-fit-check-template--21844034879741__manufacturing_fit_check .mfg-fit-panel {
+flex: 1;
+transition: flex 0.45s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+}
+#manufacturing-fit-check-template--21844034879741__manufacturing_fit_check .mfg-fit-panel:hover,
+#manufacturing-fit-check-template--21844034879741__manufacturing_fit_check .mfg-fit-panel.is-active {
+flex: 2.7;
+border-color: rgba(201, 169, 98, 0.45);
+}
+}

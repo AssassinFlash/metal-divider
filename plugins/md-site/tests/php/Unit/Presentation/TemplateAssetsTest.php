@@ -159,6 +159,109 @@ final class TemplateAssetsTest extends TestCase {
 	}
 
 	/**
+	 * A video a template plays is a real local file, and never a framed one.
+	 *
+	 * The two face templates' closing "cutting process" lightboxes were
+	 * converted carrying an `<iframe src="….webp">` — the poster frame
+	 * written into the frame's address. That WebP thumbnail did not exist
+	 * either: the stem's only file is the film, so the frame asked for a 404.
+	 *
+	 * Pointing the same iframe at the real MP4 does not repair it. The site's
+	 * CSP is `frame-src https://challenges.cloudflare.com` — Turnstile and
+	 * nothing else — so every same-origin file is refused as a frame. The
+	 * console says so on a plain page load, before any lightbox is opened,
+	 * because the hidden frame navigates anyway:
+	 *
+	 *   Framing '…-hd-1080p-4-8mbps-68978841.mp4' violates the following
+	 *   Content Security Policy directive: "frame-src
+	 *   https://challenges.cloudflare.com"
+	 *
+	 * A `<video>` is not a frame: `media-src` falls back to `default-src
+	 * 'self'`, so the same file plays (measured readyState 4, 47.6 s,
+	 * 606x1080, in the sibling section of the same page). The fix is the
+	 * element, not the address.
+	 *
+	 * So two rules, and the second is the one that keeps the first honest:
+	 * no template frames a local file, and every `<source>` a `<video>` names
+	 * is a video file that exists. A poster in a `<source>` is the same bug
+	 * wearing the right element.
+	 */
+	public function test_video_is_played_by_a_video_element_not_a_frame(): void {
+		$uploads = $this->instance_uploads();
+		$sources = 0;
+		$videos  = 0;
+
+		foreach ( $this->sources() as $path => $file ) {
+			$markup = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+			preg_match_all( '/<iframe\b[^>]*>/i', $markup, $frames );
+			foreach ( $frames[0] as $frame ) {
+				preg_match( '/\bsrc\s*=\s*"([^"]*)"/i', $frame, $src );
+				$address = (string) ( $src[1] ?? '' );
+				$this->assertDoesNotMatchRegularExpression(
+					'#^/wp-content/#',
+					$address,
+					"{$file} frames a local address ('{$address}'); the CSP's frame-src allows only challenges.cloudflare.com, so the browser refuses it and logs a violation on every load"
+				);
+			}
+
+			preg_match_all( '/<video\b[^>]*>.*?<\/video>/is', $markup, $blocks );
+			foreach ( $blocks[0] as $block ) {
+				++$videos;
+				preg_match_all( '/<source\b[^>]*>/i', $block, $tag_list );
+				$this->assertNotSame(
+					array(),
+					$tag_list[0],
+					"{$file} ships a <video> with no <source>: nothing to play"
+				);
+				foreach ( $tag_list[0] as $tag ) {
+					preg_match( '/\bsrc\s*=\s*"([^"]*)"/i', $tag, $src );
+					$address = (string) ( $src[1] ?? '' );
+					++$sources;
+
+					$this->assertMatchesRegularExpression(
+						'/\.(?:mp4|webm|ogv|ogg|mov)(?:\?|#|$)/i',
+						$address,
+						"{$file} names '{$address}' as a video source, which is not a video file — a poster frame here plays nothing"
+					);
+
+					$this->assertDoesNotMatchRegularExpression(
+						'#^/wp-content/plugins/#',
+						$address,
+						"{$file} plays '{$address}' from the plugin bundle; uploads is where the media plane writes films"
+					);
+
+					if ( null !== $uploads && 0 === strpos( $address, '/wp-content/uploads/' ) ) {
+						$this->assertFileExists(
+							$uploads . '/' . basename( $address ),
+							"{$file} plays '{$address}', which is not in the instance's uploads"
+						);
+					}
+				}
+			}
+		}
+
+		// A regex change that stops matching would make the guard vacuous.
+		$this->assertGreaterThanOrEqual( 3, $videos, 'the templates ship their video sections; the scan found fewer' );
+		$this->assertGreaterThanOrEqual( 3, $sources, 'those videos carry a <source> each; the scan found fewer' );
+	}
+
+	/**
+	 * The instance's uploads directory, or null when this is not this Mac.
+	 *
+	 * Same contract as `ImageSizesTest::upload_widths()`: the finished set
+	 * is a local-only artefact (never in the repository), so the existence
+	 * half of the assertions above runs here and is skipped in CI rather
+	 * than asserted against a path CI does not have.
+	 */
+	private function instance_uploads(): ?string {
+		$home = getenv( 'MD_LOCAL_HOME' );
+		$base = ( false === $home || '' === $home ? ( getenv( 'HOME' ) . '/metal-divider-local' ) : $home )
+			. '/dev/wordpress/wp-content/uploads/2026/10';
+		return is_dir( $base ) ? $base : null;
+	}
+
+	/**
 	 * The landing face's 16px rem base stays scoped to that face.
 	 *
 	 * The carried faces were captured from old pages that ran at

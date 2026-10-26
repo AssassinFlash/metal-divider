@@ -245,6 +245,138 @@ final class CardsTest extends TestCase {
 	}
 
 	/**
+	 * Every image the tile draws carries its own attachment's ladder and a
+	 * `sizes` describing the box it lands in.
+	 *
+	 * The grid image, the thumb frame and the strip are three *different*
+	 * attachments, so one product-level ladder cannot serve them: asking for
+	 * the featured image's `srcset` would describe the wrong picture at the
+	 * wrong widths. This is the check that fails if the partials go back to a
+	 * bare `src` — the acceptance scan in `ImageSizesTest` cannot see it,
+	 * because it reads the partial files and those hold shortcode
+	 * placeholders, not uploads.
+	 */
+	public function test_every_tile_image_carries_its_own_srcset_and_sizes(): void {
+		$this->mock_product( array( 901, 902 ) );
+
+		$html = ( new Cards() )->tile( self::PRODUCT, 'Moroccan & Arabic' );
+
+		// The grid image: the featured attachment's ladder.
+		$this->assertMatchesRegularExpression(
+			'/<img src="[^"]*888-large\.webp" srcset="[^"]*888-400w\.webp 400w'
+			. '[^"]*888-800w\.webp 800w" sizes="\(min-width: 1025px\) 181px[^"]*"/',
+			$html,
+			'the grid image offers the featured attachment\'s ladder at the grid width'
+		);
+		// A thumb: a *gallery* attachment, so the ladder names that file.
+		$this->assertMatchesRegularExpression(
+			'/<img src="[^"]*901-large\.webp" srcset="[^"]*901-400w\.webp 400w[^"]*" sizes="\(min-width: 1025px\) 87px/',
+			$html,
+			'the thumb offers its own attachment\'s ladder at the thumb width'
+		);
+		$this->assertStringNotContainsString(
+			'888-400w.webp 400w, https://site.test/uploads/888-800w.webp 800w" sizes="(min-width: 1025px) 87px',
+			$html,
+			'the featured image\'s ladder never describes a gallery thumb'
+		);
+		// The stage: sized to the dialog, not to a grid cell.
+		$this->assertMatchesRegularExpression(
+			'/data-pattern-main-image[^>]*srcset="[^"]*888-400w\.webp 400w[^"]*" sizes="\(min-width: 900px\) 900px, 100vw"/',
+			$html,
+			'the stage describes the dialog\'s width'
+		);
+	}
+
+	/**
+	 * The strip buttons carry the switching data the interaction layer needs:
+	 * the `srcset` list and the `sizes` value, so a button press can move both
+	 * attributes onto the stage.
+	 *
+	 * Without these the stage could only ever be given a `src`, which is the
+	 * defect this covers: the previous image's `srcset` would survive the
+	 * switch and the browser could pick a candidate from the wrong picture.
+	 */
+	public function test_every_strip_button_carries_its_switching_data(): void {
+		$this->mock_product( array( 901, 902 ) );
+
+		$html = ( new Cards() )->tile( self::PRODUCT, 'Moroccan & Arabic' );
+
+		$buttons = array();
+		preg_match_all( '/<button[^>]*data-pattern-thumb[^>]*>/', $html, $buttons );
+		$this->assertCount( 3, $buttons[0], 'main image plus two gallery images' );
+		foreach ( $buttons[0] as $button ) {
+			$this->assertStringContainsString( ' data-src="http', $button );
+			$this->assertStringContainsString( ' data-alt="', $button );
+			$this->assertMatchesRegularExpression( '/ data-srcset="[^"]*-400w\.webp 400w[^"]*"/', $button );
+			// The button carries no `sizes`: that describes the *box*, and the
+			// box these buttons are drawn in (a 64px strip thumb) is not the box
+			// their picture is shown in (a 900px stage). The stage declares its
+			// own, and moving the thumb's onto it would ask for a candidate
+			// five times too small.
+			$this->assertStringNotContainsString( ' data-sizes=', $button, 'the ladder travels, not the thumb\'s own sizes' );
+		}
+	}
+
+	/**
+	 * The interaction layer moves the ladder with the source, and leaves
+	 * `sizes` to the stage.
+	 *
+	 * A source assertion rather than a behavioural one, because this suite has
+	 * no DOM; the behaviour is verified in real Chrome (`show()` moves `src`
+	 * and `srcset` together and the stage keeps `(min-width: 900px) 900px,
+	 * 100vw` across presses, measured 2026-10-26). What the source cannot tell
+	 * you — and what this asserts — is that the *stale* case is handled: the
+	 * attribute is removed, never blanked, so the previous picture's
+	 * candidates cannot survive the switch.
+	 */
+	public function test_the_lightbox_switch_replaces_both_src_and_srcset(): void {
+		$source = (string) file_get_contents( dirname( __DIR__, 4 ) . '/assets/js/md-chrome.js' );
+
+		$this->assertMatchesRegularExpression(
+			'/stageImage\.src = active\.getAttribute\(\'data-src\'\)/',
+			$source,
+			'the source moves'
+		);
+		$this->assertMatchesRegularExpression(
+			'/var srcset = active\.getAttribute\(\'data-srcset\'\)/',
+			$source,
+			'the ladder is read from the button being shown'
+		);
+		$this->assertMatchesRegularExpression(
+			'/stageImage\.setAttribute\(\'srcset\', srcset\)/',
+			$source,
+			'the ladder moves with it'
+		);
+		$this->assertMatchesRegularExpression(
+			'/stageImage\.removeAttribute\(\'srcset\'\)/',
+			$source,
+			'no ladder means the attribute goes, so no stale candidate can win'
+		);
+		// `sizes` is the stage's, so the switch must not overwrite it with the
+		// thumb's.
+		$this->assertStringNotContainsString(
+			"stageImage.setAttribute('sizes'",
+			$source,
+			'the thumb\'s sizes is never applied to the stage'
+		);
+	}
+
+	/**
+	 * A gallery attachment with no ladder of its own yields no `srcset`, and
+	 * the element is then a plain `src` — the pair is omitted whole rather
+	 * than emitted as `srcset=""`.
+	 */
+	public function test_an_attachment_without_a_ladder_renders_no_srcset(): void {
+		$this->mock_product( array( 901 ), true, '58', 'product', array( 400, 800 ), null, array( 'native_srcset' => false ) );
+
+		$html = ( new Cards() )->tile( self::PRODUCT, 'Moroccan' );
+
+		$this->assertStringNotContainsString( 'srcset=""', $html, 'no empty srcset attribute' );
+		$this->assertStringNotContainsString( ' sizes=""', $html, 'no empty sizes attribute' );
+		$this->assertStringContainsString( 'class="pattern-image"', $html, 'the image is still drawn' );
+	}
+
+	/**
 	 * Every card image declares the attachment's real dimensions, never the
 	 * replica's literal numbers. The catalog card used to carry the old
 	 * markup's fixed `400×800` while the editorial card carried the real pair,
@@ -710,10 +842,11 @@ final class CardsTest extends TestCase {
 			array( 400, 800 ),
 			null,
 			array(
-				'file'    => $outside . '/888-400w.webp',
-				'basedir' => $uploads,
-				'baseurl' => 'https://site.test/uploads',
-				'url'     => 'https://site.test/uploads/888-400w.webp',
+				'native_srcset' => false,
+				'file'          => $outside . '/888-400w.webp',
+				'basedir'       => $uploads,
+				'baseurl'       => 'https://site.test/uploads',
+				'url'           => 'https://site.test/uploads/888-400w.webp',
 			)
 		);
 
@@ -755,10 +888,11 @@ final class CardsTest extends TestCase {
 			array( 400, 800 ),
 			null,
 			array(
-				'file'    => $monthly . '/888-400w.webp',
-				'basedir' => $uploads,
-				'baseurl' => 'https://site.test/uploads',
-				'url'     => 'https://site.test/uploads/2026/10/888-400w.webp',
+				'native_srcset' => false,
+				'file'          => $monthly . '/888-400w.webp',
+				'basedir'       => $uploads,
+				'baseurl'       => 'https://site.test/uploads',
+				'url'           => 'https://site.test/uploads/2026/10/888-400w.webp',
 			)
 		);
 
@@ -968,14 +1102,14 @@ final class CardsTest extends TestCase {
 	/**
 	 * The product the fixtures draw.
 	 *
-	 * @param int[]                                                                                          $gallery    The gallery attachment ids.
-	 * @param bool                                                                                           $with_thumb Whether the product has a featured image.
-	 * @param string                                                                                         $open_area  The open-area field.
-	 * @param non-empty-string                                                                               $post_type  The post type the id resolves to.
-	 * @param array{0: int, 1: int}                                                                          $dimensions The attachment's width and height.
-	 * @param \stdClass|null                                                                                 $counter    Counts the gallery-meta reads when given.
-	 * @param array{file?: string, basedir?: string, baseurl?: string, url?: string, native_srcset?: string} $media      Overrides for the srcset inputs.
-	 * @param int[]                                                                                          $related_ids Product ids that resolve as their own post (the related-cards case).
+	 * @param int[]                                                                                                $gallery    The gallery attachment ids.
+	 * @param bool                                                                                                 $with_thumb Whether the product has a featured image.
+	 * @param string                                                                                               $open_area  The open-area field.
+	 * @param non-empty-string                                                                                     $post_type  The post type the id resolves to.
+	 * @param array{0: int, 1: int}                                                                                $dimensions The attachment's width and height.
+	 * @param \stdClass|null                                                                                       $counter    Counts the gallery-meta reads when given.
+	 * @param array{file?: string, basedir?: string, baseurl?: string, url?: string, native_srcset?: string|false} $media Overrides for the srcset inputs.
+	 * @param int[]                                                                                                $related_ids Product ids that resolve as their own post (the related-cards case).
 	 */
 	private function mock_product( array $gallery = array(), bool $with_thumb = true, string $open_area = '58', string $post_type = 'product', array $dimensions = array( 400, 800 ), ?\stdClass $counter = null, array $media = array(), array $related_ids = array() ): void {
 		$related          = array_fill_keys( array_map( 'intval', $related_ids ), true );
@@ -1055,7 +1189,23 @@ final class CardsTest extends TestCase {
 					: false;
 			}
 		);
-		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->andReturn( $media['native_srcset'] ?? false );
+		// A `native_srcset` override pins one value for every attachment; the
+		// default answers per attachment, which is what a real site looks like
+		// once the uploader has registered sub-sizes — and it is the branch
+		// that matters here, because a ladder is what `srcset` needs to exist
+		// at all.
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->andReturnUsing(
+			static function ( int $id, string $size ) use ( $media ) {
+				unset( $size );
+				if ( array_key_exists( 'native_srcset', $media ) ) {
+					return $media['native_srcset'];
+				}
+				// Two real widths per attachment, the shape the media pipeline
+				// produces: a small and a large sibling of the same image.
+				return 'https://site.test/uploads/' . $id . '-400w.webp 400w, '
+					. 'https://site.test/uploads/' . $id . '-800w.webp 800w';
+			}
+		);
 		WP_Mock::userFunction( 'get_attached_file' )->andReturn( $media['file'] ?? '' );
 		WP_Mock::userFunction( 'wp_get_upload_dir' )->andReturn(
 			array(

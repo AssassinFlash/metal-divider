@@ -145,6 +145,11 @@ final class TemplatePlaceholderTest extends TestCase {
 			$html,
 			'the counter states the first project\'s real image count'
 		);
+		$this->assertMatchesRegularExpression(
+			'/class="lightbox-image"[^>]*\bloading="lazy"/s',
+			$html,
+			'the hidden dialog does not eagerly download its initial 2048w image'
+		);
 		$this->assertDoesNotMatchRegularExpression(
 			'/<div class="lightbox-(?:title|subtitle|counter)"><\/div>/',
 			$html,

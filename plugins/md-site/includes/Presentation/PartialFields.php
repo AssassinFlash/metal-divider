@@ -157,6 +157,17 @@ final class PartialFields {
 	public const MEDIA_ATTRIBUTES = 'md_media_attributes';
 
 	/**
+	 * The current item's `srcset`/`sizes` pair for one particular box, as an
+	 * attribute pair or nothing.
+	 */
+	public const MEDIA_SRCSET = 'md_media_srcset';
+
+	/**
+	 * The current item's `srcset` list alone, for a `data-srcset` carrier.
+	 */
+	public const MEDIA_SRCSET_LIST = 'md_media_srcset_list';
+
+	/**
 	 * The current item's own link (a card that is not the current post).
 	 */
 	public const ITEM_LINK = 'md_item_link';
@@ -227,6 +238,8 @@ final class PartialFields {
 		\add_shortcode( self::MEDIA_ALT, array( $this, 'media_alt' ) );
 		\add_shortcode( self::MEDIA_DIMENSIONS, array( $this, 'media_dimensions' ) );
 		\add_shortcode( self::MEDIA_ATTRIBUTES, array( $this, 'media_attributes' ) );
+		\add_shortcode( self::MEDIA_SRCSET, array( $this, 'media_srcset' ) );
+		\add_shortcode( self::MEDIA_SRCSET_LIST, array( $this, 'media_srcset_list' ) );
 		\add_shortcode( self::ITEM_LINK, array( $this, 'item_link' ) );
 		\add_shortcode( self::MEDIA_NAME, array( $this, 'media_name' ) );
 		\add_shortcode( self::MEDIA_TEXT, array( $this, 'media_text' ) );
@@ -574,6 +587,65 @@ final class PartialFields {
 			? ' loading="eager" fetchpriority="high"'
 			: ' loading="lazy"';
 		return $loading . $this->dimension_suffix();
+	}
+
+	/**
+	 * `[md_media_srcset sizes="…"]`: the current item's own `srcset`/`sizes`,
+	 * as an attribute pair or nothing.
+	 *
+	 * `sizes` is the template's because it describes the *box*, and the box is
+	 * a layout fact the volume stylesheet owns. The ladder itself is the
+	 * attachment's, which is why this reads the item's id rather than the
+	 * product's featured image — a tile's grid, its thumb frame and the
+	 * lightbox strip each draw a different attachment.
+	 *
+	 * @param array<string, mixed>|string $atts    Shortcode attributes: sizes (required in practice).
+	 * @param string|null                 $content Enclosed content (unused).
+	 */
+	public function media_srcset( $atts = array(), ?string $content = '' ): string {
+		unset( $content );
+		$atts = \shortcode_atts( array( 'sizes' => '' ), (array) $atts, self::MEDIA_SRCSET );
+		$pair = PatternFacts::attachment_srcset( (int) $this->value( 'id' ), (string) $atts['sizes'] );
+		if ( '' === $pair['srcset'] ) {
+			return '';
+		}
+		$attrs = ' srcset="' . \esc_attr( $pair['srcset'] ) . '"';
+		if ( '' !== $pair['sizes'] ) {
+			$attrs .= ' sizes="' . \esc_attr( $pair['sizes'] ) . '"';
+		}
+		return $attrs;
+	}
+
+	/**
+	 * `[md_media_srcset_list sizes="…"]`: the current item's switching
+	 * carriers — ` data-srcset="…"` and ` data-sizes="…"` — or nothing.
+	 *
+	 * The interaction layer moves these two onto the stage when a strip button
+	 * is pressed, so they travel together: a `data-srcset` without the
+	 * `data-sizes` it was chosen for would hand the browser a 100vw hint.
+	 *
+	 * Both appear, or neither does. Returning `''` for "no ladder" would leave
+	 * `data-srcset=""` in the markup, a carrier the interaction layer would
+	 * have to special-case; the whole suffix is therefore the shortcode's, and
+	 * the partial writes a shortcode directly after the previous attribute
+	 * (measured: a shortcode adjacent to a closing quote expands, while two
+	 * shortcodes or a quoted-empty pair adjacent to one do not).
+	 *
+	 * @param array<string, mixed>|string $atts    Shortcode attributes: sizes.
+	 * @param string|null                 $content Enclosed content (unused).
+	 */
+	public function media_srcset_list( $atts = array(), ?string $content = '' ): string {
+		unset( $content );
+		$atts = \shortcode_atts( array( 'sizes' => '' ), (array) $atts, self::MEDIA_SRCSET_LIST );
+		$pair = PatternFacts::attachment_srcset( (int) $this->value( 'id' ), (string) $atts['sizes'] );
+		if ( '' === $pair['srcset'] ) {
+			return '';
+		}
+		$suffix = ' data-srcset="' . \esc_attr( $pair['srcset'] ) . '"';
+		if ( '' !== $pair['sizes'] ) {
+			$suffix .= ' data-sizes="' . \esc_attr( $pair['sizes'] ) . '"';
+		}
+		return $suffix;
 	}
 
 	/**
