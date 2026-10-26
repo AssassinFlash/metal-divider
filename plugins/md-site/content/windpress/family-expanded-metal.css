@@ -688,3 +688,14 @@ padding: 10px 14px;
 border-radius: 14px;
 }
 }
+@media (max-width: 749px) {
+[id*="22084675240189"] .max-w-\[1400px\].px-4,
+[id*="22084675240189"] .max-w-\[1280px\].px-4,
+[id*="22084675240189"] > .px-4,
+[id*="22084675240189"] .max-w-\[1400px\].px-5,
+[id*="22084675240189"] .max-w-\[1400px\].px-6,
+[id*="22084675240189"] > .mx-auto.px-5 {
+padding-left: 16px !important;
+padding-right: 16px !important;
+}
+}

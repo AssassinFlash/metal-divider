@@ -190,6 +190,9 @@ flex: 0 0 78%;
 letter-spacing: 0.06em !important;
 }
 [id*="21873710563581"] .uppercase.whitespace-nowrap { white-space: normal !important; }
+[id*="21873710563581"] .max-w-\[1400px\].px-4,
+[id*="21873710563581"] .max-w-\[1280px\].px-4,
+[id*="21873710563581"] > .px-4,
 [id*="21873710563581"] .max-w-\[1400px\].px-5,
 [id*="21873710563581"] .max-w-\[1400px\].px-6,
 [id*="21873710563581"] > .mx-auto.px-5 {

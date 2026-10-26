@@ -617,3 +617,12 @@ background: rgba(255,255,255,0.05);
   line-height: 1.55;
   margin: 4px 0 0;
 }
+/* Mobile gutter: the quote band wraps at px-4 (10px at the 62.5% root) —
+ * below the 16px minimum side inset used across the family volumes
+ * (2026-10-26 table-defect round). Desktop rhythm unchanged. */
+@media (max-width: 749px) {
+.contact-quote {
+padding-left: 16px !important;
+padding-right: 16px !important;
+}
+}
