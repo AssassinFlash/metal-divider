@@ -49,6 +49,24 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-26 GSC 载体就位与三项阻塞的取证(业主指示:先去 de-linker 找)
+
+业主指出 de-linker 已提供账号与连接方式,应先去那里找。照做后逐项取证,结论如下。
+
+**1. GSC —— 载体已装好,授权卡在 Google 登录**
+
+沿用 de-linker 已验证的路径(`docs/specs/145-search-console.md`:Site Kit 建资源与验证,本仓库不写验证代码)。生产已装并激活 `google-site-kit` 1.190.0,实测落地:每页 `<head>` 有 `generator` meta 与 `googletagmanager` dns-prefetch、**零外部 script**、零控制台错误、零溢出(5 页)。`googlesitekit_search-console_settings` = `propertyID ''` / `ownerID ''`,`active_modules` = `false`——载体就位、未授权。
+
+`docs/deploy/gsc-migration.md` 整份重写:原文的 T3 地址变更、T4 双前缀监控、T5 域名长期持有与 301 不中断全部建立"旧站 301 + Shopify 转出解约"之上,而该前提已被 2026-10-25 裁定作废。现版本只保留"建新 URL 前缀属性并验证"。
+
+**2. Turnstile —— de-linker 的密钥实测不可用(错误码 110200)**
+
+`~/.config/de-linker/turnstile.env` 有真实密钥对(`HOSTNAME=de-linker.com`, mode=managed)。用该 sitekey 在 metal-divider.com 渲染返回 **`110200`**——Turnstile 密钥按域名绑定,复用是错误路径。要为本站配 Turnstile 须在 Cloudflare Dashboard 新建 widget,而 Dashboard 登录态本机没有。
+
+**3. 媒体变体偏小 —— 源素材本身就不够大,非代码可修**
+
+`tools/media` 的档位是 480/768/1024/1536/2048、`tier_widths()` 只产出 ≤ 源宽的档。查实:`hotel-lobby-decorative-stainless-steel-screen-divider` 源文件 **790×788**、`kirra-balcony-screen-design` **1000×750**,仓库内 `data/` 与生产 `uploads/` 均无更大原件。所以"最大变体只有 790–1024w"是素材上限,不是管线缺陷;提升需更高分辨率的源文件。
+
 ### 2026-10-26 可点击暗示与未登录访客验收(PR #127,生产已部署)
 
 **可点击暗示(GOAL.md 明列"看起来能点的东西必须能点")**:About 页 5 张旗舰项目卡带 `cursor-pointer`、`group` 类与**完整悬停动效**(遮罩淡入、图片缩放),点击却什么都不发生——纯 `<div>`,无链接、无处理函数、不在 Tab 序列。652×408,是全站最大的假可点击区域。改为指向 `/project-gallery/` 的锚点;`block` 保持布局,`aria-label` 给 5 个同类链接可区分的名字。验证:5 张全是带 `href` 的 `<a>`、不动点扫描报 0、点击正确跳转。

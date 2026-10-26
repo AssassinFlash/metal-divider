@@ -1,75 +1,65 @@
-# GSC 迁移(metalpartition.com → metal-divider.com)
+# GSC 接入(metal-divider.com 独立新属性)
 
-执行票:#36(cutover runbook 与切换执行)。本文只钉时序与口径,不执行、不碰生产。
+执行票:#36。本文只钉当前有效的时序与口径;历史版本的地址变更方案已作废。
 
-依据:spec 22 `docs/specs/22-seo-execution.md` §6(分支 research/spec-seo,定稿 2026-10-24)+ spec 09 `docs/specs/09-domain-dns-mail.md` §6 十步(分支 research/spec-domain-dns)。两文冲突时以 22 的 GSC 专项为准(D5:两属性均 URL 前缀,域名属性不被地址变更工具支持)。
+## 裁定来源(按日期,后者推翻前者)
 
-## 属性形态(一次性,开工前定死)
+| 日期 | 裁定 |
+| --- | --- |
+| 2026-10-25 | **Shopify 侧为绝对禁区**:metalpartition.com 的域名、DNS、商店、订阅一概不动,不解约、不迁移、不做旧域 301 |
+| 2026-10-25 | **DNS 永驻原处**:任何 NS/DNS 迁移一律不做;无前置 CDN/Cloudflare。Cloudflare 唯一身份是 Turnstile 挂件(账号级,零 DNS) |
+| 2026-10-25 | **GSC 只建新属性,无地址变更**。旧属性、T3 地址变更工具、T4 双前缀监控期、T5 域名长期持有与 301 不中断——整段作废 |
 
-| 项 | 值 | 依据 |
-|---|---|---|
-| 旧属性 | `https://metalpartition.com`,**URL 前缀** | 地址变更工具不支持域名属性(spec 22 F1) |
-| 新属性 | `https://metal-divider.com`,**URL 前缀** | 同上 |
-| 验证方式 | DNS TXT(两域 NS 均在 Cloudflare 后,加记录即验) | spec 09 §2 |
-| 地址变更 | 旧属性 → 设置 → 地址变更 → 选新属性 | 仅 URL 前缀属性可选 |
+因此本文只剩一件事:**为 `https://metal-divider.com/` 建一个新的 URL 前缀属性并验证**。旧站继续原样运行,与其并存,彼此无操作关系。
 
-## 时序(嵌 spec 09 十步)
+## 属性形态
 
-```
-T0  切换前(评审站 noindex 期;与 #9 步骤 1–4 并行,零生产写入)
-    ├─ 两个 GSC 属性按上表建好并验证
-    ├─ 旧属性导出「索引覆盖率」与「效果」报告存档(≥近 16 个月),
-    │  作 T4 衰减对照基线(spec 22 §6 T0)
-    └─ redirect-map 的 18 行 PENDING(博客 16 + 致谢页 2)在对应票
-       落地后回填,再随全量导入 Cloudflare(博客/致谢页就绪是 T1 前置)
+| 项 | 值 |
+| --- | --- |
+| 属性 | `https://metal-divider.com/`,**URL 前缀**(非域名属性) |
+| 验证方式 | DNS TXT,写入 hPanel 区(Hostinger) |
+| 地址变更 | 不做 |
+| 站点地图 | `https://metal-divider.com/sitemaps.xml`(SEOPress 原生端点;`/sitemap.xml` 恒 301 至它) |
 
-T1  DNS 与 301 上线(= #9 步骤 3–5)
-    ├─ 主域 NS → Cloudflare Active;301 矩阵在源站/CF 配好
-    └─ Shopify 后台 metalpartition.com A/www → <HOST_IP>(≤24h 生效)
+## 载体:Site Kit by Google
 
-T2  301 生效验证(= #9 步骤 6;AGENTS.md §5 硬门:不过,禁转出/解约)
-    ├─ 逐规则抽测全绿:产品(/products/<slug> → /pattern/<slug>)、
-    │  类目(9 个 pattern-* 原位保留、无跳转——gradient 亦然 #25;旧站跳转的已删测试类目 → /shop/)、page、zh 镜像、
-    │  带参 URL(CF 边缘剥参后落净 URL)、legacy 3 条源路径、
-    │  404 policies 维持 404(不软跳)
-    ├─ 新站 sitemap 提交(新属性,https://metal-divider.com/sitemaps.xml,
-    │  SEOPress 原生端点;/sitemap.xml 恒 301 至它)
-    └─ 新属性 URL 检查抽检 10 个重点页:可索引、canonical 自指新域
+沿用 de-linker 已验证的路径(`docs/specs/145-search-console.md`):Site Kit 建资源、验证并连接 Search Console,**本仓库不为验证写代码**。
 
-T3  地址变更工具(T2 全绿后立即;Google 要求 301 已生效才提交)
-    └─ 旧属性 → 设置 → 地址变更:选新属性 → 确认 301 已全量生效 → 提交
+2026-10-26 已装并激活 `google-site-kit` 1.190.0 于生产。落地状态实测:
 
-T4  双前缀监控期(≥30 天;与 #9 步骤 7–9 并行,不阻塞转出/解约)
-    ├─ 新属性:收录量上升曲线;重点 URL(首页、8 类目、头部产品)
-    │  canonical 已指新域
-    ├─ 旧属性:索引衰减曲线正常(被 301 替代;对照 T0 基线)
-    └─ 新属性 404 监控:无「本应 301 的旧路径」漏网;旧域 301 抽测仍全绿
+- 每页 `<head>` 有 `<meta name="generator" content="Site Kit by Google 1.190.0">` 与 `googletagmanager.com` 的 dns-prefetch
+- **零外部 script**、零控制台错误、零横向溢出(5 个页面实测)
+- `googlesitekit_search-console_settings` = `propertyID: ''`,`ownerID: ''`(未授权)
+- `googlesitekit_active_modules` = `false`(未开模块)
 
-T5  长期
-    └─ metalpartition.com 域名长期持有、301 与证书不中断;
-       T4 指标转月度例行查看(运营日历)
-```
+也就是说:载体就位,授权待办。**不做 GA4、不开匿名使用数据**;GA4 属度量立项,不在本站工程内。
 
-与 #9 的对齐声明:#9 步骤 6 即本文 T2;#9 步骤 7–10(转出 → 建区 → 复查 → 解约)在 T3 之后按其自身顺序执行,不依赖 T4 监控期完成。本文不新增任何 DNS/注册商动作。
+## 剩余步骤(需 Google 账号浏览器登录)
 
-## 抽测矩阵(T2 的「全绿」清单)
+1. 后台 Site Kit → Sign in with Google(业主账号)
+2. 建 `https://metal-divider.com/` URL 前缀属性并完成验证
+3. 只连 Search Console,不连 Analytics
+4. 提交 `sitemaps.xml`
+5. 回读:`googlesitekit_search-console_settings.propertyID` 应等于 `https://metal-divider.com/` 且 `ownerID` 非空;连接者有验证文件令牌;`/google<令牌>.html` 不带 cache-buster 返回 200 且含令牌
 
-从 data/redirect-map.csv(closed #4 权威)+ SEOPress PRO redirections(新站侧 28 条)各取样本,每类至少 1 条,记录 HTTP 状态与 Location:
+第 5 步是可机器验证的,`just deploy` 的 verify 段将来可接。**不得删除连接者那个后台用户,不得在 Site Kit 里 Reset / Disconnect。**
 
-| 类 | 样本 | 期望 |
-|---|---|---|
-| PDP | `/products/akira-architectural-metal-screen-pattern` | 301 → `/pattern/akira-architectural-metal-screen-pattern` |
-| 系列类目 | `/collections/pattern-organic` | 200(系列存在,不跳) |
-| 删除类目 | `/collections/other-example-products` | 301 → `/shop/` |
-| 合并类目 | `/collections/all` | 301 → `/shop/` |
-| 内容页 | `/pages/gdpr` | 301 → `/privacy/` |
-| 退休页 | `/pages/contact` | 301 → `/inquiry/` |
-| zh 镜像 | `/zh/products/<slug>` | 301 → `/pattern/<slug>` |
-| 带参 | `/products/<slug>?variant=…` | 301 → 净 URL(CF 剥参,单跳) |
-| legacy | redirect map 中 3 条预存 301 源 | 301 → 对应新 URL |
-| 政策页 | `/policies/refund-policy` | 404 维持(不软跳) |
+## 为什么这一步不能代理
 
-## 回退
+GSC 的验证 token 由 Google 在**建属性时**生成,而建属性要求已登录的 Google 会话。本机没有该会话:
 
-- T3 之后发现 301 断链:先修 CF 规则再重抽 T2 矩阵;地址变更已提交的不可撤,但 Google 以实际 301 为准,修复后曲线自愈。
-- T4 期间旧域索引不降反升:检查 canonical 与 301 是否被缓存层(CF/LiteSpeed)吞掉,对照 spec 20 §4 部署窗口协议。
+- `~/.config/de-linker/turnstile.env` 只有 de-linker 自己的 Turnstile 密钥(`HOSTNAME=de-linker.com`),与 Google 无关
+- `~/.config/`、钥匙串、`~/Downloads/` 均无 Cloudflare 或 Google 账号凭据
+
+替代路径也已核过并排除:
+
+- **DNS TXT(hPanel)**:写入能力已实测确认——`PUT /api/dns/v1/zones/{domain}`,`overwrite:false` 追加不动存量,执行路径 = SSH 到 `hostinger-metal-divider` 跑 curl(见 `seo-verification.md`)。**但 token 本身要 GSC 先建属性才有**,所以 API 在手也开不了这一步。
+- **Site Kit 自动验证**:同样要求先登录 Google。
+
+## Turnstile 的独立说明
+
+Turnstile 与 GSC 无关,但同属"需要 Cloudflare 账号"的一类,一并记在此以免混淆。
+
+de-linker 的 `~/.config/de-linker/turnstile.env` 有一对真实密钥,已实测**不可用于本站**:用该 sitekey 在 metal-divider.com 页面渲染返回 **`110200`**(该密钥未授权此域名)。Turnstile 密钥按域名绑定,复用是错误路径,不是保守。
+
+要为 metal-divider 配 Turnstile,须在 Cloudflare Dashboard 新建 widget(domain = metal-divider.com, mode = managed),而 Dashboard 登录态本机同样没有。
