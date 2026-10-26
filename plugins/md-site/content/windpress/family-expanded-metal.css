@@ -6,8 +6,8 @@
 .font-normal { font-weight: 400 }
 .list-disc { list-style-type:disc }
 .min-w-full { min-width:100% }
-.pl-6 { padding-left:1.5rem }
-.w-24 { width:6rem }
+.pl-6 { padding-left:24px }
+.w-24 { width:96px }
 @keyframes expanded-marquee {
 0%   { transform: translateX(0); }
 100% { transform: translateX(-50%); }
@@ -407,16 +407,16 @@ background: white;
 .md-t214c5857 { position: absolute;inset: 0;background: linear-gradient(90deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.38) 45%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0.42) 100%);pointer-events: none }
 .md-t3e6a46d4 { position: absolute;inset: 0;background: linear-gradient(135deg, #141414 0%, #1a1a1a 50%, #141414 100%) }
 .md-t246a2585 { position:absolute;inset:0;width:100%;height:100%;opacity:0.24 }
-.md-t56105794 { position: absolute;top: 3.5rem;left: 0;font-size: 13px;font-weight: 700;letter-spacing: 0.2em;color: #c9a962;text-transform: uppercase;z-index: 1;pointer-events: none }
-.md-t40acbc9b { font-family: 'Playfair Display', Georgia, serif;font-weight: 700;color: #fff;line-height: 1.06;margin: 0 0 1.1rem }
-.md-tedc0445e { line-height: 1.52;color: rgba(255,255,255,0.88);margin: 0 0 1.75rem;max-width: 40rem }
-.md-t78cd8e13 { display: flex;flex-wrap: wrap;gap: 0.625rem }
-.md-t795ccdf1 { background: rgba(201,169,98,0.14);border: 1px solid rgba(201,169,98,0.3);border-radius: 999px;padding: 0.35rem 1rem;font-size: 13px;font-weight: 700;color: #c9a962;letter-spacing: 0.04em }
-.md-t3e8812f2 { background: rgba(255,255,255,0.07);border: 1px solid rgba(255,255,255,0.14);border-radius: 999px;padding: 0.35rem 1rem;font-size: 13px;font-weight: 600;color: rgba(255,255,255,0.80);letter-spacing: 0.03em }
-.md-te62b1bcc { background: rgba(255,255,255,0.1);border-radius: 0.25rem;flex-shrink: 0;width: 2rem;height: 2rem;display: flex;align-items: center;justify-content: center }
+.md-t56105794 { position: absolute;top: 56px;left: 0;font-size: 13px;font-weight: 700;letter-spacing: 0.2em;color: #c9a962;text-transform: uppercase;z-index: 1;pointer-events: none }
+.md-t40acbc9b { font-family: 'Playfair Display', Georgia, serif;font-weight: 700;color: #fff;line-height: 1.06;margin: 0 0 17.6px }
+.md-tedc0445e { line-height: 1.52;color: rgba(255,255,255,0.88);margin: 0 0 28px;max-width: 640px }
+.md-t78cd8e13 { display: flex;flex-wrap: wrap;gap: 10px }
+.md-t795ccdf1 { background: rgba(201,169,98,0.14);border: 1px solid rgba(201,169,98,0.3);border-radius: 999px;padding: 5.6px 16px;font-size: 13px;font-weight: 700;color: #c9a962;letter-spacing: 0.04em }
+.md-t3e8812f2 { background: rgba(255,255,255,0.07);border: 1px solid rgba(255,255,255,0.14);border-radius: 999px;padding: 5.6px 16px;font-size: 13px;font-weight: 600;color: rgba(255,255,255,0.80);letter-spacing: 0.03em }
+.md-te62b1bcc { background: rgba(255,255,255,0.1);border-radius: 4px;flex-shrink: 0;width: 32px;height: 32px;display: flex;align-items: center;justify-content: center }
 .md-tf4f8deb9 { transition: transform 0.3s }
-.md-t9df28c2e { max-height: 0;overflow: hidden;transition: max-height 0.35s ease;background: rgba(20,20,20,0.55);backdrop-filter: blur(12px);-webkit-backdrop-filter: blur(12px);border: 1px solid rgba(255,255,255,0.08);border-top: none;border-radius: 0 0 0.5rem 0.5rem }
-.md-tdd6f615a { padding: 0.875rem 1.25rem;font-size: 0.875rem;line-height: 1.65;color: rgba(255,255,255,0.65);margin: 0 }
+.md-t9df28c2e { max-height: 0;overflow: hidden;transition: max-height 0.35s ease;background: rgba(20,20,20,0.55);backdrop-filter: blur(12px);-webkit-backdrop-filter: blur(12px);border: 1px solid rgba(255,255,255,0.08);border-top: none;border-radius: 0 0 8px 8px }
+.md-tdd6f615a { padding: 14px 20px;font-size: 14px;line-height: 1.65;color: rgba(255,255,255,0.65);margin: 0 }
 .md-tc593ad00 { text-align: right;flex: 1 }
 .md-td8ee4148 { font-variant-numeric: tabular-nums;font-weight: 600;font-size: 14px;color: #c9a962;min-width: 22px;text-align: right }
 .md-tba09eb61 { background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%) }

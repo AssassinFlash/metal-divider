@@ -380,8 +380,14 @@ def fork_journal(source: Path) -> str:
 
 
 def fork_volumes(source: Path, target: Path) -> list[Path]:
-    """The four volume files, forked whole: token swap, rewrites, and (for the
-    index face) the folded journal volume. A rerun replaces the files."""
+    """The four volume files, forked whole: token swap, rewrites, (for the
+    index face) the folded journal volume, and the volume's static appendix.
+
+    The appendix is appended here rather than by the caller so the two paths
+    that write a volume — the full conversion (``cli``) and this fork — cannot
+    disagree: `test_regeneration_reproduces_the_committed_volumes` compares
+    the fork's bytes with what is committed, and an appendix applied on one
+    path only would read as a hand edit."""
     written: list[Path] = []
     for _name, volume in FACES.items():
         css = _transform((source / "windpress" / volume).read_text(encoding="utf-8"))
@@ -389,5 +395,25 @@ def fork_volumes(source: Path, target: Path) -> list[Path]:
             css = css.rstrip("\n") + "\n\n" + fork_journal(source)
         out = target / "windpress" / volume
         out.write_text(HEADER.format(name=volume) + css + "\n", encoding="utf-8")
+        _append_appendix(out)
         written.append(out)
     return written
+
+
+def _append_appendix(volume: Path) -> None:
+    """Append ``assets/<volume>.append.css`` when the pipeline carries one.
+
+    Same contract as ``cli._append_static_volumes``: the piece lands at the
+    bottom of the volume and is skipped when it is already there, so a rerun
+    is idempotent."""
+    appendix = (
+        Path(__file__).parent.parent.parent
+        / "assets"
+        / (volume.name.replace(".css", ".append.css"))
+    )
+    if not appendix.is_file():
+        return
+    text = volume.read_text(encoding="utf-8")
+    piece = appendix.read_text(encoding="utf-8").rstrip("\n")
+    if piece not in text:
+        volume.write_text(text.rstrip("\n") + "\n" + piece + "\n", encoding="utf-8")

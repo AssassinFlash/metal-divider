@@ -4,12 +4,12 @@
  */
 .border-2 { border-width:2px }
 .cursor-ew-resize { cursor:ew-resize }
-.h-44 { height:11rem }
+.h-44 { height:176px }
 .min-h-0 { min-height:0 }
 .opacity-100 { opacity:1 }
-.pb-16 { padding-bottom:4rem }
-.w-1 { width:.25rem }
-.w-1\.5 { width:.375rem }
+.pb-16 { padding-bottom:64px }
+.w-1 { width:4px }
+.w-1\.5 { width:6px }
 #perforated-projects-template--21844034814205__perforated-projects .pp-showcase-heading {
 text-wrap: balance;
 }

@@ -7,8 +7,8 @@
 .inline-block { display: inline-block }
 .italic { font-style:italic }
 .line-clamp-2 { overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2 }
-.rounded-sm { border-radius:.125rem }
-.rounded-t-lg { border-top-left-radius:.5rem;border-top-right-radius:.5rem }
+.rounded-sm { border-radius:2px }
+.rounded-t-lg { border-top-left-radius:8px;border-top-right-radius:8px }
 .self-start { align-self:flex-start }
 #pattern-catalog-template--21844031570173__pattern-catalog-main {
 background:

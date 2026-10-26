@@ -118,6 +118,18 @@ final class WindPressVolumeTest extends TestCase {
 		$this->assertStringContainsString( '--text-5xl: 42px;--text-5xl--line-height: inherit;', $entry );
 		$this->assertStringContainsString( '--text-7xl: 56px;--text-7xl--line-height: inherit;', $entry );
 		$this->assertStringContainsString( '--text-9xl: 72px;--text-9xl--line-height: inherit;', $entry );
+		// The spacing, radius and container scales are pinned in px for the
+		// same reason the type scale is (#66, #118): base.css carries the old
+		// build's 62.5% root, so every rem-valued utility renders at 0.625x
+		// its declared size — px-4 computed 10px against a declared 16px,
+		// h-11 27.5px against 44px, max-w-7xl 800px against 1280px. Reading
+		// the entry alone is what catches a regression here: the compiled
+		// cache would still be right for a while, since it lags the volume.
+		$this->assertStringContainsString( '--spacing: 4px;', $entry, 'the spacing step is px, so p-/m-/gap-/h-/w- utilities resolve to their declared sizes at the 62.5% root (#118)' );
+		$this->assertStringContainsString( '--radius-xl: 12px;', $entry, 'the radius ladder is px (#118)' );
+		$this->assertStringContainsString( '--container-7xl: 1280px;', $entry, 'the container ladder is px (#118)' );
+		$this->assertStringContainsString( '--container-lg: 512px;', $entry, 'the container ladder is px (#118)' );
+		$this->assertStringNotContainsString( '--spacing: .25rem;', $entry, 'no rem spacing step survives, or utilities would shrink by 0.625' );
 		$this->assertGreaterThan(
 			strrpos( $entry, '@import "./tokens.css" layer(components);' ),
 			strpos( $entry, '@theme static {' ),

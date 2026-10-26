@@ -1,0 +1,42 @@
+/* The journal faces' mobile affordances (spec 19 §5.2, the #118 pass).
+ *
+ * New-writing styles, not carried old-site CSS: the empty-state and tool
+ * links shipped as bare text underlines, and on a phone that is neither a
+ * 44px hit nor a recognisable button; the search field sat below 16px, which
+ * makes iOS zoom the page on focus. This appendix is a static asset of the
+ * pipeline (assets/*.append.css); the converter appends it to its volume
+ * after every write, so a rerun keeps it — the volume itself stays the
+ * fork's output, byte for byte.
+ */
+/* Empty-state and tool links were text underlines. On a phone they need a
+   44px hit and a button shape, and the search field must stay at 16px so
+   iOS does not zoom the page. */
+@media (max-width: 999px) {
+  :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-empty a,
+  :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-tool a,
+  #md-blog-index .journal-tool a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 12px;
+    background: var(--md-gold-dark);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-tool,
+  #md-blog-index .journal-tool {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-tool a,
+  #md-blog-index .journal-tool a {
+    width: 100%;
+  }
+  :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-search input[type="search"] {
+    font-size: 16px;
+  }
+}

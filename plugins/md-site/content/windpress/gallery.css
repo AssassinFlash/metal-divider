@@ -2,7 +2,7 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
-.-mx-4 { margin-left:-1rem;margin-right:-1rem }
+.-mx-4 { margin-left:-16px;margin-right:-16px }
 .backdrop-blur { --tw-backdrop-blur:blur(8px) }
 .backdrop-blur,.backdrop-blur-\[10px\] { -webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia) }
 .backdrop-blur-md { --tw-backdrop-blur:blur(12px) }
@@ -17,7 +17,7 @@
 .border-t { border-top-width: 1px }
 .bottom-0 { bottom:0 }
 .bottom-0 { bottom: 0 }
-.bottom-6 { bottom:1.5rem }
+.bottom-6 { bottom:24px }
 .col-span-2 { grid-column:span 2/span 2 }
 .col-span-4 { grid-column:span 4/span 4 }
 .duration-500 { transition-duration:.5s }
@@ -28,33 +28,33 @@
 .ease-out { transition-timing-function: cubic-bezier(0, 0, .2, 1) }
 .flex-1 { flex:1 1 0% }
 .flex-1 { flex: 1 1 0% }
-.gap-5 { gap: 0.5rem; }
-.gap-5 { gap:1.25rem }
+.gap-5 { gap: 8px; }
+.gap-5 { gap:20px }
 .grid-cols-6 { grid-template-columns:repeat(6,minmax(0,1fr)) }
 .grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)) }
 .grid-rows-4 { grid-template-rows:repeat(4,minmax(0,1fr)) }
 .grid-rows-4 { grid-template-rows: repeat(4, minmax(0, 1fr)) }
-.h-11 { height:2.75rem }
-.h-12 { height:3rem }
-.h-12 { height: 3rem }
-.h-20 { height:5rem }
-.h-20 { height: 5rem }
+.h-11 { height:44px }
+.h-12 { height:48px }
+.h-12 { height: 48px }
+.h-20 { height:80px }
+.h-20 { height: 80px }
 .inset-y-0 { top:0;bottom:0 }
 .left-0 { left:0 }
 .left-0 { left: 0 }
-.left-6 { left:1.5rem }
-.max-w-3xl { max-width:48rem }
-.max-w-5xl { max-width:64rem }
-.max-w-5xl { max-width: 64rem }
-.max-w-7xl { max-width:80rem }
-.max-w-7xl { max-width: 80rem }
-.max-w-xl { max-width:36rem }
-.max-w-xl { max-width: 36rem }
-.mb-8 { margin-bottom:2rem }
-.mb-8 { margin-bottom: 2rem }
-.ml-1 { margin-left:.25rem }
-.ml-2 { margin-left:.5rem }
-.mt-8 { margin-top:2rem }
+.left-6 { left:24px }
+.max-w-3xl { max-width:768px }
+.max-w-5xl { max-width:1024px }
+.max-w-5xl { max-width: 1024px }
+.max-w-7xl { max-width:1280px }
+.max-w-7xl { max-width: 1280px }
+.max-w-xl { max-width:576px }
+.max-w-xl { max-width: 576px }
+.mb-8 { margin-bottom:32px }
+.mb-8 { margin-bottom: 32px }
+.ml-1 { margin-left:4px }
+.ml-2 { margin-left:8px }
+.mt-8 { margin-top:32px }
 .opacity-30 { opacity:.3 }
 .opacity-30 { opacity: .3 }
 .opacity-60 { opacity:.6 }
@@ -65,25 +65,25 @@
 .order-2 { order:2 }
 .order-3 { order:3 }
 .order-4 { order:4 }
-.pb-2 { padding-bottom:.5rem }
-.pb-20 { padding-bottom:5rem }
-.pb-4 { padding-bottom:1rem }
-.pl-1 { padding-left:.25rem }
-.pl-4 { padding-left:1rem }
-.pr-2 { padding-right:.5rem }
-.pt-1 { padding-top:.25rem }
-.pt-10 { padding-top:2.5rem }
-.pt-2 { padding-top:.5rem }
-.pt-20 { padding-top:5rem }
-.pt-20 { padding-top: 5rem }
-.px-3 { padding-left:.75rem;padding-right:.75rem }
-.px-3\.5 { padding-left:.875rem;padding-right:.875rem }
-.px-3 { padding-left: .75rem;
-padding-right: .75rem }
-.py-1 { padding-top:.25rem;padding-bottom:.25rem }
-.py-1\.5 { padding-top:.375rem;padding-bottom:.375rem }
-.py-1 { padding-top: .25rem;
-padding-bottom: .25rem }
+.pb-2 { padding-bottom:8px }
+.pb-20 { padding-bottom:80px }
+.pb-4 { padding-bottom:16px }
+.pl-1 { padding-left:4px }
+.pl-4 { padding-left:16px }
+.pr-2 { padding-right:8px }
+.pt-1 { padding-top:4px }
+.pt-10 { padding-top:40px }
+.pt-2 { padding-top:8px }
+.pt-20 { padding-top:80px }
+.pt-20 { padding-top: 80px }
+.px-3 { padding-left:12px;padding-right:12px }
+.px-3\.5 { padding-left:14px;padding-right:14px }
+.px-3 { padding-left: 12px;
+padding-right: 12px }
+.py-1 { padding-top:4px;padding-bottom:4px }
+.py-1\.5 { padding-top:6px;padding-bottom:6px }
+.py-1 { padding-top: 4px;
+padding-bottom: 4px }
 .right-0 { right:0 }
 .right-0 { right: 0 }
 .row-span-1 { grid-row:span 1/span 1 }
@@ -99,11 +99,11 @@ padding-bottom: .25rem }
 .tracking-wide { letter-spacing:.025em }
 .tracking-wide { letter-spacing: .025em }
 .via-transparent { --tw-gradient-to:transparent var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),transparent var(--tw-gradient-via-position),var(--tw-gradient-to) }
-.w-11 { width:2.75rem }
-.w-12 { width:3rem }
-.w-12 { width: 3rem }
-.w-20 { width:5rem }
-.w-20 { width: 5rem }
+.w-11 { width:44px }
+.w-12 { width:48px }
+.w-12 { width: 48px }
+.w-20 { width:80px }
+.w-20 { width: 80px }
 .z-20 { z-index:20 }
 #laser-cut-showcase-template--21873710563581__laser_cut_showcase .lcs-showcase-track {
 scrollbar-width: none;

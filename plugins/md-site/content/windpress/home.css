@@ -2,8 +2,8 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
-.-mx-5 { margin-left:-1.25rem;margin-right:-1.25rem }
-.mt-14 { margin-top:3.5rem }
+.-mx-5 { margin-left:-20px;margin-right:-20px }
+.mt-14 { margin-top:56px }
 @keyframes emt-bg-enter-template--21844031930621__decorative_panels_grid_gmaCty {
 from { transform: translateY(100%); }
 to   { transform: translateY(0); }
@@ -245,16 +245,16 @@ animation: none;
 .md-t21e2093f { height: 1200vh;position: relative;color: #fff }
 .md-tf636bf81 { position: absolute;inset: 0;overflow: hidden;z-index: 1 }
 .md-t6e675973 { position: absolute;inset: 0;background: linear-gradient(90deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.58) 45%, rgba(0,0,0,0.48) 70%, rgba(0,0,0,0.62) 100%);pointer-events: none }
-.md-t56105794 { position: absolute;top: 3.5rem;left: 0;font-size: 13px;font-weight: 700;letter-spacing: 0.2em;color: #c9a962;text-transform: uppercase;z-index: 1;pointer-events: none }
-.md-t40acbc9b { font-family: 'Playfair Display', Georgia, serif;font-weight: 700;color: #fff;line-height: 1.06;margin: 0 0 1.1rem }
-.md-tedc0445e { line-height: 1.52;color: rgba(255,255,255,0.88);margin: 0 0 1.75rem;max-width: 40rem }
-.md-t78cd8e13 { display: flex;flex-wrap: wrap;gap: 0.625rem }
-.md-t795ccdf1 { background: rgba(201,169,98,0.14);border: 1px solid rgba(201,169,98,0.3);border-radius: 999px;padding: 0.35rem 1rem;font-size: 13px;font-weight: 700;color: #c9a962;letter-spacing: 0.04em }
-.md-t3e8812f2 { background: rgba(255,255,255,0.07);border: 1px solid rgba(255,255,255,0.14);border-radius: 999px;padding: 0.35rem 1rem;font-size: 13px;font-weight: 600;color: rgba(255,255,255,0.80);letter-spacing: 0.03em }
-.md-te62b1bcc { background: rgba(255,255,255,0.1);border-radius: 0.25rem;flex-shrink: 0;width: 2rem;height: 2rem;display: flex;align-items: center;justify-content: center }
+.md-t56105794 { position: absolute;top: 56px;left: 0;font-size: 13px;font-weight: 700;letter-spacing: 0.2em;color: #c9a962;text-transform: uppercase;z-index: 1;pointer-events: none }
+.md-t40acbc9b { font-family: 'Playfair Display', Georgia, serif;font-weight: 700;color: #fff;line-height: 1.06;margin: 0 0 17.6px }
+.md-tedc0445e { line-height: 1.52;color: rgba(255,255,255,0.88);margin: 0 0 28px;max-width: 640px }
+.md-t78cd8e13 { display: flex;flex-wrap: wrap;gap: 10px }
+.md-t795ccdf1 { background: rgba(201,169,98,0.14);border: 1px solid rgba(201,169,98,0.3);border-radius: 999px;padding: 5.6px 16px;font-size: 13px;font-weight: 700;color: #c9a962;letter-spacing: 0.04em }
+.md-t3e8812f2 { background: rgba(255,255,255,0.07);border: 1px solid rgba(255,255,255,0.14);border-radius: 999px;padding: 5.6px 16px;font-size: 13px;font-weight: 600;color: rgba(255,255,255,0.80);letter-spacing: 0.03em }
+.md-te62b1bcc { background: rgba(255,255,255,0.1);border-radius: 4px;flex-shrink: 0;width: 32px;height: 32px;display: flex;align-items: center;justify-content: center }
 .md-tf4f8deb9 { transition: transform 0.3s }
-.md-t9df28c2e { max-height: 0;overflow: hidden;transition: max-height 0.35s ease;background: rgba(20,20,20,0.55);backdrop-filter: blur(12px);-webkit-backdrop-filter: blur(12px);border: 1px solid rgba(255,255,255,0.08);border-top: none;border-radius: 0 0 0.5rem 0.5rem }
-.md-tdd6f615a { padding: 0.875rem 1.25rem;font-size: 0.875rem;line-height: 1.65;color: rgba(255,255,255,0.65);margin: 0 }
+.md-t9df28c2e { max-height: 0;overflow: hidden;transition: max-height 0.35s ease;background: rgba(20,20,20,0.55);backdrop-filter: blur(12px);-webkit-backdrop-filter: blur(12px);border: 1px solid rgba(255,255,255,0.08);border-top: none;border-radius: 0 0 8px 8px }
+.md-tdd6f615a { padding: 14px 20px;font-size: 14px;line-height: 1.65;color: rgba(255,255,255,0.65);margin: 0 }
 .md-tc593ad00 { text-align: right;flex: 1 }
 .md-td8ee4148 { font-variant-numeric: tabular-nums;font-weight: 600;font-size: 14px;color: #c9a962;min-width: 22px;text-align: right }
 .md-t312247e4 { scrollbar-width: none }

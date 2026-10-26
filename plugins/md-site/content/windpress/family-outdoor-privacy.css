@@ -3,7 +3,7 @@
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
 .mb-0 { margin-bottom:0 }
-.mb-0\.5 { margin-bottom:.125rem }
+.mb-0\.5 { margin-bottom:2px }
 #outdoor-solutions-template--21873710596349__outdoor_solutions {
 padding-top: 72px;
 padding-bottom: 72px;
