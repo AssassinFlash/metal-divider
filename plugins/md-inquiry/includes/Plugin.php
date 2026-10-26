@@ -48,6 +48,7 @@ final class Plugin {
 	 * @param RestGuard    $rest_guard  The REST 404 anchor.
 	 * @param Cli          $cli         The test-mode WP-CLI command.
 	 * @param QueueCli     $queue_cli   The queue's WP-CLI commands.
+	 * @param Queue        $queue       The outbound queue: its cron schedule, tick and heal.
 	 */
 	public function __construct(
 		private readonly PostType $post_type,
@@ -62,6 +63,7 @@ final class Plugin {
 		private readonly RestGuard $rest_guard,
 		private readonly Cli $cli,
 		private readonly QueueCli $queue_cli,
+		private readonly Queue $queue,
 	) {}
 
 	/**
@@ -80,5 +82,14 @@ final class Plugin {
 		$this->rest_guard->register();
 		$this->cli->register();
 		$this->queue_cli->register();
+		// The queue's own hooks: the one-minute cron schedule, the tick action
+		// and the `init` heal that keeps it scheduled. They live on the Queue
+		// instance, which the callers above only *use* — without this line the
+		// schedule is never registered, so `wp_schedule_event()` is given an
+		// unknown recurrence and silently refuses, and no inquiry mail is ever
+		// dispatched. Measured on production 2026-10-27: `wp_get_schedules()`
+		// had no `md_inquiry_minute` and `wp_next_scheduled()` was false while
+		// two real mails sat in the queue with attempts=0.
+		$this->queue->register();
 	}
 }

@@ -74,9 +74,10 @@ final class QueueTest extends TestCase {
 	 */
 	public function test_the_schema_speaks_dbdelta_and_mysql_dialect(): void {
 		$this->fake_db();
-		$queue  = new Queue( new Config() );
+		$queue = new Queue( new Config() );
+		// PHP 8.1 made setAccessible() a no-op (and PHP 8.5 deprecates it), so
+		// reflection reaches the private method without the call.
 		$method = new \ReflectionMethod( Queue::class, 'schema_sql' );
-		$method->setAccessible( true );
 
 		$sql = (string) $method->invoke( $queue );
 		$this->assertStringContainsString( 'CREATE TABLE wp_md_inquiry_mail_queue', $sql );
@@ -372,5 +373,31 @@ final class QueueTest extends TestCase {
 			}
 		}
 		return '';
+	}
+
+	/**
+	 * The composition root calls the queue's `register()`.
+	 *
+	 * The behaviour tests call `cron_schedules()` and `schedule()` directly, so
+	 * they passed while the queue was never wired in: the root held the
+	 * instance for its callers and never called the queue's own `register()`,
+	 * so `cron_schedules` was never filtered, `init` never healed the
+	 * schedule, and `wp_schedule_event()` was handed an unknown recurrence
+	 * that WordPress silently refuses. Measured on production 2026-10-27:
+	 * `wp_get_schedules()` had no `md_inquiry_minute`, `wp_next_scheduled()`
+	 * was false, and two real inquiry mails sat at attempts=0 with no tick to
+	 * move them.
+	 *
+	 * Asserting from `Plugin::register()` rather than by calling the queue's
+	 * hook method here is the whole point: calling it here proves nothing
+	 * about whether the root does.
+	 */
+	public function test_the_composition_root_registers_the_queue(): void {
+		$source = (string) file_get_contents( dirname( __DIR__, 3 ) . '/includes/Plugin.php' );
+		$this->assertMatchesRegularExpression(
+			'/\$this->queue->register\(\);/',
+			$source,
+			'Plugin::register() must call the queue\'s own register(), or the cron schedule is never created'
+		);
 	}
 }
