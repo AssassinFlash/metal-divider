@@ -45,7 +45,7 @@
 | quic.cloud / CDN 结对 | 不连(无前置 CDN:**DNS 永驻 hPanel,Cloudflare 仅 Turnstile**,业主 2026-10-25 终版裁定) | ◐ |
 | 失效 | 默认保存钩子 + 每次部署步骤 6 `wp litespeed-purge all`(工具自动跑) | ◐ |
 
-验收断言(工具自动,`just deploy verify --target prod`):全清后匿名 GET 首页两次,响应头 `x-litespeed-cache` 首次 miss、二次 hit。
+验收断言(工具自动,`just deploy verify --target prod`):匿名 GET 首页,响应头 `x-litespeed-cache` 必须见到 `hit`——首击即 hit 直接通过(热缓存/续跑的窗口),首击 miss 则在 7.5 秒内轮询到 hit。全程 miss(或非 200)即 FAIL。判定的是「缓存是否在服务」,不是「第几击该是 hit」:2026-10-26 生产实测部署后两次连击均 miss,随后 curl 全部 hit,旧版「二次必 hit」的断言测的是 LiteSpeed 生成时机而非缓存本身。
 
 ## 4. 前置 CDN(无)
 
@@ -77,7 +77,7 @@
 2. 评审通过 → `just deploy prod --write`(同一产物集合:快照 → 构建 → 上传 → 原子 rename 切换 → opcache 重置 → present → LiteSpeed 全清 → verify)
    - 日志里 `opcache-reset=` 必须是 `done`。`unavailable` = PHP 里没有 opcache 可重置,`none` = 15 次尝试没有一次拿到插件答复(2026-10-26 生产实测:`none` 的成因是 web SAPI 没有 `HOME`,已修为按 ABSPATH 定位 token 目录)
 3. WindPress 编译:本地 `just deploy windpress-compile dev`;评审站/生产经 admin(WindPress → Settings → Performance → Generate),然后 `just deploy windpress-check --target <target>`
-4. verify 全绿(端点 200 + 图案页 + 生产侧 x-litespeed-cache miss→hit)
+4. verify 全绿(端点 200 + 图案页 + 生产侧 x-litespeed-cache 见到 hit:首击 hit 或 7.5 秒内轮询到 hit)
 5. 失败即 `just deploy rollback --target <target> --write`(rename 回上一版,零写库;库需同回退配 `just deploy restore-snapshot <name> --write`)
 6. 测试询盘一封(收件人重写开关,只发指定测试地址)
 
