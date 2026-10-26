@@ -8,6 +8,7 @@ parameters:
 		- md-error-recorder.php
 		- md-site-guards.php
 		- md-staging-guards.php
+		- md-wecom-notify.php
 		- tests/php
 	excludePaths:
 		# The bootstrap defines WordPress's own hook functions for the tests;

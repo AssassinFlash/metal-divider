@@ -6,6 +6,7 @@
 	<file>md-error-recorder.php</file>
 	<file>md-site-guards.php</file>
 	<file>md-staging-guards.php</file>
+	<file>md-wecom-notify.php</file>
 	<file>tests</file>
 
 	<rule ref="../tools/php/phpcs.xml"/>
@@ -18,6 +19,7 @@
 		<exclude-pattern>md-deploy-reset.php</exclude-pattern>
 		<exclude-pattern>md-error-recorder.php</exclude-pattern>
 		<exclude-pattern>md-staging-guards.php</exclude-pattern>
+		<exclude-pattern>md-wecom-notify.php</exclude-pattern>
 	</rule>
 
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
@@ -26,6 +28,7 @@
 				<element value="Md\Mu"/>
 				<element value="md_mu"/>
 				<element value="md_site_guards"/>
+				<element value="md_wecom_notify"/>
 			</property>
 		</properties>
 	</rule>
