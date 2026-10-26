@@ -127,12 +127,18 @@ VERIFY_PATHS = (HOME_PATH, *CONTENT_PATHS)
 PATTERN_BASE = "/pattern/"
 
 # What only a person can do. The deploy prints these; it does not claim them.
-# (Spec 20 §4.2: the Cloudflare window is the deploy's own manual protocol —
-# Development Mode is a dashboard action, and no API token is kept on purpose.)
+# Cloudflare is out of the DNS and out of the request path (owner ruling
+# 2026-10-25: DNS stays at the host panel, no NS migration, no CDN in front —
+# Cloudflare's only role is the Turnstile widget), so there is no edge cache to
+# bypass and no Development Mode step. The live response carries the host's
+# own edge and LiteSpeed instead (`server: hcdn`, `x-litespeed-cache`; no
+# `cf-ray`, seen on production 2026-10-26). The page and asset caches are
+# therefore the deploy's own business: the LiteSpeed purge after the switch,
+# and the browser-side WindPress compile.
 MANUAL = (
-    "Cloudflare: turn Development Mode ON before the window (free tier, expires by "
-    "itself after 3 h); it must be on before the WindPress compile of step 5",
     "hPanel: the staging site's directory password protection stays on (spec 20 §1.3)",
+    "WindPress: run the browser compile after a presentation change (the deploy "
+    "prints the command for this target and checks the result)",
 )
 
 # The full backup is weekly and before data writes (AGENTS.md §5); nothing

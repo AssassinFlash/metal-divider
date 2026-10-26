@@ -126,4 +126,23 @@ def test_the_verify_subset_is_absolute_paths_of_this_site() -> None:
 def test_the_manual_items_are_printed_and_never_claimed() -> None:
     """The dashboards are not reachable from here; the list must say what it is."""
     assert plan.MANUAL, "spec 20 §4.2 has steps only a person can do"
-    assert any("Cloudflare" in item for item in plan.MANUAL)
+    assert any("hPanel" in item for item in plan.MANUAL)
+
+
+def test_no_manual_step_assumes_cloudflare_in_front() -> None:
+    """Cloudflare is Turnstile only: no DNS, no CDN (owner ruling 2026-10-25).
+
+    The deploy used to print "turn Development Mode ON before the window",
+    which presupposes an edge cache to bypass. After the ruling there is none:
+    production answers with the host's own edge and LiteSpeed (`server: hcdn`,
+    `x-litespeed-cache`, no `cf-ray` — measured 2026-10-26), so a Development
+    Mode instruction would send an operator to a dashboard for a cache that is
+    not in the request path.
+    """
+    joined = " ".join(plan.MANUAL)
+
+    assert "Development Mode" not in joined
+    assert "Cloudflare" not in joined
+    # The step that replaced it: the compile is still real work, and the
+    # deploy still refuses to claim it ran.
+    assert any("WindPress" in item for item in plan.MANUAL)

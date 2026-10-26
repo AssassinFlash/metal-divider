@@ -8,7 +8,7 @@
 
 - [ ] hPanel 把 `metal-divider.com` 添加为该订阅的附加网站(此时 NS 仍在 Shopify/Hostinger parking,站点经 hPanel 预览域可见可验)
 - [ ] hPanel 把 `staging.metal-divider.com` 添加为第二个附加网站(自有子域)
-- [ ] hPanel DNS 编辑器建 `staging` A 记录 → 订阅主机 IP(NS 切换前 DNS 区还在 parking;#9 步骤 3 切 NS 后在 Cloudflare 区内重建,灰云)
+- [ ] hPanel DNS 编辑器建 `staging` A 记录 → 订阅主机 IP(DNS 区**永驻 hPanel**,不做 NS 迁移;业主 2026-10-25 终版裁定)
 - [ ] PHP 版本选 8.3(平台实测 8.3.35,与本地 php@8.3 完全同版)
 - [ ] 建两库(生产/评审站),独立 DB 用户;凭据进本机 `~/.config/metal-divider/`(600)
 - [ ] 开 SSH;`~/.ssh/config` 加 `hostinger-metal-divider` 别名(参照 `hostinger-de-linker` 写法,同一账号)。凭据绝不入仓库(AGENTS.md §4)
@@ -28,7 +28,7 @@
 - [ ] WP 设置「建议搜索引擎不索引本站」(`blog_public=0`)
 - [ ] 评审站 mu 件 `md-staging-guards.php` 随部署自动上(仅评审站装配;noindex 头 + robots.txt 兜底 + wp_mail 落盘零真发)——`just deploy verify --target staging` 时带 `MD_DEPLOY_STAGING_AUTH=user:pass` 环境变量过口令保护
 - [ ] lscwp 页面缓存开关 OFF(评审站每次都要新鲜)
-- [ ] Cloudflare:`staging` 记录灰云(DNS only)
+- [ ] Turnstile 挂件把 `staging.metal-divider.com` 加进允许的 hostname(Cloudflare 的唯一身份;零 DNS 改动)
 
 ## 3. 缓存配置(LiteSpeed,生产)
 
@@ -42,21 +42,21 @@
 | ESI | 不用 | ◐ 默认即关 |
 | optm(CSS/JS 优化)/图片压缩/lazyload | **全关**(WindPress 编译产物即终稿,minify 会与它打架) | ◐ 默认即关 |
 | 对象缓存模块 | **关**(首期零对象缓存,规格 §2.3) | ◐ |
-| quic.cloud / CDN 结对 | 不连(Cloudflare 承担 CDN 面) | ◐ |
+| quic.cloud / CDN 结对 | 不连(无前置 CDN:**DNS 永驻 hPanel,Cloudflare 仅 Turnstile**,业主 2026-10-25 终版裁定) | ◐ |
 | 失效 | 默认保存钩子 + 每次部署步骤 6 `wp litespeed-purge all`(工具自动跑) | ◐ |
 
 验收断言(工具自动,`just deploy verify --target prod`):全清后匿名 GET 首页两次,响应头 `x-litespeed-cache` 首次 miss、二次 hit。
 
-## 4. 缓存配置(Cloudflare 免费档)
+## 4. 前置 CDN(无)
 
-| 配置面 | 值 | 核对 |
-|---|---|---|
-| DNS | `@`/`www` 橙云(Proxied);`staging` 灰云 | ◻ |
-| SSL/TLS | Full (strict) | ◐ 一次性 |
-| **APO** | **禁开**(LiteSpeed 官方兼容表:不用 APO 才兼容;双重缓存冲突) | ◐ 一次性,禁改 |
-| Cache Rules / Cache Everything | **不建任何规则**:免费档默认只按扩展名缓存静态资产、HTML/JSON 不缓存、尊重源站 Cache-Control——HTML 缓存唯一归属 LiteSpeed | ◐ 一次性,保持空 |
-| **部署窗口协议** | 部署前 **Development Mode ON**(免费档,旁路边缘缓存 3 小时自动过期,不会忘关);部署 + WindPress 编译 + verify 在窗口内完;Dev Mode 过期后 CF 自动回源取新 `tailwind.css` | ◑ 每次部署 |
-| purge(备用) | 仅 Dev Mode 不可用时手工 purge by URL(免费档 5 次/分钟)清 `tailwind.css` 单文件 | |
+**无前置 CDN。** 业主 2026-10-25 终版裁定:DNS 永驻 hPanel 区直写,任何 NS 迁移不做;**Cloudflare 的唯一身份是 Turnstile 挂件**(账号级,零 DNS)。站点前只有平台自身的 `hcdn` 边缘与 LiteSpeed(生产实测响应头 `server: hcdn`、`x-litespeed-cache`,无 `cf-ray`),由平台默认处理,本项目不配置。
+
+因此本节**没有任何部署窗口动作**:
+
+- 无 Development Mode 开关(没有可旁路的边缘缓存,旧版清单的这一项作废)
+- 无缓存规则、无 APO、无手工 purge
+- 页面缓存的唯一归属是 LiteSpeed(§3),静态资产的唯一归属是源站(无边缘改写)
+- 部署窗口只需下列步骤(§6),WindPress 编译照旧——它的缓存落在源站 uploads 目录,LiteSpeed 与浏览器都在其后
 
 ## 5. 发信队列参数(md-inquiry 落地后随实现票核对)
 
@@ -73,13 +73,13 @@
 
 `just deploy drill --instance <instance>` 全绿是前置(本地实例 切换→回滚→再切换)。窗口内:
 
-1. Cloudflare Development Mode ON(§4)
-2. `just deploy staging --write`(评审站先收,内容导入与评审在评审站跑全量)
-3. 评审通过 → `just deploy prod --write`(同一产物集合:快照 → 构建 → 上传 → 原子 rename 切换 → opcache 重置 → present → LiteSpeed 全清 → verify)
-4. WindPress 编译:本地 `just deploy windpress-compile dev`;评审站/生产经 admin(WindPress → Settings → Performance → Generate),然后 `just deploy windpress-check --target <target>`
-5. verify 全绿(端点 200 + 图案页 + 生产侧 x-litespeed-cache miss→hit)
-6. 失败即 `just deploy rollback --target <target> --write`(rename 回上一版,零写库;库需同回退配 `just deploy restore-snapshot <name> --write`)
-7. 测试询盘一封(收件人重写开关,只发指定测试地址)
+1. `just deploy staging --write`(评审站先收,内容导入与评审在评审站跑全量)
+2. 评审通过 → `just deploy prod --write`(同一产物集合:快照 → 构建 → 上传 → 原子 rename 切换 → opcache 重置 → present → LiteSpeed 全清 → verify)
+   - 日志里 `opcache-reset=` 必须是 `done`。`unavailable` = PHP 里没有 opcache 可重置,`none` = 15 次尝试没有一次拿到插件答复(2026-10-26 生产实测:`none` 的成因是 web SAPI 没有 `HOME`,已修为按 ABSPATH 定位 token 目录)
+3. WindPress 编译:本地 `just deploy windpress-compile dev`;评审站/生产经 admin(WindPress → Settings → Performance → Generate),然后 `just deploy windpress-check --target <target>`
+4. verify 全绿(端点 200 + 图案页 + 生产侧 x-litespeed-cache miss→hit)
+5. 失败即 `just deploy rollback --target <target> --write`(rename 回上一版,零写库;库需同回退配 `just deploy restore-snapshot <name> --write`)
+6. 测试询盘一封(收件人重写开关,只发指定测试地址)
 
 ## 7. 备份纪律(AGENTS.md §5)
 

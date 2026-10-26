@@ -18,8 +18,43 @@ use PHPUnit\Framework\TestCase;
  * consumes (the one-time token file), and what the answer reports.
  *
  * @covers \Md\Mu\DeployReset::decide
+ * @covers \Md\Mu\DeployReset::token_file
  */
 final class DeployResetTest extends TestCase {
+
+	/**
+	 * The token's path comes from the WordPress root, never from the
+	 * environment: the production web SAPI runs with no `HOME` (measured on
+	 * the platform 2026-10-26), which is what made every deploy log
+	 * `opcache-reset=none` without attempting a reset.
+	 */
+	public function test_the_token_path_is_derived_from_the_wordpress_root(): void {
+		self::assertSame(
+			'/home/u/domains/metal-divider.com/.md-deploy/opcache-reset.token',
+			DeployReset::token_file( '/home/u/domains/metal-divider.com/public_html' )
+		);
+		// A trailing slash on ABSPATH must not change the answer: WordPress
+		// defines it with one, and a doubled slash would still resolve, but the
+		// deploy writes the canonical form and the two must be the same string.
+		self::assertSame(
+			DeployReset::token_file( '/home/u/domains/metal-divider.com/public_html' ),
+			DeployReset::token_file( '/home/u/domains/metal-divider.com/public_html/' )
+		);
+	}
+
+	/**
+	 * The directory is beside the web root, not inside it, and it is per site:
+	 * two sites on one host account never share a token, so a review-site
+	 * token cannot be presented to production.
+	 */
+	public function test_the_token_directory_is_beside_the_root_and_per_site(): void {
+		$prod    = DeployReset::token_file( '/home/u/domains/metal-divider.com/public_html' );
+		$staging = DeployReset::token_file( '/home/u/domains/staging.metal-divider.com/public_html' );
+
+		self::assertStringNotContainsString( '/public_html/', $prod, 'the token must not live in the web root' );
+		self::assertStringContainsString( '/domains/metal-divider.com/.md-deploy/', $prod );
+		self::assertNotSame( $prod, $staging );
+	}
 
 	/**
 	 * A valid request: the exact token, by POST. The token file is consumed

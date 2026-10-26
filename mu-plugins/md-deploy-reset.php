@@ -12,11 +12,14 @@
  * second. The CLI's opcode cache is another process, so the reset has to run
  * in a web request.
  *
- * Only the deploy can ask: it writes a one-time token into a file outside the
- * web root on the host, posts it in a header, and this plugin compares,
- * deletes the file and resets. The token never leaves the host. A must-use
- * plugin, so it answers even when a regular plugin of the new release fails
- * (docs/specs/23-mu-plugins.md §6.2, the interface this was ported to).
+ * Only the deploy can ask: it writes a one-time token into a directory beside
+ * the web root on the host, posts it in a header, and this plugin compares,
+ * deletes the file and resets. The token never leaves the host, and the
+ * directory's location is derived from ABSPATH rather than from an
+ * environment variable — see DeployReset::token_file() for why that matters
+ * on the production host. A must-use plugin, so it answers even when a
+ * regular plugin of the new release fails (docs/specs/23-mu-plugins.md §6.2,
+ * the interface this was ported to).
  *
  * @package Md\Mu
  */
@@ -38,11 +41,40 @@ final class DeployReset {
 	public const HEADER = 'HTTP_X_MD_OPCACHE_RESET';
 
 	/**
-	 * The token file, under the private configuration directory of this
-	 * project's tooling ($HOME is set in wp-config for web PHP; the same
-	 * directory holds this machine's other non-secret tool state).
+	 * The token's directory, beside the WordPress root and outside it.
 	 */
-	public const TOKEN = '/.config/metal-divider/opcache-reset.token';
+	public const DIRECTORY = '/.md-deploy';
+
+	/**
+	 * The token's file name, inside DIRECTORY.
+	 */
+	public const TOKEN_FILE = '/opcache-reset.token';
+
+	/**
+	 * The token file for a WordPress root: `<root>/../.md-deploy/opcache-reset.token`.
+	 *
+	 * The path is derived from a filesystem location, never from an environment
+	 * variable. The previous version asked `getenv( 'HOME' )`, and the web SAPI
+	 * of the production host runs `lsphp` with no `HOME` in its environment
+	 * (measured on the platform 2026-10-26: `/proc/<lsphp pid>/environ` is
+	 * readable and carries ten entries, none of them `HOME`, while the ssh
+	 * shell of the same account has it). `handle()` therefore returned before
+	 * reading the token, and every deploy logged `opcache-reset=none`: no
+	 * attempt was made at all, and the header that would have said `done` was
+	 * never emitted.
+	 *
+	 * `dirname( ABSPATH )` is the domain directory the docroot lives in — not
+	 * web-served, writable by the account, and the one location both sides of
+	 * the exchange can compute without sharing an environment: the deploy's own
+	 * shell derives it from the root it deploys into. It is also per site, so a
+	 * staging token can never be presented to production.
+	 *
+	 * @param string $root The WordPress root (ABSPATH), with or without a trailing slash.
+	 * @return string The token file's absolute path.
+	 */
+	public static function token_file( string $root ): string {
+		return dirname( rtrim( $root, '/' ) ) . self::DIRECTORY . self::TOKEN_FILE;
+	}
 
 	/**
 	 * What a request asks and what happened: null when it is not a valid reset
@@ -70,13 +102,15 @@ final class DeployReset {
 	 * Answers a reset request and ends it; any other request passes through.
 	 */
 	public static function handle(): void {
-		$home = getenv( 'HOME' );
-		if ( ! is_string( $home ) || '' === $home ) {
+		$root = defined( 'ABSPATH' ) ? (string) ABSPATH : '';
+		// A root at the filesystem root has no domain directory to put the
+		// token in, and a relative path would point at nothing predictable.
+		if ( '' === $root || '/' === rtrim( $root, '/' ) ) {
 			return;
 		}
 		$outcome = self::decide(
 			$_SERVER, // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- compared with hash_equals only, never output or stored.
-			$home . self::TOKEN,
+			self::token_file( $root ),
 			static fn(): bool => function_exists( 'opcache_reset' ) && opcache_reset()
 		);
 		if ( null === $outcome ) {

@@ -714,3 +714,99 @@ def test_resume_deploy_archives_a_clean_batch(
     assert result.notes == []
     assert len(archived) == 1
     assert not any("switch-time notes recovered" in action for action in result.actions)
+
+
+def test_the_reset_token_lives_beside_the_root_not_under_home(tmp_path: Path) -> None:
+    """The production web SAPI has no HOME (measured 2026-10-26).
+
+    The script used to write `$HOME/.config/metal-divider/opcache-reset.token`;
+    the web-side reader asked `getenv('HOME')`, found nothing, and returned
+    before it ever read the token — every deploy logged `opcache-reset=none`.
+    The path is now computed from the root, which both sides know.
+    """
+    target = Target(
+        "prod",
+        "/home/u/domains/metal-divider.com/public_html",
+        "https://metal-divider.com",
+        (),
+        None,
+        "host:/home/u/domains/metal-divider.com/public_html",
+    )
+
+    script = steps.opcache_reset_script(target)
+
+    expected = "/home/u/domains/metal-divider.com/.md-deploy"
+    assert f"dir={expected}" in script
+    assert f"{expected}/opcache-reset.token" in script
+    assert f"{expected}/opcache-reset.header" in script
+    assert "$HOME" not in script, "the token must not depend on an environment variable"
+
+
+def test_the_reset_script_is_per_site(tmp_path: Path) -> None:
+    """A review-site token must never be presentable to production."""
+
+    def script(root: str) -> str:
+        return steps.opcache_reset_script(
+            Target("t", root, "https://x.test", (), None, f"host:{root}")
+        )
+
+    prod = script("/home/u/domains/metal-divider.com/public_html")
+    staging = script("/home/u/domains/staging.metal-divider.com/public_html")
+
+    assert "dir=/home/u/domains/metal-divider.com/.md-deploy" in prod
+    assert "dir=/home/u/domains/metal-divider.com/.md-deploy" not in staging
+    assert "dir=/home/u/domains/staging.metal-divider.com/.md-deploy" in staging
+
+
+def test_the_reset_script_still_asks_with_a_header_file_and_cleans_up(
+    tmp_path: Path,
+) -> None:
+    """The contract the plugin answers to, unchanged by the path move."""
+    target = Target(
+        "prod",
+        "/root/public_html",
+        "https://metal-divider.com",
+        (),
+        None,
+        "host:/root/public_html",
+    )
+
+    script = steps.opcache_reset_script(target)
+
+    # The token travels in a file, never on a command line other accounts could list.
+    assert "-H @/root/.md-deploy/opcache-reset.header" in script
+    assert "--max-time 5" in script
+    assert "-X POST" in script
+    # Both files the run created are removed, whatever the outcome.
+    assert (
+        "rm -f /root/.md-deploy/opcache-reset.token /root/.md-deploy/opcache-reset.header"
+        in script
+    )
+    # The answer is what the deploy reads back, and 'none' means no attempt
+    # reached the plugin — the shape the production log showed.
+    assert "opcache-reset=%s attempts=%s" in script
+
+
+def test_the_reset_header_name_is_the_plugins() -> None:
+    """The deploy sends X-MD-Opcache-Reset; the plugin reads HTTP_X_MD_OPCACHE_RESET."""
+    plugin = (
+        Path(__file__).resolve().parents[3] / "mu-plugins" / "md-deploy-reset.php"
+    ).read_text()
+    assert "HTTP_X_MD_OPCACHE_RESET" in plugin
+    assert "X-MD-Opcache-Reset" in steps.opcache_reset_script(
+        Target("t", "/root/public_html", "https://x.test", (), None, "host:/x")
+    )
+
+
+def test_the_two_sides_agree_on_the_token_directory() -> None:
+    """`steps.RESET_DIRECTORY` and the plugin's `DeployReset::DIRECTORY` are one path.
+
+    They are two languages in two projects, so nothing but a test keeps them
+    equal — and a silent mismatch is exactly the failure that produced
+    `opcache-reset=none`.
+    """
+    plugin = (
+        Path(__file__).resolve().parents[3] / "mu-plugins" / "md-deploy-reset.php"
+    ).read_text()
+
+    assert f"DIRECTORY = '/{steps.RESET_DIRECTORY}'" in plugin
