@@ -96,6 +96,27 @@ final class WindPressVolume {
 
 	/**
 	 * The theme block itself, marker line included.
+	 *
+	 * Two scales are pinned here, for one reason: base.css carries the old
+	 * build's `html { font-size: 62.5% }` (1rem = 10px) so the carried
+	 * volumes' rem values keep the sizes the old site rendered, and every
+	 * Tailwind utility measured in rem then renders at 0.625x its own
+	 * declared size. The type scale avoided that from #66 by being px; the
+	 * spacing, radius and container scales were missed, so on the shipped
+	 * site `px-4` computed 10px (declared 16px), `h-11` 27.5px (44px),
+	 * `gap-4` 10px (16px), `rounded-xl` 7.5px (12px) and `max-w-7xl` 800px
+	 * (1280px) — the whole layout ran one step tight against its own
+	 * utilities, which is what every "tap target too small / content 10px
+	 * from the edge" report was actually measuring (#118).
+	 *
+	 * Pinning the three scales in px resolves each utility to the value it
+	 * declares, at the 10px root, without touching the root: the carried
+	 * volumes' own rem values keep their old-site meaning, and the 16px
+	 * breakpoints inside them keep resolving to the same pixels they always
+	 * did. `--spacing` is Tailwind's 0.25rem step expressed in px (4px), and
+	 * the radius/container ladders are the v4 defaults converted the same
+	 * way, so a utility that worked on any other Tailwind site now renders
+	 * the same number here.
 	 */
 	private const ENTRY_THEME = self::ENTRY_THEME_MARK . "\n"
 		. '@theme static {' . "\n"
@@ -114,6 +135,14 @@ final class WindPressVolume {
 		. '--text-7xl: 56px;--text-7xl--line-height: inherit;' . "\n"
 		. '--text-8xl: 64px;--text-8xl--line-height: inherit;' . "\n"
 		. '--text-9xl: 72px;--text-9xl--line-height: inherit;' . "\n"
+		. '--spacing: 4px;' . "\n"
+		. '--radius-xs: 2px;--radius-sm: 4px;--radius-md: 6px;--radius-lg: 8px;' . "\n"
+		. '--radius-xl: 12px;--radius-2xl: 16px;--radius-3xl: 24px;--radius-4xl: 32px;' . "\n"
+		. '--container-3xs: 256px;--container-2xs: 288px;--container-xs: 320px;' . "\n"
+		. '--container-sm: 384px;--container-md: 448px;--container-lg: 512px;' . "\n"
+		. '--container-xl: 576px;--container-2xl: 672px;--container-3xl: 768px;' . "\n"
+		. '--container-4xl: 896px;--container-5xl: 1024px;--container-6xl: 1152px;' . "\n"
+		. '--container-7xl: 1280px;' . "\n"
 		. '}';
 
 	/**

@@ -2,4 +2,4 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
-.-mx-6 { margin-left:-1.5rem;margin-right:-1.5rem }
+.-mx-6 { margin-left:-30px;margin-right:-30px }

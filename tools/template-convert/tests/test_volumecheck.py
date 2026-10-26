@@ -6,7 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from md_template_convert.volumecheck import check_volume, check_volumes, main
+from md_template_convert.volumecheck import (
+    check_utility_rem,
+    check_volume,
+    check_volumes,
+    main,
+)
 
 
 def _plugin_with(tmp_path: Path, name: str, css: str) -> Path:
@@ -91,3 +96,51 @@ def test_main_exits_zero_on_pass_and_one_on_failure(
 
 def test_main_rejects_a_wrong_argument_count() -> None:
     assert main([]) == 2
+
+
+# --- the px utility scale gate (#118) ---------------------------------------
+#
+# base.css carries the old build's 62.5% root, so a rem-valued utility
+# renders at 0.625x its Tailwind declaration: px-4 computed 10px against 16px,
+# h-11 27.5px against 44px, max-w-7xl 800px against 1280px. The volumes hold a
+# second, literal copy of those utilities that outranks the variable-based
+# ones, so the value has to be px there too.
+
+
+def test_a_utility_that_declares_rem_is_a_problem() -> None:
+    problems = check_utility_rem(".px-4 { padding-left:1rem;padding-right:1rem }\n")
+    assert len(problems) == 1
+    assert "px-4" in problems[0]
+    assert "#118" in problems[0]
+
+
+def test_a_negative_utility_is_checked_too() -> None:
+    problems = check_utility_rem(".-mt-8 { margin-top:-2rem }\n")
+    assert len(problems) == 1
+    assert "-mt-8" in problems[0]
+
+
+def test_a_px_utility_passes() -> None:
+    assert check_utility_rem(".px-4 { padding-left:16px;padding-right:16px }\n") == []
+
+
+def test_a_scoped_rule_is_the_page_own_choice() -> None:
+    # `.card .px-4` is not a copy of Tailwind's definition.
+    assert check_utility_rem(".card .px-4 { padding-left:1rem }\n") == []
+
+
+def test_a_state_rule_is_the_page_own_choice() -> None:
+    assert check_utility_rem(".px-4:hover { padding-left:1rem }\n") == []
+
+
+def test_a_site_component_sharing_a_prefix_is_exempt() -> None:
+    # .hero-chip is this site's own component, not a utility copy.
+    assert check_utility_rem(".hero-chip { gap:0.5rem }\n") == []
+
+
+def test_the_gate_runs_as_part_of_the_volume_check(tmp_path: Path) -> None:
+    plugin = _plugin_with(tmp_path, "v.css", ".px-4 { padding-left:1rem }\n")
+    report = check_volumes(plugin)
+    assert list(report) == ["v.css"]
+    assert any("#118" in row for row in report["v.css"])
+    assert main([str(plugin)]) == 1

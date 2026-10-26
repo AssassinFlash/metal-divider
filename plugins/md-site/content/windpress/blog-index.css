@@ -173,7 +173,16 @@
  * SVG masks are decorative; the existing text/current-page semantics remain. */
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-topics :is(.journal-all,.cat-item > a) { gap: 12px; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-topics :is(.journal-all,.cat-item > a)::before { content: ""; flex-shrink: 0; width: var(--journal-topic-icon); height: var(--journal-topic-icon); background: currentColor; mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2215%22%20y%3D%223%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2215%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2215%22%20y%3D%2215%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221%22%2F%3E%3C%2Fsvg%3E") center / contain no-repeat; }
-
+/* The journal faces' mobile affordances (spec 19 §5.2, the #118 pass).
+ *
+ * New-writing styles, not carried old-site CSS: the empty-state and tool
+ * links shipped as bare text underlines, and on a phone that is neither a
+ * 44px hit nor a recognisable button; the search field sat below 16px, which
+ * makes iOS zoom the page on focus. This appendix is a static asset of the
+ * pipeline (assets/*.append.css); the converter appends it to its volume
+ * after every write, so a rerun keeps it — the volume itself stays the
+ * fork's output, byte for byte.
+ */
 /* Empty-state and tool links were text underlines. On a phone they need a
    44px hit and a button shape, and the search field must stay at 16px so
    iOS does not zoom the page. */
