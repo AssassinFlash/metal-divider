@@ -176,6 +176,7 @@
       return {
         isOpen: false,
         detail: null,
+        opener: null,
         open: function (detail) {
           if (document.getElementById('quote-modal') && this.$root.id !== 'quote-modal') {
             return;
@@ -185,11 +186,40 @@
             focusInquiryForm(page_form);
             return;
           }
+          if (this.isOpen) {
+            return;
+          }
+          // The dialog joins the shared surface stack before it is shown.
+          // Without this the stack only knows the drawer the CTA lives in,
+          // and that drawer's inert sweep marks every other body child —
+          // this dialog included, it lives in the footer — inert. Focus
+          // cannot enter an inert subtree, so the form sat unreachable
+          // behind its own overlay, and one Escape closed both surfaces
+          // (the stack answered for the drawer, Alpine's window listener
+          // for the dialog). On the stack, inert, Tab and Escape all
+          // treat the dialog as the topmost surface.
+          var root = this.$root;
+          var self = this;
+          this.opener = document.activeElement;
+          root.__mdClose = function () {
+            self.close();
+          };
+          pushSurface(root);
           this.detail = detail || null;
           this.isOpen = true;
         },
         close: function () {
+          if (!this.isOpen) {
+            return;
+          }
+          var root = this.$root;
+          var opener = this.opener;
           this.isOpen = false;
+          this.opener = null;
+          this.detail = null;
+          root.__mdClose = null;
+          popSurface(root);
+          restoreFocus(opener);
         }
       };
     });
