@@ -53,4 +53,15 @@ namespace {
 			return '';
 		}
 	}
+
+	/**
+	 * The knowledge plugin's whitelist-validated table name, present at
+	 * runtime exactly when the plugin is (rapls-ai-chatbot.php:316).
+	 *
+	 * @param string $suffix The table's suffix, without the prefix.
+	 * @return string The backtick-quoted table name, '' when not whitelisted.
+	 */
+	function raplsaich_validated_table( string $suffix ): string {
+		return '';
+	}
 }

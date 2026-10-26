@@ -37,6 +37,35 @@ final class KbEndpointTest extends TestCase {
 		$GLOBALS['md_mu_test_routes']         = array();
 		$GLOBALS['md_mu_test_http']           = array();
 		$GLOBALS['md_mu_test_http_responder'] = null;
+		$GLOBALS['md_mu_test_db_responder']   = null;
+		$GLOBALS['md_mu_test_transients']     = array();
+		$GLOBALS['wpdb']->queries             = array();
+		$_SERVER['REMOTE_ADDR']               = '192.0.2.10';
+		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
+	}
+
+	/**
+	 * Puts the request environment back the way the runner had it.
+	 */
+	protected function tearDown(): void {
+		unset( $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_X_FORWARDED_FOR'] );
+		parent::tearDown();
+	}
+
+	/**
+	 * One wrong-token request from the given remote address.
+	 *
+	 * @param string $ip The client's REMOTE_ADDR.
+	 * @return array{status: int, body: array<string, mixed>} The response.
+	 */
+	private function wrong_bearer_from( string $ip ): array {
+		$_SERVER['REMOTE_ADDR'] = $ip;
+		return md_kb_endpoint_answer(
+			array(
+				'header' => 'Bearer ' . str_repeat( 'w', 48 ),
+				'body'   => array( 'q' => 'x' ),
+			)
+		);
 	}
 
 	/**
@@ -267,8 +296,9 @@ final class KbEndpointTest extends TestCase {
 
 	/**
 	 * The full knowledge-side configuration: the token, the DeepSeek key, a
-	 * faked knowledge engine returning the given hits, and a faked model
-	 * reply.
+	 * faked knowledge engine returning the given hits, a faked model reply,
+	 * and a knowledge base that holds something for the engine to have come
+	 * from.
 	 *
 	 * @param array<int, array<string, mixed>> $hits        The search results the engine returns.
 	 * @param string                           $model_reply The DeepSeek HTTP body.
@@ -283,6 +313,7 @@ final class KbEndpointTest extends TestCase {
 		}
 		FakeRaplsEngine::$hits = $hits;
 
+		$GLOBALS['md_mu_test_db_responder']   = static fn (): string => '5';
 		$GLOBALS['md_mu_test_http_responder'] = static fn (): array => array(
 			'response' => array(
 				'code'    => 200,
@@ -421,6 +452,319 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * Ten wrong tokens from one address are ten 401s; the eleventh is the
+	 * 429 of the brute-force gate — the contract's error shape, with the
+	 * fallback message a visitor can be shown.
+	 */
+	public function test_the_eleventh_wrong_token_from_one_address_is_rate_limited(): void {
+		$this->configure_token();
+
+		for ( $i = 1; $i <= 10; $i++ ) {
+			$out = $this->wrong_bearer_from( '192.0.2.10' );
+			self::assertSame( 401, $out['status'], "Failure {$i} is still the ordinary refusal." );
+		}
+
+		$eleventh = $this->wrong_bearer_from( '192.0.2.10' );
+
+		self::assertSame( 429, $eleventh['status'] );
+		self::assertSame( 'rate_limited', $eleventh['body']['error']['code'] );
+		self::assertSame( md_kb_endpoint_fallback_message(), $eleventh['body']['msg'] );
+	}
+
+	/**
+	 * The window is a minute: failures older than it no longer count, so an
+	 * address that stopped guessing a minute ago is not still locked out.
+	 */
+	public function test_failures_older_than_the_window_stop_counting(): void {
+		$this->configure_token();
+
+		// One failure now, so the window's store key exists; then age its
+		// ten failures past the minute.
+		$this->wrong_bearer_from( '192.0.2.10' );
+		$keys = array_keys( $GLOBALS['md_mu_test_transients'] );
+		self::assertNotEmpty( $keys );
+		$GLOBALS['md_mu_test_transients'][ $keys[0] ] = array_fill( 0, 10, time() - 61 );
+
+		$out = $this->wrong_bearer_from( '192.0.2.10' );
+
+		self::assertSame( 401, $out['status'], 'expired failures do not lock the address out.' );
+	}
+
+	/**
+	 * Requests that carry the right token are never refused for the
+	 * frequency of the chat: the gate counts authentication failures, not
+	 * conversations, and a long exchange on one address is not an attack.
+	 */
+	public function test_valid_requests_are_not_rate_limited(): void {
+		$this->configure_token();
+
+		for ( $i = 1; $i <= 15; $i++ ) {
+			$out = md_kb_endpoint_answer(
+				array(
+					'header' => $this->bearer(),
+					'body'   => array( 'q' => 'question ' . $i ),
+				)
+			);
+			self::assertNotSame( 429, $out['status'], "A valid request {$i} is never the rate limit." );
+		}
+	}
+
+	/**
+	 * The gate is per address, and the address it reads is the one the
+	 * transport reports: a forged X-Forwarded-For neither poisons another
+	 * address's window nor hides the real one.
+	 */
+	public function test_the_gate_reads_the_remote_address_only(): void {
+		$this->configure_token();
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '198.51.100.99';
+
+		for ( $i = 1; $i <= 10; $i++ ) {
+			$this->wrong_bearer_from( '192.0.2.10' );
+		}
+		$forged_header_still_limited = $this->wrong_bearer_from( '192.0.2.10' );
+		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
+
+		$other_address = $this->wrong_bearer_from( '198.51.100.99' );
+
+		self::assertSame( 429, $forged_header_still_limited['status'] );
+		self::assertSame( 401, $other_address['status'], 'another address answers for its own failures only.' );
+	}
+
+	/**
+	 * No raw address reaches the store: the window's key is keyed by a
+	 * digest, so the counter never becomes a log of who asked.
+	 */
+	public function test_the_failure_window_key_holds_no_address(): void {
+		$this->configure_token();
+
+		$this->wrong_bearer_from( '192.0.2.10' );
+
+		$keys = array_keys( $GLOBALS['md_mu_test_transients'] );
+		self::assertNotEmpty( $keys );
+		foreach ( $keys as $key ) {
+			$key = (string) $key;
+			self::assertStringNotContainsString( '192.0.2.10', $key );
+			self::assertMatchesRegularExpression( '/^md_kb_endpoint_failures_[0-9a-f]{64}$/', $key );
+		}
+	}
+
+	/**
+	 * A knowledge plugin with nothing indexed — neither its crawl index nor
+	 * an active knowledge entry — is the same 503 as no plugin at all: the
+	 * model would be answering from no knowledge, and the operator is told
+	 * which half of the pipeline to fill.
+	 */
+	public function test_a_site_with_an_empty_knowledge_base_is_unavailable(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$GLOBALS['md_mu_test_db_responder'] = static fn (): string => '0';
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'delivery time' ),
+			)
+		);
+
+		self::assertSame( 503, $out['status'] );
+		self::assertSame( 'kb_unavailable', $out['body']['error']['code'] );
+		self::assertNotSame( '', $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * A question nothing matches is not an empty knowledge base: the site's
+	 * index is there, the search simply found nothing for this question —
+	 * and the model is asked anyway, under a prompt that makes it say it
+	 * has nothing (and hand off) rather than guess. This is the path the
+	 * acceptance matrix's knowledge-out questions ride on.
+	 */
+	public function test_a_question_with_no_hits_still_reaches_the_model(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"role":"assistant","content":"{\\"answer\\":\\"I don\'t have that in my notes.\\",\\"handoff\\":true}"}}]}' );
+		$GLOBALS['md_mu_test_db_responder'] = static fn (): string => '5';
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'something nothing covers' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( "I don't have that in my notes.", $out['body']['msg'] );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array(), $out['body']['sources'] );
+
+		$http = $this->recorded( 'md_mu_test_http' );
+		self::assertCount( 1, $http );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		self::assertStringContainsString( '(no knowledge found)', end( $payload['messages'] )['content'] );
+	}
+
+	/**
+	 * The failures worth one retry — a network error, a 429, a 5xx — get
+	 * exactly one: the second attempt answers, and the call count proves
+	 * no third try. The rest of the conversation is untouched.
+	 *
+	 * @dataProvider retryable_failures
+	 *
+	 * @param \WP_Error|array<string, mixed> $first  What the first attempt returns.
+	 * @param string                         $kind   The failure's kind, for the message.
+	 */
+	public function test_a_retryable_failure_is_retried_once( \WP_Error|array $first, string $kind ): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"role":"assistant","content":"{\\"answer\\":\\"Back on the second try.\\",\\"handoff\\":false}"}}]}' );
+		$attempt                              = 0;
+		$GLOBALS['md_mu_test_http_responder'] = static function () use ( &$attempt, $first ): \WP_Error|array {
+			++$attempt;
+			return 1 === $attempt ? $first : array(
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'body'     => '{"choices":[{"message":{"role":"assistant","content":"{\\"answer\\":\\"Back on the second try.\\",\\"handoff\\":false}"}}]}',
+			);
+		};
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'delivery time' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'], $kind );
+		self::assertSame( 'Back on the second try.', $out['body']['msg'], $kind );
+		self::assertCount( 2, $this->recorded( 'md_mu_test_http' ), $kind . ' earns exactly one retry.' );
+	}
+
+	/**
+	 * The retryable failures: a transport error, the upstream's busy signal,
+	 * and its own errors.
+	 *
+	 * @return array<string, array{0: \WP_Error|array{response: array{code: int, message: string}, body: string}, 1: string}>
+	 */
+	public static function retryable_failures(): array {
+		return array(
+			'network error' => array( new \WP_Error(), 'network error' ),
+			'http 429'      => array(
+				array(
+					'response' => array(
+						'code'    => 429,
+						'message' => 'Too Many Requests',
+					),
+					'body'     => '',
+				),
+				'429',
+			),
+			'http 5xx'      => array(
+				array(
+					'response' => array(
+						'code'    => 503,
+						'message' => 'Service Unavailable',
+					),
+					'body'     => '',
+				),
+				'5xx',
+			),
+		);
+	}
+
+	/**
+	 * The failures not worth a retry — the upstream answered, and its answer
+	 * is not going to change for the asking: a 4xx, and a 200 whose reply
+	 * is not the JSON contract. One attempt each, then the 502.
+	 *
+	 * @dataProvider unretryable_failures
+	 *
+	 * @param array<string, mixed> $first What the one attempt returns.
+	 * @param string               $kind  The failure's kind, for the message.
+	 */
+	public function test_an_unretryable_failure_is_asked_once( array $first, string $kind ): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$GLOBALS['md_mu_test_http_responder'] = static fn (): array => $first;
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'delivery time' ),
+			)
+		);
+
+		self::assertSame( 502, $out['status'], $kind );
+		self::assertSame( 'upstream_error', $out['body']['error']['code'], $kind );
+		self::assertCount( 1, $this->recorded( 'md_mu_test_http' ), $kind . ' is asked once.' );
+	}
+
+	/**
+	 * The unretryable failures.
+	 *
+	 * @return array<string, array{array<string, mixed>, string}>
+	 */
+	public static function unretryable_failures(): array {
+		return array(
+			'4xx'      => array(
+				array(
+					'response' => array(
+						'code'    => 401,
+						'message' => 'Unauthorized',
+					),
+					'body'     => '',
+				),
+				'4xx',
+			),
+			'bad json' => array(
+				array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => '{"choices":[{"message":{"content":"just words"}}]}',
+				),
+				'a reply that is not the contract',
+			),
+		);
+	}
+
+	// phpcs:disable WordPress.PHP.IniSet, WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions -- the test that follows points PHP's own error log at a local temp file, reads it back and removes it; it runs outside WordPress, where wp_remote_* and wp_delete_file do not exist.
+	/**
+	 * A failure that survives its retry is written to the server's error
+	 * log — the site's rotating php.log, where md-error-recorder points
+	 * error_log — with the failure's kind and HTTP status only: the line
+	 * names neither the key, nor the question, nor the visitor's data.
+	 */
+	public function test_the_final_failure_is_logged_without_secrets(): void {
+		$log    = tempnam( sys_get_temp_dir(), 'md-kb-endpoint-test-log-' );
+		$before = (string) ini_get( 'error_log' );
+		self::assertNotFalse( $log );
+		try {
+			ini_set( 'error_log', $log );
+			$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+			$GLOBALS['md_mu_test_http_responder'] = static fn (): \WP_Error => new \WP_Error();
+
+			$out = md_kb_endpoint_answer(
+				array(
+					'header' => $this->bearer(),
+					'body'   => array(
+						'q'       => 'delivery time',
+						'chat_id' => 'chat-77',
+					),
+				)
+			);
+
+			self::assertSame( 502, $out['status'] );
+			$written = (string) file_get_contents( $log );
+			self::assertStringContainsString( '[md-kb-endpoint] model call failed after 2 attempt(s): network_error http=0', $written );
+			self::assertStringNotContainsString( $this->deepseek_key(), $written );
+			self::assertStringNotContainsString( 'delivery time', $written );
+			self::assertStringNotContainsString( 'chat-77', $written );
+		} finally {
+			ini_set( 'error_log', $before );
+			@unlink( $log );
+		}
+	}
+
+	// phpcs:enable WordPress.PHP.IniSet, WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions
+
+	/**
 	 * The endpoint registers itself on rest_api_init, and the route it
 	 * registers is the one the LHC bot is configured against: the md/v1
 	 * namespace, /kb/answer, POST.
@@ -527,6 +871,6 @@ final class FakeRaplsEngine {
 	 */
 	public function build_context( array $results, int $max_length = 50000, string $query = '' ): string {
 		self::$calls[] = array( 'build_context', $results, $max_length, $query );
-		return self::CONTEXT;
+		return array() === $results ? '' : self::CONTEXT;
 	}
 }

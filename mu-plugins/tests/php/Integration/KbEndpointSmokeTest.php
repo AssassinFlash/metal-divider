@@ -101,6 +101,14 @@ final class KbEndpointSmokeTest extends TestCase {
 				'--format=json',
 			)
 		);
+		// The brute-force window outlives a request (it is the point of
+		// it); each test starts with no failures counted.
+		self::wp(
+			array(
+				'eval',
+				'global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s", \'\\\\_transient\\\\_md\\\\_kb\\\\_endpoint\\\\_failures%\', \'\\\\_transient\\\\_timeout\\\\_md\\\\_kb\\\\_endpoint\\\\_failures%\' ) );',
+			)
+		);
 	}
 
 	/**
@@ -159,6 +167,25 @@ final class KbEndpointSmokeTest extends TestCase {
 		self::assertSame( 503, $response['status'] );
 		$body = self::json( $response );
 		self::assertSame( 'kb_unavailable', $body['error']['code'] ?? '' );
+		self::assertNotSame( '', $body['msg'] ?? '' );
+	}
+
+	/**
+	 * The brute-force gate over the real stack: ten wrong tokens are ten
+	 * 401s, the eleventh is the 429 — the window really living in the
+	 * site's transients, not just in the unit's stand-in store.
+	 */
+	public function test_the_eleventh_wrong_token_over_http_is_rate_limited(): void {
+		for ( $i = 1; $i <= 10; $i++ ) {
+			$response = self::ask( self::$url . '/wp-json/md/v1/kb/answer', 'Bearer ' . str_repeat( 'w', 64 ) );
+			self::assertSame( 401, $response['status'], "Failure {$i} is still the ordinary refusal." );
+		}
+
+		$eleventh = self::ask( self::$url . '/wp-json/md/v1/kb/answer', 'Bearer ' . str_repeat( 'w', 64 ) );
+
+		self::assertSame( 429, $eleventh['status'] );
+		$body = self::json( $eleventh );
+		self::assertSame( 'rate_limited', $body['error']['code'] ?? '' );
 		self::assertNotSame( '', $body['msg'] ?? '' );
 	}
 
