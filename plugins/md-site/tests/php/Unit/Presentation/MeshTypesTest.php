@@ -351,4 +351,38 @@ final class MeshTypesTest extends TestCase {
 			'the active-state class the runtime sets keeps its rule'
 		);
 	}
+
+	/**
+	 * The outgoing scene's background has to lose `.emt-bg-prev` when its
+	 * animation finishes.
+	 *
+	 * The volume's rule is `visibility: visible; z-index: 1` plus the
+	 * slide-out keyframes, so while the class stays the old image remains
+	 * painted underneath the new one. Measured before this: 2.5s after a
+	 * click the outgoing scene was still `visibility: visible`, and after a
+	 * few swipes every scene visited was stacked under the current one. The
+	 * class name promises a one-shot transition state, so the runtime has to
+	 * clear it — on `animationend`, with a timer as the floor for the cases
+	 * where the event never fires (reduced motion turns the animation off,
+	 * and a backgrounded tab pauses it).
+	 */
+	public function test_the_outgoing_background_is_cleared_when_its_animation_ends(): void {
+		$runtime = $this->runtime();
+
+		$this->assertMatchesRegularExpression(
+			'/addEventListener\(\s*\'animationend\'\s*,\s*settle\s*\)/',
+			$runtime,
+			'the transition state is cleared on animationend'
+		);
+		$this->assertMatchesRegularExpression(
+			'/__emtPrevTimer\s*=\s*setTimeout\(\s*settle\s*,/',
+			$runtime,
+			'a timer clears it too, so reduced motion and a paused tab still settle'
+		);
+		$this->assertMatchesRegularExpression(
+			'/bg\.classList\.remove\(\s*\'emt-bg-prev\'\s*\)/',
+			$runtime,
+			'the stale class is actually removed'
+		);
+	}
 }
