@@ -49,7 +49,7 @@
 
 (每轮追加,最新在上)
 
-### 2026-10-26 Woo 唯一资料源与全站交互整合(PR #71,待 CI/合并/部署)
+### 2026-10-26 Woo 唯一资料源与全站交互整合(PR #71–#75,生产已部署并读回)
 
 **本批交付**:提交 `3a75a10`,分支 `integration/visual-parity`,PR #71。商品、系列与编辑精选只从当前 Woo 数据读取;PDP 两段文案、系列描述/缩略图、首页 featured 卡、定制页 `menu_order` 卡、计数和上下架联动已接通。卡片与瓦片 markup 落到仓库管理的 LiveCanvas partial,PHP 只做数据;部署依次执行 present → seed-series → seed-tiles → seo,后续 Woo 后台修改与有意移除不被 seed 回滚。
 
@@ -57,7 +57,9 @@
 
 **门禁**:`just check` 全绿;PHP 288 + 70 + 6 + 21 tests 通过;Python 51 + 36 + 46(+1 skip)+ 93 + 67 tests 通过;`just migrate reconcile` **13/13 PASS**,零待写。两个可重建 pytest 探测实例及数据库已回收,dev 保留且 HTTP 200。
 
-**尚未完成**:PR CI、合并和生产部署/读回尚未发生;生产仍是旧版本。全站像素门明确未通过,Gradient 只退出空内容基线对照而不做 301;性能基线、完整询盘线上实走及 GOAL 全矩阵仍是持续 goal,不以本批局部验收冒充全站完成。
+**生产读回**:PR #71–#75 全部 CI 通过并合并;最终部署 `20261026T004838168731Z-77e2440` 已验证归档。SEO drift 0,anchors 正常,seed-tiles 18/18 与 seed-series 幂等;products/media dry-run 各 146 identical。真 Chrome 读回首页 9 卡、hub 9 图、定制页 18 卡、画廊 64 图、PDP 两段 Woo 文案、材质/报价禁词 0、关键页 390 溢出 0;OPcache reset 两次 done/attempt 1,缓存 miss→hit。完整备份 `backup-20261026-0008` 共 28693 files,数据写入前完成。
+
+**尚未完成**:全站像素门明确未通过,Gradient 只退出空内容基线对照而不做 301;性能优化、完整询盘线上实走及 GOAL 全矩阵仍是持续 goal,不以本批局部验收冒充全站完成。
 
 ### 2026-10-25 阶段二·第二轮:交互层与目录真身修复(dev 全验 → 生产已部署并读回)
 
