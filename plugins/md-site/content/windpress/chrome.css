@@ -1084,6 +1084,24 @@ padding: 4px 0;
 .pattern-catalog__search-button{ min-width: 44px; min-height: 44px; }
 .pdp-faq-q{ min-height: 44px; }
 
+/* Mobile CTA density: the templates size the WhatsApp and quote CTAs with
+   Tailwind py-3/py-3.5 — 30-35px of padding-plus-text at the 62.5% root,
+   measured 36-39px tall on 390 (2026-10-26, real Chrome, home / shop /
+   manufacturing / family pages). The site's own mobile primaries (the
+   drawer CTA, the quote dialog's submit, .md-inquiry-cta__*) are 48px, and
+   these anchors are the same class of action. Phone widths only: the
+   footer's inline wa.me link keeps its documented 31px mobile rhythm, the
+   float and the inquiry-cta partial already meet the minimum, and desktop
+   keeps the converted sizes. */
+@media (max-width: 767px) {
+a[href^="https://wa.me/"]:not(footer *):not(.md-whatsapp-float):not(.md-inquiry-cta__whatsapp) {
+min-height: 48px;
+}
+a[data-quote-source] {
+min-height: 48px;
+}
+}
+
 /* =========================
    First-party floating chrome (ticket #67, spec #65)
    The WhatsApp entry and the back-to-top control are plain anchors in the
