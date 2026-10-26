@@ -61,6 +61,22 @@
 
 **终局验收**:生产 28 项全过、矩阵 63/63、零控制台错误、零 4xx。
 
+### 2026-10-27 页脚全站复验:媒体查询覆盖范围(PR #145/#146)
+
+**首次做页脚的全站复验**(21 页型 × 3 视口 = 63 组),抓到 #144 的漏网:44px 下限写进了 `@media (max-width: 760px)`,**只覆盖手机,桌面那行没动**。390/320 每页干净,**1440 每页都有且仅有 3 个控件不合格**(Privacy/FAQ/Contact 各 26px)。
+
+**#146 又抓到第二个实例**:同一条守卫发现 `.md-footer__copy` 基础层 34px、只在移动块里长到 44px——760px 以上的每个宽度都留着低于下限的控件。基础层改为 44px,移动块只保图标 16px。
+
+**守卫断言的是位置而非值**:三个页脚控件必须在**第一个媒体查询之前**就带上自己的下限——这正是缺陷的形状(有些宽度继承、有些不继承)。实证:改回 34px 即失败并指名选择器。
+
+**教训(页脚两次踩同一件事)**:照搬/修改后必须做**全视口的全站复验**,只验首页或只验一个视口都会漏。
+
+**de-linker header 照搬的施工图(下一轮执行)**:
+- 结构:291 行;5 个主导航项 `products / solutions / ai / partners / about`;桌面 `tv-desktop-nav` + `tv-desktop-actions` + `[contact placement=header]`;移动 `tv-mobile-panel` 用**原生 `<details>`**(无 JS 可展开)+ `tv-mobile-rail` 横滑带图卡片 + 直达链接(`--direct` 变体)
+- 行为:`assets/header-menu.js` 167 行——pointerenter/pointerleave/click/focusout/keydown 四路开合、mega menu 因 visibility 过渡需等 `transitionend` 再移焦点、`document` 级 click/focusout/Escape 分层关闭、`ResizeObserver` + `fits()` 的"放不下就折叠"(`data-tv-nav-folded` / `data-tv-actions-compact`)
+- 样式:239 条规则集中在 de-linker 的 `chrome.css`
+- 本站现状 1469 行,是实质性替换
+
 ### 2026-10-27 页脚全站复验:媒体查询覆盖范围漏网(PR #145)
 
 **首次做页脚的全站复验**(21 页型 × 3 视口 = 63 组),立刻抓到 #144 的漏网:#144 把 44px 下限写进了 `@media (max-width: 760px)`,**只覆盖手机宽度,桌面那行没动**。复验结果清楚地分成两半——390 与 320 每页干净,**1440 每页都有且仅有 3 个控件不合格**(Privacy/FAQ/Contact 各 26px)。
