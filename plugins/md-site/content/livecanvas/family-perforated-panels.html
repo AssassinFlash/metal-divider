@@ -133,7 +133,7 @@ class="xo-container--wide"
         <div class="flex items-center justify-center">
           <div class="pa-scope-template--21844034814205__perforated-applications-oa-badge px-4 py-2 rounded-lg bg-[#0a0a0a]/80 backdrop-blur border border-white/10">
             <span class="text-[13px] font-semibold uppercase tracking-[0.12em] text-[#c9a962]">Open Area</span>
-            <span class="pa-scope-template--21844034814205__perforated-applications-oa-value ml-2 text-xl font-bold text-white" data-pa-oa-value>50%</span>
+            <span class="pa-scope-template--21844034814205__perforated-applications-oa-value ml-2 text-xl font-bold text-white" data-pa-oa-value>25%</span>
           </div>
         </div>
       </div>
@@ -141,9 +141,10 @@ class="xo-container--wide"
       <div class="max-w-[1400px] mx-auto px-5 md:px-10">
         <div class="pa-scope-template--21844034814205__perforated-applications-rail flex items-center justify-between gap-2 md:gap-4 relative"><div class="absolute top-[17px] md:top-[21px] left-0 right-0 h-[2px] bg-white/10"></div><div class="pa-scope-template--21844034814205__perforated-applications-rail-fill md-te73a22bd" data-pa-rail-fill></div><button
                 type="button"
-                class="pa-scope-template--21844034814205__perforated-applications-marker group relative flex flex-col items-center gap-2 md:gap-3 flex-1 cursor-pointer"
+                class="pa-scope-template--21844034814205__perforated-applications-marker group relative flex flex-col items-center gap-2 md:gap-3 flex-1 cursor-pointer is-active"
                 data-pa-marker="1"
                 data-pa-position="25"
+                aria-pressed="true"
                 aria-label="Privacy + Entry — 25% open area"
               ><div class="relative z-10 min-w-[44px] h-9 md:min-w-[52px] md:h-11 px-2 rounded-full border-2 flex items-center justify-center transition-all duration-300 bg-[#141414] group-hover:border-[#c9a962]/60 group-hover:shadow-[0_0_16px_rgba(201,169,98,0.3)]" data-pa-marker-dot>
                   <span class="text-[11px] md:text-[13px] font-bold text-white/75">25%</span>
@@ -153,6 +154,7 @@ class="xo-container--wide"
                 class="pa-scope-template--21844034814205__perforated-applications-marker group relative flex flex-col items-center gap-2 md:gap-3 flex-1 cursor-pointer"
                 data-pa-marker="2"
                 data-pa-position="25"
+                aria-pressed="false"
                 aria-label="Outdoor — 25% open area"
               ><div class="relative z-10 min-w-[44px] h-9 md:min-w-[52px] md:h-11 px-2 rounded-full border-2 flex items-center justify-center transition-all duration-300 bg-[#141414] group-hover:border-[#c9a962]/60 group-hover:shadow-[0_0_16px_rgba(201,169,98,0.3)]" data-pa-marker-dot>
                   <span class="text-[11px] md:text-[13px] font-bold text-white/75">25%</span>
@@ -162,6 +164,7 @@ class="xo-container--wide"
                 class="pa-scope-template--21844034814205__perforated-applications-marker group relative flex flex-col items-center gap-2 md:gap-3 flex-1 cursor-pointer"
                 data-pa-marker="3"
                 data-pa-position="25"
+                aria-pressed="false"
                 aria-label="Feature Wall — 25% open area"
               ><div class="relative z-10 min-w-[44px] h-9 md:min-w-[52px] md:h-11 px-2 rounded-full border-2 flex items-center justify-center transition-all duration-300 bg-[#141414] group-hover:border-[#c9a962]/60 group-hover:shadow-[0_0_16px_rgba(201,169,98,0.3)]" data-pa-marker-dot>
                   <span class="text-[11px] md:text-[13px] font-bold text-white/75">25%</span>
@@ -171,6 +174,7 @@ class="xo-container--wide"
                 class="pa-scope-template--21844034814205__perforated-applications-marker group relative flex flex-col items-center gap-2 md:gap-3 flex-1 cursor-pointer"
                 data-pa-marker="4"
                 data-pa-position="25"
+                aria-pressed="false"
                 aria-label="Light Filter — 25% open area"
               ><div class="relative z-10 min-w-[44px] h-9 md:min-w-[52px] md:h-11 px-2 rounded-full border-2 flex items-center justify-center transition-all duration-300 bg-[#141414] group-hover:border-[#c9a962]/60 group-hover:shadow-[0_0_16px_rgba(201,169,98,0.3)]" data-pa-marker-dot>
                   <span class="text-[11px] md:text-[13px] font-bold text-white/75">25%</span>
@@ -191,7 +195,7 @@ class="xo-container--wide"
           <div class="pa-scope-template--21844034814205__perforated-applications-masked-left absolute inset-0" data-pa-masked-left>
             <div class="pa-scope-template--21844034814205__perforated-applications-pattern-masked absolute inset-0 opacity-30"></div>
           </div>
-        </div><div class="pa-scope-template--21844034814205__perforated-applications-slider md-t66682c10" data-pa-slider>
+        </div><div class="pa-scope-template--21844034814205__perforated-applications-slider md-t66682c10" data-pa-slider role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
           <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#c9a962] shadow-[0_0_24px_rgba(201,169,98,0.5)] flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round">
               <path d="M9 18l6-6-6-6"/>
@@ -1020,10 +1024,10 @@ Frame tolerance critical at joints."
         <table class="spec-table" id="perforated-manufacturing-envelope-template--21844034814205__perforated_manufacturing_envelope-table">
           <thead>
             <tr>
-              <th data-sort="param">Parameter<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
-              <th data-sort="range">Range<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
-              <th data-sort="status">Status<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
-              <th data-sort="note">Note<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
+              <th aria-sort="none" data-sort="param">Parameter<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
+              <th aria-sort="none" data-sort="range">Range<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
+              <th aria-sort="none" data-sort="status">Status<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
+              <th aria-sort="none" data-sort="note">Note<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
             </tr>
           </thead>
           <tbody><tr data-original-order="1">

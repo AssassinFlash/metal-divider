@@ -99,7 +99,9 @@ border-left: 2px solid transparent;
 cursor: pointer; white-space: nowrap;
 transition: color 0.3s, border-color 0.3s;
 }
-.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active {
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active,
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.active,
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques[aria-current="true"] {
 color: #fff;
 border-left-color: #c9a962;
 }
@@ -116,12 +118,16 @@ flex-direction: row; gap: 1.25rem;
 border-bottom: 1px solid rgba(255,255,255,0.35); padding-bottom: 0.5rem;
 }
 .mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques { flex-direction: row-reverse; padding: 0; border-left: none; font-size: 15px; }
-.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active { color: #c9a962; }
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active,
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.active,
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques[aria-current="true"] { color: #c9a962; }
 .mfg-tech-nav-label-template--21844034879741__manufacturing_techniques {
 opacity: 0; max-width: 0; overflow: hidden; font-size: 13px;
 transition: max-width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s;
 }
-.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active .mfg-tech-nav-label-template--21844034879741__manufacturing_techniques { opacity: 1; max-width: 12rem; }
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active .mfg-tech-nav-label-template--21844034879741__manufacturing_techniques,
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.active .mfg-tech-nav-label-template--21844034879741__manufacturing_techniques,
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques[aria-current="true"] .mfg-tech-nav-label-template--21844034879741__manufacturing_techniques { opacity: 1; max-width: 12rem; }
 #mfg-tech-stage-template--21844034879741__manufacturing_techniques { border-radius: 0; width: 100%; margin: 0; }
 .mfg-tech-content-template--21844034879741__manufacturing_techniques h2 { font-size: 38px; }
 .mfg-tech-content-template--21844034879741__manufacturing_techniques p  { font-size: 16px; }
