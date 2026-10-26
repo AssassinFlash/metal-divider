@@ -1056,25 +1056,68 @@ transition:opacity .3s ease,transform .3s ease,visibility 0s;
 .xo-modal-content__close--abs{position:absolute;top:15px;right:15px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.06);cursor:pointer}
 .xo-modal-content__close--abs:hover{background:rgba(0,0,0,.14);rotate:180deg;transition:rotate .3s ease,background-color .3s ease}
 
-/* Touch targets: the footer's link rows, the header logo link, and the
-   catalog search field measured under 44px on 390/320 (audit 2026-10-25).
-   The footer rows keep the old 31px mobile rhythm (footer height parity)
-   and take the 44px minimum from 768px up, where the first column's height
-   already dominates the grid. */
+/* Touch targets (audit 2026-10-25; owner decision 2026-10-26): the footer's
+   text links, the header logo link and the catalog search field measured
+   under 44px on 390/320. This replaces the earlier footer note that kept the
+   old site's 31px mobile row rhythm from 768px up only: the owner ruled the
+   mobile site must feel app-like with comfortably large tap targets, so the
+   footer's text links take a 44px hit area at every width. Only the hit box
+   grows — the type, its size and the row rhythm the parity pass recorded are
+   unchanged. The block-info/copyright links stay inline and grow by padding
+   so the contact paragraph's leading does not reflow. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ min-height: 44px; }
-footer .footer-v21__block-list-item a{
-display: inline;
-padding: 0;
-}
-@media (min-width: 768px){
 footer .footer-v21__block-list-item a{
 display: inline-flex;
 align-items: center;
 min-height: 44px;
 padding: 4px 0;
 }
+footer .footer-v21__block-info a,
+footer .footer-v21__copyright a{
+display: inline-flex;
+align-items: center;
+min-height: 44px;
 }
 .pattern-catalog__search input{ min-height: 44px; box-sizing: border-box; }
+
+/* Mobile text-link hit areas (audit 2026-10-26, same owner ruling as the
+   footer pass above): breadcrumb links measured 24px, the privacy TOC 20px,
+   the thank-you page's exit links 19px, the PDP text link 26px, the pattern
+   tiles' pattern-name 15px and the applications strip's btn-link 25px on
+   390. Each takes a 44px hit box on phone widths. The links whose design
+   carries an underline (pdp-textlink, btn-link) grow upward only, so the
+   rule stays glued to its text; the rest center in an inline-flex box.
+   Phone widths only — the volumes' desktop leading is untouched. */
+@media (max-width: 767px){
+.xo-section[class*="__breadcrumb"] .breadcrumb__item a,
+.xo-section[class*="__breadcrumb"] .breadcrumb__link{
+display: inline-flex;
+align-items: center;
+min-height: 44px;
+}
+.privacy-toc a{
+display: inline-flex;
+align-items: center;
+min-height: 44px;
+}
+.md-inquiry-ty a{
+display: inline-flex;
+align-items: center;
+min-height: 44px;
+}
+#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-textlink{
+padding-top: 18px;
+}
+#patterns-template--22465876033789__patterns_marquee_hqqfqz .pattern-name,
+a.pattern-name{
+display: inline-flex;
+align-items: center;
+min-height: 44px;
+}
+#applications-template--22465876033789__applications_section_mQDDtL .btn-link{
+padding-top: 19px;
+}
+}
 
 /* Final touch-target pass (customer-profile audit 2026-10-25): the home
    chips are 38px wide, the mobile logo link 27px, the catalog search
@@ -1090,9 +1133,9 @@ padding: 4px 0;
    manufacturing / family pages). The site's own mobile primaries (the
    drawer CTA, the quote dialog's submit, .md-inquiry-cta__*) are 48px, and
    these anchors are the same class of action. Phone widths only: the
-   footer's inline wa.me link keeps its documented 31px mobile rhythm, the
-   float and the inquiry-cta partial already meet the minimum, and desktop
-   keeps the converted sizes. */
+   footer's inline wa.me link takes its 44px hit area from the footer pass
+   above, the float and the inquiry-cta partial already meet the minimum,
+   and desktop keeps the converted sizes. */
 @media (max-width: 767px) {
 a[href^="https://wa.me/"]:not(footer *):not(.md-whatsapp-float):not(.md-inquiry-cta__whatsapp) {
 min-height: 48px;
