@@ -348,7 +348,10 @@ font-size: 10px;
 font-weight: 700;
 letter-spacing: 0.18em;
 text-transform: uppercase;
-color: #8a7a4e;
+/* 10px uppercase labels on the certificate paper (#f7f4ee). The carried
+   #8a7a4e measured 3.85:1 there, under the 4.5:1 a 10px label needs; #6f6238
+   measures 5.7:1 on the same paper and keeps the muted gold cast. */
+color: #6f6238;
 }
 .mfg-quality__doc-title {
 margin: 6px 0 8px;
