@@ -299,6 +299,9 @@ letter-spacing: 0.08em !important;
 [id*="21873710498045"] .uppercase.whitespace-nowrap {
 white-space: normal !important;
 }
+[id*="21873710498045"] .max-w-\[1400px\].px-4,
+[id*="21873710498045"] .max-w-\[1280px\].px-4,
+[id*="21873710498045"] > .px-4,
 [id*="21873710498045"] .max-w-\[1400px\].px-5,
 [id*="21873710498045"] .max-w-\[1400px\].px-6,
 [id*="21873710498045"] > .mx-auto.px-5,

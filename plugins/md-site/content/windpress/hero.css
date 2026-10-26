@@ -260,3 +260,21 @@ border-color: rgba(201,169,98,0.60);
 }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+/* About facilities accordion: hover/flex accordion has no hover on touch, so
+ * at phone widths the panels collapse to slivers. Swap to a swipeable snap
+ * carousel (same pattern as the ghs-gallery mobile block). Desktop untouched. */
+@media (max-width: 767px) {
+.about-gallery {
+overflow-x: auto !important;
+scroll-snap-type: x mandatory;
+-webkit-overflow-scrolling: touch;
+scrollbar-width: none;
+}
+.about-gallery::-webkit-scrollbar { display: none; }
+.about-gallery .about-gallery-panel,
+.about-gallery .about-gallery-panel.active,
+.about-gallery .about-gallery-panel:hover {
+flex: 0 0 78%;
+scroll-snap-align: center;
+}
+}

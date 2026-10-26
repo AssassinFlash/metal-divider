@@ -186,6 +186,9 @@ pointer-events: none;
 letter-spacing: 0.08em !important;
 }
 [id*="21844034814205"] .uppercase.whitespace-nowrap { white-space: normal !important; }
+[id*="21844034814205"] .max-w-\[1400px\].px-4,
+[id*="21844034814205"] .max-w-\[1280px\].px-4,
+[id*="21844034814205"] > .px-4,
 [id*="21844034814205"] .max-w-\[1400px\].px-5,
 [id*="21844034814205"] .max-w-\[1400px\].px-6 {
 padding-left: 16px !important;
