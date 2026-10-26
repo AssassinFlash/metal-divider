@@ -312,8 +312,9 @@ class="xo-container--box"
     <ul class="mfg-tech-nav-template--21844034879741__manufacturing_techniques"><li>
           <button
             type="button"
-            class="mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques mfg-tech-active"
+            class="mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques active"
             data-mfg-tech-nav="0"
+            aria-current="true"
           >
             <span class="mfg-tech-nav-label-template--21844034879741__manufacturing_techniques md-tc593ad00">Laser Cutting</span>
             <span class="md-td8ee4148">01</span>
@@ -369,10 +370,14 @@ for Your Screen?</h2>
         <button
           data-mfg-spec-switch="compare"
           data-active
+          role="tab"
+          aria-selected="true"
           class="rounded-full px-6 py-2 text-sm font-semibold transition-all duration-200"
         >Side by Side</button>
         <button
           data-mfg-spec-switch="detail"
+          role="tab"
+          aria-selected="false"
           class="rounded-full px-6 py-2 text-sm font-semibold transition-all duration-200"
         >Method Detail</button>
       </div>
@@ -444,9 +449,9 @@ for Your Screen?</h2>
     <!-- ── METHOD DETAIL: tabs + gallery + property cards ── -->
     <div data-mfg-spec-panel="detail" hidden>
       <div class="mb-8 flex flex-wrap justify-center gap-3">
-        <button data-mfg-spec-tab="expanded" data-active class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Expanded Metal</button>
-        <button data-mfg-spec-tab="perforated" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Perforated</button>
-        <button data-mfg-spec-tab="laser" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Laser-Cut</button>
+        <button data-mfg-spec-tab="expanded" data-active role="tab" aria-selected="true" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Expanded Metal</button>
+        <button data-mfg-spec-tab="perforated" role="tab" aria-selected="false" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Perforated</button>
+        <button data-mfg-spec-tab="laser" role="tab" aria-selected="false" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Laser-Cut</button>
       </div>
 
       <!-- Expanded detail -->
@@ -1211,7 +1216,7 @@ for Your Screen?</h2>
         <div class="mfg-quality__stack" aria-live="polite">
           
             
-            <article class="mfg-quality__doc is-active" data-mfg-quality-card data-card-index="0" >
+            <article class="mfg-quality__doc is-active" data-mfg-quality-card data-card-index="0" aria-hidden="false" >
               <div class="mfg-quality__paper">
                 
                   <div class="mfg-quality__doc-image">
@@ -1243,7 +1248,7 @@ for Your Screen?</h2>
             </article>
           
             
-            <article class="mfg-quality__doc is-next" data-mfg-quality-card data-card-index="1" >
+            <article class="mfg-quality__doc is-next" data-mfg-quality-card data-card-index="1" aria-hidden="true" inert >
               <div class="mfg-quality__paper">
                 
                   <div class="mfg-quality__doc-image">
@@ -1275,7 +1280,7 @@ for Your Screen?</h2>
             </article>
           
             
-            <article class="mfg-quality__doc is-hidden" data-mfg-quality-card data-card-index="2" >
+            <article class="mfg-quality__doc is-hidden" data-mfg-quality-card data-card-index="2" aria-hidden="true" inert >
               <div class="mfg-quality__paper">
                 
                   <div class="mfg-quality__doc-image">
@@ -1307,7 +1312,7 @@ for Your Screen?</h2>
             </article>
           
             
-            <article class="mfg-quality__doc is-prev" data-mfg-quality-card data-card-index="3" >
+            <article class="mfg-quality__doc is-prev" data-mfg-quality-card data-card-index="3" aria-hidden="true" inert >
               <div class="mfg-quality__paper">
                 
                   <div class="mfg-quality__doc-image">
@@ -1357,6 +1362,7 @@ for Your Screen?</h2>
                   type="button"
                   data-mfg-quality-dot
                   data-card-index="0"
+                  aria-current="true"
                   aria-label="Show ISO 9001 Quality System"
                 ></button>
               
@@ -1365,6 +1371,7 @@ for Your Screen?</h2>
                   type="button"
                   data-mfg-quality-dot
                   data-card-index="1"
+                  aria-current="false"
                   aria-label="Show EN 10204 3.1 Mill Certificates"
                 ></button>
               
@@ -1373,6 +1380,7 @@ for Your Screen?</h2>
                   type="button"
                   data-mfg-quality-dot
                   data-card-index="2"
+                  aria-current="false"
                   aria-label="Show ASTM B117 Salt Spray Reports"
                 ></button>
               
@@ -1381,6 +1389,7 @@ for Your Screen?</h2>
                   type="button"
                   data-mfg-quality-dot
                   data-card-index="3"
+                  aria-current="false"
                   aria-label="Show Pre-Shipment Photo Report"
                 ></button>
               
