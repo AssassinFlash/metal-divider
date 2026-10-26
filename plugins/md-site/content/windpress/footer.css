@@ -550,8 +550,16 @@
 	gap: 18px;
 }
 
+/* The same 44px floor every control on this site holds to. Applied with
+   padding and inline-flex so the legal row's type and rhythm do not move —
+   and at the base layer, because a mobile-only version left the desktop row
+   at 26px (measured 2026-10-27 at 1440: Privacy, FAQ and Contact all under
+   the floor while the phone widths passed). */
 .md-footer__bar-legal a {
-	padding: 5px 0;
+	align-items: center;
+	display: inline-flex;
+	min-height: 44px;
+	padding: 0 4px;
 }
 
 .md-footer__bar-legal a:hover,
@@ -773,15 +781,6 @@
 	.md-footer__bar-legal {
 		gap: 5px 13px;
 		justify-content: center;
-	}
-
-	/* Same 44px floor as every other control on the site, applied with
-	   padding so the legal row's type and rhythm do not change. */
-	.md-footer__bar-legal a {
-		align-items: center;
-		display: inline-flex;
-		min-height: 44px;
-		padding: 0 2px;
 	}
 
 	.md-footer__bar-trust {
