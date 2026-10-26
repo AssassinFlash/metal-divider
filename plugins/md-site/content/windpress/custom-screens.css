@@ -1032,8 +1032,8 @@ transform: scale(1) translateY(0);
 position: absolute;
 top: 20px;
 right: 20px;
-width: 36px;
-height: 36px;
+width: 44px;
+height: 44px;
 background: rgba(0,0,0,0.5); /* Semi-transparent bg */
 backdrop-filter: blur(4px);
 border: 1px solid rgba(255,255,255,0.1);
@@ -1176,8 +1176,8 @@ top: 12px;
 right: 12px;
 background: rgba(0,0,0,0.6);
 backdrop-filter: blur(4px);
-width: 32px;
-height: 32px;
+width: 44px;
+height: 44px;
 font-size: 18px;
 border: 1px solid rgba(255,255,255,0.2);
 }
@@ -1738,7 +1738,9 @@ pointer-events: none;
 z-index: 0;
 }
 .footer-nav-link {
-display: block;
+display: flex;
+align-items: center;
+min-height: 44px;
 color: rgba(255, 255, 255, 0.6);
 text-decoration: none;
 font-size: 1rem;
@@ -1960,5 +1962,24 @@ border-radius: 14px;
 font-size: 16px;
 min-height: 48px;
 border-radius: 12px;
+}
+}
+
+/* Inline hero links (audit 2026-10-26). These three sat inside the landing
+   hero's bottom row at 21px and 16px tall — under the 44px tap minimum the
+   rest of this face now meets. They keep their inline text look; only the
+   hit box grows, in px, because the 62.5% root makes any rem figure render
+   0.625x its written value. */
+@media (max-width: 767px) {
+#hero-section-template--22465876033789__hero_landing_yPiYEt a[href="#patterns"],
+#hero-section-template--22465876033789__hero_landing_yPiYEt a[href="#contact"] {
+min-height: 44px;
+display: inline-flex;
+align-items: center;
+}
+html:has(#landing-nav) a[href="https://wa.me/85264731687"] {
+min-height: 44px;
+display: inline-flex;
+align-items: center;
 }
 }
