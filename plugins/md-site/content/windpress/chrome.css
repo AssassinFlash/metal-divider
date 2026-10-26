@@ -1693,3 +1693,70 @@ align-items: center;
 min-height: 44px;
 }
 }
+
+/* The one keyboard-focus floor (GOAL.md acceptance: "焦点框可见").
+ *
+ * Focus styling on this site grew component by component: 20-odd volumes
+ * each added `outline: none` on their own `:focus`/`:focus-visible` rule and
+ * some offered a substitute (a border tint, a background wash, a shadow)
+ * while others offered nothing. Measured on production 2026-10-26 with a
+ * scripted Tab walk, the ones that offered nothing left a keyboard visitor
+ * with no visible position at all: the hub's `View Patterns` and `Send
+ * Reference` buttons, every `.spec-map__card`, the journal search field, and
+ * the shop's search input, sort select and pagination links. A rule that
+ * paints a substitute is still allowed to remove the outline — that is a
+ * design choice — but nothing may leave the element with neither.
+ *
+ * `!important` is deliberate and is the point of the rule: the ~21
+ * `outline: none` declarations above are components' own, so a
+ * lower-priority floor would simply lose to them, which is exactly how the
+ * gap survived. The offset keeps the ring clear of the element's own border
+ * so it reads as focus rather than as a state change.
+ *
+ * `:focus-visible` only, never `:focus`: a mouse click must not draw a ring,
+ * which is the whole reason the platform distinguishes them. Elements whose
+ * own rule already paints a substitute simply get both, and the ring reads
+ * as the stronger signal.
+ */
+:focus-visible {
+outline: 2px solid var(--md-gold-light, #d4b878) !important;
+outline-offset: 2px;
+}
+
+/* A focused field inside a dark panel needs the ring to sit against the
+   panel, not against the field's own 1px border. Same colour, wider offset
+   only where the field is the only thing on the row. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+outline-offset: 1px;
+}
+
+/* The ring has to survive a light background too.
+ *
+ * Gold on the site's dark surfaces measures 8.9:1, but the header sits on
+ * white on several faces and gold there measures 1.7-1.9:1 — below the 3:1
+ * WCAG 1.4.11 floor for a non-text indicator, and effectively invisible.
+ * Measured on the dev instance 2026-10-26: the logo link, the hamburger and
+ * the menu-header image all put a `rgb(212,184,120)` ring on
+ * `rgb(255,255,255)`.
+ *
+ * A two-tone ring fixes it without knowing the background: a white inner
+ * ring and a near-black outer ring. Against a light surface the black ring
+ * measures 17.8:1 and the white one merges; against the dark surfaces the
+ * white ring measures 18.5:1 and the black one merges. One of the two always
+ * clears 3:1, so the indicator is visible on every face. The outer ring is
+ * `#131313` rather than the site gold on purpose: gold measures only 2.1:1 on
+ * white, which is what made the first version of this rule fail exactly where
+ * it was needed.
+ *
+ * `box-shadow` is used rather than a second `outline` because only one
+ * outline can exist per element; the offset outline sits outside both rings.
+ */
+:focus-visible {
+box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #131313 !important;
+}
+
+/* Inside the dark bands the white inner ring would be the loud one; keep the
+   two-tone pair anyway, so the indicator is one shape everywhere rather than
+   two designs that a reviewer has to judge separately. */
