@@ -83,13 +83,30 @@ final class PatternTabsTest extends TestCase {
 	 * passes. A second tab implementation would show up as a second
 	 * definition.
 	 */
-	public function test_one_tab_engine_serves_both_vocabularies(): void {
+	/**
+	 * The runtime binds every tab vocabulary from the same engine — one
+	 * `bindTabSet`, called once per discovery pass. A second tab
+	 * implementation would show up as a second definition.
+	 *
+	 * The pass count is asserted by name rather than by a bare number: the
+	 * third caller is the laser-cut panels' method strip (`data-target` /
+	 * `data-panel`), whose container carries no class of its own. Adding a
+	 * fourth vocabulary should mean adding a pass, and this test should have to
+	 * be updated to say so.
+	 */
+	public function test_one_tab_engine_serves_every_vocabulary(): void {
 		$js = $this->runtime();
 
 		$this->assertSame( 1, substr_count( $js, 'function bindTabSet(' ), 'the tab engine is defined once' );
-		$this->assertSame( 2, substr_count( $js, 'bindTabSet(triggers, panes, {' ), 'and called by both discovery passes' );
+		$this->assertSame(
+			4,
+			substr_count( $js, 'bindTabSet(triggers, panes, {' ),
+			'every vocabulary — converted, pattern library, method strip, trust tabs — uses the one engine'
+		);
 		$this->assertStringContainsString( "querySelectorAll('xo-tabs')", $js, 'the converted strip is still bound' );
 		$this->assertStringContainsString( "querySelectorAll('.patterns-tabs')", $js, 'the pattern library strip is bound too' );
+		$this->assertStringContainsString( "'.tab-btn[data-target]'", $js, 'and so is the laser-cut method strip' );
+		$this->assertStringContainsString( "'.tab-btn[role=\"tab\"]'", $js, 'and the landing trust tabs' );
 	}
 
 	/**
@@ -135,9 +152,18 @@ final class PatternTabsTest extends TestCase {
 	public function test_a_closed_dialog_is_removed_from_the_tab_order(): void {
 		$js = $this->runtime();
 
-		$this->assertSame( 2, substr_count( $js, 'setClosed(true);' ), 'closed on init and on every close' );
-		$this->assertStringContainsString( "lightbox.setAttribute('inert', '')", $js, 'the closed dialog is inert' );
-		$this->assertStringContainsString( "lightbox.removeAttribute('inert')", $js, 'and the open one is not' );
+		// Sliced to the pattern lightbox's own pass. Counting the string across
+		// the whole file used to work only because nothing else in the runtime
+		// used that helper name; the landing page's application lightboxes now
+		// do, and their count is their business, not this dialog's.
+		$start = strpos( $js, 'function setupPatternLightbox()' );
+		$this->assertNotFalse( $start, 'the pattern lightbox pass exists' );
+		$end  = strpos( $js, "\n  function ", (int) $start + 10 );
+		$body = false === $end ? $js : substr( $js, (int) $start, (int) $end - (int) $start );
+
+		$this->assertSame( 2, substr_count( $body, 'setClosed(true);' ), 'closed on init and on every close' );
+		$this->assertStringContainsString( "lightbox.setAttribute('inert', '')", $body, 'the closed dialog is inert' );
+		$this->assertStringContainsString( "lightbox.removeAttribute('inert')", $body, 'and the open one is not' );
 	}
 
 	/**

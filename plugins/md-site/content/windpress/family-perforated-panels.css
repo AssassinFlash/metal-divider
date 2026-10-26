@@ -56,3 +56,123 @@ padding-bottom: 80px;
 .md-t16705960 { aspect-ratio:9/14;background-color:#0a0a0a }
 .md-t156d2b52 { --pt:0;--pb:0;--bg-color:#141414 }
 .md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
+
+/* ── Application comparison: split handle and mask ───────────────────────
+   The section shipped a draggable split (data-pa-slider, data-pa-masked-left)
+   with no stylesheet at all — measured, every `pa-scope` rule was missing from
+   this volume and from the compiled cache. The handle computed to a 4px strip
+   at an unset position and the mask revealed nothing, so setupCompareDrag()
+   moved a divider nobody could see.
+
+   The mask is the reveal: the masked half's width is the percentage the
+   runtime sets, and it clips its own content. `left` on the handle is the same
+   percentage, so the two can never disagree. */
+.pa-scope-template--21844034814205__perforated-applications-left-panel {
+position: relative;
+isolation: isolate;
+}
+/* The masked half. The runtime sets `width`; `inset-0` supplies `left: 0`, and
+   a specified width wins over the right offset, so the reveal follows width. */
+.pa-scope-template--21844034814205__perforated-applications-masked-left {
+overflow: hidden;
+border-right: 1px solid rgba(201, 169, 98, 0.55);
+box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35);
+}
+.pa-scope-template--21844034814205__perforated-applications-masked-left > * {
+/* The pattern inside must stay put as the mask narrows, or it slides with the
+   reveal and the split reads as a moving image rather than a cut. */
+width: 100vw;
+max-width: none;
+}
+.pa-scope-template--21844034814205__perforated-applications-mask,
+[data-pa-mask] {
+/* Above the background images, below the handle. */
+z-index: 2;
+}
+/* The handle's width and position live here and nowhere else. The template
+   used to carry `w-1` / `inset-y-0` utilities alongside these rules; Tailwind
+   utilities compile into `@layer utilities` and this volume into
+   `@layer components`, so the utility won regardless of selector weight and
+   the handle measured 3px wide — an invisible, ungrabbable control. The
+   utilities are gone from the markup, so a plain attribute selector is
+   enough and no `!important` is needed. */
+[data-pa-slider] {
+position: absolute;
+top: 0;
+bottom: 0;
+left: 50%;
+width: 44px;
+margin-left: -22px;
+background: transparent;
+cursor: ew-resize;
+touch-action: none;
+z-index: 4;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+/* The visible line is a child of the wide hit area, so the handle is easy to
+   grab without drawing a 44px bar over the photograph. */
+[data-pa-slider]::before {
+content: '';
+position: absolute;
+top: 0;
+bottom: 0;
+left: 50%;
+width: 2px;
+margin-left: -1px;
+background: rgba(255, 255, 255, 0.75);
+box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+}
+[data-pa-slider] > div {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 48px;
+height: 48px;
+border-radius: 9999px;
+background: var(--md-gold, #c9a962);
+box-shadow: 0 0 24px rgba(201, 169, 98, 0.5);
+display: flex;
+align-items: center;
+justify-content: center;
+pointer-events: none;
+}
+[data-pa-slider]:focus-visible {
+outline: 2px solid #fff;
+outline-offset: 4px;
+}
+@media (min-width: 768px) {
+[data-pa-slider] { width: 56px; margin-left: -28px; }
+[data-pa-slider] > div { width: 56px; height: 56px; }
+}
+
+/* The application markers and their rail. The volume styled their inner
+   children but not the selected state the runtime sets. */
+[data-pa-marker] { position: relative; background: transparent; border: 0; }
+/* The marker's inner circle is drawn by utility classes (`border-2`,
+   `bg-[#141414]`), so a component-layer rule loses to them. Doubling the
+   attribute outranks a single-class utility without `!important`. */
+[data-pa-marker][data-pa-marker].is-active > div {
+border-color: var(--md-gold, #c9a962);
+background: rgba(201, 169, 98, 0.18);
+}
+[data-pa-marker].is-active [data-pa-marker-label] {
+color: #fff;
+}
+[data-pa-rail-fill] {
+position: absolute;
+top: 17px;
+left: 0;
+height: 2px;
+background: linear-gradient(to right, rgba(201, 169, 98, 0.2), var(--md-gold, #c9a962));
+transition: width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+pointer-events: none;
+}
+@media (min-width: 768px) {
+[data-pa-rail-fill] { top: 21px; }
+}
+@media (prefers-reduced-motion: reduce) {
+[data-pa-rail-fill] { transition: none; }
+}
