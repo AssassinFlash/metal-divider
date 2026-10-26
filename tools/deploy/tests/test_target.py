@@ -46,12 +46,13 @@ def test_the_backup_root_is_per_site_on_the_shared_account() -> None:
 
         def shell(self, script: str) -> str:
             self.answers.append(script)
-            # The real thing printf's "$HOME" plus the script's own per-site
-            # suffix; the stub replays exactly that, so the split — not the
-            # printf — is what is under test.
-            if "deploy-prev/" in script:
-                site = script.split("deploy-prev/", 1)[1].split('"', 1)[0]
-                return f"/home/u388076051/deploy-prev/{site}"
+            # The real thing printf's "$HOME" plus the script's own suffix; the
+            # stub replays exactly that, so the split — not the printf — is
+            # what is under test.
+            for namespace in (target.NAMESPACE, target.LEGACY_ROOT):
+                if f"/{namespace}/" in script:
+                    site = script.split(f"/{namespace}/", 1)[1].split('"', 1)[0]
+                    return f"/home/u388076051/{namespace}/{site}"
             return ""
 
     staging = _Asking(
@@ -76,9 +77,62 @@ def test_the_backup_root_is_per_site_on_the_shared_account() -> None:
 
     assert (
         target.backup_root(staging)
-        == "/home/u388076051/deploy-prev/staging.metal-divider.com"
+        == "/home/u388076051/deploy-prev-metal-divider/staging.metal-divider.com"
     )
-    assert target.backup_root(prod) == "/home/u388076051/deploy-prev/metal-divider.com"
+    assert (
+        target.backup_root(prod)
+        == "/home/u388076051/deploy-prev-metal-divider/metal-divider.com"
+    )
+
+
+def test_the_batch_namespace_is_outside_de_linkers_prune() -> None:
+    """de-linker's archive deletes every directory under its own flat root.
+
+    Measured on the shared Hostinger account 2026-10-26: `~/deploy-prev/latest`
+    carried a de-linker batch id while this project's pointer sat at
+    `~/deploy-prev/metal-divider.com/latest`, and the pending batch
+    `20261026T042025478901Z-1be1823` was gone from disk afterwards
+    (linker_cutover/atomic.py: `for old in <root>/*; do ... rm -rf "$old"`).
+    New batches must therefore not live under that root at all.
+    """
+    assert target.NAMESPACE != target.LEGACY_ROOT
+    assert not target.NAMESPACE.startswith(target.LEGACY_ROOT + "/")
+    # Siblings under $HOME, so neither is inside the other.
+    assert "/" not in target.NAMESPACE
+    assert "/" not in target.LEGACY_ROOT
+
+
+def test_the_legacy_root_still_names_the_old_place() -> None:
+    """Reads must keep working there: archived recovery points predate the split."""
+
+    class _Asking(Target):
+        def shell(self, script: str) -> str:
+            site = script.split("/deploy-prev/", 1)[1].split('"', 1)[0]
+            return f"/home/u388076051/deploy-prev/{site}"
+
+    prod = _Asking(
+        "prod",
+        "/home/u388076051/domains/metal-divider.com/public_html",
+        "https://metal-divider.com",
+        (),
+        ("ssh", "host"),
+        "host:root",
+    )
+
+    assert (
+        target.legacy_backup_root(prod)
+        == "/home/u388076051/deploy-prev/metal-divider.com"
+    )
+
+
+def test_a_local_target_keeps_one_store_for_both_roots(tmp_path: Path) -> None:
+    """No other project prunes a local instance's tree, so nothing needs moving."""
+    local = Target(
+        "local:dev", str(tmp_path / "wordpress"), "http://127.0.0.1:1", (), None, None
+    )
+
+    assert target.backup_root(local) == str(tmp_path / "deploy-prev")
+    assert target.legacy_backup_root(local) == target.backup_root(local)
 
 
 def test_local_entries_cover_every_kind_of_file(tmp_path: Path) -> None:

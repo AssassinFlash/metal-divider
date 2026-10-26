@@ -18,7 +18,7 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from md_deploy.target import DeployError, Target, backup_root
+from md_deploy.target import DeployError, Target, backup_root, legacy_backup_root
 
 
 @dataclass(frozen=True)
@@ -212,12 +212,44 @@ def read_phase_notes(target: Target, directory: str) -> list[str]:
 
 
 def latest_manifest(target: Target) -> tuple[str, Manifest]:
-    """Load the most recent deployment record; no glob can mix backup batches."""
-    root = backup_root(target)
+    """Load the most recent deployment record; no glob can mix backup batches.
+
+    This project's own namespace is asked first. When it has no pointer, the
+    legacy location is read — an archived recovery point from before the
+    namespace split must stay rollbackable — and a *pending* batch found there
+    is refused rather than resumed: de-linker's archive deletes every
+    directory under its root, so a pending batch in the legacy place can
+    vanish between this read and the resume that would trust it
+    (`legacy_backup_root`). Refusing is the honest answer; resuming would
+    report success against files another project may already have removed.
+    """
+    directory, manifest = _manifest_at(target, backup_root(target), required=False)
+    if directory is not None and manifest is not None:
+        return directory, manifest
+    legacy_directory, legacy = _manifest_at(
+        target, legacy_backup_root(target), required=False
+    )
+    if legacy_directory is None or legacy is None:
+        raise DeployError("no previous deployment manifest")
+    if legacy.state == "pending":
+        raise DeployError(
+            f"deployment {legacy.deploy_id} is pending in the legacy store "
+            f"({legacy_directory}), which de-linker's archive prunes — refusing "
+            "to resume or roll it back; inspect the live tree and deploy afresh"
+        )
+    return legacy_directory, legacy
+
+
+def _manifest_at(
+    target: Target, root: str, *, required: bool
+) -> tuple[str | None, Manifest | None]:
+    """The manifest under one batch root, or (None, None) when it holds no pointer."""
     pointer = shlex.quote(str(Path(root) / "latest"))
     deploy_id = target.shell(f"if [ -f {pointer} ]; then cat {pointer}; fi").strip()
     if not deploy_id:
-        raise DeployError("no previous deployment manifest")
+        if required:
+            raise DeployError(f"no deployment manifest in {root}")
+        return None, None
     directory = str(Path(root) / _check_id(deploy_id))
     try:
         raw = json.loads(target.shell(f"cat {shlex.quote(_manifest_path(directory))}"))
@@ -280,13 +312,24 @@ def publish(
     if not artifacts or len({item.relative for item in artifacts}) != len(artifacts):
         raise DeployError("deployment inventory is empty or duplicated")
     root = backup_root(target)
+    # A pending batch anywhere still holds live paths hostage in its `*.prev`
+    # siblings, so no new batch may start on top of one. The new namespace is
+    # asked first and its own pointer is authoritative there; when it is
+    # empty the legacy store is consulted too, because a batch left in it must
+    # not be silently buried by a fresh deploy writing elsewhere — and a
+    # *pending* one there is refused outright (`latest_manifest`), because
+    # de-linker's archive prunes that directory.
     pointer = shlex.quote(str(Path(root) / "latest"))
     prior_id = target.shell(f"if [ -f {pointer} ]; then cat {pointer}; fi").strip()
-    if prior_id:
+    legacy_pointer = shlex.quote(str(Path(legacy_backup_root(target)) / "latest"))
+    legacy_id = target.shell(
+        f"if [ -f {legacy_pointer} ]; then cat {legacy_pointer}; fi"
+    ).strip()
+    if prior_id or legacy_id:
         _, prior = latest_manifest(target)
         if prior.state == "pending":
             raise DeployError(
-                f"deployment {prior_id} still needs verify/archive or rollback"
+                f"deployment {prior.deploy_id} still needs verify/archive or rollback"
             )
     for artifact in artifacts:
         names = _siblings(artifact.relative)
@@ -470,13 +513,30 @@ def _checked_backups(
     return directory, manifest, paths
 
 
+def _batch_root(target: Target, directory: str) -> str:
+    """The batch store `directory` actually lives in (new namespace or legacy).
+
+    Archive and rollback must not assume: a rollback follows whatever
+    `latest_manifest` found, and an archived recovery point from before the
+    namespace split lives in the legacy store. Naming the wrong root would
+    create it (`_same_filesystem` does `mkdir -p`) and compare devices across
+    a directory the batch is not in.
+    """
+    for root in (backup_root(target), legacy_backup_root(target)):
+        if directory == root or directory.startswith(root.rstrip("/") + "/"):
+            return root
+    return backup_root(target)
+
+
 def archive(target: Target, receipt: Receipt) -> None:
     """After site verification, rename every backup into the private deploy set."""
     directory, manifest, paths = _checked_backups(target, list(receipt.paths))
     if manifest.deploy_id != receipt.deploy_id or manifest.state != "pending":
         raise DeployError("archive requires the pending deployment receipt")
     _same_filesystem(
-        target, backup_root(target), [str(Path(path).parent) for path in paths]
+        target,
+        _batch_root(target, directory),
+        [str(Path(path).parent) for path in paths],
     )
     prepare: list[str] = []
     switch: list[str] = []
@@ -521,10 +581,13 @@ def archive(target: Target, receipt: Receipt) -> None:
         raise DeployError(
             "deployment artifacts remain in web root: " + ", ".join(remaining)
         )
-    # This root belongs only to deployment batches. Retain the latest after
-    # successful readback, including pruning killed batches that never
-    # reached their manifest commit.
-    root = shlex.quote(backup_root(target))
+    # This root belongs only to this project's deployment batches. Retain the
+    # latest after successful readback, including pruning killed batches that
+    # never reached their manifest commit. The prune is scoped to the store
+    # the batch is actually in: pointed at the legacy store it would delete
+    # de-linker's batches, and pointed at a fresh namespace while archiving a
+    # legacy recovery point it would leave that point unreachable.
+    root = shlex.quote(_batch_root(target, directory))
     target.shell(
         f'set -eu\nfor old in {root}/*; do\n    [ -d "$old" ] || continue\n    if [ "$old" != {shlex.quote(directory)} ]; then rm -rf "$old"; fi\ndone\n'
     )
@@ -559,7 +622,9 @@ def rollback(target: Target, relatives: list[str]) -> Receipt:
     if drifted:
         raise DeployError("live changed since deploy: " + ", ".join(drifted))
     _same_filesystem(
-        target, backup_root(target), [str(Path(path).parent) for path in live_paths]
+        target,
+        _batch_root(target, directory),
+        [str(Path(path).parent) for path in live_paths],
     )
     prepare: list[str] = []
     checks: list[str] = []

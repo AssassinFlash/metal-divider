@@ -8,7 +8,8 @@ from pathlib import Path
 import pytest
 
 from md_deploy import atomic
-from md_deploy.target import Target
+from md_deploy import target as target_module
+from md_deploy.target import DeployError, Target
 
 
 def target_at(root: Path) -> Target:
@@ -208,3 +209,176 @@ def test_a_duplicated_or_empty_inventory_is_refused(tmp_path: Path) -> None:
 
     with pytest.raises(RuntimeError, match="empty or duplicated"):
         atomic.publish(target, twice, deploy_id="20261024T000000Z-abc123")
+
+
+def namespaced(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[Target, Path, Path]:
+    """A target whose two batch stores are distinct, real, local directories.
+
+    The store split lives in `md_deploy.target.backup_root` (a function of the
+    host's `$HOME`); `atomic` imports both names directly, so the split is
+    installed here the way it resolves in production while the publication,
+    archive and rollback machinery runs for real against a local filesystem.
+    """
+    new = tmp_path / "deploy-prev-metal-divider" / "metal-divider.com"
+    legacy = tmp_path / "deploy-prev" / "metal-divider.com"
+    new.mkdir(parents=True)
+    legacy.mkdir(parents=True)
+    monkeypatch.setattr(atomic, "backup_root", lambda _target: str(new))
+    monkeypatch.setattr(atomic, "legacy_backup_root", lambda _target: str(legacy))
+    return target_at(tmp_path / "site"), new, legacy
+
+
+def manifest_at(directory: Path, deploy_id: str, state: str) -> None:
+    """A batch directory with a pointer and a manifest, as publish leaves one."""
+    batch = directory / deploy_id
+    batch.mkdir(parents=True, exist_ok=True)
+    (directory / "latest").write_text(deploy_id)
+    (batch / "manifest.json").write_text(
+        json.dumps({"deploy_id": deploy_id, "state": state, "backups": []})
+    )
+
+
+def test_a_new_batch_lands_in_the_namespace_not_the_legacy_store() -> None:
+    """de-linker prunes every directory under its own root; ours must not be there."""
+
+    # The real functions, asked the way a remote target asks: the stub answers
+    # the `$HOME`-relative printf so the split itself is what is asserted.
+    class Host(Target):
+        def shell(self, script: str) -> str:  # noqa: D102 - scripted
+            assert "printf" in script
+            if "deploy-prev-metal-divider" in script:
+                return "/home/u/deploy-prev-metal-divider/metal-divider.com"
+            return "/home/u/deploy-prev/metal-divider.com"
+
+    target = Host(
+        "prod",
+        "/home/u/domains/metal-divider.com/public_html",
+        "https://metal-divider.com",
+        (),
+        ("ssh", "host"),
+        "host:root",
+    )
+
+    new = target_module.backup_root(target)
+    legacy = target_module.legacy_backup_root(target)
+
+    assert new == "/home/u/deploy-prev-metal-divider/metal-divider.com"
+    assert legacy == "/home/u/deploy-prev/metal-divider.com"
+    assert not new.startswith(legacy + "/"), "the new store is inside de-linker's prune"
+
+
+def test_an_archived_legacy_batch_is_still_readable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Recovery points from before the split must keep working for rollback."""
+    target, new, legacy = namespaced(tmp_path, monkeypatch)
+    manifest_at(legacy, "20261026T044505580272Z-0f054c9", "archived")
+
+    directory, manifest = atomic.latest_manifest(target)
+
+    assert directory == str(legacy / "20261026T044505580272Z-0f054c9")
+    assert manifest.state == "archived"
+
+
+def test_the_namespace_pointer_wins_over_the_legacy_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Once this project has deployed into its own store, that is the record."""
+    target, new, legacy = namespaced(tmp_path, monkeypatch)
+    manifest_at(legacy, "20261026T044505580272Z-0f054c9", "archived")
+    manifest_at(new, "20261026T060000000000Z-abcdef0", "archived")
+
+    directory, manifest = atomic.latest_manifest(target)
+
+    assert directory.startswith(str(new))
+    assert manifest.deploy_id == "20261026T060000000000Z-abcdef0"
+
+
+def test_a_pending_legacy_batch_is_refused_not_resumed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """It lives inside de-linker's prune: resuming would trust files another project deletes."""
+    target, _new, legacy = namespaced(tmp_path, monkeypatch)
+    manifest_at(legacy, "20261026T042025478901Z-1be1823", "pending")
+
+    with pytest.raises(DeployError, match="legacy store"):
+        atomic.latest_manifest(target)
+
+
+def test_a_pending_legacy_batch_also_blocks_a_new_publish(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A fresh deploy must not bury a batch that still holds live paths hostage."""
+    target, _new, legacy = namespaced(tmp_path, monkeypatch)
+    manifest_at(legacy, "20261026T042025478901Z-1be1823", "pending")
+    live = tmp_path / "site" / "wp-content" / "mu-plugins"
+    live.mkdir(parents=True)
+    (live / "md-site-guards.php").write_text("old")
+    source = tmp_path / "release"
+    source.mkdir()
+    (source / "md-site-guards.php").write_text("new")
+
+    with pytest.raises(DeployError, match="legacy store"):
+        atomic.publish(
+            target,
+            [
+                atomic.Artifact(
+                    source / "md-site-guards.php",
+                    "wp-content/mu-plugins/md-site-guards.php",
+                )
+            ],
+            deploy_id="20261026T070000000000Z-aaaaaaa",
+        )
+
+
+def test_nothing_is_reported_when_no_store_has_a_batch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A first deploy on a clean host is not an error, it is simply no record."""
+    target, _new, _legacy = namespaced(tmp_path, monkeypatch)
+
+    with pytest.raises(DeployError, match="no previous deployment manifest"):
+        atomic.latest_manifest(target)
+
+
+def test_archiving_prunes_only_this_projects_store(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The reciprocal of the defect: our archive must not delete de-linker's batches.
+
+    Every archive ends with a prune of its own root. Scoped to the namespace,
+    that leaves `~/deploy-prev/` — another project's store — untouched; scoped
+    to `$HOME/deploy-prev` (the old value) it would `rm -rf` their batches.
+    """
+    target, new, legacy = namespaced(tmp_path, monkeypatch)
+    their_batch = legacy.parent / "20261026T050910Z-product-library-scope-89c20879"
+    their_batch.mkdir()
+    (their_batch / "manifest.json").write_text('{"theirs": true}')
+    (legacy.parent / "latest").write_text(their_batch.name)
+    old_batch = new / "20261026T050000000000Z-oldold0"
+    old_batch.mkdir()
+    live = tmp_path / "site" / "wp-content" / "mu-plugins"
+    live.mkdir(parents=True)
+    (live / "md-site-guards.php").write_text("old")
+    source = tmp_path / "release"
+    source.mkdir()
+    (source / "md-site-guards.php").write_text("new")
+
+    receipt = atomic.publish(
+        target,
+        [
+            atomic.Artifact(
+                source / "md-site-guards.php",
+                "wp-content/mu-plugins/md-site-guards.php",
+            )
+        ],
+        deploy_id="20261026T080000000000Z-bbbbbbb",
+    )
+    atomic.archive(target, receipt)
+
+    assert (their_batch / "manifest.json").is_file(), "de-linker's batch was deleted"
+    assert (legacy.parent / "latest").read_text() == their_batch.name
+    assert not old_batch.exists(), "our own superseded batch is pruned as before"
+    assert (new / receipt.deploy_id / "manifest.json").is_file()

@@ -87,3 +87,28 @@
 - 数据写入(导入、媒体管线 `just deploy media --target <site> --write`):先完整备份 `just deploy backup --target <target> --write`(增量 `--link-dest`,存本机 `~/metal-divider-local/backups/`)
 - 完整备份每周一次;部署日志会提醒超期
 - 首次生产写入前,在票上记录备份与回滚方式
+
+### 7.1 主机侧的批次目录(项目命名空间)
+
+主机账号上**不只本项目**在写 `$HOME`。批次目录因此分两层：
+
+| 位置 | 用途 | 谁写 |
+|---|---|---|
+| `~/deploy-prev-metal-divider/<domain>/` | 本项目**新批次**的 `latest` 指针与批次目录 | 只本项目 |
+| `~/deploy-prev/<domain>/` | **只读遗留**：命名空间拆分前的已归档恢复点 | 只读，新批次不写 |
+
+**证据(2026-10-26 实测)**：de-linker 的部署工具把 `~/deploy-prev` 当作**扁平**根目录
+(`linker_cutover/atomic.py` 的 `backup_root` 返回 `"$HOME/deploy-prev"`)，并且每次归档成功后
+对它自己根下的**每个目录**执行 `rm -rf`（源码注释原文:「this root belongs only to deployment
+batches」）。我们原本把批次放在 `~/deploy-prev/<domain>/`，正落在那个循环里：
+`~/deploy-prev/latest` 当时是 de-linker 的批次 id，我们的指针在下一层，而待续的批次
+`20261026T042025478901Z-1be1823` 事后在整棵树上已不存在。
+
+因此：
+
+- 新批次一律写 `~/deploy-prev-metal-divider/<domain>/`，与 de-linker 的根是**兄弟**关系，不在其剪除范围内
+- 遗留坑里的**已归档**批次仍可读、可回滚（恢复点不能因为搬家而失效）
+- 遗留坑里的**待续（pending）**批次**拒绝** resume/rollback：它随时可能被 de-linker 的下一次归档删掉，续跑等于相信已经不存在的文件
+- 本项目归档时的剪除只作用于批次实际所在的根，**不会**删 de-linker 的批次
+
+详见 `tools/deploy/src/md_deploy/target.py` 的 `backup_root()` / `legacy_backup_root()`。
