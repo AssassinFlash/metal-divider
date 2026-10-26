@@ -850,11 +850,12 @@ def verify(target: Target, *, cache_buster: str) -> Result:
     construction, and a machinery deploy must still be able to verify and
     archive — the rollout is deploy → import → review → production. On
     production, the page-cache contract is asserted on the response headers:
-    two anonymous GETs of the home page, miss then hit (spec 20 §4.1;
-    staging's page cache is off by ruling, and the dev instance has no
-    LiteSpeed server at all). The URL scheme options are read back here too:
-    they are what the entry-point paths resolve through, so a drifted scheme
-    becomes its own note instead of a scatter of 404s.
+    the home page must be answered from LiteSpeed's cache — a first GET that
+    already hits, or a hit within a bounded poll after a miss
+    (`_page_cache_check`; staging's page cache is off by ruling, and the dev
+    instance has no LiteSpeed server at all). The URL scheme options are read
+    back here too: they are what the entry-point paths resolve through, so a
+    drifted scheme becomes its own note instead of a scatter of 404s.
     """
     actions: list[str] = []
     notes: list[str] = []
@@ -908,31 +909,51 @@ def _first_pattern_slug(target: Target) -> str | None:
 
 
 def _page_cache_check(target: Target) -> tuple[list[str], list[str]]:
-    """Two anonymous GETs without a cache buster: the first misses, the second hits.
+    """One anonymous GET must be answered from LiteSpeed's page cache.
 
     The header is LiteSpeed Cache's own control header (`x-litespeed-cache`).
     No cache buster here — a busted URL is a fresh cache key by definition and
     can never hit.
+
+    What is asserted is that the cache *serves*, not which request first saw
+    it. Two shapes pass:
+
+    - the first GET is already a hit (a warm cache: a resumed deploy, or a
+      window whose purge ran earlier than verify);
+    - a miss, followed by a hit within `plan.PAGE_CACHE_ATTEMPTS` — LiteSpeed
+      generates the entry for a miss and may finish after that response has
+      gone out, so demanding a hit on the immediate second request measured
+      the generator's scheduling rather than the cache (production, 2026-10-26:
+      two back-to-back misses, then every following curl a hit).
+
+    What never passes: a non-200 (a page that does not serve is not a cache
+    result), and a run of misses through the whole deadline — that is the
+    cache genuinely not serving, reported with what was actually seen.
     """
     actions: list[str] = []
     notes: list[str] = []
-    answers: list[str] = []
-    for attempt in (1, 2):
+    seen: list[str] = []
+    for attempt in range(1, plan.PAGE_CACHE_ATTEMPTS + 1):
         status, headers, _ = target.fetch("/")
         value = (headers.get("x-litespeed-cache") or "").strip().lower()
-        answers.append(value)
-        actions.append(f"page cache: GET / (attempt {attempt}) -> {status} {value}")
-        if status != 200:
-            notes.append(f"page cache: / answered {status}")
-    if answers[0] != "miss":
-        notes.append(
-            f"page cache: the first GET was {answers[0]!r}, expected miss "
-            "(the deploy purged the cache)"
+        seen.append(value or "no-header")
+        actions.append(
+            f"page cache: GET / (attempt {attempt}) -> {status} {value or 'no header'}"
         )
-    if answers[1] != "hit":
+        if status != 200:
+            # Polling would not change this verdict, and the window should see
+            # the failure at once rather than after the deadline.
+            notes.append(f"page cache: / answered {status} on attempt {attempt}")
+            return actions, notes
+        if value == "hit":
+            break
+        if attempt < plan.PAGE_CACHE_ATTEMPTS:
+            time.sleep(plan.PAGE_CACHE_PAUSE)
+    if "hit" not in seen:
         notes.append(
-            f"page cache: the second GET was {answers[1]!r}, expected hit — "
-            "the page cache is not serving"
+            f"page cache: / never answered hit in {len(seen)} attempt(s) "
+            f"over {plan.PAGE_CACHE_ATTEMPTS * plan.PAGE_CACHE_PAUSE:.1f} s "
+            f"(saw {', '.join(seen)}) — the page cache is not serving"
         )
     return actions, notes
 

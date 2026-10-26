@@ -151,3 +151,14 @@ FULL_BACKUP_DAYS = 7
 # retries for longer than one revalidation period.
 OPCACHE_RESET_ATTEMPTS = 15
 OPCACHE_RESET_PAUSE = 0.2  # seconds; 15 × 0.2 s = 3 s > the 2 s period
+
+# The production page-cache contract: one anonymous GET must be answered from
+# LiteSpeed's cache. LiteSpeed generates the entry for a miss on the first
+# request and can finish after that response is already on its way, so the
+# second immediate GET is not yet evidence of anything — measured on
+# production 2026-10-26: a deploy's two back-to-back GETs both missed, and the
+# next curls were all hits with `public, max-age=604800`. The check therefore
+# polls to a deadline instead of demanding a hit on request two. 15 × 0.5 s =
+# 7.5 s, well past a generation and short enough that a window does not hang.
+PAGE_CACHE_ATTEMPTS = 15
+PAGE_CACHE_PAUSE = 0.5

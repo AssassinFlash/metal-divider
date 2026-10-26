@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+import time
+from http.client import HTTPMessage
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +34,11 @@ class _Site(Target):
     scheme: list[str]
     stuck: bool
     wp_failures: dict[tuple[str, ...], str]
+    # The page-cache script (path -> [(status, cache header), ...]) and how many
+    # answers each path has consumed, so a test can prove the poll stopped at
+    # the hit instead of running the whole deadline.
+    fetch_answers: dict[str, list[tuple[int, str | None]]]
+    fetch_calls: dict[str, list[int]]
 
     def wp(self, *args: str, check: bool = True) -> str:  # noqa: D102 - scripted
         self.wp_calls.append(args)
@@ -65,6 +72,34 @@ class _Site(Target):
     def http(self, path: str, *, cache_buster: str | None = None) -> tuple[int, str]:
         return self.http_answers.get(path, (404, ""))
 
+    def fetch(
+        self, path: str, *, cache_buster: str | None = None
+    ) -> tuple[int, HTTPMessage, str]:
+        """The page-cache script: one scripted answer per call, then the last one.
+
+        `fetch_answers["/"]` is a list of (status, cache header) the test
+        scripted in order; an exhausted list repeats its last entry, so a test
+        that wants "always missing" writes one and a test that wants
+        "miss, miss, hit" writes three.
+        """
+        del cache_buster
+        scripted = self.fetch_answers.get(path)
+        if scripted is None:
+            status, body = self.http_answers.get(path, (404, ""))
+            return status, _headers(None), body
+        index = min(len(self.fetch_calls.get(path, [])), len(scripted) - 1)
+        self.fetch_calls.setdefault(path, []).append(index)
+        status, cache = scripted[index]
+        return status, _headers(cache), ""
+
+
+def _headers(cache_value: str | None) -> HTTPMessage:
+    """A real `HTTPMessage` carrying the one header the cache check reads."""
+    message = HTTPMessage()
+    if cache_value is not None:
+        message["x-litespeed-cache"] = cache_value
+    return message
+
 
 def _site(tmp_path: Path, **answers: Any) -> _Site:
     site = _Site("local:test", str(tmp_path), "http://127.0.0.1:9999", (), None, None)
@@ -76,6 +111,8 @@ def _site(tmp_path: Path, **answers: Any) -> _Site:
     object.__setattr__(site, "scheme", answers.get("scheme", list(permalinks.SCHEME)))
     object.__setattr__(site, "stuck", answers.get("stuck", False))
     object.__setattr__(site, "wp_failures", answers.get("wp_failures", {}))
+    object.__setattr__(site, "fetch_answers", answers.get("fetch_answers", {}))
+    object.__setattr__(site, "fetch_calls", {})
     return site
 
 
@@ -810,3 +847,136 @@ def test_the_two_sides_agree_on_the_token_directory() -> None:
     ).read_text()
 
     assert f"DIRECTORY = '/{steps.RESET_DIRECTORY}'" in plugin
+
+
+def test_the_page_cache_passes_on_an_immediate_hit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A warm cache is a pass: a resumed deploy must not be failed for being early.
+
+    The first GET already hitting means LiteSpeed is serving; nothing about
+    the cache is broken because this deploy did not see it miss.
+    """
+    monkeypatch.setattr(time, "sleep", _no_sleep)
+    site = _site(tmp_path, fetch_answers={"/": [(200, "hit")]})
+
+    actions, notes = steps._page_cache_check(site)
+
+    assert notes == []
+    assert len(actions) == 1, "an immediate hit ends the check at once"
+    assert "200 hit" in actions[0]
+
+
+def test_the_page_cache_polls_through_misses_to_a_hit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The reported production shape: miss, miss, then hit — generation is async."""
+    monkeypatch.setattr(time, "sleep", _no_sleep)
+    site = _site(
+        tmp_path,
+        fetch_answers={"/": [(200, "miss"), (200, "miss"), (200, "hit")]},
+    )
+
+    actions, notes = steps._page_cache_check(site)
+
+    assert notes == []
+    assert len(actions) == 3
+    assert "miss" in actions[0] and "hit" in actions[2]
+
+
+def test_the_page_cache_stops_at_the_first_hit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The poll is bounded by the hit, not by the deadline: no wasted window time."""
+    monkeypatch.setattr(time, "sleep", _no_sleep)
+    site = _site(
+        tmp_path,
+        fetch_answers={"/": [(200, "miss"), (200, "hit"), (200, "hit")]},
+    )
+
+    actions, _ = steps._page_cache_check(site)
+
+    assert len(actions) == 2
+    assert len(site.fetch_calls["/"]) == 2
+
+
+def test_the_page_cache_never_passes_a_sustained_miss(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A cache that never serves is the failure this check exists for."""
+    monkeypatch.setattr(time, "sleep", _no_sleep)
+    site = _site(tmp_path, fetch_answers={"/": [(200, "miss")]})
+
+    actions, notes = steps._page_cache_check(site)
+
+    assert len(actions) == plan.PAGE_CACHE_ATTEMPTS, "it used the whole deadline"
+    assert len(notes) == 1
+    assert "never answered hit" in notes[0]
+    assert "miss" in notes[0], "the report says what was actually seen"
+
+
+def test_the_page_cache_never_passes_a_non_200(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A page that does not serve is not a cache result; fail fast, do not poll."""
+    monkeypatch.setattr(time, "sleep", _no_sleep)
+    site = _site(tmp_path, fetch_answers={"/": [(503, "miss"), (200, "hit")]})
+
+    actions, notes = steps._page_cache_check(site)
+
+    assert len(actions) == 1, "no polling after a bad status"
+    assert any("answered 503" in note for note in notes)
+    assert not any("never answered hit" in note for note in notes)
+
+
+def test_a_missing_header_is_not_a_hit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No header is 'no evidence', never a pass and never a silent crash."""
+    monkeypatch.setattr(time, "sleep", _no_sleep)
+    site = _site(tmp_path, fetch_answers={"/": [(200, None)]})
+
+    actions, notes = steps._page_cache_check(site)
+
+    assert "no header" in actions[0]
+    assert any("never answered hit" in note for note in notes)
+
+
+def test_verify_passes_a_warm_page_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The production verify path: an immediate hit is a green verify, not a note."""
+    monkeypatch.setattr(time, "sleep", _no_sleep)
+    site = _site(
+        tmp_path,
+        http_answers={"/": (200, "home")},
+        fetch_answers={"/": [(200, "hit")]},
+    )
+    object.__setattr__(site, "label", "prod")
+
+    result = steps.verify(site, cache_buster="t")
+
+    assert result.notes == []
+    assert any("page cache: GET / (attempt 1) -> 200 hit" in a for a in result.actions)
+
+
+def test_verify_fails_a_page_cache_that_never_serves(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Sustained misses must keep a production verify red."""
+    monkeypatch.setattr(time, "sleep", _no_sleep)
+    site = _site(
+        tmp_path,
+        http_answers={"/": (200, "home")},
+        fetch_answers={"/": [(200, "miss")]},
+    )
+    object.__setattr__(site, "label", "prod")
+
+    result = steps.verify(site, cache_buster="t")
+
+    assert any("never answered hit" in note for note in result.notes)
+
+
+def _no_sleep(seconds: float) -> None:
+    """The poll's pause, without the pause: the deadline is the code's, not the test's."""
+    del seconds
