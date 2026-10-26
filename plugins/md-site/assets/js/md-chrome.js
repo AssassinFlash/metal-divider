@@ -1497,10 +1497,39 @@
 
         // The outgoing background keeps one class until the next change: it
         // animates away underneath the incoming scene.
+        //
+        // It has to lose the class when that animation ends, though. The
+        // volume's `.emt-bg-prev` rule is `visibility: visible; z-index: 1`
+        // with the slide-out animation on top, and nothing ever removed it:
+        // the outgoing scene's image stayed visible under the incoming one
+        // indefinitely (measured at 2.5s after the click, still
+        // `visible`). Between two scenes with any transparency in the
+        // incoming art the stale frame shows through, and after a few
+        // swipes every scene the visitor has passed through is stacked
+        // under the current one. Removing it at animationend — with a
+        // timer as the floor, because a reduced-motion or backgrounded tab
+        // may never fire that event — leaves the finished state as "the
+        // current scene only", which is what the class name says.
         groups[0].items.forEach(function (bg) {
           var scene = sceneOf(bg, 'data-emt-bg');
           bg.classList.toggle('emt-bg-active', scene === index);
           bg.classList.toggle('emt-bg-prev', scene === current && current !== index);
+          if (scene === current && current !== index) {
+            clearTimeout(bg.__emtPrevTimer);
+            var settle = function (event) {
+              if (event && event.target !== bg) {
+                return;
+              }
+              bg.removeEventListener('animationend', settle);
+              clearTimeout(bg.__emtPrevTimer);
+              bg.classList.remove('emt-bg-prev');
+            };
+            bg.addEventListener('animationend', settle);
+            bg.__emtPrevTimer = setTimeout(settle, 900);
+          } else {
+            clearTimeout(bg.__emtPrevTimer);
+            bg.classList.remove('emt-bg-prev');
+          }
         });
 
         showGroup(groups[1], index);
