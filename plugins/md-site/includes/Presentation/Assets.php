@@ -51,10 +51,18 @@ final class Assets {
 	public static function version( string $relative = '' ): string {
 		static $version = null;
 		if ( null === $version ) {
-			if ( ! \function_exists( 'get_file_data' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			// `get_file_data()` is a wp-admin include. A front-end request that
+			// asks before it loads — and any unit test without the stub — must
+			// fall back rather than fatal on a missing ABSPATH.
+			if ( ! \function_exists( 'get_file_data' ) && \defined( 'ABSPATH' ) ) {
+				$plugin_api = ABSPATH . 'wp-admin/includes/plugin.php';
+				if ( \is_readable( $plugin_api ) ) {
+					require_once $plugin_api;
+				}
 			}
-			$header  = \get_file_data( dirname( __DIR__, 2 ) . '/md-site.php', array( 'Version' => 'Version' ) );
+			$header  = \function_exists( 'get_file_data' )
+				? \get_file_data( dirname( __DIR__, 2 ) . '/md-site.php', array( 'Version' => 'Version' ) )
+				: array();
 			$version = ! empty( $header['Version'] ) ? (string) $header['Version'] : '0';
 		}
 		if ( '' === $relative ) {

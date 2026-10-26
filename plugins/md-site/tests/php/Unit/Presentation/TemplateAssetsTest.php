@@ -9,6 +9,7 @@ declare( strict_types = 1 );
 
 namespace MetalDivider\Site\Tests\Unit\Presentation;
 
+use MetalDivider\Site\Presentation\Assets;
 use MetalDivider\Site\Presentation\Templates;
 use MetalDivider\Site\Tests\TestCase;
 
@@ -332,5 +333,33 @@ final class TemplateAssetsTest extends TestCase {
 				'a root font-size in custom-screens.css is not scoped to #landing-nav'
 			);
 		}
+	}
+
+	/**
+	 * The runtime's cache key follows the file, not the release number.
+	 *
+	 * A code-only deploy leaves the plugin header at its last release, so the
+	 * URL kept `?ver=0.3.2` while the bytes changed, and Hostinger's CDN
+	 * serves plugin assets with a seven-day TTL. Measured on production
+	 * 2026-10-27: the footer dock shipped, the file on disk and the bytes
+	 * served over HTTP both carried the new function, and visitors still ran
+	 * the previous script (`x-hcdn-cache-status: HIT, age: 81`). The block sat
+	 * undriven for as long as the cache held, and the deploy's own page
+	 * checks could not see it.
+	 *
+	 * The assertion is on the shape, because the value depends on the file:
+	 * a version, a dot, and a digest. What matters is that it is not the bare
+	 * header string, which is what a regression would put back.
+	 */
+	public function test_the_runtime_cache_key_follows_the_file(): void {
+		$keyed = Assets::version( 'assets/js/md-chrome.js' );
+		$bare  = Assets::version();
+
+		$this->assertMatchesRegularExpression(
+			'/^' . preg_quote( $bare, '/' ) . '\.[0-9a-f]{6,}$/',
+			$keyed,
+			'the asset key is the plugin version plus a digest of the file'
+		);
+		$this->assertNotSame( $bare, $keyed, 'the key is not the bare release number: a code-only deploy must still bust the cache' );
 	}
 }
