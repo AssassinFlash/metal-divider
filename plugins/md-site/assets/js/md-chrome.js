@@ -3388,6 +3388,115 @@
   // (ticket #67): it appears after the first viewport and returns to the
   // top. The WhatsApp float needs no script. Overlap is not a reason to hide
   // either control — they stay visible and discoverable.
+  // The footer's tab dock.
+  //
+  // Ported from de-linker's footer (its inline `footer-app.js`) at the
+  // owner's direction on 2026-10-27. The dock is a phone shape — five icons
+  // along the bottom of the footer — and on desktop the same nodes become an
+  // inline tab strip; one panel shows at a time either way, so twenty
+  // destinations cost one screen instead of two.
+  //
+  // The gate matters: `is-ready` is what un-hides the dock and turns the
+  // panels into a single visible one. Without this function the block shows
+  // every panel stacked and no dock at all, which is exactly what a visitor
+  // without JavaScript should get — readable, complete, nothing hidden behind
+  // a control that cannot work.
+  //
+  // Keyboard behaviour is de-linker's: arrows move between tabs, Home and End
+  // jump to the ends, and selecting moves focus with the selection (the ARIA
+  // tabs pattern's automatic activation).
+  function setupFooterDock() {
+    var root = document.getElementById('md-footer');
+    if (!root) {
+      return;
+    }
+    var dock = root.querySelector('[data-md-footer-nav]');
+    if (!dock) {
+      return;
+    }
+    var tabs = [].slice.call(dock.querySelectorAll('[data-md-footer-tab]'));
+    if (!tabs.length) {
+      return;
+    }
+    var panels = tabs.map(function (tab) {
+      return root.querySelector('#' + tab.getAttribute('aria-controls'));
+    });
+
+    var select = function (index, focus) {
+      tabs.forEach(function (tab, position) {
+        var selected = position === index;
+        tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+        tab.tabIndex = selected ? 0 : -1;
+        if (panels[position]) {
+          panels[position].hidden = !selected;
+        }
+      });
+      if (focus && tabs[index]) {
+        tabs[index].focus();
+      }
+    };
+
+    dock.setAttribute('role', 'tablist');
+    tabs.forEach(function (tab, index) {
+      tab.setAttribute('role', 'tab');
+      if (panels[index]) {
+        panels[index].setAttribute('role', 'tabpanel');
+      }
+      tab.addEventListener('click', function () {
+        select(index);
+      });
+      tab.addEventListener('keydown', function (event) {
+        var steps = { ArrowRight: 1, ArrowLeft: -1 };
+        if (!(event.key in steps) && event.key !== 'Home' && event.key !== 'End') {
+          return;
+        }
+        event.preventDefault();
+        var next = event.key === 'Home' ? 0
+          : event.key === 'End' ? tabs.length - 1
+            : (index + steps[event.key] + tabs.length) % tabs.length;
+        select(next, true);
+      });
+    });
+
+    root.classList.add('is-ready');
+
+    // The contact heading's arrow is a decorative suffix; de-linker appends it
+    // to the link so the two travel together when the heading is copied or
+    // read out. Kept because the markup ships the arrow as a sibling.
+    var arrow = root.querySelector('[data-md-footer-contact-arrow]');
+    if (arrow && arrow.previousElementSibling && arrow.previousElementSibling.append) {
+      arrow.previousElementSibling.append(' ', arrow);
+    }
+
+    select(0);
+
+    // Copy-to-clipboard on the enquiries address. The status element is the
+    // accessible half (a live region); the button's own label flips so a
+    // screen reader hears the result without the live region being read
+    // twice. A refused clipboard (insecure context, permission) falls back to
+    // telling the visitor to select the address, which is what they can do.
+    var copy = root.querySelector('[data-md-footer-copy]');
+    var status = root.querySelector('.md-footer__copy-status');
+    if (copy && status) {
+      copy.addEventListener('click', function () {
+        var value = copy.getAttribute('data-md-footer-copy') || '';
+        var done = function () {
+          copy.setAttribute('data-copied', 'true');
+          copy.setAttribute('aria-label', 'Email address copied');
+          status.textContent = 'Email address copied.';
+        };
+        var failed = function () {
+          status.textContent = 'Select the email address to copy it.';
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(value).then(done, failed);
+        } else {
+          failed();
+        }
+      });
+    }
+  }
+
   function setupFloats() {
     var top = document.querySelector('.md-back-to-top');
     if (!top) {
@@ -3894,6 +4003,7 @@
     setupDesktopMegaPanels();
     setupLazyload();
     setupSticky();
+    setupFooterDock();
     setupFloats();
     setupGallery();
     setupPatternLightbox();
