@@ -1342,6 +1342,253 @@
     });
   }
 
+  // The expanded-mesh sections: several scenes on one sticky stage.
+  //
+  // The outer element is a tall scroll track (1200vh on the home page, 800vh
+  // on the expanded-metal page) and the stage inside it is sticky at 100vh, so
+  // the section holds the viewport while the page scrolls through it. The
+  // markup ships every scene — background, copy, FAQ group, nav item — and the
+  // volumes already carry the state classes that show one of them
+  // (.emt-bg-active / .emt-bg-prev with the .emt-rev variant for travelling
+  // up, .emt-active on the copy and FAQ groups). Nothing ever set those
+  // classes, so the track scrolled through the whole 1200vh with the stage
+  // frozen on scene one: the page read as thousands of pixels of nothing.
+  //
+  // The scene is a function of scroll progress through the track, and nothing
+  // else — one source of truth. A nav click is a scroll to that scene's
+  // slice, not a separate state, so the two can never disagree.
+  //
+  // The scene count comes from the markup (six here, four there) rather than a
+  // literal, which is what lets one function serve both sections.
+  function setupMeshTypes() {
+    each(document.querySelectorAll('[id^="emt-outer-"]'), function (root) {
+      var stage = root.querySelector('[id^="emt-stage-"]');
+      if (!stage) {
+        return;
+      }
+
+      var groups = [
+        { attr: 'data-emt-bg', items: [].slice.call(root.querySelectorAll('[data-emt-bg]')) },
+        { attr: 'data-emt-content', items: [].slice.call(root.querySelectorAll('[data-emt-content]')) },
+        { attr: 'data-emt-faq', items: [].slice.call(root.querySelectorAll('[data-emt-faq]')) },
+        { attr: 'data-emt-nav', items: [].slice.call(root.querySelectorAll('[data-emt-nav]')) }
+      ];
+
+      var sceneOf = function (element, attr) {
+        var value = parseInt(element.getAttribute(attr), 10);
+        return isNaN(value) ? -1 : value;
+      };
+
+      var count = 0;
+      groups.forEach(function (group) {
+        group.items.forEach(function (item) {
+          var scene = sceneOf(item, group.attr);
+          if (scene + 1 > count) {
+            count = scene + 1;
+          }
+        });
+      });
+      if (!count || !groups[0].items.length) {
+        return;
+      }
+
+      var current = -1;
+
+      // The inactive scenes' copy and FAQ buttons are only faded out
+      // (opacity 0, pointer-events none), which leaves their buttons in the
+      // tab order: without this, Tab walks into answers for a scene the
+      // visitor cannot see. `inert` is the mechanism the rest of this file
+      // uses for exactly that.
+      var showGroup = function (group, index) {
+        group.items.forEach(function (item) {
+          var active = sceneOf(item, group.attr) === index;
+          item.classList.toggle('emt-active', active);
+          if (group.attr === 'data-emt-content' || group.attr === 'data-emt-faq') {
+            if (active) {
+              item.removeAttribute('inert');
+              item.removeAttribute('aria-hidden');
+            } else {
+              item.setAttribute('inert', '');
+              item.setAttribute('aria-hidden', 'true');
+            }
+          }
+          if (group.attr === 'data-emt-nav') {
+            // The active item is the current one in a set of six, which is
+            // what aria-current states; it also tells a screen reader why the
+            // item is styled differently.
+            if (active) {
+              item.setAttribute('aria-current', 'true');
+            } else {
+              item.removeAttribute('aria-current');
+            }
+          }
+        });
+      };
+
+      var apply = function (index) {
+        if (index === current) {
+          return;
+        }
+        // Direction is what the volume's four keyframes are keyed on:
+        // travelling up must bring the incoming scene in from above and send
+        // the outgoing one down, or a reversed scroll plays the forward
+        // animation and the section reads as broken.
+        if (index < current) {
+          root.classList.add('emt-rev');
+        } else {
+          root.classList.remove('emt-rev');
+        }
+
+        // The outgoing background keeps one class until the next change: it
+        // animates away underneath the incoming scene.
+        groups[0].items.forEach(function (bg) {
+          var scene = sceneOf(bg, 'data-emt-bg');
+          bg.classList.toggle('emt-bg-active', scene === index);
+          bg.classList.toggle('emt-bg-prev', scene === current && current !== index);
+        });
+
+        showGroup(groups[1], index);
+        showGroup(groups[2], index);
+        showGroup(groups[3], index);
+
+        current = index;
+      };
+
+      var distance = function () {
+        return root.offsetHeight - stage.offsetHeight;
+      };
+
+      var scrollTopFor = function (index) {
+        var top = root.getBoundingClientRect().top + window.pageYOffset;
+        return top + (distance() * index) / count;
+      };
+
+      var sync = function () {
+        var total = distance();
+        if (total <= 0) {
+          apply(0);
+          return;
+        }
+        var travelled = -root.getBoundingClientRect().top;
+        var progress = travelled / total;
+        if (progress < 0) {
+          progress = 0;
+        } else if (progress > 1) {
+          progress = 1;
+        }
+        // A scene owns an equal slice of the track; the last slice absorbs the
+        // final pixel where progress reaches exactly 1.
+        var index = Math.floor(progress * count);
+        if (index > count - 1) {
+          index = count - 1;
+        }
+        apply(index);
+      };
+
+      // One recomputation per frame: the handler runs on every scroll event,
+      // and apply() is a no-op unless the scene actually changed.
+      var frame = 0;
+      var onScroll = function () {
+        if (frame) {
+          return;
+        }
+        frame = window.requestAnimationFrame(function () {
+          frame = 0;
+          sync();
+        });
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+
+      groups[3].items.forEach(function (button) {
+        button.addEventListener('click', function () {
+          var index = sceneOf(button, 'data-emt-nav');
+          if (index < 0) {
+            return;
+          }
+          // Reduced motion asks for no animation, and a smooth scroll across
+          // half a page is exactly that; the jump still lands on the scene.
+          var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          window.scrollTo({
+            top: scrollTopFor(index),
+            behavior: reduced ? 'auto' : 'smooth'
+          });
+        });
+      });
+
+      /* --- FAQ ------------------------------------------------------- *
+       * The answer element is the one that animates: its volume rule is
+       * max-height:0 with overflow hidden, so the open height has to be
+       * measured for the transition to have somewhere to go. The button's
+       * aria-expanded is the state a screen reader reads, and it is also what
+       * the volume styles the joined corner on. */
+
+      var answerOf = function (wrap) {
+        return wrap ? wrap.querySelector('[data-emt-faq-ans]') : null;
+      };
+      var buttonOf = function (wrap) {
+        return wrap ? wrap.querySelector('[data-emt-faq-btn]') : null;
+      };
+
+      var setAnswer = function (wrap, open) {
+        var button = buttonOf(wrap);
+        var answer = answerOf(wrap);
+        if (button) {
+          button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        if (!answer) {
+          return;
+        }
+        if (open) {
+          answer.removeAttribute('aria-hidden');
+          // scrollHeight is the content's own height, measured while the box is
+          // clipped to zero — that is what makes it the height to open to.
+          answer.style.maxHeight = answer.scrollHeight + 'px';
+        } else {
+          answer.style.maxHeight = '';
+          answer.setAttribute('aria-hidden', 'true');
+        }
+      };
+
+      each(root.querySelectorAll('[data-emt-faq-wrap]'), function (wrap) {
+        var button = buttonOf(wrap);
+        if (!button) {
+          return;
+        }
+        setAnswer(wrap, false);
+        button.addEventListener('click', function () {
+          var open = button.getAttribute('aria-expanded') === 'true';
+          var group = button.closest('[data-emt-faq]') || root;
+          // One answer at a time within the group: a second open answer pushes
+          // the rest of the list past the bottom of the stage, where it is
+          // unreachable.
+          each(group.querySelectorAll('[data-emt-faq-wrap]'), function (other) {
+            if (other !== wrap) {
+              setAnswer(other, false);
+            }
+          });
+          setAnswer(wrap, !open);
+        });
+      });
+
+      // An open answer's measured height is a snapshot: re-measure on resize,
+      // where the copy reflows and the old number would clip the text.
+      window.addEventListener('resize', function () {
+        each(root.querySelectorAll('[data-emt-faq-btn][aria-expanded="true"]'), function (button) {
+          var wrap = button.closest('[data-emt-faq-wrap]');
+          var answer = answerOf(wrap);
+          if (answer) {
+            answer.style.maxHeight = answer.scrollHeight + 'px';
+          }
+        });
+      });
+
+      // The markup marks scene one with the same classes apply() would set, so
+      // this first call only records where the page already is.
+      sync();
+    });
+  }
+
   function setupSticky() {
     each(document.querySelectorAll('xo-sticky'), function (element) {
       if (element.closest('header#lc-header')) {
@@ -1753,6 +2000,7 @@
     setupGallery();
     setupPatternLightbox();
     setupProcessVideos();
+    setupMeshTypes();
 
     // The catalog's sort select posts its form on change (the CSP blocks
     // inline handlers, so the behaviour lives here).

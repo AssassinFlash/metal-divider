@@ -960,6 +960,24 @@ xo-tabs-trigger{cursor:pointer}
 .md-process-video{display:none;z-index:1000}
 .md-process-video.is-open{display:flex}
 
+/* Expanded-mesh scenes under reduced motion.
+   setupMeshTypes() drives six scenes from scroll position, and the volumes
+   animate each change with keyframes on the background and a transform on the
+   copy. A visitor who asked for less motion still needs the scene to change —
+   that is the content — so the *change* stays and only the travel goes. The
+   runtime already picks `auto` over `smooth` for a nav jump; this removes the
+   keyframe and transition durations so a scene swap is instantaneous rather
+   than a 600ms slide. */
+@media (prefers-reduced-motion: reduce){
+[data-emt-bg],
+[data-emt-content],
+[data-emt-faq],
+[data-emt-faq-ans]{
+animation: none !important;
+transition: none !important;
+}
+}
+
 /* The desktop mega panel. The markup ships an empty <xo-mega-menu> in every
    nav item plus the panel's content in a <template>; md-chrome.js clones the
    content in, and these rules give the result the dropdown's presentation.
