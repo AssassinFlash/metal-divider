@@ -134,4 +134,41 @@ final class MobileChromeTest extends TestCase {
 		$path = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/windpress/' . $name;
 		return (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
 	}
+
+	/**
+	 * The keyboard-focus floor survives the components' own resets
+	 * (GOAL.md acceptance: a visible focus ring on every focusable control).
+	 *
+	 * Twenty-odd volumes each set `outline: none` on their own `:focus` rule;
+	 * some paint a substitute and some paint nothing, which left a keyboard
+	 * visitor with no visible position on the hub buttons, every spec-map
+	 * card, the journal search field and the catalog's search, sort and
+	 * pagination. A floor below those declarations would lose to them, so it
+	 * has to be `!important` — and it has to be two-tone, because the site
+	 * gold measures only 2.1:1 on the white header.
+	 *
+	 * Verified with a real Tab walk on the dev instance (eight faces, 82
+	 * controls): every stop paints the pair, and every ring clears 3:1
+	 * against its backdrop. `:focus-visible` keeps a mouse click from
+	 * drawing it.
+	 */
+	public function test_the_keyboard_focus_floor_is_two_tone_and_wins(): void {
+		$css = $this->volume( 'chrome.css' );
+
+		$this->assertMatchesRegularExpression(
+			'/\n:focus-visible \{\s*box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #131313 !important;/',
+			$css,
+			'the floor paints a white inner ring and a near-black outer ring, and declares !important so a component reset cannot remove it'
+		);
+		$this->assertStringNotContainsString(
+			':focus:not(:focus-visible) { outline: none !important; }',
+			$css,
+			'no blanket reset cancels the floor'
+		);
+		$this->assertMatchesRegularExpression(
+			'/\n:focus-visible \{[^}]*!/',
+			$css,
+			'the floor is authoritative'
+		);
+	}
 }
