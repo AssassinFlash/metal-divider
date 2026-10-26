@@ -50,6 +50,26 @@ background: #ffffff;
 .md-t156d2b52 { --pt:0;--pb:0;--bg-color:#141414 }
 .md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
 
+/* The project tabs switch their panels by the `hidden` attribute the runtime
+   sets; the first panel's `flex` utility is an author rule, so the attribute
+   needs this guard to stay decisive — the same rule the expanded-metal volume
+   carries for its switch panels. */
+[id*="21844035043581"] .sps-panel[hidden] {
+display: none;
+}
+/* The tabs' selected state reads `aria-selected`, the attribute
+   bindSwitchable writes; the shipped `sps-tab-active` class had no rule
+   anywhere, so all four tabs rendered identically (measured on production:
+   same border and text colour selected or not). */
+[id*="21844035043581"] .sps-tab[aria-selected="true"] {
+border-top-color: var(--md-gold, #c9a962);
+color: #ffffff;
+}
+[id*="21844035043581"] .sps-tab[aria-selected="false"] {
+border-top-color: rgba(255, 255, 255, 0.15);
+color: rgba(255, 255, 255, 0.6);
+}
+
 @media (max-width: 749px) {
 [id*="21844035043581"] .tracking-\[0\.22em\],
 [id*="21844035043581"] .tracking-\[0\.2em\],
