@@ -61,6 +61,22 @@
 
 **终局验收**:生产 28 项全过、矩阵 63/63、零控制台错误、零 4xx。
 
+### 2026-10-27 询盘链实走:抓到阻塞缺陷(PR #136)
+
+**缺陷**:`Plugin::register()` 持有 `Queue` 实例只为传给三个调用方(设置页、提交处理、CLI),**从未调用队列自己的 `register()`**。而队列能跑的一切都在里面:定义 `md_inquiry_minute` 的 `cron_schedules` 过滤器、维持调度的 `init` 自愈、以及 tick 动作。后果是 `wp_schedule_event()` 拿到未注册的 recurrence,**静默拒绝**。
+
+生产实测(真实浏览器提交后):`wp_get_schedules()` 无 `md_inquiry_minute`、`wp_next_scheduled()` 为 false、队列两封邮件 `attempts=0` 永远不动。**询盘会被记录,但通知永远发不出去。**
+
+**为什么测试一直绿**:既有测试直接调 `cron_schedules()` 与 `schedule()`,所以全程通过。新测试断言**组合根**(读 `Plugin.php` 源码),因为在测试里调用队列的钩子方法证明不了组合根会不会调。**实证**:移除那行则失败并给出正确信息,恢复则通过。
+
+第一版守卫是假的——我直接把 `$queue->register()` 写进测试,移除修复仍通过。这是本轮第二次踩「守卫不实证等于没有」。
+
+**链路其余环节实测正常**:slug 正确携带、nonce 存在、跳转 `/inquiry/thank-you/?md_inquiry=1667`、meta 齐全(`source_module=quote-modal`、`turnstile_status=not_configured`)、队列两行收件人正确(内部 `["sales@sunriverinverter.com","info@metal-divider.com"]`、客户确认 `["sales@sunriverinverter.com"]`)。
+
+**dev 端到端验证修复有效**:tick 前 2 行 `attempts=0`;tick 后 id=13 已派发(`attempts=1`)、id=14 待下一 tick——正是「一 tick 一封」的测试模式纪律,**只发一封**,邮件实测 `To: sales@sunriverinverter.com`、主题 `New inquiry: Apiary…`。探针数据已清(队列 0 行、post 已删、测试模式关闭)。
+
+**顺带修掉**:PHP 8.5 已弃用的 `ReflectionMethod::setAccessible()`——自 8.1 就是 no-op,且已让该套件在 8.3 上变红。
+
 ### 2026-10-27 目录卡的方形裁切(PR #131)
 
 上一轮把"卡片下载 480×960 长图、只显示方形"记成取舍;按"发现即修"改掉。
