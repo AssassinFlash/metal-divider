@@ -81,11 +81,23 @@ function md_wecom_notify_handle( array $input ): array {
 		);
 	}
 
-	$chat_id = $body['chat_id'] ?? null;
-	if ( ! is_int( $chat_id ) || $chat_id <= 0 ) {
+	$event_name = $body['event'] ?? null;
+	$chat       = $body['chat'] ?? null;
+	$chat_id    = is_array( $chat ) ? ( $chat['id'] ?? null ) : null;
+	if ( ! is_string( $event_name ) || '' === $event_name || ! is_array( $chat ) || ! is_int( $chat_id ) || $chat_id <= 0 ) {
 		return array(
 			'status' => 400,
 			'body'   => array( 'error' => array( 'code' => 'bad_request' ) ),
+		);
+	}
+
+	if ( ! in_array( $event_name, array( 'chat.genericbot_chat_command_transfer', 'chat.chat_transfered' ), true ) ) {
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'sent'   => false,
+				'reason' => 'ignored',
+			),
 		);
 	}
 
@@ -99,39 +111,89 @@ function md_wecom_notify_handle( array $input ): array {
 		}
 	}
 
-	$notified = md_wecom_notify_notified_chats();
-	if ( array_key_exists( $chat_id, $notified ) ) {
+	if ( ! md_wecom_notify_lock( $chat_id ) ) {
 		return array(
 			'status' => 200,
 			'body'   => array(
 				'sent'   => false,
-				'reason' => 'duplicate',
+				'reason' => 'busy',
 			),
 		);
 	}
 
-	$link = md_wecom_notify_autologin_link( $chat_id );
-	if ( null === $link ) {
-		return array(
-			'status' => 502,
-			'body'   => array( 'error' => array( 'code' => 'upstream' ) ),
-		);
-	}
+	try {
+		$notified = md_wecom_notify_notified_chats();
+		if ( array_key_exists( $chat_id, $notified ) ) {
+			return array(
+				'status' => 200,
+				'body'   => array(
+					'sent'   => false,
+					'reason' => 'duplicate',
+				),
+			);
+		}
 
-	$sent = md_wecom_notify_send_card( $chat_id, $link, $body );
-	if ( ! $sent ) {
-		return array(
-			'status' => 502,
-			'body'   => array( 'error' => array( 'code' => 'upstream' ) ),
-		);
-	}
+		$link = md_wecom_notify_autologin_link( $chat_id );
+		if ( null === $link ) {
+			return array(
+				'status' => 502,
+				'body'   => array( 'error' => array( 'code' => 'upstream' ) ),
+			);
+		}
 
-	md_wecom_notify_remember_chat( $chat_id );
+		$msg_obj = is_array( $body['msg'] ?? null ) ? $body['msg'] : array();
+
+		$sent = md_wecom_notify_send_card( $chat_id, $link, $chat, $msg_obj );
+		if ( ! $sent ) {
+			return array(
+				'status' => 502,
+				'body'   => array( 'error' => array( 'code' => 'upstream' ) ),
+			);
+		}
+
+		md_wecom_notify_remember_chat( $chat_id );
+	} finally {
+		md_wecom_notify_unlock( $chat_id );
+	}
 
 	return array(
 		'status' => 200,
 		'body'   => array( 'sent' => true ),
 	);
+}
+
+/**
+ * The chat's notification lock, WordPress's own atomic mechanism: an
+ * add_option whose name is taken is refused, so of two concurrent first
+ * events for one chat only the winner reaches the upstreams — the loser
+ * is answered busy, not with a second card. A lock held past its window
+ * (a request that died mid-flight) is taken over, the way WordPress's own
+ * upgrader lock is.
+ *
+ * @param int $chat_id The chat to notify.
+ * @return bool Whether this request holds the chat's lock.
+ */
+function md_wecom_notify_lock( int $chat_id ): bool {
+	$name = 'md_wecom_notify_lock_' . $chat_id;
+	$now  = time();
+	if ( add_option( $name, $now, '', false ) ) {
+		return true;
+	}
+	$held = get_option( $name );
+	if ( is_numeric( $held ) && (int) $held < $now - 300 ) {
+		delete_option( $name );
+		return (bool) add_option( $name, $now, '', false );
+	}
+	return false;
+}
+
+/**
+ * Releases the chat's lock: it is a hand-off, not a record.
+ *
+ * @param int $chat_id The chat whose lock is released.
+ */
+function md_wecom_notify_unlock( int $chat_id ): void {
+	delete_option( 'md_wecom_notify_lock_' . $chat_id );
 }
 
 /**
@@ -167,6 +229,18 @@ function md_wecom_notify_remember_chat( int $chat_id ): void {
 }
 
 /**
+ * The route into the chat's back-office view, the operator screen
+ * adminchat: it locks the chat row and takes the operator into the
+ * conversation, a bot chat included (modules/lhchat/adminchat.php).
+ *
+ * @param int $chat_id The chat the link opens.
+ * @return string The route the autologin link carries.
+ */
+function md_wecom_notify_chat_route( int $chat_id ): string {
+	return 'chat/adminchat/' . $chat_id;
+}
+
+/**
  * The one-time link into the chat's back-office view, from LHC's
  * generateautologin: the route pins the chat, the TTL is the hour the
  * research allows (the API caps it at 3600), and the nonce is the LHC's
@@ -199,7 +273,7 @@ function md_wecom_notify_autologin_link( int $chat_id ): ?string {
 				),
 				'body'    => (string) wp_json_encode(
 					array(
-						'r' => 'chat/readchat/' . $chat_id,
+						'r' => md_wecom_notify_chat_route( $chat_id ),
 						'l' => $user,
 						't' => 3600,
 					)
@@ -252,17 +326,18 @@ function md_wecom_notify_log_failure( string $side, string $kind, int $status, i
  *
  * @param int                  $chat_id The chat the card's link opens.
  * @param string               $link    The one-time autologin link.
- * @param array<string, mixed> $event   The event's body: nick and msg build the card's text.
+ * @param array<string, mixed> $chat    The event's chat object: nick builds the card's title.
+ * @param array<string, mixed> $msg     The event's msg object, empty when the event carries none.
  * @return bool Whether the card was delivered.
  */
-function md_wecom_notify_send_card( int $chat_id, string $link, array $event ): bool {
+function md_wecom_notify_send_card( int $chat_id, string $link, array $chat, array $msg ): bool {
 	$to_user = md_wecom_notify_setting( 'wecom_to_user' );
 	if ( '' === $to_user ) {
 		return false;
 	}
 
-	$nick = is_string( $event['nick'] ?? null ) && '' !== trim( $event['nick'] ) ? trim( $event['nick'] ) : 'Visitor';
-	$msg  = is_string( $event['msg'] ?? null ) && '' !== trim( $event['msg'] ) ? trim( $event['msg'] ) : '';
+	$nick = is_string( $chat['nick'] ?? null ) && '' !== trim( (string) $chat['nick'] ) ? trim( (string) $chat['nick'] ) : 'Visitor';
+	$text = is_string( $msg['msg'] ?? null ) && '' !== trim( (string) $msg['msg'] ) ? trim( (string) $msg['msg'] ) : '';
 
 	$payload = array(
 		'touser'   => $to_user,
@@ -270,7 +345,7 @@ function md_wecom_notify_send_card( int $chat_id, string $link, array $event ): 
 		'agentid'  => (int) md_wecom_notify_setting( 'wecom_agent_id' ),
 		'textcard' => array(
 			'title'       => sprintf( 'Live chat #%d — %s', $chat_id, $nick ),
-			'description' => mb_substr( $msg, 0, 120 ),
+			'description' => mb_substr( $text, 0, 120 ),
 			'url'         => $link,
 			'btntxt'      => 'Open chat',
 		),

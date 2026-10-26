@@ -73,6 +73,16 @@ final class WecomNotifySmokeTest extends TestCase {
 	private static string $token = '';
 
 	/**
+	 * The connector option and the chats record the site had: both are
+	 * the site's own state, and the smoke puts back exactly what it
+	 * found — a run of the tests must never widen the dedup window of a
+	 * real site (that would let a live chat notify twice).
+	 *
+	 * @var string
+	 */
+	private static string $installed_chats = '';
+
+	/**
 	 * Skips the tests without a site; finds the site's faces.
 	 */
 	public static function setUpBeforeClass(): void {
@@ -110,7 +120,8 @@ final class WecomNotifySmokeTest extends TestCase {
 				'--format=json',
 			)
 		);
-		self::wp( array( 'option', 'delete', 'md_wecom_notify_chats' ) );
+		self::$installed_chats = trim( self::wp( array( 'eval', 'echo json_encode( get_option( "md_wecom_notify_chats" ) );' ) ) );
+		self::wp( array( 'eval', 'delete_option( "md_wecom_notify_chats" ); delete_option( "md_wecom_notify_lock_123" ); delete_option( "md_wecom_notify_lock_321" );' ) );
 	}
 
 	/**
@@ -124,13 +135,26 @@ final class WecomNotifySmokeTest extends TestCase {
 			file_put_contents( $target, self::$installed );
 		}
 		self::$installed = '';
-		if ( '' === self::$installed_option || 'null' === self::$installed_option ) {
+		if ( '' === self::$installed_option || 'false' === self::$installed_option || 'null' === self::$installed_option ) {
 			self::wp( array( 'option', 'delete', 'md_wecom_notify' ) );
 		} else {
 			self::wp( array( 'option', 'update', 'md_wecom_notify', self::$installed_option, '--format=json' ) );
 		}
-		self::wp( array( 'option', 'delete', 'md_wecom_notify_chats' ) );
+		// The site's own dedup record goes back exactly as it was, whatever
+		// the smoke's own requests left behind.
+		if ( 'false' === self::$installed_chats ) {
+			self::wp( array( 'eval', 'delete_option( "md_wecom_notify_chats" ); delete_option( "md_wecom_notify_lock_123" ); delete_option( "md_wecom_notify_lock_321" );' ) );
+		} else {
+			self::wp(
+				array(
+					'eval',
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- a PHP literal for the eval; the value is the site's own record, read back this same run.
+					sprintf( 'update_option( "md_wecom_notify_chats", %s );', var_export( json_decode( self::$installed_chats, true ), true ) ),
+				)
+			);
+		}
 		self::$installed_option = '';
+		self::$installed_chats  = '';
 		parent::tearDown();
 	}
 
@@ -153,24 +177,45 @@ final class WecomNotifySmokeTest extends TestCase {
 	}
 
 	/**
-	 * A request that carries the token but no chat_id is a 400 of the
-	 * contract's own shape.
+	 * A request that carries the token but not the event's structure is a
+	 * 400 of the contract's own shape.
 	 */
-	public function test_the_route_refuses_an_event_without_a_chat_id(): void {
-		$response = self::ask( 'Bearer ' . self::$token, '{"nick":"Jane"}' );
+	public function test_the_route_refuses_an_event_without_the_structure(): void {
+		$no_event = self::ask( 'Bearer ' . self::$token, '{"chat":{"id":123,"nick":"Jane"}}' );
+		$no_chat  = self::ask( 'Bearer ' . self::$token, '{"event":"chat.genericbot_chat_command_transfer"}' );
 
-		self::assertSame( 400, $response['status'] );
-		self::assertSame( 'bad_request', self::json( $response )['error']['code'] ?? '' );
+		foreach ( array(
+			'no event' => $no_event,
+			'no chat'  => $no_chat,
+		) as $case => $response ) {
+			self::assertSame( 400, $response['status'], $case );
+			self::assertSame( 'bad_request', self::json( $response )['error']['code'] ?? '', $case );
+		}
 	}
 
 	/**
-	 * A well-formed event on a site whose upstreams are not configured is
-	 * the explicit 503: the connector names the operator's missing
-	 * configuration instead of calling out with half a setting. No
-	 * upstream is ever asked, so nothing here reaches WeCom or the LHC.
+	 * An event the connector does not serve — a visitor message, not a
+	 * transfer — is acknowledged and ignored, with no upstream call:
+	 * nothing here reaches WeCom or the LHC.
 	 */
-	public function test_a_configured_token_on_an_unconfigured_site_answers_not_configured(): void {
-		$response = self::ask( 'Bearer ' . self::$token, '{"chat_id":123,"nick":"Jane","msg":"hello"}' );
+	public function test_the_route_ignores_events_that_are_not_transfers(): void {
+		$response = self::ask( 'Bearer ' . self::$token, '{"event":"chat.addmsguser","chat":{"id":123,"nick":"Jane"},"msg":{"msg":"hello"}}' );
+
+		self::assertSame( 200, $response['status'] );
+		$body = self::json( $response );
+		self::assertFalse( $body['sent'] ?? true );
+		self::assertSame( 'ignored', $body['reason'] ?? '' );
+	}
+
+	/**
+	 * A well-formed transfer event on a site whose upstreams are not
+	 * configured is the explicit 503: the connector names the operator's
+	 * missing configuration instead of calling out with half a setting.
+	 * No upstream is ever asked, so nothing here reaches WeCom or the
+	 * LHC.
+	 */
+	public function test_a_transfer_event_on_an_unconfigured_site_answers_not_configured(): void {
+		$response = self::ask( 'Bearer ' . self::$token, '{"event":"chat.genericbot_chat_command_transfer","chat":{"id":123,"nick":"Jane"},"msg":{"msg":"hello"}}' );
 
 		self::assertSame( 503, $response['status'] );
 		self::assertSame( 'not_configured', self::json( $response )['error']['code'] ?? '' );
@@ -179,10 +224,11 @@ final class WecomNotifySmokeTest extends TestCase {
 	/**
 	 * The same event twice on the unconfigured site never becomes a
 	 * duplicate: the record is only written by a delivered card, so the
-	 * second answer is the same 503, and the chats option stays absent.
+	 * second answer is the same 503, the lock is never left behind, and
+	 * the chats option stays as absent as it was.
 	 */
 	public function test_an_undelivered_notification_records_no_chat(): void {
-		$event = '{"chat_id":321,"nick":"Jane","msg":"hello"}';
+		$event = '{"event":"chat.chat_transfered","chat":{"id":321,"nick":"Jane"}}';
 
 		$first  = self::ask( 'Bearer ' . self::$token, $event );
 		$second = self::ask( 'Bearer ' . self::$token, $event );
@@ -191,6 +237,8 @@ final class WecomNotifySmokeTest extends TestCase {
 		self::assertSame( 503, $second['status'] );
 		$chats = trim( self::wp( array( 'eval', 'echo json_encode( get_option( "md_wecom_notify_chats" ) );' ) ) );
 		self::assertSame( 'false', $chats );
+		$lock = trim( self::wp( array( 'eval', 'echo json_encode( get_option( "md_wecom_notify_lock_321" ) );' ) ) );
+		self::assertSame( 'false', $lock );
 	}
 
 	/**

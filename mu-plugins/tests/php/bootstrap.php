@@ -8,7 +8,7 @@
 
 declare( strict_types = 1 );
 
-// phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- a test bootstrap runs outside WordPress: it builds its temporary instance directory with PHP itself, and stands in for WordPress by defining WordPress's own constants and hook functions.
+// phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound, Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- a test bootstrap runs outside WordPress: it builds its temporary instance directory with PHP itself, and stands in for WordPress by defining WordPress's own constants and hook functions, whose signatures carry arguments the stand-ins do not use.
 
 require_once dirname( __DIR__, 2 ) . '/vendor/autoload.php';
 
@@ -89,17 +89,14 @@ function get_option( string $name, mixed $default_value = false ): mixed {
 }
 
 /**
- * Writes an option into the same store, recorded into
- * $GLOBALS['md_mu_test_options_written'] so the tests can assert what a
- * handler persisted.
+ * Writes an option into the same store.
  *
  * @param string $name  The option's name.
  * @param mixed  $value The option's value.
  * @return bool Always true, as WordPress's own when a value changes.
  */
 function update_option( string $name, mixed $value ): bool {
-	$GLOBALS['md_mu_test_options'][ $name ]  = $value;
-	$GLOBALS['md_mu_test_options_written'][] = $name;
+	$GLOBALS['md_mu_test_options'][ $name ] = $value;
 	return true;
 }
 
@@ -125,8 +122,39 @@ function get_transient( string $name ): mixed {
  * @return bool Always true, as WordPress's own.
  */
 function set_transient( string $name, mixed $value, int $expiry = 0 ): bool {
-	$GLOBALS['md_mu_test_transients'][ $name ]       = $value;
-	$GLOBALS['md_mu_test_transient_expiry'][ $name ] = $expiry;
+	$GLOBALS['md_mu_test_transients'][ $name ] = $value;
+	return true;
+}
+
+/**
+ * The atomic insert WordPress's own locks are built on: an option whose
+ * name is taken is refused, so two callers cannot both win it.
+ *
+ * @param string           $name       The option's name.
+ * @param mixed            $value      The option's value.
+ * @param string           $deprecated WordPress's unused argument.
+ * @param string|bool|null $autoload  WordPress's autoload flag, 'no' for a lock.
+ * @return bool Whether this call created the option.
+ */
+function add_option( string $name, mixed $value = '', string $deprecated = '', string|bool|null $autoload = null ): bool {
+	if ( array_key_exists( $name, $GLOBALS['md_mu_test_options'] ) ) {
+		return false;
+	}
+	$GLOBALS['md_mu_test_options'][ $name ] = $value;
+	return true;
+}
+
+/**
+ * Removes an option from the same store.
+ *
+ * @param string $name The option's name.
+ * @return bool Whether an option was removed.
+ */
+function delete_option( string $name ): bool {
+	if ( ! array_key_exists( $name, $GLOBALS['md_mu_test_options'] ) ) {
+		return false;
+	}
+	unset( $GLOBALS['md_mu_test_options'][ $name ] );
 	return true;
 }
 

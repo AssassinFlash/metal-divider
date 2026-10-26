@@ -26,12 +26,11 @@ final class WecomNotifyTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$GLOBALS['md_mu_test_options']         = array();
-		$GLOBALS['md_mu_test_options_written'] = array();
-		$GLOBALS['md_mu_test_transients']      = array();
-		$GLOBALS['md_mu_test_http']            = array();
-		$GLOBALS['md_mu_test_routes']          = array();
-		$GLOBALS['md_mu_test_http_responder']  = null;
+		$GLOBALS['md_mu_test_options']        = array();
+		$GLOBALS['md_mu_test_transients']     = array();
+		$GLOBALS['md_mu_test_http']           = array();
+		$GLOBALS['md_mu_test_routes']         = array();
+		$GLOBALS['md_mu_test_http_responder'] = null;
 	}
 
 	/**
@@ -89,6 +88,34 @@ final class WecomNotifyTest extends TestCase {
 	}
 
 	/**
+	 * A transfer event the way the LHC webhook's REST action posts it: the
+	 * event's own name (a constant the operator writes into the action's
+	 * template, one webhook per event), the chat object the dispatcher
+	 * passes, and — only for events that carry one — the msg object
+	 * (dispatch.tpl.php's argument table; lhgenericbotactionrestapi's
+	 * {{args.*}} placeholders).
+	 *
+	 * @param int                       $chat_id The chat the event is about.
+	 * @param string                    $event   The event's name.
+	 * @param array<string, mixed>      $chat The chat object's fields.
+	 * @param array<string, mixed>|null $msg The msg object, null for none.
+	 * @return array<string, mixed> The request: header and body.
+	 */
+	private function event( int $chat_id, string $event = 'chat.genericbot_chat_command_transfer', array $chat = array( 'nick' => 'Jane Architect' ), ?array $msg = array( 'msg' => 'Need a quote for metal screens' ) ): array {
+		$body = array(
+			'event' => $event,
+			'chat'  => array_merge( array( 'id' => $chat_id ), $chat ),
+		);
+		if ( null !== $msg ) {
+			$body['msg'] = $msg;
+		}
+		return array(
+			'header' => 'Bearer inbound-secret',
+			'body'   => $body,
+		);
+	}
+
+	/**
 	 * A transfer event reaches the one configured member as a textcard
 	 * whose url is exactly the one-time link the LHC returned.
 	 */
@@ -97,16 +124,7 @@ final class WecomNotifyTest extends TestCase {
 		$link = 'https://lhc.test/site_admin/user/autologin/HASH/(r)/Y2hhdC8xMjM/(n)/NONCE/(t)/1790000000';
 		$this->upstream_answers( $link );
 
-		$result = md_wecom_notify_handle(
-			array(
-				'header' => 'Bearer inbound-secret',
-				'body'   => array(
-					'chat_id' => 123,
-					'nick'    => 'Jane Architect',
-					'msg'     => 'Need a quote for metal screens',
-				),
-			)
-		);
+		$result = md_wecom_notify_handle( $this->event( 123 ) );
 
 		$this->assertSame( 200, $result['status'] );
 		$this->assertSame( array( 'sent' => true ), $result['body'] );
@@ -119,7 +137,7 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertSame( 'POST', $lhc_method );
 		$this->assertSame( 'Basic ' . base64_encode( 'operator:lhc-rest-key' ), $lhc_args['headers']['Authorization'] );
 		$lhc_body = json_decode( (string) $lhc_args['body'], true );
-		$this->assertSame( 'chat/readchat/123', $lhc_body['r'] );
+		$this->assertSame( 'chat/adminchat/123', $lhc_body['r'] );
 		$this->assertSame( 'operator', $lhc_body['l'] );
 		$this->assertIsInt( $lhc_body['t'] );
 		$this->assertGreaterThan( 0, $lhc_body['t'] );
@@ -151,25 +169,21 @@ final class WecomNotifyTest extends TestCase {
 		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
 
 		$requests = array(
-			'no header at all'      => array(
+			'no header at all'  => array(
 				'header' => '',
-				'body'   => array( 'chat_id' => 123 ),
+				'body'   => $this->event( 123 )['body'],
 			),
-			'wrong token'           => array(
+			'wrong token'       => array(
 				'header' => 'Bearer wrong-token',
-				'body'   => array( 'chat_id' => 123 ),
+				'body'   => $this->event( 123 )['body'],
 			),
-			'not even a Bearer'     => array(
+			'not even a Bearer' => array(
 				'header' => 'Basic b3BlcmF0b3I6a2V5',
-				'body'   => array( 'chat_id' => 123 ),
+				'body'   => $this->event( 123 )['body'],
 			),
-			'token-less site'       => array(
+			'token-less site'   => array(
 				'header' => 'Bearer inbound-secret',
-				'body'   => array( 'chat_id' => 123 ),
-			),
-			'no token, no requests' => array(
-				'header' => 'Bearer inbound-secret',
-				'body'   => array( 'chat_id' => 123 ),
+				'body'   => $this->event( 123 )['body'],
 			),
 		);
 
@@ -190,32 +204,102 @@ final class WecomNotifyTest extends TestCase {
 	}
 
 	/**
-	 * An event without a usable chat_id is a 400 before any upstream call
-	 * happens: the chat is the notification's whole subject.
+	 * An event without the structure the contract names is a 400 before
+	 * any upstream call happens: the event's name and the chat it is
+	 * about are the notification's whole subject.
 	 */
-	public function testRefusesEventsWithoutAUsableChatId(): void {
+	public function testRefusesEventsWithoutTheNamedStructure(): void {
 		$this->configure();
 		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
 
 		$bodies = array(
-			array(),
-			array( 'chat_id' => null ),
-			array( 'chat_id' => '123' ),
-			array( 'chat_id' => 0 ),
-			array( 'chat_id' => -5 ),
-			array( 'nick' => 'Jane Architect' ),
+			'no body'            => array(),
+			'no event'           => array( 'chat' => array( 'id' => 123 ) ),
+			'event not a string' => array(
+				'event' => 42,
+				'chat'  => array( 'id' => 123 ),
+			),
+			'no chat'            => array( 'event' => 'chat.genericbot_chat_command_transfer' ),
+			'chat not an object' => array(
+				'event' => 'chat.genericbot_chat_command_transfer',
+				'chat'  => 123,
+			),
+			'chat without an id' => array(
+				'event' => 'chat.genericbot_chat_command_transfer',
+				'chat'  => array( 'nick' => 'Jane Architect' ),
+			),
+			'id a quoted string' => array(
+				'event' => 'chat.genericbot_chat_command_transfer',
+				'chat'  => array( 'id' => '123' ),
+			),
+			'id zero'            => array(
+				'event' => 'chat.genericbot_chat_command_transfer',
+				'chat'  => array( 'id' => 0 ),
+			),
+			'id negative'        => array(
+				'event' => 'chat.genericbot_chat_command_transfer',
+				'chat'  => array( 'id' => -5 ),
+			),
 		);
-		foreach ( $bodies as $body ) {
+		foreach ( $bodies as $label => $body ) {
 			$result = md_wecom_notify_handle(
 				array(
 					'header' => 'Bearer inbound-secret',
 					'body'   => $body,
 				)
 			);
-			$this->assertSame( 400, $result['status'], var_export( $body, true ) );
-			$this->assertSame( array( 'error' => array( 'code' => 'bad_request' ) ), $result['body'] );
+			$this->assertSame( 400, $result['status'], $label );
+			$this->assertSame( array( 'error' => array( 'code' => 'bad_request' ) ), $result['body'], $label );
 		}
 		$this->assertSame( array(), $this->calls() );
+	}
+
+	/**
+	 * The webhooks this connector serves are the two transfer events, and
+	 * nothing else: another event of the same site — a visitor message, a
+	 * chat closed, a mail ticket — is acknowledged and ignored, with not
+	 * one upstream call and no chat recorded. One webhook per event is
+	 * how the LHC dispatches; the connector does not become an
+	 * every-event platform.
+	 */
+	public function testIgnoresEventsThatAreNotTransfers(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		foreach ( array( 'chat.addmsguser', 'chat.close', 'chat.chat_started', 'chat.web_add_msg_admin', 'mail.conversation_started' ) as $event ) {
+			$result = md_wecom_notify_handle( $this->event( 123, $event ) );
+
+			$this->assertSame( 200, $result['status'], $event );
+			$this->assertSame(
+				array(
+					'sent'   => false,
+					'reason' => 'ignored',
+				),
+				$result['body'],
+				$event
+			);
+		}
+		$this->assertSame( array(), $this->calls() );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_chats', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * The department transfer notifies too: its event carries no msg
+	 * object, and the card stands without a message snippet — the link is
+	 * the card's business.
+	 */
+	public function testNotifiesAChatTransferedEventWithoutAMessage(): void {
+		$this->configure();
+		$link = 'https://lhc.test/site_admin/user/autologin/HASH/(n)/NONCE/(t)/1790000000';
+		$this->upstream_answers( $link );
+
+		$result = md_wecom_notify_handle( $this->event( 321, 'chat.chat_transfered', array( 'nick' => 'Contractor' ), null ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( array( 'sent' => true ), $result['body'] );
+		$send_body = json_decode( (string) $this->calls()[2][1]['body'], true );
+		$this->assertStringContainsString( 'Contractor', (string) $send_body['textcard']['title'] );
+		$this->assertSame( '', (string) $send_body['textcard']['description'] );
 	}
 
 	/**
@@ -229,7 +313,7 @@ final class WecomNotifyTest extends TestCase {
 		$result = md_wecom_notify_handle(
 			array(
 				'header' => 'Bearer inbound-secret',
-				'body'   => array( 'chat_id' => 123 ),
+				'body'   => $this->event( 123 )['body'],
 			)
 		);
 
@@ -250,7 +334,7 @@ final class WecomNotifyTest extends TestCase {
 		$result = md_wecom_notify_handle(
 			array(
 				'header' => 'Bearer env-secret',
-				'body'   => array( 'chat_id' => 123 ),
+				'body'   => $this->event( 123 )['body'],
 			)
 		);
 
@@ -273,8 +357,9 @@ final class WecomNotifyTest extends TestCase {
 		$event = static fn( int $chat_id ): array => array(
 			'header' => 'Bearer inbound-secret',
 			'body'   => array(
-				'chat_id' => $chat_id,
-				'msg'     => 'message body',
+				'event' => 'chat.genericbot_chat_command_transfer',
+				'chat'  => array( 'id' => $chat_id ),
+				'msg'   => array( 'msg' => 'message body' ),
 			),
 		);
 
@@ -297,7 +382,7 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertSame( array( 'sent' => true ), $other['body'] );
 		$calls = $this->calls();
 		$this->assertCount( 5, $calls );
-		$this->assertStringContainsString( 'readchat/124', (string) json_decode( (string) $calls[3][1]['body'], true )['r'] );
+		$this->assertStringContainsString( 'adminchat/124', (string) json_decode( (string) $calls[3][1]['body'], true )['r'] );
 	}
 
 	/**
@@ -316,7 +401,7 @@ final class WecomNotifyTest extends TestCase {
 		$result = md_wecom_notify_handle(
 			array(
 				'header' => 'Bearer inbound-secret',
-				'body'   => array( 'chat_id' => 555 ),
+				'body'   => $this->event( 555 )['body'],
 			)
 		);
 
@@ -361,7 +446,7 @@ final class WecomNotifyTest extends TestCase {
 			$result = md_wecom_notify_handle(
 				array(
 					'header' => 'Bearer inbound-secret',
-					'body'   => array( 'chat_id' => 200 + random_int( 1, 1000 ) ),
+					'body'   => $this->event( 200 + random_int( 1, 1000 ) )['body'],
 				)
 			);
 
@@ -417,7 +502,7 @@ final class WecomNotifyTest extends TestCase {
 			$result = md_wecom_notify_handle(
 				array(
 					'header' => 'Bearer inbound-secret',
-					'body'   => array( 'chat_id' => 300 + random_int( 1, 1000 ) ),
+					'body'   => $this->event( 300 + random_int( 1, 1000 ) )['body'],
 				)
 			);
 
@@ -468,7 +553,7 @@ final class WecomNotifyTest extends TestCase {
 		$result = md_wecom_notify_handle(
 			array(
 				'header' => 'Bearer inbound-secret',
-				'body'   => array( 'chat_id' => 777 ),
+				'body'   => $this->event( 777 )['body'],
 			)
 		);
 
@@ -527,7 +612,7 @@ final class WecomNotifyTest extends TestCase {
 		$result = md_wecom_notify_handle(
 			array(
 				'header' => 'Bearer inbound-secret',
-				'body'   => array( 'chat_id' => 123 ),
+				'body'   => $this->event( 123 )['body'],
 			)
 		);
 
@@ -570,7 +655,7 @@ final class WecomNotifyTest extends TestCase {
 		$result = md_wecom_notify_handle(
 			array(
 				'header' => 'Bearer inbound-secret',
-				'body'   => array( 'chat_id' => 999 ),
+				'body'   => $this->event( 999 )['body'],
 			)
 		);
 
@@ -615,7 +700,7 @@ final class WecomNotifyTest extends TestCase {
 		$result = md_wecom_notify_handle(
 			array(
 				'header' => 'Bearer inbound-secret',
-				'body'   => array( 'chat_id' => 432 ),
+				'body'   => $this->event( 432 )['body'],
 			)
 		);
 
@@ -627,6 +712,74 @@ final class WecomNotifyTest extends TestCase {
 			}
 		}
 		$this->assertSame( 2, $sends );
+	}
+
+	/**
+	 * Two first events for one chat race for one card. The connector's
+	 * answer is WordPress's own atomic insert — add_option refuses a
+	 * name that exists — so the request that wins the insert sends, and
+	 * the request that finds the chat already held declines without a
+	 * single upstream call: the loser of the race is not a second card.
+	 * The occupation here is what the winning request's own add_option
+	 * would have left in the options table.
+	 */
+	public function testDeclinesWhileAnotherRequestHoldsTheChat(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_lock_123'] = time();
+
+		$result = md_wecom_notify_handle( $this->event( 123 ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'busy',
+			),
+			$result['body']
+		);
+		$this->assertSame( array(), $this->calls() );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_chats', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * A lock left behind by a request that died mid-flight is not a
+	 * silence forever: past its window it is taken over, and the event
+	 * notifies as if the lock had never been.
+	 */
+	public function testTakesOverALockPastItsWindow(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_lock_123'] = time() - 301;
+
+		$result = md_wecom_notify_handle( $this->event( 123 ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( array( 'sent' => true ), $result['body'] );
+		$this->assertCount( 3, $this->calls() );
+	}
+
+	/**
+	 * The lock is a hand-off, not a record: whatever the outcome — the
+	 * card delivered, or the upstream refusing it — the chat's lock is
+	 * released for the next event.
+	 */
+	public function testReleasesTheLockWhateverTheOutcome(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$delivered = md_wecom_notify_handle( $this->event( 500 ) );
+		$this->assertSame( array( 'sent' => true ), $delivered['body'] );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_lock_500', $GLOBALS['md_mu_test_options'] );
+
+		$GLOBALS['md_mu_test_http_responder'] = static function (): \WP_Error {
+			return new \WP_Error( 'http_request_failed', 'cURL error 28' );
+		};
+		$refused                              = md_wecom_notify_handle( $this->event( 501 ) );
+		$this->assertSame( 502, $refused['status'] );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_lock_501', $GLOBALS['md_mu_test_options'] );
 	}
 
 	/**
