@@ -638,3 +638,117 @@ white-space: nowrap;
 color: #c9a962;
 font-weight: 700;
 }
+
+/* FAQ mobile: category buttons become a horizontal chip rail, the search
+   field is a 16px/48px control, and the stat cells stay readable at 320. */
+#faq-download-questions .md-faq-search {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+#faq-download-questions .md-faq-search__label {
+  color: #c9a962;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+#faq-download-questions .md-faq-search input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font: 400 16px/1.4 Inter, sans-serif;
+}
+#faq-download-questions .md-faq-search input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  opacity: 1;
+}
+#faq-download-questions .md-faq-search input:focus-visible {
+  outline: 2px solid #c9a962;
+  outline-offset: 2px;
+}
+#faq-download-questions .md-faq-empty {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 16px;
+}
+#faq-download-questions .md-faq-empty[hidden] {
+  display: none;
+}
+@media (max-width: 1023px) {
+  #faqs-download-template--21844278411517__faqs_download .px-5 {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  #faq-download-questions nav[aria-label="FAQ categories"] {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    margin-top: 16px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #faq-download-questions nav[aria-label="FAQ categories"]::-webkit-scrollbar {
+    display: none;
+  }
+  #faq-download-questions .cat-tab {
+    flex: 0 0 auto !important;
+    width: max-content !important;
+    max-width: 280px;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.82);
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+  #faq-download-questions button[aria-controls] {
+    padding-right: 64px;
+  }
+  #faq-download-questions .cat-tab.active,
+  #faq-download-questions .cat-tab:has(span.opacity-100) {
+    background: #c9a962;
+    border-color: #c9a962;
+    color: #141414;
+  }
+  #faq-download-questions .cat-tab span.h-px {
+    display: none;
+  }
+  #faqs-download-template--21844278411517__faqs_download aside .aspect-\[4\/3\] {
+    aspect-ratio: 16 / 10 !important;
+  }
+  #faqs-download-template--21844278411517__faqs_download .grid.grid-cols-3,
+  #faqs-download-template--21844278411517__faqs_download .grid.grid-cols-2 {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  #faqs-download-template--21844278411517__faqs_download .grid.grid-cols-3 > div,
+  #faqs-download-template--21844278411517__faqs_download .grid.grid-cols-2 > div {
+    min-width: 0;
+    padding: 12px 8px;
+    border-radius: 12px;
+  }
+  #faqs-download-template--21844278411517__faqs_download .grid.grid-cols-3 > div p:first-child,
+  #faqs-download-template--21844278411517__faqs_download .grid.grid-cols-2 > div p:first-child {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    overflow-wrap: anywhere;
+  }
+  #faqs-download-template--21844278411517__faqs_download .grid.grid-cols-3 > div p:last-child,
+  #faqs-download-template--21844278411517__faqs_download .grid.grid-cols-2 > div p:last-child {
+    font-family: "Playfair Display", serif;
+    font-size: 22px;
+  }
+}

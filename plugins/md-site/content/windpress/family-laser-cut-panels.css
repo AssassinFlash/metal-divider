@@ -258,3 +258,75 @@ stroke-dashoffset: 0;
 .md-t58129e41 { --len: 100;--off: 8 }
 .md-t28c04a94 { --len: 80;--off: 0 }
 .md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
+
+@media (max-width: 749px) {
+[id*="21844033995005"] .tracking-\[0\.22em\],
+[id*="21844033995005"] .tracking-\[0\.2em\],
+[id*="21844033995005"] .tracking-\[0\.18em\],
+[id*="21844033995005"] .tracking-\[0\.16em\],
+[id*="21844033995005"] .tracking-widest {
+letter-spacing: 0.08em !important;
+}
+[id*="21844033995005"] .uppercase.whitespace-nowrap { white-space: normal !important; }
+[id*="21844033995005"] .max-w-\[1400px\].px-5,
+[id*="21844033995005"] .max-w-\[1400px\].px-6,
+[id*="21844033995005"] > .mx-auto.px-5 {
+padding-left: 16px !important;
+padding-right: 16px !important;
+}
+[id*="21844033995005"] p.pointer-events-none.absolute { display: none !important; }
+[id*="21844033995005"] [role="tablist"] {
+width: 100%;
+display: flex !important;
+flex-wrap: wrap;
+gap: 6px;
+padding: 6px;
+border-radius: 16px;
+overflow: visible;
+mask-image: none;
+-webkit-mask-image: none;
+}
+[id*="21844033995005"] .tab-btn,
+[id*="21844033995005"] .cat-tab {
+min-height: 44px !important;
+display: inline-flex !important;
+align-items: center;
+justify-content: center;
+border-radius: 12px;
+flex: 1 1 42%;
+padding: 8px 12px !important;
+font-size: 13px !important;
+line-height: 1.2;
+text-align: center;
+white-space: normal;
+}
+[id*="21844033995005"] .overflow-x-auto:has(button),
+[id*="21844033995005"] .showcase-track,
+[id*="21844033995005"] .scroll-thin {
+scroll-snap-type: x mandatory;
+scrollbar-width: thin;
+-webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent);
+mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent);
+}
+[id*="21844033995005"] a[href="#open-quote"]:not([class*="min-h-"]) {
+min-height: 48px !important;
+display: inline-flex !important;
+align-items: center;
+padding: 12px 18px !important;
+border-radius: 12px;
+border: 1px solid rgba(201,169,98,0.45);
+background: rgba(201,169,98,0.12);
+font-size: 16px !important;
+}
+[id*="21844033995005"] input[type="text"],
+[id*="21844033995005"] input[type="search"] {
+font-size: 16px !important;
+min-height: 48px;
+border-radius: 12px;
+}
+[id*="21844033995005"] .lcpi-range { height: 44px; }
+[id*="21844033995005"][id*="cta"],
+[id*="21844033995005"][id*="faq"] {
+padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+}
+}

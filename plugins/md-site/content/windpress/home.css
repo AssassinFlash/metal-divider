@@ -360,3 +360,188 @@ font-size: 13px;
 @media (prefers-reduced-motion: reduce){
 .hpl__tab{ transition: none; }
 }
+
+/* Mobile app pass: one viewport, no overlapping layers. The sticky stage
+   stays scroll-driven; only the in-stage stack changes below 768px. */
+@media (max-width: 767px) {
+#emt-stage-template--21844031930621__decorative_panels_grid_gmaCty {
+display: flex;
+flex-direction: column;
+justify-content: flex-start;
+gap: 12px;
+top: var(--header-height, 73px);
+height: calc(100dvh - var(--header-height, 73px));
+height: calc(100svh - var(--header-height, 73px));
+padding: 8px 0 calc(12px + env(safe-area-inset-bottom));
+overflow: hidden;
+}
+.emt-nav-template--21844031930621__decorative_panels_grid_gmaCty {
+position: relative;
+top: auto;
+left: auto;
+right: auto;
+transform: none;
+order: -1;
+display: flex;
+flex-direction: row;
+flex-wrap: nowrap;
+align-items: center;
+gap: 8px;
+width: 100%;
+max-width: 100%;
+margin: 0;
+padding: 4px 16px 10px;
+overflow-x: auto;
+overflow-y: hidden;
+-webkit-overflow-scrolling: touch;
+scroll-snap-type: x proximity;
+scroll-padding-inline: 16px;
+border-bottom: 0;
+z-index: 6;
+scrollbar-width: thin;
+scrollbar-color: #c9a962 rgba(255,255,255,.16);
+}
+.emt-nav-template--21844031930621__decorative_panels_grid_gmaCty::-webkit-scrollbar { height: 3px; }
+.emt-nav-template--21844031930621__decorative_panels_grid_gmaCty::-webkit-scrollbar-thumb {
+background: #c9a962;
+border-radius: 99px;
+}
+.emt-nav-template--21844031930621__decorative_panels_grid_gmaCty::after {
+content: "";
+position: sticky;
+right: 0;
+flex: 0 0 28px;
+width: 28px;
+height: 44px;
+margin-left: -28px;
+background: linear-gradient(to right, transparent, rgba(10,10,10,.92));
+pointer-events: none;
+}
+.emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty {
+flex: 0 0 auto;
+flex-direction: row;
+scroll-snap-align: start;
+min-height: 44px;
+min-width: 44px;
+padding: 8px 14px;
+gap: 8px;
+border: 1px solid rgba(255,255,255,.14);
+border-left: 1px solid rgba(255,255,255,.14);
+border-radius: 14px;
+background: rgba(20,20,20,.55);
+backdrop-filter: blur(16px);
+-webkit-backdrop-filter: blur(16px);
+color: rgba(255,255,255,.82);
+font-size: 14px;
+font-weight: 600;
+}
+.emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty.emt-active {
+color: #fff;
+border-color: #c9a962;
+background: rgba(201,169,98,.18);
+}
+.emt-nav-label-template--21844031930621__decorative_panels_grid_gmaCty,
+.emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty.emt-active .emt-nav-label-template--21844031930621__decorative_panels_grid_gmaCty {
+opacity: 1;
+max-width: none;
+overflow: visible;
+font-size: 14px;
+text-align: left;
+flex: 0 1 auto;
+}
+.emt-content-slot-template--21844031930621__decorative_panels_grid_gmaCty {
+position: relative;
+inset: auto;
+left: auto;
+right: auto;
+top: auto;
+width: auto;
+max-width: none;
+flex: 1 1 auto;
+min-height: 0;
+padding: 0 16px;
+display: flex;
+flex-direction: column;
+justify-content: center;
+z-index: 3;
+pointer-events: none;
+}
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty {
+position: absolute;
+top: auto;
+left: 16px;
+right: 16px;
+width: auto;
+max-width: none;
+transform: none;
+opacity: 0;
+pointer-events: none;
+}
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty.emt-active {
+position: relative;
+left: auto;
+right: auto;
+top: auto;
+opacity: 1;
+transform: none;
+pointer-events: auto;
+}
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty h2 { font-size: 28px; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty p { font-size: 15px; }
+.emt-faq-slot-template--21844031930621__decorative_panels_grid_gmaCty {
+position: relative;
+left: auto;
+right: auto;
+bottom: auto;
+width: auto;
+max-width: none;
+flex: 0 0 auto;
+padding: 0 76px 0 16px;
+z-index: 4;
+}
+.emt-nav-template--21844031930621__decorative_panels_grid_gmaCty {
+-webkit-mask-image: linear-gradient(to right, #000 12px, #000 calc(100% - 48px), transparent);
+mask-image: linear-gradient(to right, #000 12px, #000 calc(100% - 48px), transparent);
+}
+.emt-faq-template--21844031930621__decorative_panels_grid_gmaCty {
+position: absolute;
+width: 1px;
+height: 1px;
+overflow: hidden;
+opacity: 0;
+transform: none;
+pointer-events: none;
+}
+.emt-faq-template--21844031930621__decorative_panels_grid_gmaCty.emt-active {
+position: relative;
+width: 100%;
+height: auto;
+overflow: visible;
+opacity: 1;
+transform: none;
+pointer-events: auto;
+}
+.emt-faq-btn-template--21844031930621__decorative_panels_grid_gmaCty {
+min-height: 44px;
+padding: 10px 14px;
+font-size: 15px;
+border-radius: 14px;
+background: rgba(20,20,20,.62);
+backdrop-filter: blur(18px);
+-webkit-backdrop-filter: blur(18px);
+}
+#interior-manufacturing-stats-template--21844031930621__manufacture_excellence_fEVjGG .mf-stats-container {
+scroll-snap-type: x mandatory;
+scrollbar-width: thin;
+scrollbar-color: #c9a962 rgba(255,255,255,.16);
+padding-bottom: 18px;
+-webkit-mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 36px), transparent);
+mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 36px), transparent);
+}
+#interior-manufacturing-stats-template--21844031930621__manufacture_excellence_fEVjGG .mf-stat-card {
+width: calc(100vw - 72px) !important;
+min-width: 0 !important;
+scroll-snap-align: center;
+border-radius: 16px;
+}
+}
