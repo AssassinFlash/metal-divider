@@ -36,6 +36,16 @@ use MetalDivider\Site\Tests\TestCase;
 final class ImageSizesTest extends TestCase {
 
 	/**
+	 * The placeholder a pattern's featured image URL travels as.
+	 */
+	private const PATTERN_IMAGE_PLACEHOLDER = '[md_pattern_image_url]';
+
+	/**
+	 * The placeholder that emits `srcset`/`sizes` as an attribute pair.
+	 */
+	private const PATTERN_SRCSET_PLACEHOLDER = '[md_pattern_image_srcset';
+
+	/**
 	 * `<img>` elements that are fallback content inside a `<video>`.
 	 *
 	 * A video's `poster` attribute cannot carry a `srcset` — the grammar has
@@ -398,6 +408,52 @@ final class ImageSizesTest extends TestCase {
 			);
 		}
 		return $found;
+	}
+
+	/**
+	 * A placeholder-backed pattern image offers the ladder too.
+	 *
+	 * The two scans above key on a concrete upload file name, so a template
+	 * that writes `[md_pattern_image_url]` never reaches them: the placeholder
+	 * carries no `/wp-content/uploads/` prefix and no `-NNNw.webp` suffix, so
+	 * `bare_upload_images()` skips it as "an icon or a logo". That is exactly
+	 * how the catalog grid shipped a 100px thumbnail into a 338px slot — a
+	 * 3.4x upscale on every product card of `/shop/` and all nine series
+	 * archives — while this suite stayed green.
+	 *
+	 * The placeholder is the one case where the ladder is knowable without
+	 * the media library: `[md_pattern_image_srcset]` emits an attribute pair
+	 * only when WordPress holds alternatives for the pattern's featured
+	 * image, so every `<img>` carrying `[md_pattern_image_url]` must carry it
+	 * as well. Cards elsewhere on the site (the editorial card, the pattern
+	 * tile) already do.
+	 */
+	public function test_a_placeholder_backed_pattern_image_offers_its_ladder(): void {
+		$offenders = array();
+		$checked   = 0;
+		foreach ( $this->sources() as $path => $file ) {
+			$label  = basename( $path );
+			$source = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			preg_match_all( '/<img\b[^>]*>/i', $source, $tags );
+			foreach ( $tags[0] as $tag ) {
+				if ( ! str_contains( $tag, self::PATTERN_IMAGE_PLACEHOLDER ) ) {
+					continue;
+				}
+				++$checked;
+				if ( str_contains( $tag, self::PATTERN_SRCSET_PLACEHOLDER ) ) {
+					continue;
+				}
+				$offenders[] = "{$label}: " . substr( $tag, 0, 90 );
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$offenders,
+			'an <img> reading [md_pattern_image_url] must also read [md_pattern_image_srcset]: '
+			. implode( ' | ', $offenders )
+		);
+		$this->assertGreaterThan( 2, $checked, 'the scan finds the placeholder-backed images' );
 	}
 
 	/**
