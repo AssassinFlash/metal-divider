@@ -191,12 +191,16 @@ final class Cards {
 	/**
 	 * One image as a fragment renders it.
 	 *
-	 * @param array{url: string, width: int, height: int} $size The attachment's size.
-	 * @param string                                      $alt  The alt text.
-	 * @return array{url: string, width: int, height: int, alt: string}
+	 * @param array{id?: int, url: string, width: int, height: int} $size The attachment's size.
+	 * @param string                                                $alt  The alt text.
+	 * @return array{id: int, url: string, width: int, height: int, alt: string}
 	 */
 	private function item( array $size, string $alt ): array {
 		return array(
+			// The id travels so a fragment can ask for *this* attachment's
+			// `srcset`; without it the only ladder available would be the
+			// product's featured image, which is a different picture.
+			'id'     => (int) ( $size['id'] ?? 0 ),
 			'url'    => $size['url'],
 			'width'  => $size['width'],
 			'height' => $size['height'],

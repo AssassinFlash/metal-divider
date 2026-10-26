@@ -939,6 +939,27 @@ xo-modal[xo-placement="top-left"]{background:rgba(0,0,0,.55)}
 xo-tabs-pane{display:block}
 xo-tabs-trigger{cursor:pointer}
 
+/* The process sections' video dialog (.md-process-video, opened by
+   setupProcessVideos in md-chrome.js).
+
+   The converted volumes each hide their own dialog by full id
+   (`#…-process-lightbox{display:none}`), which is a fact about one section,
+   not about the mechanism. These rules state the mechanism once, so a
+   template that carries the class is wired without a per-section rule.
+
+   z-index 1000 is xo-modal's tier: this dialog is a peer surface, not a
+   child of one, and it must paint over the sticky header band (100) and the
+   first-party floats (900). It is deliberately not higher — a quote dialog
+   opened from inside it has to come out on top, and both surfaces reach that
+   by being pushed on the same stack in opening order.
+
+   `display:none` is the closed state and it is load-bearing: the dialog ships
+   aria-modal="true" in the markup, and a dialog that is merely transparent
+   would keep a player with controls in the tab order before its opener was
+   ever pressed. */
+.md-process-video{display:none;z-index:1000}
+.md-process-video.is-open{display:flex}
+
 /* The desktop mega panel. The markup ships an empty <xo-mega-menu> in every
    nav item plus the panel's content in a <template>; md-chrome.js clones the
    content in, and these rules give the result the dropdown's presentation.

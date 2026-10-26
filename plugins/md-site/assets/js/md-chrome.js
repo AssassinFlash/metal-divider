@@ -483,9 +483,16 @@
   // instance — still reports visibility:visible and tabIndex 0 while having no
   // box at all. Counting those made a Tab wrap hand focus to an invisible
   // control, which reads as "Tab does nothing" at the end of the list.
+  //
+  // Media players are in the list because the browser puts them in the tab
+  // order: a <video controls> is a tab stop with its own play, seek and
+  // volume controls. Leaving it out made the trap treat a dialog's close
+  // button as the last stop and wrap straight back to itself, so the player —
+  // the one control the process dialog exists for — was reachable by pointer
+  // only.
   function focusablesIn(root) {
     return [].slice
-      .call(root.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+      .call(root.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), video[controls], audio[controls], [tabindex]:not([tabindex="-1"])'))
       .filter(function (el) {
         return el.tabIndex >= 0 && el.getClientRects().length > 0;
       });
@@ -1130,6 +1137,24 @@
         if (stageImage) {
           stageImage.src = active.getAttribute('data-src') || '';
           stageImage.alt = active.getAttribute('data-alt') || '';
+          // The source set has to move with the source. A leftover `srcset`
+          // from the previous image keeps describing *that* picture's widths,
+          // so the browser may satisfy the new layout from a stale candidate
+          // and show the wrong image at the right size. When the picture being
+          // shown has no ladder of its own the attribute is removed rather
+          // than blanked, after which `src` alone decides.
+          //
+          // Only the *ladder* travels: which picture is the button's business,
+          // which box is the stage's. The button's `data-sizes` describes its
+          // 64px thumb, and applying that to a 900px dialog would hand the
+          // browser a candidate five times too small, so `sizes` stays the
+          // stage's own declaration from the markup.
+          var srcset = active.getAttribute('data-srcset') || '';
+          if (srcset) {
+            stageImage.setAttribute('srcset', srcset);
+          } else {
+            stageImage.removeAttribute('srcset');
+          }
         }
         each(thumbs, function (thumb, i) {
           thumb.classList.toggle('active', i === index);
@@ -1209,6 +1234,109 @@
         } else if (event.key === 'ArrowRight') {
           event.preventDefault();
           show(index + 1);
+        }
+      });
+    });
+  }
+
+  // The process sections' "Watch 30s" tiles.
+  //
+  // Each family page draws a play tile over one step of its process and a
+  // full-screen dialog holding that step's video, and nothing bound the two:
+  // the conversion dropped the old section's inline script, and the CSP
+  // blocks inline handlers anyway, so the tile was a button that only looked
+  // pressable (measured: a click produced no class, no focus change and no
+  // playback). The tile names its dialog with aria-controls, and this
+  // function is the whole of the wiring.
+  //
+  // The dialog is a plain <div>, not an <xo-modal>, so it cannot ride
+  // openModal/closeModal directly; it joins the same stack by hand —
+  // pushSurface/popSurface for the scroll lock and the inert page behind it,
+  // the __mdClose hook for Escape, the shared Tab trap and restoreFocus for
+  // the keyboard. That is deliberately not a second modal engine: the same
+  // functions the header drawers, the search sheet and the two lightboxes
+  // use, driven by the same calls.
+  //
+  // The template's own <video> stays the player. Nothing is swapped for an
+  // embed: opening calls play(), closing calls pause(), and poster, controls
+  // and source are the markup's.
+  function setupProcessVideos() {
+    each(document.querySelectorAll('.video-trigger'), function (trigger) {
+      // aria-controls is the pairing, so the button itself states which
+      // dialog it opens. A tile without it is left alone rather than this
+      // function guessing from an id convention the next template may not
+      // keep.
+      var id = trigger.getAttribute('aria-controls');
+      var dialog = id ? document.getElementById(id) : null;
+      if (!dialog) {
+        return;
+      }
+      var video = dialog.querySelector('video');
+      var opener = null;
+
+      // Closed is a state the section volume cannot express for every
+      // template: display:none hides the dialog, but the element ships
+      // aria-modal="true" and a player with controls, so `inert` is what keeps
+      // a dialog one property away from visible out of the tab order and the
+      // accessibility tree in the meantime.
+      var setDialogClosed = function (closed) {
+        if (closed) {
+          dialog.setAttribute('inert', '');
+          dialog.setAttribute('aria-hidden', 'true');
+        } else {
+          dialog.removeAttribute('inert');
+          dialog.setAttribute('aria-hidden', 'false');
+        }
+      };
+      setDialogClosed(true);
+      if (video) {
+        video.pause();
+      }
+
+      var close = function () {
+        // The player is the point of the surface: it stops when the dialog
+        // goes, not whenever the video next reaches its end.
+        if (video) {
+          video.pause();
+        }
+        dialog.classList.remove('is-open');
+        // Same order as closeModal, for the same reason: the tile sits in the
+        // page that is inert until popSurface runs, so focus is handed back
+        // only once it can land. One task, no intermediate paint.
+        popSurface(dialog);
+        restoreFocus(opener);
+        opener = null;
+        setDialogClosed(true);
+      };
+      // The shared Escape handler closes whichever surface is on top.
+      dialog.__mdClose = close;
+
+      var open = function () {
+        opener = trigger;
+        setDialogClosed(false);
+        dialog.classList.add('is-open');
+        pushSurface(dialog);
+        initialFocusTarget(dialog).focus({ preventScroll: true });
+        if (video && typeof video.play === 'function') {
+          // A refused play() is the browser declining to start a media
+          // element; the controls in the markup are the visitor's way out,
+          // and an unhandled rejection would only be console noise.
+          var started = video.play();
+          if (started && typeof started.catch === 'function') {
+            started.catch(function () {});
+          }
+        }
+      };
+
+      trigger.addEventListener('click', open);
+
+      dialog.addEventListener('click', function (event) {
+        // The dialog element is its own backdrop: the content sits in a
+        // centred child, so a click landing on the dialog itself is a click
+        // outside the video.
+        if (event.target === dialog || event.target.closest('[data-close]')) {
+          event.preventDefault();
+          close();
         }
       });
     });
@@ -1624,6 +1752,7 @@
     setupFloats();
     setupGallery();
     setupPatternLightbox();
+    setupProcessVideos();
 
     // The catalog's sort select posts its form on change (the CSP blocks
     // inline handlers, so the behaviour lives here).

@@ -75,7 +75,7 @@ final class PatternFacts {
 	/**
 	 * The per-request memo of gallery lists, by product id.
 	 *
-	 * @var array<int, list<array{url: string, width: int, height: int}>>
+	 * @var array<int, list<array{id: int, url: string, width: int, height: int}>>
 	 */
 	private static array $galleries = array();
 
@@ -198,14 +198,23 @@ final class PatternFacts {
 	 * The product's card image: the featured image at the card size.
 	 *
 	 * @param int $post_id The product id.
-	 * @return array{url: string, width: int, height: int} The image, url '' when the product carries none.
+	 * @return array{id: int, url: string, width: int, height: int} The image; id and url are 0/'' when the product carries none.
 	 */
 	public static function image( int $post_id ): array {
 		$thumbnail = (int) \get_post_thumbnail_id( $post_id );
 		if ( $thumbnail <= 0 ) {
 			return self::no_image();
 		}
-		return self::size( $thumbnail ) ?? self::no_image();
+		$size = self::size( $thumbnail );
+		if ( null === $size ) {
+			return self::no_image();
+		}
+		return array(
+			'id'     => $thumbnail,
+			'url'    => $size['url'],
+			'width'  => $size['width'],
+			'height' => $size['height'],
+		);
 	}
 
 	/**
@@ -217,7 +226,7 @@ final class PatternFacts {
 	 * answers come from one read.
 	 *
 	 * @param int $post_id The product id.
-	 * @return list<array{url: string, width: int, height: int}> The images, empty when the gallery is empty.
+	 * @return list<array{id: int, url: string, width: int, height: int}> The images, empty when the gallery is empty.
 	 */
 	public static function gallery( int $post_id ): array {
 		if ( isset( self::$galleries[ $post_id ] ) ) {
@@ -236,7 +245,12 @@ final class PatternFacts {
 			}
 			$size = self::size( $id );
 			if ( null !== $size ) {
-				$images[] = $size;
+				$images[] = array(
+					'id'     => $id,
+					'url'    => $size['url'],
+					'width'  => $size['width'],
+					'height' => $size['height'],
+				);
 			}
 		}
 		self::$galleries[ $post_id ] = $images;
@@ -309,6 +323,37 @@ final class PatternFacts {
 		$list = self::srcset_list( $thumbnail );
 		if ( '' === $list ) {
 			return $empty;
+		}
+		return array(
+			'srcset' => $list,
+			'sizes'  => $sizes,
+		);
+	}
+
+	/**
+	 * One attachment's `srcset` list and the `sizes` that describe its box.
+	 *
+	 * `srcset()` above answers for the *product's featured image*, which is
+	 * what a card's hero needs. A tile's grid, its thumb frame and the
+	 * lightbox strip draw *gallery* attachments — a different image each — so
+	 * they ask per attachment instead.
+	 *
+	 * The list is the same computation either way (WordPress's own metadata,
+	 * else the media pipeline's sibling files), and it is memoised per
+	 * attachment, so the featured image asked for here and by `srcset()`
+	 * costs one read.
+	 *
+	 * @param int    $attachment_id The attachment id.
+	 * @param string $sizes         The `sizes` value of the box it is drawn in.
+	 * @return array{srcset: string, sizes: string} The pair, both '' when the attachment has no alternatives.
+	 */
+	public static function attachment_srcset( int $attachment_id, string $sizes = '' ): array {
+		$list = $attachment_id > 0 ? self::srcset_list( $attachment_id ) : '';
+		if ( '' === $list ) {
+			return array(
+				'srcset' => '',
+				'sizes'  => '',
+			);
 		}
 		return array(
 			'srcset' => $list,
@@ -427,10 +472,11 @@ final class PatternFacts {
 	/**
 	 * An empty card image.
 	 *
-	 * @return array{url: string, width: int, height: int}
+	 * @return array{id: int, url: string, width: int, height: int}
 	 */
 	private static function no_image(): array {
 		return array(
+			'id'     => 0,
 			'url'    => '',
 			'width'  => 0,
 			'height' => 0,
