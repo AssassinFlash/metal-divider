@@ -466,11 +466,7 @@ final class PartialFields {
 		if ( '' === $pair['srcset'] ) {
 			return '';
 		}
-		$attrs = ' srcset="' . \esc_attr( $pair['srcset'] ) . '"';
-		if ( '' !== $pair['sizes'] ) {
-			$attrs .= ' sizes="' . \esc_attr( $pair['sizes'] ) . '"';
-		}
-		return $attrs;
+		return $this->attributes_for( $pair );
 	}
 
 	/**
@@ -605,7 +601,27 @@ final class PartialFields {
 	public function media_srcset( $atts = array(), ?string $content = '' ): string {
 		unset( $content );
 		$atts = \shortcode_atts( array( 'sizes' => '' ), (array) $atts, self::MEDIA_SRCSET );
+		// A caller that already resolved the pair for *this* box wins: it knows
+		// which slot the image is drawn in, and only it can. The `sizes`
+		// attribute is then ignored rather than merged — two sources of one
+		// value is the drift this class exists to prevent.
+		$given = $this->value_pair( 'srcset' );
+		if ( '' !== $given['srcset'] ) {
+			return $this->attributes_for( $given );
+		}
 		$pair = PatternFacts::attachment_srcset( (int) $this->value( 'id' ), (string) $atts['sizes'] );
+		if ( '' === $pair['srcset'] ) {
+			return '';
+		}
+		return $this->attributes_for( $pair );
+	}
+
+	/**
+	 * The `srcset`/`sizes` attribute pair for a resolved ladder.
+	 *
+	 * @param array{srcset: string, sizes: string} $pair The ladder and its box.
+	 */
+	private function attributes_for( array $pair ): string {
 		if ( '' === $pair['srcset'] ) {
 			return '';
 		}
@@ -614,6 +630,26 @@ final class PartialFields {
 			$attrs .= ' sizes="' . \esc_attr( $pair['sizes'] ) . '"';
 		}
 		return $attrs;
+	}
+
+	/**
+	 * A list/scalar pair from the scope, as the `srcset` pair shape.
+	 *
+	 * @param string $key The scope key holding the `srcset` string.
+	 * @return array{srcset: string, sizes: string}
+	 */
+	private function value_pair( string $key ): array {
+		$raw = $this->lookup( $key );
+		if ( ! is_array( $raw ) ) {
+			return array(
+				'srcset' => '',
+				'sizes'  => '',
+			);
+		}
+		return array(
+			'srcset' => is_string( $raw['srcset'] ?? null ) ? $raw['srcset'] : '',
+			'sizes'  => is_string( $raw['sizes'] ?? null ) ? $raw['sizes'] : '',
+		);
 	}
 
 	/**

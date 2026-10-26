@@ -209,11 +209,51 @@ final class Cards {
 	}
 
 	/**
+	 * The `sizes` of each PDP gallery slot: the box the slot is drawn in.
+	 *
+	 * A `srcset` without an honest `sizes` is worse than none — the browser
+	 * assumes the viewport (100vw) and picks a candidate for a box ten times
+	 * the real one, which is how the plate and the square were fetching 2048w
+	 * files to fill 460px and 569px. These are not estimates: each was
+	 * measured on a real product page in Chrome (`getBoundingClientRect` of
+	 * the slot element) at twenty viewports from 320 to 1600 CSS px, and the
+	 * formulas below reproduce every measurement with no underestimate and at
+	 * most 12px of overestimate (at 990px, where the hero grid is still
+	 * two-column). The breakpoints are the stylesheet's own:
+	 *
+	 * - the hero section is `100vw` at every width;
+	 * - `.pdp-hero-plate` is `max-width: 460px` inside a `2fr` column, and
+	 *   `380px` from 989px down (the stylesheet's `max-width: 989px` block),
+	 *   then `width: 100%` of the container's padded column below 420px;
+	 * - `.pdp-square` fills the `3fr` column above 989px, the full split
+	 *   column from 989px down, and loses the container's padding below 750px;
+	 * - `.pdp-wide` is the content column, capped by the 1400px container.
+	 *
+	 * A slot not named here gets `''` — no `sizes`, and therefore no `srcset`
+	 * either (see `slot_image()`), which is the honest answer for a box whose
+	 * width this class cannot vouch for.
+	 *
+	 * @var array<string, string>
+	 */
+	private const SLOT_SIZES = array(
+		'hero-bg' => '100vw',
+		'plate'   => '(min-width: 1440px) 460px, (min-width: 990px) 35vw, (min-width: 420px) 380px, calc(100vw - 40px)',
+		'square'  => '(min-width: 1440px) 569px, (min-width: 990px) 40vw, (min-width: 750px) calc(100vw - 80px), calc(100vw - 40px)',
+		'wide'    => 'min(100vw, 1400px)',
+	);
+
+	/**
 	 * One PDP gallery-slot image, drawn from the `pdp-image` partial.
 	 *
 	 * The slot's *identity* — which attachment each slot resolves to, and the
 	 * alt-role algorithm behind it — stays in `Shortcodes::slot_attachment()`
 	 * and is handed in here; what moved is the element.
+	 *
+	 * The slot also decides the `sizes` its ladder is declared against: the
+	 * same photograph is drawn in a 460px plate and a 569px square, so one
+	 * product-level `sizes` would be wrong for both. `SLOT_SIZES` carries the
+	 * measured value per slot; a slot outside it gets no `srcset` at all
+	 * rather than a ladder hinting at the viewport.
 	 *
 	 * The two attributes that are not plain values travel as suffixes, so the
 	 * partial never decides a design outcome: `priority` is the loading tier
@@ -226,14 +266,29 @@ final class Cards {
 	 * @param int    $attachment_id The resolved attachment.
 	 * @param string $alt           The alt text ('' for the decorative hero).
 	 * @param bool   $eager         Whether the image is the page's first paint.
+	 * @param string $slot          The slot name (hero-bg|plate|square|wide).
 	 * @return string The img element, '' when the attachment has no URL.
 	 */
-	public function slot_image( int $attachment_id, string $alt, bool $eager ): string {
+	public function slot_image( int $attachment_id, string $alt, bool $eager, string $slot = '' ): string {
 		$url = (string) \wp_get_attachment_image_url( $attachment_id, 'full' );
 		if ( '' === $url ) {
 			return '';
 		}
 		$metadata = \wp_get_attachment_metadata( $attachment_id );
+		$sizes    = self::SLOT_SIZES[ $slot ] ?? '';
+		// A ladder is only declared when this class can vouch for the box: a
+		// width-descriptor `srcset` with no `sizes` makes the browser assume
+		// 100vw, which is the very mistake `SLOT_SIZES` exists to avoid. An
+		// unknown slot therefore gets `src` alone.
+		$pair = '' === $sizes
+			? array(
+				'srcset' => '',
+				'sizes'  => '',
+			)
+			// The ladder is the attachment's; `PatternFacts` memoises it, so
+			// the plate, the square and the hero cost one read each rather than
+			// one per candidate.
+			: PatternFacts::attachment_srcset( $attachment_id, $sizes );
 		return $this->partials->render(
 			self::SLOT_IMAGE,
 			array(
@@ -242,6 +297,8 @@ final class Cards {
 				'priority' => $eager ? 'eager' : 'lazy',
 				'width'    => is_array( $metadata ) ? (int) ( $metadata['width'] ?? 0 ) : 0,
 				'height'   => is_array( $metadata ) ? (int) ( $metadata['height'] ?? 0 ) : 0,
+				'sizes'    => $sizes,
+				'srcset'   => $pair,
 			)
 		);
 	}

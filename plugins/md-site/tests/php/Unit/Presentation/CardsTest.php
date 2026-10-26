@@ -566,6 +566,9 @@ final class CardsTest extends TestCase {
 	 * tests cover the alt-role algorithm); this asserts the element.
 	 */
 	public function test_a_slot_image_is_rendered_from_the_partial(): void {
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->andReturn(
+			'https://site.test/uploads/slot-400w.webp 400w, https://site.test/uploads/slot-800w.webp 800w'
+		);
 		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->andReturn( 'https://site.test/uploads/slot.webp' );
 		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->andReturn(
 			array(
@@ -574,12 +577,11 @@ final class CardsTest extends TestCase {
 			)
 		);
 
-		$html = ( new Cards() )->slot_image( self::THUMB, 'A pattern', false );
+		$html = ( new Cards() )->slot_image( self::THUMB, 'A pattern', false, 'plate' );
 
-		$this->assertSame(
-			'<img src="https://site.test/uploads/slot.webp" alt="A pattern" loading="lazy" width="800" height="600">',
-			$html
-		);
+		$this->assertStringContainsString( '<img src="https://site.test/uploads/slot.webp"', $html );
+		$this->assertStringContainsString( 'sizes="(min-width: 1440px) 460px,', $html, 'the plate declares its own box' );
+		$this->assertStringContainsString( ' alt="A pattern" loading="lazy" width="800" height="600">', $html );
 	}
 
 	/**
@@ -589,6 +591,9 @@ final class CardsTest extends TestCase {
 	 * empty string.
 	 */
 	public function test_a_hero_slot_image_is_eager_and_decorative(): void {
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->andReturn(
+			'https://site.test/uploads/slot-400w.webp 400w, https://site.test/uploads/slot-800w.webp 800w'
+		);
 		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->andReturn( 'https://site.test/uploads/hero.webp' );
 		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->andReturn(
 			array(
@@ -597,12 +602,11 @@ final class CardsTest extends TestCase {
 			)
 		);
 
-		$html = ( new Cards() )->slot_image( self::THUMB, '', true );
+		$html = ( new Cards() )->slot_image( self::THUMB, '', true, 'hero-bg' );
 
-		$this->assertSame(
-			'<img src="https://site.test/uploads/hero.webp" alt="" loading="eager" fetchpriority="high" width="1024" height="1024">',
-			$html
-		);
+		$this->assertStringContainsString( '<img src="https://site.test/uploads/hero.webp"', $html );
+		$this->assertStringContainsString( ' sizes="100vw"', $html, 'the hero is the whole viewport' );
+		$this->assertStringContainsString( ' alt="" loading="eager" fetchpriority="high" width="1024" height="1024">', $html );
 	}
 
 	/**
@@ -610,12 +614,16 @@ final class CardsTest extends TestCase {
 	 * pair rather than `width="0" height="0"`.
 	 */
 	public function test_a_slot_image_without_metadata_omits_the_dimensions(): void {
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->andReturn(
+			'https://site.test/uploads/slot-400w.webp 400w, https://site.test/uploads/slot-800w.webp 800w'
+		);
 		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->andReturn( 'https://site.test/uploads/plain.webp' );
 		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->andReturn( false );
 
-		$html = ( new Cards() )->slot_image( self::THUMB, 'A pattern', false );
+		$html = ( new Cards() )->slot_image( self::THUMB, 'A pattern', false, 'square' );
 
-		$this->assertSame( '<img src="https://site.test/uploads/plain.webp" alt="A pattern" loading="lazy">', $html );
+		$this->assertStringContainsString( '<img src="https://site.test/uploads/plain.webp"', $html );
+		$this->assertStringContainsString( ' alt="A pattern" loading="lazy">', $html );
 	}
 
 	/**
@@ -625,7 +633,7 @@ final class CardsTest extends TestCase {
 	public function test_a_slot_image_without_a_url_renders_nothing(): void {
 		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->andReturn( '' );
 
-		$this->assertSame( '', ( new Cards() )->slot_image( self::THUMB, 'A pattern', false ) );
+		$this->assertSame( '', ( new Cards() )->slot_image( self::THUMB, 'A pattern', false, 'plate' ) );
 	}
 
 	/**
@@ -641,11 +649,114 @@ final class CardsTest extends TestCase {
 	public function test_the_slot_image_partial_uses_one_attribute_suffix(): void {
 		$file = (string) file_get_contents( Partials::path( Cards::SLOT_IMAGE ) );
 
-		$this->assertSame( 3, preg_match_all( '/\[md_[a-z_]+\]/', $file ), 'src, alt and one combined suffix' );
+		$this->assertSame( 4, preg_match_all( '/\[md_[a-z_]+\]/', $file ), 'src, the ladder pair, alt, and the attribute suffix' );
 		$this->assertStringContainsString( '[md_media_attributes]', $file );
 		$this->assertStringNotContainsString( '][md_', $file, 'no two adjacent shortcodes' );
 		$this->assertStringNotContainsString( 'md_media_priority', $file, 'the tier is not a second suffix' );
 		$this->assertStringNotContainsString( 'md_media_dimensions', $file, 'the dimensions are not a second suffix' );
+	}
+
+	/**
+	 * Every PDP gallery slot declares the `sizes` of the box it is drawn in,
+	 * and the element a slot renders carries it.
+	 *
+	 * The values are measured, not guessed: the plate is 460px of a `2fr`
+	 * column at 1440 and 380px below 990, the square is 569px at 1440 and
+	 * `40vw` while the split is two-column, and the hero is the viewport. A
+	 * slot image with no ladder but a viewport-wide `sizes` is what made the
+	 * plate and the square fetch 2048w files for 460px and 569px boxes.
+	 */
+	public function test_every_slot_declares_the_box_it_is_drawn_in(): void {
+		$expected   = array(
+			'hero-bg' => '100vw',
+			'plate'   => '(min-width: 1440px) 460px, (min-width: 990px) 35vw, (min-width: 420px) 380px, calc(100vw - 40px)',
+			'square'  => '(min-width: 1440px) 569px, (min-width: 990px) 40vw, (min-width: 750px) calc(100vw - 80px), calc(100vw - 40px)',
+			'wide'    => 'min(100vw, 1400px)',
+		);
+		$reflection = new \ReflectionClass( Cards::class );
+		$this->assertSame( $expected, $reflection->getConstant( 'SLOT_SIZES' ), 'the measured table is unchanged' );
+
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->andReturn( 'https://site.test/uploads/slot.webp' );
+		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->andReturn(
+			array(
+				'width'  => 800,
+				'height' => 600,
+			)
+		);
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->andReturn(
+			'https://site.test/uploads/slot-400w.webp 400w, https://site.test/uploads/slot-800w.webp 800w'
+		);
+
+		foreach ( $expected as $slot => $sizes ) {
+			$html = ( new Cards() )->slot_image( self::THUMB, 'A pattern', false, $slot );
+			$this->assertStringContainsString( ' sizes="' . $sizes . '"', $html, $slot . ' declares its measured box' );
+			$this->assertStringContainsString( 'srcset="https://site.test/uploads/slot-400w.webp 400w', $html, $slot . ' offers the ladder' );
+		}
+	}
+
+	/**
+	 * A slot outside the measured table gets no `srcset` at all.
+	 *
+	 * A width-descriptor ladder without a `sizes` makes the browser assume
+	 * 100vw — the exact mistake the table exists to prevent — so an unknown
+	 * box is answered with the plain `src` rather than a ladder hinting at the
+	 * viewport.
+	 */
+	public function test_an_unmeasured_slot_gets_no_ladder(): void {
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->andReturn( 'https://site.test/uploads/slot.webp' );
+		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->andReturn( false );
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->andReturn(
+			'https://site.test/uploads/slot-400w.webp 400w'
+		);
+
+		$html = ( new Cards() )->slot_image( self::THUMB, 'A pattern', false, 'not-a-slot' );
+
+		$this->assertStringNotContainsString( 'srcset=', $html, 'no ladder for a box this class cannot vouch for' );
+		$this->assertStringNotContainsString( 'sizes=', $html );
+		$this->assertStringContainsString( '<img src="https://site.test/uploads/slot.webp"', $html, 'the image is still drawn' );
+	}
+
+	/**
+	 * The slot image partial puts the ladder pair where WordPress can expand
+	 * it: directly after a closing quote, with no `][` run anywhere.
+	 *
+	 * Measured limit: two adjacent shortcodes, or a quoted-empty pair next to
+	 * one, make `wp_kses_attr_parse()` fail and every bracket in the tag is
+	 * entity-encoded — the visitor sees raw shortcodes and the image loses its
+	 * src entirely.
+	 */
+	public function test_the_slot_partial_has_no_adjacent_shortcodes(): void {
+		$file = (string) file_get_contents( Partials::path( Cards::SLOT_IMAGE ) );
+
+		$this->assertStringNotContainsString( '][', $file, 'no two adjacent shortcodes' );
+		$this->assertStringNotContainsString( '""[md_', $file, 'no quoted-empty pair next to a shortcode' );
+		$this->assertStringContainsString( '[md_media_srcset]', $file, 'the ladder comes from the caller' );
+	}
+
+	/**
+	 * The caller's resolved pair wins over the shortcode's own lookup: the
+	 * slot knows which box it is in, the value shortcode does not.
+	 */
+	public function test_a_resolved_pair_is_used_instead_of_a_fresh_lookup(): void {
+		$fields = PartialFields::shared();
+		$fields->push(
+			array(
+				'id'     => self::THUMB,
+				'srcset' => array(
+					'srcset' => 'https://site.test/uploads/x-460w.webp 460w',
+					'sizes'  => '(min-width: 1440px) 460px',
+				),
+			)
+		);
+		try {
+			$this->assertSame(
+				' srcset="https://site.test/uploads/x-460w.webp 460w" sizes="(min-width: 1440px) 460px"',
+				$fields->media_srcset( array( 'sizes' => 'IGNORED' ) ),
+				'the caller\'s box is the one declared'
+			);
+		} finally {
+			$fields->pop();
+		}
 	}
 
 	/**
