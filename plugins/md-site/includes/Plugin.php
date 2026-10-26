@@ -9,6 +9,8 @@ declare( strict_types = 1 );
 
 namespace MetalDivider\Site;
 
+use MetalDivider\Site\Media\Sizes;
+
 use MetalDivider\Site\Catalog;
 use MetalDivider\Site\Fields\FieldGroups;
 use MetalDivider\Site\Presentation\Assets;
@@ -43,6 +45,7 @@ final class Plugin {
 	 * @param PageNoindex   $page_noindex   The page-level noindex + canonical rules.
 	 * @param Assets        $assets     The front-end scripts (chrome runtime + Alpine).
 	 * @param Catalog       $catalog    The pattern catalog's cards, pager and query inputs.
+	 * @param Sizes         $media_sizes The 1:1 image sides the catalog card draws.
 	 */
 	public function __construct(
 		private readonly FieldGroups $fields,
@@ -54,6 +57,7 @@ final class Plugin {
 		private readonly PageNoindex $page_noindex,
 		private readonly Assets $assets,
 		private readonly Catalog $catalog,
+		private readonly Sizes $media_sizes,
 	) {}
 
 	/**
@@ -77,6 +81,7 @@ final class Plugin {
 		$this->page_noindex->register();
 		$this->assets->register();
 		$this->catalog->register();
+		$this->media_sizes->register();
 		// SEOPress prints an unlayered `.breadcrumb li{display:inline-block}` +
 		// ' - ' separator into wp_head; unlayered author CSS outranks the
 		// WindPress volume layer and broke the replica's breadcrumb row. The

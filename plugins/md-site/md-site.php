@@ -32,5 +32,6 @@ require_once __DIR__ . '/includes/Presentation/template-functions.php';
 	new Seo\CatalogRobots(),
 	new Seo\PageNoindex(),
 	new Presentation\Assets(),
-	new Catalog()
+	new Catalog(),
+	new Media\Sizes()
 ) )->register();

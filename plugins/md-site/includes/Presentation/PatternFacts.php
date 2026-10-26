@@ -9,6 +9,8 @@ declare( strict_types = 1 );
 
 namespace MetalDivider\Site\Presentation;
 
+use MetalDivider\Site\Media\Sizes;
+
 /**
  * One place that answers "what does WooCommerce hold about this pattern",
  * for the templates' card partials.
@@ -326,6 +328,67 @@ final class PatternFacts {
 		}
 		return array(
 			'srcset' => $list,
+			'sizes'  => $sizes,
+		);
+	}
+
+	/**
+	 * The featured image's *square* `srcset`, for a 1:1 card box.
+	 *
+	 * `srcset()` above lists the attachment's same-aspect ladder, which for a
+	 * portrait pattern is a 480x960 portrait: a card whose box is
+	 * `aspect-ratio: 1/1` then covers more than half of every download away.
+	 * The card asks for this instead, and falls back to `srcset()` when no
+	 * square side exists yet — a corpus that has not been regenerated still
+	 * renders, just at the old weight.
+	 *
+	 * Only sides that actually exist are listed, so the attribute never names
+	 * a file that is not on disk. `srcset()`'s own rule applies: neither path
+	 * invents a width.
+	 *
+	 * @param int    $post_id The product id.
+	 * @param string $sizes   The card's layout width, '' for none.
+	 * @return array{srcset: string, sizes: string} The pair, both '' when there is nothing to offer.
+	 */
+	public static function square_srcset( int $post_id, string $sizes = '' ): array {
+		$empty     = array(
+			'srcset' => '',
+			'sizes'  => '',
+		);
+		$thumbnail = (int) \get_post_thumbnail_id( $post_id );
+		if ( $thumbnail <= 0 ) {
+			return $empty;
+		}
+		// Guarded: `wp_get_attachment_metadata()` is a wp-admin include, so a
+		// front-end render that asks before it loads (and any unit test
+		// without the stub) would fatal instead of falling back.
+		$meta = \function_exists( 'wp_get_attachment_metadata' ) ? \wp_get_attachment_metadata( $thumbnail ) : null;
+		if ( ! \is_array( $meta ) || empty( $meta['sizes'] ) || ! \is_array( $meta['sizes'] ) ) {  // @phpstan-ignore booleanNot.alwaysFalse
+			return self::srcset( $post_id, $sizes );
+		}
+		$has_card = isset( $meta['sizes'][ Sizes::CARD ]['file'] );
+		$has_2x   = isset( $meta['sizes'][ Sizes::CARD_2X ]['file'] );
+		if ( ! $has_card && ! $has_2x ) {
+			return self::srcset( $post_id, $sizes );
+		}
+		$dir   = \dirname( (string) \get_attached_file( $thumbnail ) );
+		$parts = array();
+		foreach ( array( Sizes::CARD, Sizes::CARD_2X ) as $name ) {
+			if ( ! isset( $meta['sizes'][ $name ]['file'] ) ) {
+				continue;
+			}
+			$file = (string) $meta['sizes'][ $name ]['file'];
+			if ( ! \is_readable( $dir . '/' . $file ) ) {
+				continue;
+			}
+			$url     = \wp_get_attachment_image_url( $thumbnail, $name );
+			$parts[] = $url . ' ' . (int) $meta['sizes'][ $name ]['width'] . 'w';
+		}
+		if ( array() === $parts ) {
+			return self::srcset( $post_id, $sizes );
+		}
+		return array(
+			'srcset' => \implode( ', ', $parts ),
 			'sizes'  => $sizes,
 		);
 	}

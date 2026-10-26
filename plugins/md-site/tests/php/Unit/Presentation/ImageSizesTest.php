@@ -46,6 +46,11 @@ final class ImageSizesTest extends TestCase {
 	private const PATTERN_SRCSET_PLACEHOLDER = '[md_pattern_image_srcset';
 
 	/**
+	 * The placeholder that emits the 1:1 pair.
+	 */
+	private const PATTERN_SQUARE_SRCSET_PLACEHOLDER = '[md_pattern_square_srcset';
+
+	/**
 	 * `<img>` elements that are fallback content inside a `<video>`.
 	 *
 	 * A video's `poster` attribute cannot carry a `srcset` — the grammar has
@@ -440,7 +445,12 @@ final class ImageSizesTest extends TestCase {
 					continue;
 				}
 				++$checked;
-				if ( str_contains( $tag, self::PATTERN_SRCSET_PLACEHOLDER ) ) {
+				// Either ladder satisfies this: the wide one, or the square one
+				// a 1:1 box should draw. `square_srcset()` itself falls back to
+				// the wide list when no square side exists yet, so a card that
+				// names the square placeholder still offers real alternatives.
+				if ( str_contains( $tag, self::PATTERN_SRCSET_PLACEHOLDER )
+					|| str_contains( $tag, self::PATTERN_SQUARE_SRCSET_PLACEHOLDER ) ) {
 					continue;
 				}
 				$offenders[] = "{$label}: " . substr( $tag, 0, 90 );

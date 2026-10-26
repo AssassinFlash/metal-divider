@@ -121,6 +121,11 @@ final class PartialFields {
 	public const IMAGE_SRCSET = 'md_pattern_image_srcset';
 
 	/**
+	 * The 1:1 `srcset`/`sizes` pair for a square media box.
+	 */
+	public const SQUARE_SRCSET = 'md_pattern_square_srcset';
+
+	/**
 	 * A value the current render's call site supplied.
 	 */
 	public const CONTEXT = 'md_pattern_context';
@@ -231,6 +236,7 @@ final class PartialFields {
 		\add_shortcode( self::IMAGE_HEIGHT, array( $this, 'image_height' ) );
 		\add_shortcode( self::IMAGE_ALT, array( $this, 'image_alt' ) );
 		\add_shortcode( self::IMAGE_SRCSET, array( $this, 'image_srcset' ) );
+		\add_shortcode( self::SQUARE_SRCSET, array( $this, 'square_srcset' ) );
 		\add_shortcode( self::CONTEXT, array( $this, 'context' ) );
 		\add_shortcode( self::MEDIA_URL, array( $this, 'media_url' ) );
 		\add_shortcode( self::MEDIA_WIDTH, array( $this, 'media_width' ) );
@@ -463,6 +469,29 @@ final class PartialFields {
 		unset( $content );
 		$atts = \shortcode_atts( array( 'sizes' => '' ), (array) $atts, self::IMAGE_SRCSET );
 		$pair = PatternFacts::srcset( $this->current(), (string) $atts['sizes'] );
+		if ( '' === $pair['srcset'] ) {
+			return '';
+		}
+		return $this->attributes_for( $pair );
+	}
+
+	/**
+	 * `[md_pattern_square_srcset sizes="…"]`: the 1:1 pair, or nothing.
+	 *
+	 * The catalog card's media box is `aspect-ratio: 1/1`, so the attachment's
+	 * same-aspect ladder is the wrong shape for it — a portrait pattern hands
+	 * the card a 480x960 file and `object-fit: cover` discards more than half.
+	 * This pair names the square sides instead, and is empty when the corpus
+	 * has not been regenerated yet; `card-catalog.html` therefore also carries
+	 * the wide pair as its fallback.
+	 *
+	 * @param array<string, mixed>|string $atts    Shortcode attributes: sizes.
+	 * @param string|null                 $content Enclosed content (unused).
+	 */
+	public function square_srcset( $atts = array(), ?string $content = '' ): string {
+		unset( $content );
+		$atts = \shortcode_atts( array( 'sizes' => '' ), (array) $atts, self::SQUARE_SRCSET );
+		$pair = PatternFacts::square_srcset( $this->current(), (string) $atts['sizes'] );
 		if ( '' === $pair['srcset'] ) {
 			return '';
 		}
