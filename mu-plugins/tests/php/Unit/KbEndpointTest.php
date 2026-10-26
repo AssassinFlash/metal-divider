@@ -277,7 +277,8 @@ final class KbEndpointTest extends TestCase {
 		self::assertCount( 1, $http );
 		list( $url, $args ) = $http[0];
 		self::assertSame( 'https://api.deepseek.com/chat/completions', $url );
-		self::assertSame( 45, $args['timeout'] );
+		self::assertLessThanOrEqual( 45, $args['timeout'] );
+		self::assertGreaterThan( 44.9, $args['timeout'] );
 		self::assertSame(
 			array(
 				'Content-Type'  => 'application/json',
@@ -763,6 +764,128 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	// phpcs:enable WordPress.PHP.IniSet, WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions
+
+	/**
+	 * The model call lives inside one 45-second deadline, attempts included:
+	 * the first attempt asks for (at most) the whole budget, and a retry
+	 * asks for what is left of it — never a second 45 of its own.
+	 */
+	public function test_the_model_call_asks_within_the_shared_deadline(): void {
+		$this->configure_kb(
+			array(),
+			'{"choices":[{"message":{"role":"assistant","content":"{\\"answer\\":\\"Fine.\\",\\"handoff\\":false}"}}]}'
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'delivery time' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		$http = $this->recorded( 'md_mu_test_http' );
+		self::assertCount( 1, $http );
+		self::assertLessThanOrEqual( 45, $http[0][1]['timeout'] );
+		self::assertGreaterThan( 44.9, $http[0][1]['timeout'] );
+	}
+
+	/**
+	 * A retry spends only the remaining budget: the first attempt fails
+	 * after measurable time, and the second's timeout is the deadline minus
+	 * what the first one already spent — the elapsed time and the retry's
+	 * timeout together stay inside the 45 seconds.
+	 */
+	public function test_a_retry_spends_only_the_remaining_budget(): void {
+		$this->configure_kb(
+			array(),
+			'{"choices":[{"message":{"role":"assistant","content":"{\\"answer\\":\\"Back on the second try.\\",\\"handoff\\":false}"}}]}'
+		);
+		$attempt                              = 0;
+		$after_first                          = 0.0;
+		$GLOBALS['md_mu_test_http_responder'] = static function () use ( &$attempt, &$after_first ): \WP_Error|array {
+			++$attempt;
+			if ( 1 === $attempt ) {
+				usleep( 60000 );
+				return new \WP_Error();
+			}
+			$after_first = microtime( true );
+			return array(
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'body'     => '{"choices":[{"message":{"role":"assistant","content":"{\\"answer\\":\\"Back on the second try.\\",\\"handoff\\":false}"}}]}',
+			);
+		};
+
+		$before = microtime( true );
+		$out    = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'delivery time' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		$http = $this->recorded( 'md_mu_test_http' );
+		self::assertCount( 2, $http );
+		$first  = (float) $http[0][1]['timeout'];
+		$second = (float) $http[1][1]['timeout'];
+		self::assertGreaterThan( 0.0, $after_first );
+		self::assertLessThan( $first, $second, 'the retry asks for less than the first attempt did.' );
+		$spent = $after_first - $before;
+		self::assertLessThanOrEqual( 45.0 + 0.005, $spent + $second, 'the time gone and the retry\'s timeout stay inside the one deadline.' );
+	}
+
+	/**
+	 * A deadline with nothing left in it buys no second request: when the
+	 * first attempt has spent the budget (a deadline already at its end,
+	 * passed straight to the call), the failure is final — one request,
+	 * the log line, the 502.
+	 */
+	public function test_no_second_attempt_when_the_deadline_is_spent(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$GLOBALS['md_mu_test_http_responder'] = static fn (): \WP_Error => new \WP_Error();
+
+		$out = md_kb_endpoint_call_model(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'delivery time',
+				),
+			),
+			microtime( true ) + 0.05
+		);
+
+		self::assertSame( 'upstream_error', $out );
+		self::assertCount( 1, $this->recorded( 'md_mu_test_http' ), 'a spent deadline buys no second request.' );
+	}
+
+	/**
+	 * The fallback message is the reviewed, final customer copy — pinned
+	 * exactly, so a rewrite has to go through the copy review again.
+	 */
+	public function test_the_fallback_message_is_the_approved_copy(): void {
+		self::assertSame(
+			"Sorry — I can't look that up right now. Please try again in a moment, or reach our team on WhatsApp at +852 6473 1687.",
+			md_kb_endpoint_fallback_message()
+		);
+	}
+
+	/**
+	 * The system prompt carries the reviewed customer-facing rules: the
+	 * fixed no-knowledge sentence (with the handoff), no mention of the
+	 * knowledge machinery to the visitor, and the site's own word —
+	 * pattern, not product.
+	 */
+	public function test_the_system_prompt_carries_the_approved_rules(): void {
+		$prompt = md_kb_endpoint_system_prompt();
+
+		self::assertStringContainsString( "I don't have that information — our team can help.", $prompt );
+		self::assertStringContainsString( 'Never mention knowledge, documents or context to the visitor', $prompt );
+		self::assertStringContainsString( 'Say pattern, not product.', $prompt );
+	}
 
 	/**
 	 * The endpoint registers itself on rest_api_init, and the route it

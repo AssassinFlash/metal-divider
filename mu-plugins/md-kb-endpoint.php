@@ -222,7 +222,7 @@ function md_kb_endpoint_sources( array $results ): array {
  * @return string The system prompt.
  */
 function md_kb_endpoint_system_prompt(): string {
-	return 'You are the support assistant of metal-divider.com, a B2B architectural metal divider (pattern) inquiry site. Answer the visitor\'s question ONLY from the KNOWLEDGE provided in the user message. Do not invent specifications, prices or materials. If the KNOWLEDGE does not contain the answer, say plainly that you do not have it. Reply with json only: {"answer": "<text for the visitor>", "handoff": true|false}. Set handoff true when the visitor asks for a human or an agent, or when you cannot answer from the KNOWLEDGE.';
+	return "You are the support assistant of metal-divider.com, a B2B architectural metal screen pattern inquiry site. Answer the visitor's question ONLY from the knowledge provided in the user message. Do not invent specifications, prices or materials. Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. Say pattern, not product. When the knowledge does not contain the answer, reply exactly: \"I don't have that information — our team can help.\" with handoff true. Reply with json only: {\"answer\": \"<text for the visitor>\", \"handoff\": true|false}. Set handoff true when the visitor asks for a human or an agent, or when you cannot answer from the knowledge.";
 }
 
 /**
@@ -258,26 +258,34 @@ function md_kb_endpoint_messages( string $q, string $context, array $history ): 
 
 /**
  * Ask DeepSeek's official chat completions for the answer, without
- * streaming: the whole call — the search and the generation together — fits
- * the 45-second HTTP budget, and the JSON response format is requested so
- * the {"answer","handoff"} reply is the model's own contract. The failures
- * a second sample can fix — a transport error, a 429, a 5xx — get exactly
- * one retry; the upstream's considered answers (any other 4xx, a 200 that
- * is not the contract) are asked once. A failure that survives is written
- * to the server's log without the key, the question or the visitor's data,
- * and the caller gets the error code for the 502 instead of the answer.
+ * streaming, inside one shared deadline: the whole model call — attempts
+ * included — gets the 45 seconds the research budgeted (the search and
+ * the generation together, against the LHC bot's 60-second execution
+ * limit), so a retry asks for what the first attempt left of the budget,
+ * and a deadline with nothing left in it buys no second request. The
+ * failures a second sample can fix — a transport error, a 429, a 5xx —
+ * get exactly one retry; the upstream's considered answers (any other
+ * 4xx, a 200 that is not the contract) are asked once. A failure that
+ * survives is written to the server's log without the key, the question
+ * or the visitor's data, and the caller gets the error code for the 502
+ * instead of the answer.
  *
  * @param array<int, array{role: string, content: string}> $messages The conversation.
+ * @param float                                            $deadline The Unix microtime the call must end by; 0.0 starts a 45-second one now.
  * @return array{answer: string, handoff: bool}|string The parsed reply, or the error code.
  */
-function md_kb_endpoint_call_model( array $messages ): array|string {
+function md_kb_endpoint_call_model( array $messages, float $deadline = 0.0 ): array|string {
+	if ( $deadline <= 0.0 ) {
+		$deadline = microtime( true ) + 45.0;
+	}
+
 	$attempts = 0;
 	while ( true ) {
 		++$attempts;
 		$response = wp_remote_post(
 			'https://api.deepseek.com/chat/completions',
 			array(
-				'timeout' => 45,
+				'timeout' => md_kb_endpoint_attempt_timeout( $deadline, microtime( true ) ),
 				'headers' => array(
 					'Content-Type'  => 'application/json',
 					'Authorization' => 'Bearer ' . md_kb_endpoint_setting( 'deepseek_api_key' ),
@@ -294,36 +302,63 @@ function md_kb_endpoint_call_model( array $messages ): array|string {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			if ( 1 === $attempts ) {
-				continue;
-			}
-			md_kb_endpoint_log_model_failure( 'network_error', 0, $attempts );
-			return 'upstream_error';
-		}
-
-		$status = (int) wp_remote_retrieve_response_code( $response );
-		if ( 200 === $status ) {
-			$body    = json_decode( wp_remote_retrieve_body( $response ), true );
-			$content = $body['choices'][0]['message']['content'] ?? null;
-			if ( is_string( $content ) ) {
-				$reply = md_kb_endpoint_parse_model_json( $content );
-				if ( null !== $reply ) {
-					return $reply;
+			$kind      = 'network_error';
+			$status    = 0;
+			$retryable = true;
+		} else {
+			$status = (int) wp_remote_retrieve_response_code( $response );
+			if ( 200 === $status ) {
+				$body    = json_decode( wp_remote_retrieve_body( $response ), true );
+				$content = $body['choices'][0]['message']['content'] ?? null;
+				if ( is_string( $content ) ) {
+					$reply = md_kb_endpoint_parse_model_json( $content );
+					if ( null !== $reply ) {
+						return $reply;
+					}
 				}
+				// A reply that is not the contract is not retried: the upstream
+				// answered, and a second sample of a wrong-shaped answer buys
+				// nothing but another visitor-facing wait.
+				$kind      = 'bad_reply';
+				$retryable = false;
+			} else {
+				$kind      = 'http_error';
+				$retryable = 429 === $status || $status >= 500;
 			}
-			// A reply that is not the contract is not retried: the upstream
-			// answered, and a second sample of a wrong-shaped answer buys
-			// nothing but another visitor-facing wait.
-			md_kb_endpoint_log_model_failure( 'bad_reply', $status, $attempts );
-			return 'upstream_error';
 		}
 
-		if ( ( 429 === $status || $status >= 500 ) && 1 === $attempts ) {
+		if ( $retryable && 1 === $attempts && md_kb_endpoint_time_for_another_attempt( $deadline, microtime( true ) ) ) {
 			continue;
 		}
-		md_kb_endpoint_log_model_failure( 'http_error', $status, $attempts );
+		md_kb_endpoint_log_model_failure( $kind, $status, $attempts );
 		return 'upstream_error';
 	}
+}
+
+/**
+ * The timeout one attempt may ask for: the deadline's remainder, in whole
+ * milliseconds — never more than the shared budget, and never a number so
+ * small the HTTP layer would treat it as none.
+ *
+ * @param float $deadline The Unix microtime the call must end by.
+ * @param float $now      The Unix microtime it is.
+ * @return float The timeout in seconds, at least a millisecond.
+ */
+function md_kb_endpoint_attempt_timeout( float $deadline, float $now ): float {
+	return round( max( 0.001, $deadline - $now ), 3 );
+}
+
+/**
+ * Whether the deadline still holds enough time for another attempt: a
+ * second request needs a second to be worth sending at all — a model
+ * roundtrip does not fit in the budget's last sliver.
+ *
+ * @param float $deadline The Unix microtime the call must end by.
+ * @param float $now      The Unix microtime it is.
+ * @return bool True when another attempt fits.
+ */
+function md_kb_endpoint_time_for_another_attempt( float $deadline, float $now ): bool {
+	return ( $deadline - $now ) >= 1.0;
 }
 
 /**
@@ -389,7 +424,7 @@ function md_kb_endpoint_parse_model_json( string $content ): ?array {
  * @return string The fallback message.
  */
 function md_kb_endpoint_fallback_message(): string {
-	return 'Sorry — I cannot look that up right now. Please ask again in a moment, or message us on WhatsApp (+852 6473 1687) and our team will take it from there.';
+	return "Sorry — I can't look that up right now. Please try again in a moment, or reach our team on WhatsApp at +852 6473 1687.";
 }
 
 /**
