@@ -172,7 +172,11 @@ height: auto;
 /* 初始悬浮状态 (Desktop) */
 @media (min-width: 1024px) {
 #landing-nav.initial-state {
-top: 40px;
+/* 站点 sticky header 在 z-index 100 占据视口顶部；本页 nav 是 fixed 且
+   z-index 40，若仍用 top:40px 两者会重叠并被站点 header 盖住。偏移量由
+   setupLandingNav() 写入 --landing-nav-offset（实测 band 高度），未测得时
+   回落到 40px，与原设计一致。 */
+top: calc(var(--landing-nav-offset, 0px) + 40px);
 left: 40px;
 right: 40px;
 border-radius: 9999px;
@@ -182,10 +186,11 @@ margin: 0 auto;
 border: 1px solid rgba(255,255,255,0.08);
 }
 }
-/* 滚动锁定状态 */
+/* 滚动锁定状态。锁定到视口顶部时同样要让开 sticky band，否则玻璃条会
+   钻到站点 header 底下。 */
 #landing-nav.scrolled,
 #landing-nav.mobile-view {
-top: 0;
+top: var(--landing-nav-offset, 0px);
 left: 0;
 right: 0;
 border-radius: 0;

@@ -1589,6 +1589,1526 @@
     });
   }
 
+  /* ================================================================== *
+   * Shared control primitives
+   *
+   * The converted pages carry seven vocabulary families for the same four
+   * behaviours: a tab strip, an accordion, a horizontal carousel, and a
+   * numbered stepper. Every one of them shipped as markup plus a stylesheet
+   * state class that nothing ever set, so the controls were drawn and dead.
+   *
+   * Implementing them one family at a time would have produced seven copies
+   * of the same logic, each with its own idea of what "open" means. These
+   * three functions are the behaviours; the setup* passes below only say how
+   * to read each family's attribute names. The tab strip already had this
+   * shape (bindTabSet), so it is reused rather than duplicated.
+   * ================================================================== */
+
+  // A horizontal scroll-snap carousel: two arrows, optional dots and a
+  // counter. Scrolling is the state, so dragging, wheel and keyboard scrolling
+  // all stay in sync with the arrows for free — the same reason the expanded
+  // mesh section reads scroll position instead of tracking an index.
+  //
+  // `step` is measured from the track's own children rather than assumed: the
+  // cards differ per page (a 620px proof card, a 300px case card), and a
+  // hard-coded distance scrolls to the wrong place on every other page.
+  function bindCarousel(track, options) {
+    if (!track) {
+      return;
+    }
+    var settings = options || {};
+
+    var step = function () {
+      var first = track.firstElementChild;
+      if (!first) {
+        return track.clientWidth;
+      }
+      var gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap || '0') || 0;
+      return first.getBoundingClientRect().width + gap;
+    };
+
+    var pages = function () {
+      var card = step();
+      return card > 0 ? Math.max(1, Math.round(track.scrollWidth / card)) : 1;
+    };
+
+    // The list of scroll stops the dots index into. Rounding drift across a
+    // fractional card width would make the last dot unreachable, so the final
+    // stop is pinned to the true maximum.
+    var maxScroll = function () {
+      return Math.max(0, track.scrollWidth - track.clientWidth);
+    };
+
+    var current = function () {
+      var card = step();
+      if (card <= 0) {
+        return 0;
+      }
+      var index = Math.round(track.scrollLeft / card);
+      var total = pages();
+      return Math.min(Math.max(index, 0), total - 1);
+    };
+
+    // "At the start" and "at the end" are geometric facts, not scrollLeft == 0.
+    // A snap container with `padding-left` settles at scrollLeft = padding on
+    // load (measured: 25px on the home proof strip), so comparing against zero
+    // left the previous arrow enabled on a strip that could not go back. The
+    // honest test is where the first and last cards actually are relative to
+    // the track's own box.
+    var atStart = function () {
+      var first = track.firstElementChild;
+      if (!first || maxScroll() <= 0) {
+        return true;
+      }
+      return first.getBoundingClientRect().left >= track.getBoundingClientRect().left - 2;
+    };
+
+    var atEnd = function () {
+      var last = track.lastElementChild;
+      if (!last || maxScroll() <= 0) {
+        return true;
+      }
+      return last.getBoundingClientRect().right <= track.getBoundingClientRect().right + 2;
+    };
+
+    var announce = function () {
+      var index = current();
+      if (settings.counter) {
+        settings.counter.textContent = String(index + 1);
+      }
+      if (settings.dots) {
+        each(settings.dots, function (dot, i) {
+          var active = i === index;
+          dot.setAttribute('data-active', active ? 'true' : 'false');
+          dot.setAttribute('aria-current', active ? 'true' : 'false');
+        });
+      }
+      // An arrow at the end of its travel says so rather than looking
+      // pressable and doing nothing.
+      if (settings.prev) {
+        settings.prev.disabled = atStart();
+      }
+      if (settings.next) {
+        settings.next.disabled = atEnd();
+      }
+    };
+
+    var goTo = function (index) {
+      var card = step();
+      var total = pages();
+      var target = Math.min(Math.max(index, 0), total - 1);
+      var left = target * card;
+      if (target === total - 1) {
+        left = maxScroll();
+      }
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // scrollTo with behaviour is the one API that moves a snap container to a
+      // position the snap points actually agree with.
+      if (typeof track.scrollTo === 'function') {
+        track.scrollTo({ left: left, behavior: reduced ? 'auto' : 'smooth' });
+      } else {
+        track.scrollLeft = left;
+      }
+    };
+
+    var step_by = function (direction) {
+      goTo(current() + direction);
+    };
+
+    if (settings.prev) {
+      settings.prev.addEventListener('click', function () {
+        step_by(-1);
+      });
+    }
+    if (settings.next) {
+      settings.next.addEventListener('click', function () {
+        step_by(1);
+      });
+    }
+    if (settings.dots) {
+      each(settings.dots, function (dot, i) {
+        dot.addEventListener('click', function () {
+          goTo(i);
+        });
+      });
+    }
+
+    // One recomputation per frame, for the same reason the mesh section uses
+    // one: scroll fires continuously and announce() is cheap but not free.
+    var frame = 0;
+    track.addEventListener('scroll', function () {
+      if (frame) {
+        return;
+      }
+      frame = window.requestAnimationFrame(function () {
+        frame = 0;
+        announce();
+      });
+    }, { passive: true });
+    window.addEventListener('resize', announce);
+
+    // Keyboard: the track is a scroll container, so Left/Right already work
+    // natively once it has focus. Focusability is what the markup is missing.
+    if (!track.hasAttribute('tabindex') && track.tabIndex < 0) {
+      track.tabIndex = 0;
+    }
+    if (settings.label && !track.hasAttribute('aria-label') && !track.hasAttribute('aria-labelledby')) {
+      track.setAttribute('aria-label', settings.label);
+    }
+
+    announce();
+  }
+
+  // An accordion: one trigger, one body, and a class the stylesheet animates
+  // on. `single` keeps one item open per group (used where a second open item
+  // would push the list out of its box).
+  //
+  // The body height is measured, never fixed: the volume for one of these
+  // groups caps the open body at a fixed 640px, which clips the longer answers.
+  function bindAccordion(items, options) {
+    var settings = options || {};
+    var openClass = settings.openClass || 'is-open';
+    var triggerSelector = settings.trigger || 'button';
+    var bodySelector = settings.body || null;
+
+    var bodyOf = function (item) {
+      if (bodySelector) {
+        return item.querySelector(bodySelector);
+      }
+      var trigger = item.querySelector(triggerSelector);
+      return trigger ? trigger.nextElementSibling : null;
+    };
+
+    var setOpen = function (item, open, animate) {
+      var trigger = item.querySelector(triggerSelector);
+      var body = bodyOf(item);
+      item.classList.toggle(openClass, open);
+      if (trigger) {
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      if (!body) {
+        return;
+      }
+      if (open) {
+        body.removeAttribute('aria-hidden');
+        body.removeAttribute('inert');
+        if (animate === false) {
+          body.style.maxHeight = 'none';
+        } else {
+          body.style.maxHeight = body.scrollHeight + 'px';
+        }
+      } else {
+        // Collapsing from `none` needs one frame at the measured height first,
+        // or the transition has no start value and the body snaps shut.
+        if (body.style.maxHeight === 'none') {
+          body.style.maxHeight = body.scrollHeight + 'px';
+          // Force the start value to be read before the transition begins.
+          void body.offsetHeight;
+        }
+        body.style.maxHeight = '';
+        body.setAttribute('aria-hidden', 'true');
+        body.setAttribute('inert', '');
+      }
+    };
+
+    each(items, function (item) {
+      var trigger = item.querySelector(triggerSelector);
+      if (!trigger) {
+        return;
+      }
+      // The markup's own open state wins on first paint.
+      var initiallyOpen = item.classList.contains(openClass)
+        || trigger.getAttribute('aria-expanded') === 'true';
+      setOpen(item, initiallyOpen, false);
+
+      trigger.addEventListener('click', function () {
+        var willOpen = !item.classList.contains(openClass);
+        if (willOpen && settings.single) {
+          each(items, function (other) {
+            if (other !== item && other.classList.contains(openClass)) {
+              setOpen(other, false);
+            }
+          });
+        }
+        setOpen(item, willOpen);
+      });
+    });
+
+    // Re-measure open bodies when the layout changes: the height recorded at
+    // open time clips the text once the copy reflows.
+    if (settings.remeasure !== false) {
+      window.addEventListener('resize', function () {
+        each(items, function (item) {
+          if (!item.classList.contains(openClass)) {
+            return;
+          }
+          var body = bodyOf(item);
+          if (body && body.style.maxHeight !== 'none') {
+            body.style.maxHeight = body.scrollHeight + 'px';
+          }
+        });
+      });
+    }
+  }
+
+  // Home: the "why leading projects choose us" proof carousel. The markup
+  // ships four cards, two arrows, four dots and a "1 / 4" counter, all inert.
+  function setupOutcomesCarousel() {
+    var track = document.querySelector('[data-home-outcomes-track]');
+    if (!track) {
+      return;
+    }
+    var dotsWrap = document.querySelector('[data-home-outcomes-dots]');
+    bindCarousel(track, {
+      prev: document.querySelector('[data-home-outcomes-prev]'),
+      next: document.querySelector('[data-home-outcomes-next]'),
+      dots: dotsWrap ? dotsWrap.querySelectorAll('[data-home-outcomes-dot]') : null,
+      counter: document.querySelector('[data-home-outcomes-current]'),
+      label: 'Project proof'
+    });
+  }
+
+  // The family pages' case showcase: one track, two arrows, no dots. Six pages
+  // carry this section and none of them bound the arrows.
+  function setupShowcaseCarousels() {
+    each(document.querySelectorAll('[data-showcase-track]'), function (track) {
+      // The arrows are the track's siblings inside the section, and the
+      // page-level selector would otherwise pair the first pair with every
+      // track.
+      var section = track.closest('section') || document;
+      var scope = section;
+      bindCarousel(track, {
+        prev: scope.querySelector('[data-showcase-direction="-1"]'),
+        next: scope.querySelector('[data-showcase-direction="1"]'),
+        label: track.getAttribute('aria-label') || 'Project showcase'
+      });
+    });
+  }
+
+  // The project-proof strip on the catalog pages (series-archive, shop): the
+  // same shape with its own attribute names.
+  function setupProjectProofCarousels() {
+    each(document.querySelectorAll('[data-ppp-track]'), function (track) {
+      var scope = track.closest('section') || document;
+      bindCarousel(track, {
+        prev: scope.querySelector('[data-ppp-direction="-1"]'),
+        next: scope.querySelector('[data-ppp-direction="1"]'),
+        label: 'Project proof'
+      });
+    });
+  }
+
+  // The expanded-metal material accordion. The volume caps the open body at a
+  // fixed 640px, so these bodies are set to `none` while open — the content is
+  // taller than that on a narrow screen and would be clipped.
+  function setupMaterialAccordion() {
+    each(document.querySelectorAll('[data-emf-acc]'), function (item) {
+      var body = item.querySelector('.emf-acc-body');
+      var trigger = item.querySelector('.emf-acc-trigger');
+      if (!body || !trigger) {
+        return;
+      }
+      // The image panel this material owns is paired by index, and the volume
+      // already has an is-active state for it.
+      var index = item.getAttribute('data-emf-acc');
+      var panel = document.querySelector('[data-emf-img="' + index + '"]');
+
+      var setOpen = function (open) {
+        item.classList.toggle('emf-acc-open', open);
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) {
+          body.removeAttribute('aria-hidden');
+          // `none` rather than the measured height: the volume's 640px cap is
+          // shorter than these bodies on a phone, and a measured px value goes
+          // stale the moment the swatch row reflows.
+          body.style.maxHeight = 'none';
+        } else {
+          body.style.maxHeight = '';
+          body.setAttribute('aria-hidden', 'true');
+        }
+        if (panel) {
+          panel.classList.toggle('emf-active', open);
+        }
+      };
+
+      setOpen(item.classList.contains('emf-acc-open'));
+
+      trigger.addEventListener('click', function () {
+        var willOpen = !item.classList.contains('emf-acc-open');
+        // One material open at a time: the image column shows the open one, and
+        // two open bodies would disagree with it.
+        each(document.querySelectorAll('[data-emf-acc]'), function (other) {
+          if (other === item) {
+            return;
+          }
+          var otherBody = other.querySelector('.emf-acc-body');
+          var otherTrigger = other.querySelector('.emf-acc-trigger');
+          other.classList.remove('emf-acc-open');
+          if (otherTrigger) {
+            otherTrigger.setAttribute('aria-expanded', 'false');
+          }
+          if (otherBody) {
+            otherBody.style.maxHeight = '';
+            otherBody.setAttribute('aria-hidden', 'true');
+          }
+          var otherPanel = document.querySelector('[data-emf-img="' + other.getAttribute('data-emf-acc') + '"]');
+          if (otherPanel) {
+            otherPanel.classList.remove('emf-active');
+          }
+        });
+        setOpen(willOpen);
+      });
+    });
+  }
+
+  // The tab families. Each is the same WAI-ARIA strip over a different
+  // vocabulary, so each one is a call to the engine setupTabs already uses —
+  // not a new implementation.
+  //
+  // The common thread in every family: the volumes style an `active`/`data-active`
+  // state and the markup ships either nothing or a single hard-coded first tab,
+  // so the strip rendered and did not respond.
+  function setupDeadTabFamilies() {
+    // Expanded-metal "Side by Side / Method Detail" switch.
+    bindSwitchable(document.querySelectorAll('[data-evp-switch]'), document.querySelectorAll('[data-evp-panel]'), 'data-evp-switch', 'data-evp-panel');
+
+    // The method-detail strip inside that panel.
+    bindSwitchable(document.querySelectorAll('[data-evp-tab]'), document.querySelectorAll('[data-evp-tab-content]'), 'data-evp-tab', 'data-evp-tab-content');
+
+    // Manufacturing: the same two-level switch with its own names.
+    bindSwitchable(document.querySelectorAll('[data-mfg-spec-switch]'), document.querySelectorAll('[data-mfg-spec-panel]'), 'data-mfg-spec-switch', 'data-mfg-spec-panel');
+    bindSwitchable(document.querySelectorAll('[data-mfg-spec-tab]'), document.querySelectorAll('[data-mfg-spec-tab-content]'), 'data-mfg-spec-tab', 'data-mfg-spec-tab-content');
+
+    // Manufacturing techniques: a nav rail, a copy block and a background per
+    // item — three parallel groups keyed by the same 0-based index. Each group
+    // names its own attribute and its own state class; nothing is inferred from
+    // the element's other data attributes.
+    bindIndexedGroups(
+      document.querySelectorAll('[data-mfg-tech-nav]'),
+      'data-mfg-tech-nav',
+      'active',
+      [
+        { items: document.querySelectorAll('[data-mfg-tech-content]'), attr: 'data-mfg-tech-content', activeClass: 'mfg-tech-active' },
+        { items: document.querySelectorAll('[data-mfg-tech-bg]'), attr: 'data-mfg-tech-bg', activeClass: 'mfg-tech-bg-active' }
+      ]
+    );
+
+    // Stainless: the four project tabs (1-based) switch the four project panels
+    // (1-based) — a plain pair.
+    bindSwitchable(document.querySelectorAll('[data-sps-tab]'), document.querySelectorAll('[data-sps-panel]'), 'data-sps-tab', 'data-sps-panel');
+
+    // Stainless: the story rows below the panel are their own accordion — the
+    // trigger opens its row and the matching scene image, 0-based.
+    bindIndexedGroups(
+      document.querySelectorAll('[data-sps-trigger]'),
+      'data-sps-trigger',
+      'is-active',
+      [
+        { items: document.querySelectorAll('[data-sps-row]'), attr: 'data-sps-row', activeClass: 'is-active' },
+        { items: document.querySelectorAll('[data-sps-scene]'), attr: 'data-sps-scene', activeClass: 'is-active' }
+      ]
+    );
+
+    // Series archive: the pattern-guide pagination.
+    bindSwitchable(document.querySelectorAll('[data-pag-tab]'), document.querySelectorAll('[data-pag-panel]'), 'data-pag-tab', 'data-pag-panel');
+
+    // Laser-cut panels: the method tabs. Their container has no hook class of
+    // its own (only a tablist role inside a rounded panel), so the pair is
+    // found by looking for the strip that owns `data-target` buttons.
+    each(document.querySelectorAll('[role="tablist"]'), function (list) {
+      var triggers = list.querySelectorAll('.tab-btn[data-target]');
+      if (!triggers.length) {
+        return;
+      }
+      var scope = list.parentElement || document;
+      var panes = scope.querySelectorAll('.panel[data-panel]');
+      if (!panes.length) {
+        return;
+      }
+      bindTabSet(triggers, panes, {
+        list: list,
+        activeClass: 'active',
+        nameOf: function (trigger) {
+          return trigger.getAttribute('data-target');
+        },
+        paneNameOf: function (pane) {
+          return pane.getAttribute('data-panel');
+        },
+        initial: list.querySelector('.tab-btn.active') || triggers[0]
+      });
+    });
+  }
+
+  // Two control groups paired by a shared value: the clicked control's own
+  // attribute value must equal the panel's. `hidden` is the state — the volumes
+  // already style `[data-…-panel][hidden]` — so nothing else has to be invented.
+  function bindSwitchable(controls, panels, controlAttr, panelAttr) {
+    if (!controls.length || !panels.length) {
+      return;
+    }
+    var apply = function (value) {
+      each(controls, function (control) {
+        var active = control.getAttribute(controlAttr) === value;
+        if (active) {
+          control.setAttribute('data-active', '');
+        } else {
+          control.removeAttribute('data-active');
+        }
+        control.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      each(panels, function (panel) {
+        panel.hidden = panel.getAttribute(panelAttr) !== value;
+      });
+    };
+
+    each(controls, function (control) {
+      var label = control.getAttribute('role');
+      if (!label) {
+        control.setAttribute('role', 'tab');
+      }
+      if (!control.hasAttribute('tabindex')) {
+        control.tabIndex = 0;
+      }
+      control.addEventListener('click', function () {
+        apply(control.getAttribute(controlAttr));
+      });
+      control.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+          event.preventDefault();
+          apply(control.getAttribute(controlAttr));
+        }
+      });
+    });
+
+    var initial = null;
+    each(controls, function (control) {
+      if (!initial && control.hasAttribute('data-active')) {
+        initial = control;
+      }
+    });
+    if (!initial) {
+      initial = controls[0];
+    }
+    apply(initial.getAttribute(controlAttr));
+  }
+
+  // One control group and N display groups that all switch together on the
+  // same index.
+  //
+  // Every group names its own attribute and its own state class: the three
+  // families in this page reuse `active`, `is-active` and `mfg-tech-active`
+  // for the same idea, and inferring which data attribute identifies an item
+  // (by scanning for a numeric value) paired `data-sps-row` with
+  // `data-sps-scene` on the wrong items. The caller states the contract.
+  function bindIndexedGroups(controls, controlAttr, controlClass, groups) {
+    if (!controls.length) {
+      return;
+    }
+
+    var keyOf = function (element, attr) {
+      return element ? element.getAttribute(attr) : null;
+    };
+
+    var apply = function (value, options) {
+      each(controls, function (control) {
+        var active = keyOf(control, controlAttr) === value;
+        if (controlClass) {
+          control.classList.toggle(controlClass, active);
+        }
+        if (active) {
+          control.setAttribute('aria-current', 'true');
+        } else {
+          control.removeAttribute('aria-current');
+        }
+        if (control.hasAttribute('aria-expanded')) {
+          control.setAttribute('aria-expanded', active ? 'true' : 'false');
+        }
+      });
+      each(groups, function (group) {
+        each(group.items, function (item) {
+          var active = keyOf(item, group.attr) === value;
+          if (group.activeClass) {
+            item.classList.toggle(group.activeClass, active);
+          }
+          if (group.hide) {
+            item.hidden = !active;
+          }
+          if (group.announce) {
+            item.setAttribute('aria-hidden', active ? 'false' : 'true');
+          }
+        });
+      });
+    };
+
+    var selected = null;
+    each(controls, function (control) {
+      if (selected !== null) {
+        return;
+      }
+      if (control.getAttribute('aria-expanded') === 'true'
+        || (controlClass && control.classList.contains(controlClass))) {
+        selected = control.getAttribute(controlAttr);
+      }
+    });
+    if (selected === null && controls[0]) {
+      selected = controls[0].getAttribute(controlAttr);
+    }
+    apply(selected);
+
+    each(controls, function (control) {
+      if (!control.hasAttribute('tabindex') && control.tabIndex < 0) {
+        control.tabIndex = 0;
+      }
+      var activate = function () {
+        var value = control.getAttribute(controlAttr);
+        var isOpen = control.getAttribute('aria-expanded') === 'true'
+          || (controlClass && control.classList.contains(controlClass));
+        // A control that carries aria-expanded is an accordion trigger: its
+        // second click closes the row it opened.
+        if (control.hasAttribute('aria-expanded') && isOpen) {
+          return;
+        }
+        apply(value);
+      };
+      control.addEventListener('click', activate);
+      control.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+          event.preventDefault();
+          activate();
+        }
+      });
+    });
+  }
+
+  // A spec table whose headers advertise sorting: `th[data-sort]` over rows
+  // that carry `data-original-order` so the original sequence can be restored.
+  // The volume ships the SVG arrows and a `.sort-ic` class but no behaviour, so
+  // the arrows pointed at nothing.
+  function setupSpecTableSort() {
+    each(document.querySelectorAll('table.spec-table, table[data-spec-table]'), function (table) {
+      var headers = [].slice.call(table.querySelectorAll('th[data-sort]'));
+      var body = table.querySelector('tbody');
+      if (!headers.length || !body) {
+        return;
+      }
+      var rows = [].slice.call(body.querySelectorAll('tr'));
+      var direction = 1;
+      var current = null;
+
+      var sortBy = function (header) {
+        var key = header.getAttribute('data-sort');
+        // Clicking the current header reverses it; a different header starts
+        // ascending. There is no third state: the authored order is what the
+        // section ships, and a visitor who wants it back reloads.
+        direction = current === key && direction === 1 ? -1 : 1;
+        var column = headers.indexOf(header);
+
+        var sorted = rows.slice().sort(function (a, b) {
+          var left = (a.children[column] || {}).textContent || '';
+          var right = (b.children[column] || {}).textContent || '';
+          var leftNumber = parseFloat(left.replace(/[^0-9.\-]/g, ''));
+          var rightNumber = parseFloat(right.replace(/[^0-9.\-]/g, ''));
+          // Numeric when both cells lead with a number, textual otherwise: a
+          // "0.8 — 12.0 mm" range and a "Sheet or coil format" note live in the
+          // same table.
+          if (!isNaN(leftNumber) && !isNaN(rightNumber)) {
+            return (leftNumber - rightNumber) * direction;
+          }
+          return left.trim().localeCompare(right.trim()) * direction;
+        });
+
+        sorted.forEach(function (row) {
+          body.appendChild(row);
+        });
+
+        each(headers, function (other) {
+          var sortedThis = other === header;
+          other.setAttribute('aria-sort', sortedThis
+            ? (direction === 1 ? 'ascending' : 'descending')
+            : 'none');
+          if (other !== header) {
+            other.removeAttribute('data-sorted');
+          }
+        });
+        header.setAttribute('data-sorted', direction === 1 ? 'asc' : 'desc');
+        current = key;
+      };
+
+      each(headers, function (header, index) {
+        header.setAttribute('tabindex', '0');
+        header.setAttribute('role', 'button');
+        header.setAttribute('aria-sort', 'none');
+        var activate = function () {
+          sortBy(header);
+        };
+        header.addEventListener('click', activate);
+        header.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+            event.preventDefault();
+            activate();
+          }
+        });
+        if (index === 0) {
+          // No default sort: the table is authored in the order the section
+          // wants read.
+        }
+      });
+    });
+  }
+
+  // Laser-cut panels' FAQ: category tabs, a text filter, collapsible groups and
+  // per-question answers. All four were drawn and none of them worked.
+  function setupFaqFilter() {
+    each(document.querySelectorAll('#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq, [data-md-faq-filter]'), function (root) {
+      var tabs = [].slice.call(root.querySelectorAll('.cat-tab[data-cat]'));
+      var groups = [].slice.call(root.querySelectorAll('.faq-group[data-cat]'));
+      var search = root.querySelector('input[id$="-faq-search"]');
+      var items = [].slice.call(root.querySelectorAll('.faq-item[data-q]'));
+      if (!tabs.length && !search) {
+        return;
+      }
+
+      var activeCat = 'all';
+      var query = '';
+
+      var apply = function () {
+        var shown = 0;
+        groups.forEach(function (group) {
+          var groupCat = group.getAttribute('data-cat');
+          var catMatch = activeCat === 'all' || groupCat === activeCat;
+          var groupShown = 0;
+          each(group.querySelectorAll('.faq-item[data-q]'), function (item) {
+            var haystack = (item.getAttribute('data-q') || '').toLowerCase();
+            // The visible question text matters too: data-q is a keyword list,
+            // and a visitor searching what they can read must find it.
+            var label = (item.textContent || '').toLowerCase();
+            var textMatch = !query || haystack.indexOf(query) > -1 || label.indexOf(query) > -1;
+            var visible = catMatch && textMatch;
+            item.hidden = !visible;
+            if (visible) {
+              groupShown += 1;
+            }
+          });
+          var groupVisible = groupShown > 0;
+          group.hidden = !groupVisible;
+          if (groupVisible) {
+            shown += groupShown;
+          }
+        });
+
+        var empty = root.querySelector('[data-md-faq-empty]');
+        if (empty) {
+          empty.hidden = shown > 0;
+        }
+        return shown;
+      };
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          activeCat = tab.getAttribute('data-cat');
+          each(tabs, function (other) {
+            var on = other === tab;
+            other.classList.toggle('active', on);
+            other.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+          apply();
+        });
+        tab.setAttribute('aria-pressed', tab.classList.contains('active') ? 'true' : 'false');
+      });
+
+      if (search) {
+        search.addEventListener('input', function () {
+          query = (search.value || '').trim().toLowerCase();
+          apply();
+        });
+      }
+
+      // The group headers (Drawing & Design, …) open and close their body.
+      each(root.querySelectorAll('.faq-group'), function (group) {
+        var bodyEl = group.querySelector('.group-body');
+        var header = group.querySelector('.group-header')
+          || (group.firstElementChild && group.firstElementChild.tagName === 'BUTTON' ? group.firstElementChild : null);
+        if (!header || !bodyEl) {
+          return;
+        }
+        var setOpen = function (open) {
+          bodyEl.hidden = !open;
+          header.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        // Groups ship open: the section reads as a list of answers, and a
+        // collapsed group would hide every question behind a second click.
+        setOpen(true);
+        header.addEventListener('click', function () {
+          setOpen(bodyEl.hidden);
+        });
+      });
+
+      // Per-question answers.
+      each(items, function (item) {
+        var question = item.querySelector('.question');
+        var answer = item.querySelector('.answer');
+        if (!question || !answer) {
+          return;
+        }
+        answer.hidden = true;
+        question.setAttribute('aria-expanded', 'false');
+        question.addEventListener('click', function () {
+          var open = answer.hidden;
+          // One answer at a time within a group: a long answer would push the
+          // rest of the list out of view.
+          each(item.parentElement.querySelectorAll('.faq-item'), function (other) {
+            if (other === item) {
+              return;
+            }
+            var otherAnswer = other.querySelector('.answer');
+            var otherQuestion = other.querySelector('.question');
+            if (otherAnswer) {
+              otherAnswer.hidden = true;
+            }
+            if (otherQuestion) {
+              otherQuestion.setAttribute('aria-expanded', 'false');
+            }
+          });
+          answer.hidden = !open;
+          question.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      });
+    });
+  }
+
+  // Perforated panels' application scope: four markers over an open-area rail,
+  // each owning a background image, a copy panel and (on a phone) a detail
+  // panel. The section also carries an open-area readout that follows the
+  // marker's own `data-pa-position`.
+  function setupPerforatedMarkers() {
+    each(document.querySelectorAll('[data-pa-marker]'), function (marker) {
+      var index = marker.getAttribute('data-pa-marker');
+      var scope = marker.closest('section') || document;
+      var bgs = [].slice.call(scope.querySelectorAll('[data-pa-bg-panel]'));
+      var panels = [].slice.call(scope.querySelectorAll('[data-pa-panel]'));
+      var mobile = [].slice.call(scope.querySelectorAll('[data-pa-mobile-panel]'));
+      var railFill = scope.querySelector('[data-pa-rail-fill]');
+      var readout = scope.querySelector('[data-pa-oa-value]');
+
+      var apply = function () {
+        each(scope.querySelectorAll('[data-pa-marker]'), function (other) {
+          var active = other === marker;
+          other.setAttribute('aria-pressed', active ? 'true' : 'false');
+          other.classList.toggle('is-active', active);
+        });
+        each(bgs, function (bg) {
+          var active = bg.getAttribute('data-pa-bg-panel') === index;
+          bg.classList.toggle('opacity-100', active);
+          bg.classList.toggle('opacity-0', !active);
+        });
+        each(panels, function (panel) {
+          panel.classList.toggle('is-active', panel.getAttribute('data-pa-panel') === index);
+          panel.hidden = panel.getAttribute('data-pa-panel') !== index;
+        });
+        each(mobile, function (panel) {
+          panel.classList.toggle('is-active', panel.getAttribute('data-pa-mobile-panel') === index);
+          panel.hidden = panel.getAttribute('data-pa-mobile-panel') !== index;
+        });
+
+        // The open-area readout and the rail fill both come from the marker's
+        // own declared position, so they cannot drift from each other.
+        var percent = marker.getAttribute('data-pa-position');
+        if (railFill && percent) {
+          railFill.style.width = percent + '%';
+        }
+        if (readout && percent) {
+          readout.textContent = percent + '%';
+        }
+      };
+
+      marker.addEventListener('click', apply);
+    });
+
+    // First marker is the authored default.
+    var first = document.querySelector('[data-pa-marker]');
+    if (first) {
+      first.click();
+    }
+  }
+
+  // The before/after split comparison. `data-pa-slider` is the handle, the
+  // masked half's width is the reveal, and the drag is pointer-only because a
+  // range input is not in this markup.
+  //
+  // The split is measured against the panel that actually holds the mask, not
+  // the whole section: the section is full width but the comparison lives in
+  // the left half of it, so a ratio taken from the section put the handle at
+  // half the distance the pointer had travelled (measured: dragging to 80% of
+  // the section produced a 0.5 split).
+  function setupCompareDrag() {
+    each(document.querySelectorAll('[data-pa-slider]'), function (slider) {
+      var scope = slider.closest('[data-pa-left-panel]')
+        || slider.closest('section')
+        || slider.parentElement;
+      if (!scope) {
+        return;
+      }
+      var masked = scope.querySelector('[data-pa-masked-left]');
+      var mask = scope.querySelector('[data-pa-mask]');
+      if (!masked || !mask) {
+        return;
+      }
+
+      var set = function (ratio) {
+        var clamped = Math.min(1, Math.max(0, ratio));
+        var percent = (clamped * 100).toFixed(2) + '%';
+        masked.style.width = percent;
+        // The handle is positioned by the same percentage. Its `left` is set
+        // here rather than in the stylesheet because this is the value that
+        // must match the mask exactly; the stylesheet owns the box, not the
+        // position.
+        slider.style.left = percent;
+        slider.setAttribute('aria-valuenow', String(Math.round(clamped * 100)));
+      };
+
+      var ratioFromEvent = function (event) {
+        var box = scope.getBoundingClientRect();
+        if (!box.width) {
+          return 0.5;
+        }
+        var x = (event.touches && event.touches[0] ? event.touches[0].clientX : event.clientX) - box.left;
+        return x / box.width;
+      };
+
+      var dragging = false;
+      var start = function (event) {
+        dragging = true;
+        set(ratioFromEvent(event));
+        event.preventDefault();
+      };
+      var move = function (event) {
+        if (!dragging) {
+          return;
+        }
+        set(ratioFromEvent(event));
+      };
+      var end = function () {
+        dragging = false;
+      };
+
+      slider.addEventListener('pointerdown', start);
+      // The move and release listeners live on the window: the pointer leaves
+      // the 4px handle immediately, and a listener on the handle would stop
+      // receiving events at that moment.
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', end);
+      window.addEventListener('pointercancel', end);
+
+      // Keyboard: the handle is a slider, so the arrow keys must move it.
+      slider.setAttribute('tabindex', '0');
+      slider.setAttribute('role', 'slider');
+      slider.setAttribute('aria-valuemin', '0');
+      slider.setAttribute('aria-valuemax', '100');
+      slider.addEventListener('keydown', function (event) {
+        var box = scope.getBoundingClientRect();
+        var current = masked.getBoundingClientRect().width / (box.width || 1);
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          set(current - 0.05);
+        } else if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          set(current + 0.05);
+        } else if (event.key === 'Home') {
+          event.preventDefault();
+          set(0);
+        } else if (event.key === 'End') {
+          event.preventDefault();
+          set(1);
+        }
+      });
+
+      set(0.5);
+    });
+  }
+
+  // The manufacturing quality document stack: four cards dealt into
+  // is-active / is-next / is-prev / is-hidden positions, with a caption, four
+  // dots and two arrows.
+  //
+  // The card positions are the volume's vocabulary (a "deck" of documents), so
+  // this is a stepper, not a scroller: the index is the state and each card
+  // gets the class its offset from the current index implies.
+  function setupQualityDeck() {
+    var root = document.querySelector('[data-mfg-quality]');
+    if (!root) {
+      return;
+    }
+    var cards = [].slice.call(root.querySelectorAll('[data-mfg-quality-card]'));
+    var dots = [].slice.call(root.querySelectorAll('[data-mfg-quality-dot]'));
+    var caption = root.querySelector('[data-mfg-quality-caption]');
+    var prev = root.querySelector('[data-mfg-quality-prev]');
+    var next = root.querySelector('[data-mfg-quality-next]');
+    if (!cards.length) {
+      return;
+    }
+
+    var index = 0;
+    // The caption content per card is the card's own title block; the caption
+    // element is a summary of the current document.
+    var captionFor = function (card) {
+      var title = card.querySelector('.mfg-quality__doc-title');
+      var type = card.querySelector('.mfg-quality__doc-label');
+      return {
+        title: title ? title.textContent.trim() : '',
+        type: type ? type.textContent.trim() : ''
+      };
+    };
+
+    var apply = function (next_index) {
+      var total = cards.length;
+      index = ((next_index % total) + total) % total;
+
+      cards.forEach(function (card, i) {
+        var offset = (i - index + total) % total;
+        card.classList.toggle('is-active', offset === 0);
+        card.classList.toggle('is-next', offset === 1);
+        card.classList.toggle('is-prev', offset === total - 1);
+        card.classList.toggle('is-hidden', offset !== 0 && offset !== 1 && offset !== total - 1);
+        card.setAttribute('aria-hidden', offset === 0 ? 'false' : 'true');
+        // Only the shown card is reachable: the others are stacked behind it.
+        if (offset === 0) {
+          card.removeAttribute('inert');
+        } else {
+          card.setAttribute('inert', '');
+        }
+      });
+
+      dots.forEach(function (dot, i) {
+        var active = i === index;
+        dot.classList.toggle('is-active', active);
+        dot.setAttribute('aria-current', active ? 'true' : 'false');
+      });
+
+      if (caption) {
+        var info = captionFor(cards[index]);
+        var textNode = null;
+        for (var i = 0; i < caption.childNodes.length; i += 1) {
+          if (caption.childNodes[i].nodeType === 3 && caption.childNodes[i].textContent.trim()) {
+            textNode = caption.childNodes[i];
+            break;
+          }
+        }
+        if (textNode) {
+          textNode.textContent = info.title;
+        } else if (info.title) {
+          caption.insertBefore(document.createTextNode(info.title), caption.firstChild);
+        }
+        var typeEl = caption.querySelector('.mfg-quality__type');
+        if (typeEl && info.type) {
+          typeEl.textContent = info.type;
+        }
+      }
+    };
+
+    if (prev) {
+      prev.addEventListener('click', function () {
+        apply(index - 1);
+      });
+    }
+    if (next) {
+      next.addEventListener('click', function () {
+        apply(index + 1);
+      });
+    }
+    dots.forEach(function (dot, i) {
+      dot.addEventListener('click', function () {
+        apply(i);
+      });
+    });
+
+    apply(0);
+  }
+
+  // The header's predictive search: a text field, a clear control and a result
+  // container. The field is a real form input, so submitting works; the reset
+  // clears the query and the result region.
+  function setupPredictiveSearchReset() {
+    each(document.querySelectorAll('[data-predictive-search-input]'), function (input) {
+      var name = input.getAttribute('data-predictive-search-input');
+      var reset = document.querySelector('[data-predictive-search-reset="' + name + '"]');
+      var results = document.querySelector('[data-predictive-search-result="' + name + '"]');
+      if (!reset) {
+        return;
+      }
+
+      var sync = function () {
+        // The clear control only exists while there is something to clear.
+        var hasValue = !!(input.value || '').trim();
+        reset.hidden = !hasValue;
+        if (results) {
+          results.hidden = !hasValue;
+        }
+      };
+
+      reset.addEventListener('click', function (event) {
+        event.preventDefault();
+        input.value = '';
+        if (results) {
+          results.innerHTML = '';
+        }
+        sync();
+        input.focus();
+      });
+
+      input.addEventListener('input', sync);
+      sync();
+    });
+  }
+
+  // The series archive's specification-decision cards: picking a card fills the
+  // one detail panel beside them from that card's own data attributes. The
+  // cards carry every value the panel needs, so nothing is duplicated in markup.
+  function setupSpecDecisionCards() {
+    each(document.querySelectorAll('[data-psd-card]'), function (card) {
+      var scope = card.closest('section') || document;
+      var detail = scope.querySelector('[data-psd-detail]');
+      if (!detail) {
+        return;
+      }
+
+      var set = function (field, value) {
+        var el = detail.querySelector('[data-psd-detail-' + field + ']');
+        if (!el) {
+          return;
+        }
+        if (el.tagName === 'IMG') {
+          el.src = value;
+          return;
+        }
+        if (el.tagName === 'A') {
+          el.href = value;
+          return;
+        }
+        el.textContent = value;
+      };
+
+      // The chips and notes are spans with their own classes, not list items:
+      // the volume styles `.psd__chip` and `.psd__note`, so the replacement has
+      // to produce those elements rather than semantic list children.
+      var fill = function (selector, values, tag, className) {
+        var container = detail.querySelector(selector);
+        if (!container) {
+          return;
+        }
+        container.innerHTML = '';
+        values.forEach(function (value) {
+          var item = document.createElement(tag);
+          item.className = className;
+          item.textContent = value;
+          container.appendChild(item);
+        });
+      };
+
+      var apply = function () {
+        each(scope.querySelectorAll('[data-psd-card]'), function (other) {
+          var active = other === card;
+          other.classList.toggle('is-active', active);
+          other.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+
+        set('img', card.getAttribute('data-psd-image') || '');
+        var img = detail.querySelector('[data-psd-detail-img]');
+        if (img) {
+          img.alt = card.getAttribute('data-psd-image-alt') || '';
+        }
+        set('label', card.getAttribute('data-psd-label') || '');
+        set('title', card.getAttribute('data-psd-title') || '');
+        set('desc', card.getAttribute('data-psd-desc') || '');
+        set('cta', card.getAttribute('data-psd-cta') || '');
+
+        var link = detail.querySelector('[data-psd-detail-cta]');
+        if (link) {
+          link.href = card.getAttribute('data-psd-url') || '#';
+        }
+
+        var best = (card.getAttribute('data-psd-best') || '').split(',').map(function (item) {
+          return item.trim();
+        }).filter(Boolean);
+        fill('[data-psd-best-list]', best, 'span', 'psd__chip');
+
+        var notes = (card.getAttribute('data-psd-notes') || '').split('\n').map(function (item) {
+          return item.trim();
+        }).filter(Boolean);
+        fill('[data-psd-note-list]', notes, 'span', 'psd__note');
+      };
+
+      card.addEventListener('click', apply);
+      if (card.classList.contains('is-active')) {
+        apply();
+      }
+    });
+  }
+
+  /* ================================================================== *
+   * The custom-screens landing face
+   *
+   * This page was converted from a theme that carried its whole interaction
+   * layer as inline `onclick` attributes. The CSP baseline blocks inline
+   * handlers, and the functions they named were never migrated, so all
+   * twenty-three of them were dead: the pattern chips, the feature gallery
+   * arrows, the three application lightboxes, the trust tabs, the mobile menu,
+   * the mobile thumbnails, the Get Quote buttons and the success dialog.
+   * ================================================================== */
+
+  // The hero's pattern chips: four chips, one preview image, one label. Each
+  // chip carries its image, alt and label, so the preview is a copy of the
+  // chip's own data — the same shape as the catalog's spec-decision cards.
+  function setupHeroChips() {
+    var chips = [].slice.call(document.querySelectorAll('.hero-chip[data-pattern-image]'));
+    if (!chips.length) {
+      return;
+    }
+    var scope = chips[0].closest('section') || document;
+    var image = scope.querySelector('.hero-preview img');
+    var label = scope.querySelector('[data-hero-pattern-label]');
+    if (!image) {
+      return;
+    }
+
+    var apply = function (chip) {
+      each(chips, function (other) {
+        var active = other === chip;
+        other.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      var src = chip.getAttribute('data-pattern-image');
+      if (src) {
+        image.src = src;
+        // The srcset was describing the previous picture; left in place the
+        // browser can satisfy the new layout from a stale candidate.
+        image.removeAttribute('srcset');
+      }
+      image.alt = chip.getAttribute('data-pattern-alt') || '';
+      if (label) {
+        label.textContent = chip.getAttribute('data-pattern-label') || '';
+      }
+    };
+
+    each(chips, function (chip) {
+      chip.addEventListener('click', function () {
+        apply(chip);
+      });
+    });
+
+    var initial = chips.filter(function (chip) {
+      return chip.getAttribute('aria-pressed') === 'true';
+    })[0];
+    if (initial) {
+      apply(initial);
+    }
+  }
+
+  // Why-us: the feature gallery's arrows. The panels are flexible siblings —
+  // `.feature-panel.active { flex: 2.5 }` — so this is a stepper over
+  // `.active`, not a scroller, and only one panel is active at a time.
+  function setupFeatureGallery() {
+    var gallery = document.querySelector('[class*="features-gallery"]')
+      || document.querySelector('#gallery-template--22465876033789__why_us_a7TA6d');
+    if (!gallery) {
+      return;
+    }
+    var panels = [].slice.call(gallery.querySelectorAll('.feature-panel'));
+    if (panels.length < 2) {
+      return;
+    }
+    var section = gallery.closest('section') || document;
+    var prev = section.querySelector('.gallery-nav--prev');
+    var next = section.querySelector('.gallery-nav--next');
+    var index = Math.max(0, panels.findIndex(function (panel) {
+      return panel.classList.contains('active');
+    }));
+
+    var apply = function (next_index) {
+      index = ((next_index % panels.length) + panels.length) % panels.length;
+      panels.forEach(function (panel, i) {
+        var active = i === index;
+        panel.classList.toggle('active', active);
+        // The inactive panels are collapsed by the volume's flex rules but
+        // their text is still in the accessibility tree.
+        panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+      });
+      if (prev) {
+        prev.disabled = false;
+      }
+      if (next) {
+        next.disabled = false;
+      }
+    };
+
+    if (prev) {
+      prev.addEventListener('click', function () {
+        apply(index - 1);
+      });
+    }
+    if (next) {
+      next.addEventListener('click', function () {
+        apply(index + 1);
+      });
+    }
+    apply(index);
+  }
+
+  // The three application case studies. Each trigger opens the dialog its own
+  // id names, and every dialog is a surface on the shared stack — the same
+  // scroll lock, inert page, Escape handling and focus restore the gallery
+  // lightbox uses.
+  function setupApplicationLightboxes() {
+    each(document.querySelectorAll('[data-app-lightbox]'), function (trigger) {
+      var dialog = document.getElementById(trigger.getAttribute('data-app-lightbox'));
+      if (!dialog) {
+        return;
+      }
+      var opener = null;
+
+      var setClosed = function (closed) {
+        if (closed) {
+          dialog.classList.remove('active');
+          dialog.setAttribute('inert', '');
+          dialog.setAttribute('aria-hidden', 'true');
+        } else {
+          dialog.removeAttribute('inert');
+          dialog.setAttribute('aria-hidden', 'false');
+        }
+      };
+      setClosed(true);
+
+      var close = function () {
+        setClosed(true);
+        popSurface(dialog);
+        restoreFocus(opener);
+        opener = null;
+      };
+      dialog.__mdClose = close;
+
+      var open = function () {
+        opener = trigger;
+        setClosed(false);
+        dialog.classList.add('active');
+        pushSurface(dialog);
+        initialFocusTarget(dialog).focus({ preventScroll: true });
+      };
+
+      trigger.addEventListener('click', open);
+      trigger.addEventListener('keydown', function (event) {
+        // role="button" on a div carries no native activation.
+        if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+          event.preventDefault();
+          open();
+        }
+      });
+
+      each(dialog.querySelectorAll('[data-app-lightbox-close]'), function (control) {
+        control.addEventListener('click', function (event) {
+          event.preventDefault();
+          close();
+        });
+      });
+    });
+  }
+
+  // The landing page's own quote dialog. The face carries an Alpine
+  // `quoteModal()` component, so the shared `[data-quote-source]` handler in
+  // setupModals already dispatches `open-quote`; this only adds the mobile
+  // menu's "close before opening" ordering, which the inline handler used to
+  // do with a 200ms timeout.
+  function setupLandingNav() {
+    var nav = document.getElementById('landing-nav');
+    if (!nav) {
+      return;
+    }
+    var toggle = document.getElementById('mobile-toggle');
+    var overlay = document.getElementById('mobile-menu-overlay');
+    var drawer = document.getElementById('mobile-menu-drawer');
+
+    // The band is `position: fixed` on this face, and the site header is
+    // sticky above it. Without an offset the two occupy the same pixels and
+    // the site header wins on z-index.
+    var syncOffset = function () {
+      var header = document.querySelector('body > header#lc-header');
+      var height = header ? Math.round(header.getBoundingClientRect().height) : 0;
+      nav.style.setProperty('--landing-nav-offset', height + 'px');
+      nav.setAttribute('data-md-header-offset', String(height));
+    };
+    syncOffset();
+    window.addEventListener('resize', syncOffset);
+
+    // Once scrolled the nav locks to the top, so the offset must not keep
+    // pushing it down then.
+    var syncState = function () {
+      nav.classList.toggle('scrolled', window.scrollY > 24);
+    };
+    window.addEventListener('scroll', syncState, { passive: true });
+    syncState();
+
+    if (!toggle || !drawer) {
+      return;
+    }
+
+    var setMenu = function (open) {
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      drawer.classList.toggle('open', open);
+      nav.classList.toggle('mobile-view', open);
+      if (overlay) {
+        overlay.classList.toggle('open', open);
+      }
+      // A closed drawer is off-screen, not absent: its links stay in the tab
+      // order and would strand a keyboard visitor.
+      if (open) {
+        drawer.removeAttribute('inert');
+        drawer.setAttribute('aria-hidden', 'false');
+      } else {
+        drawer.setAttribute('inert', '');
+        drawer.setAttribute('aria-hidden', 'true');
+      }
+    };
+    setMenu(false);
+
+    toggle.addEventListener('click', function () {
+      setMenu(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    each(document.querySelectorAll('[data-mobile-menu-close]'), function (control) {
+      control.addEventListener('click', function () {
+        setMenu(false);
+      });
+    });
+
+    // The drawer's Get Quote closes the menu first, then opens the dialog. The
+    // shared handler reads data-quote-source off the same button, so this only
+    // has to close the menu — no timeout, and no second open path.
+    each(drawer.querySelectorAll('[data-quote-source]'), function (control) {
+      control.addEventListener('click', function () {
+        setMenu(false);
+      });
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        setMenu(false);
+        toggle.focus();
+      }
+    });
+  }
+
+  // The trust section's four tabs. Same WAI-ARIA strip the rest of the site
+  // uses, over this face's `.tab-btn` / `.tab-content-item` vocabulary.
+  function setupTrustTabs() {
+    each(document.querySelectorAll('.trust-tabs-section'), function (section) {
+      var triggers = [].slice.call(section.querySelectorAll('.tab-btn[role="tab"]'));
+      var panes = [].slice.call(section.querySelectorAll('.tab-content-item'));
+      if (!triggers.length || !panes.length) {
+        return;
+      }
+      bindTabSet(triggers, panes, {
+        list: section.querySelector('[role="tablist"]'),
+        activeClass: 'active',
+        nameOf: function (trigger) {
+          return trigger.id.replace(/^tab-btn-/, '');
+        },
+        paneNameOf: function (pane) {
+          return pane.id.replace(/^trust-tab-/, '');
+        },
+        initial: triggers.filter(function (t) {
+          return t.getAttribute('aria-selected') === 'true';
+        })[0] || triggers[0]
+      });
+
+      // The volume draws a sliding underline whose width and position the old
+      // inline handler computed. One delegated update per activation keeps it
+      // honest without a second state tracker.
+      var indicator = section.querySelector('.tab-indicator');
+      var moveIndicator = function () {
+        var active = section.querySelector('.tab-btn[aria-selected="true"]');
+        if (!indicator || !active) {
+          return;
+        }
+        indicator.style.width = active.offsetWidth + 'px';
+        indicator.style.transform = 'translateX(' + active.offsetLeft + 'px)';
+      };
+      moveIndicator();
+      each(triggers, function (trigger) {
+        trigger.addEventListener('click', moveIndicator);
+      });
+      window.addEventListener('resize', moveIndicator);
+    });
+  }
+
+  // The mobile product gallery: four thumbnails swap the main image and its
+  // caption. The thumbnails carry the source, the label and the alt so the
+  // main image is a copy of the chosen button.
+  function setupMobileGallery() {
+    each(document.querySelectorAll('[data-mobile-thumb]'), function (thumb) {
+      // The scope is the mobile block that holds both the big image and these
+      // buttons. It is found by walking up to the first ancestor that contains
+      // a main image — the block's own class list is a Tailwind display
+      // utility (`md:hidden`) and matching on an escaped class name is a
+      // selector waiting to break.
+      var scope = thumb.parentElement;
+      while (scope && scope !== document.body && !scope.querySelector('img')) {
+        scope = scope.parentElement;
+      }
+      if (!scope) {
+        return;
+      }
+      // Wider than the thumbnail row, and the one that holds the caption.
+      while (scope && scope !== document.body && !scope.querySelector('#mobile-main-label')) {
+        scope = scope.parentElement;
+      }
+      var main = scope ? scope.querySelector('img') : null;
+      var label = scope ? scope.querySelector('#mobile-main-label') : null;
+      if (!main) {
+        return;
+      }
+
+      var apply = function () {
+        var src = thumb.getAttribute('data-src');
+        if (src) {
+          main.src = src;
+          main.removeAttribute('srcset');
+        }
+        main.alt = thumb.getAttribute('data-alt') || main.alt;
+        if (label) {
+          label.textContent = thumb.getAttribute('data-label') || label.textContent;
+        }
+        each(scope.querySelectorAll('[data-mobile-thumb]'), function (other) {
+          other.setAttribute('aria-pressed', other === thumb ? 'true' : 'false');
+          other.classList.toggle('is-active', other === thumb);
+        });
+      };
+
+      thumb.setAttribute('aria-pressed', 'false');
+      thumb.addEventListener('click', apply);
+    });
+  }
+
+  // The landing face's shared success dialog: the backdrop and its Close
+  // button dismiss it. The dialog is shown by the inquiry flow, not here, so
+  // this only owns the dismissal the inline handlers used to provide.
+  function setupSectionModalClose() {
+    each(document.querySelectorAll('[data-section-modal-close]'), function (control) {
+      var modal = control.closest('[id$="section-success-modal"]') || document.querySelector('#section-success-modal');
+      if (!modal) {
+        return;
+      }
+      control.addEventListener('click', function (event) {
+        event.preventDefault();
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.classList.remove('opacity-100');
+        modal.setAttribute('aria-hidden', 'true');
+        var content = modal.querySelector('.section-modal-content');
+        if (content) {
+          content.classList.add('scale-95');
+          content.classList.remove('scale-100');
+        }
+      });
+    });
+  }
+
   function setupSticky() {
     each(document.querySelectorAll('xo-sticky'), function (element) {
       if (element.closest('header#lc-header')) {
@@ -2001,6 +3521,32 @@
     setupPatternLightbox();
     setupProcessVideos();
     setupMeshTypes();
+
+    // The control families. Each is markup plus a stylesheet state class that
+    // nothing set, so every one of them was drawn and dead.
+    setupDeadTabFamilies();
+    setupOutcomesCarousel();
+    setupMaterialAccordion();
+    setupShowcaseCarousels();
+    setupProjectProofCarousels();
+    setupQualityDeck();
+    setupSpecTableSort();
+    setupFaqFilter();
+    setupPerforatedMarkers();
+    setupCompareDrag();
+    setupPredictiveSearchReset();
+    setupSpecDecisionCards();
+
+    // The custom-screens landing face, converted from a theme whose whole
+    // interaction layer was inline `onclick` — blocked by the CSP and naming
+    // functions that were never migrated.
+    setupHeroChips();
+    setupFeatureGallery();
+    setupApplicationLightboxes();
+    setupTrustTabs();
+    setupMobileGallery();
+    setupSectionModalClose();
+    setupLandingNav();
 
     // The catalog's sort select posts its form on change (the CSP blocks
     // inline handlers, so the behaviour lives here).

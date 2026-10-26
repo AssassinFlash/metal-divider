@@ -183,3 +183,316 @@ flex: 2.7;
 border-color: rgba(201, 169, 98, 0.45);
 }
 }
+
+/* ── Quality document deck ────────────────────────────────────────────────
+   This section shipped markup and a deck vocabulary (is-active / is-next /
+   is-prev / is-hidden) with no stylesheet at all: measured, every rule for
+   `mfg-quality` was missing from this volume and from the compiled cache, the
+   four cards all rendered at full width stacked 2224px tall, and the dots
+   computed to 0x0. setupQualityDeck() in md-chrome.js drives the state; this
+   gives the state something to look like.
+
+   The stack is a fixed-height stage with the four documents piled in it. Only
+   the active one is interactive — the runtime marks the rest inert — so the
+   offsets are presentational and cannot mislead a pointer. */
+.mfg-quality {
+position: relative;
+padding: 64px 0;
+background: var(--md-bg-deep, #141414);
+color: #fff;
+overflow: hidden;
+}
+@media (min-width: 750px) {
+.mfg-quality { padding: 96px 0; }
+}
+.mfg-quality__inner {
+max-width: 1240px;
+margin: 0 auto;
+padding: 0 20px;
+display: grid;
+grid-template-columns: 1fr;
+gap: 40px;
+align-items: center;
+}
+@media (min-width: 900px) {
+.mfg-quality__inner {
+grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+gap: 64px;
+padding: 0 40px;
+}
+}
+.mfg-quality__eyebrow {
+display: block;
+font-size: 12px;
+font-weight: 700;
+letter-spacing: 0.2em;
+text-transform: uppercase;
+color: var(--md-gold, #c9a962);
+margin-bottom: 16px;
+}
+.mfg-quality__heading {
+font-family: 'Playfair Display', Georgia, serif;
+font-size: 30px;
+line-height: 1.12;
+font-weight: 700;
+margin: 0 0 16px;
+}
+@media (min-width: 750px) {
+.mfg-quality__heading { font-size: 42px; }
+}
+.mfg-quality__subheading {
+font-size: 15px;
+line-height: 1.6;
+color: rgba(255, 255, 255, 0.72);
+margin: 0 0 24px;
+max-width: 46ch;
+}
+.mfg-quality__features {
+display: flex;
+flex-direction: column;
+gap: 12px;
+margin: 0 0 28px;
+padding: 0;
+list-style: none;
+}
+.mfg-quality__feature {
+display: flex;
+gap: 10px;
+font-size: 14px;
+line-height: 1.5;
+color: rgba(255, 255, 255, 0.8);
+}
+/* The stage holds the pile AND the caption and controls (they are its
+   children in the markup), so it is a column: the stack takes the remaining
+   room and the caption and controls sit under it. Making the stack
+   `inset: 0` instead put it over the controls and swallowed every click on
+   the arrows and dots — measured, Playwright reported the stack intercepting
+   pointer events on `[data-mfg-quality-next]`. */
+.mfg-quality__stage {
+position: relative;
+display: flex;
+flex-direction: column;
+height: 460px;
+}
+@media (min-width: 750px) {
+.mfg-quality__stage { height: 620px; }
+}
+.mfg-quality__halo {
+position: absolute;
+inset: 8% 6%;
+border-radius: 50%;
+background: radial-gradient(circle, rgba(201, 169, 98, 0.16) 0%, rgba(201, 169, 98, 0) 70%);
+pointer-events: none;
+}
+.mfg-quality__stack {
+position: relative;
+flex: 1 1 auto;
+min-height: 300px;
+}
+/* Every document is absolutely placed on the same spot and then offset by its
+   deck position. Without the base rule they would stack in normal flow, which
+   is exactly what the un-styled section did. */
+.mfg-quality__doc {
+position: absolute;
+top: 50%;
+left: 50%;
+width: min(100%, 440px);
+margin: 0;
+background: #f7f4ee;
+color: #1a1a1a;
+border-radius: 6px;
+box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+transform: translate(-50%, -50%);
+transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
+opacity 0.35s ease;
+}
+.mfg-quality__doc.is-active {
+transform: translate(-50%, -50%) rotate(-1.2deg) scale(1);
+opacity: 1;
+z-index: 3;
+}
+.mfg-quality__doc.is-next {
+transform: translate(calc(-50% + 22px), calc(-50% + 18px)) rotate(2.4deg) scale(0.96);
+opacity: 0.55;
+z-index: 2;
+}
+.mfg-quality__doc.is-prev {
+transform: translate(calc(-50% - 22px), calc(-50% + 12px)) rotate(-3.4deg) scale(0.94);
+opacity: 0.35;
+z-index: 1;
+}
+.mfg-quality__doc.is-hidden {
+opacity: 0;
+transform: translate(-50%, -50%) scale(0.9);
+z-index: 0;
+pointer-events: none;
+}
+.mfg-quality__paper {
+padding: 14px;
+}
+.mfg-quality__doc-image img {
+display: block;
+width: 100%;
+height: 168px;
+object-fit: cover;
+border-radius: 3px;
+background: #e6e1d8;
+}
+@media (min-width: 750px) {
+.mfg-quality__doc-image img { height: 210px; }
+}
+.mfg-quality__doc-label {
+display: inline-block;
+margin-top: 12px;
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 0.18em;
+text-transform: uppercase;
+color: #8a7a4e;
+}
+.mfg-quality__doc-title {
+margin: 6px 0 8px;
+font-size: 17px;
+line-height: 1.25;
+font-weight: 700;
+color: #1a1a1a;
+}
+.mfg-quality__doc-meta {
+margin: 0;
+font-size: 12px;
+line-height: 1.5;
+color: #5c564b;
+}
+.mfg-quality__doc-lines {
+display: flex;
+flex-direction: column;
+gap: 6px;
+margin: 12px 0 0;
+}
+.mfg-quality__doc-lines span {
+display: block;
+height: 5px;
+border-radius: 3px;
+background: #e2ddd2;
+}
+.mfg-quality__stamp {
+position: absolute;
+right: 12px;
+bottom: 12px;
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 0.14em;
+text-transform: uppercase;
+color: #9b8c60;
+border: 1px solid #d9d2c2;
+border-radius: 3px;
+padding: 3px 6px;
+}
+/* The caption and the controls sit under the stage and are the deck's only
+   visible affordances, so they have to be real, sized controls. */
+.mfg-quality__caption {
+margin: 18px 0 0;
+font-size: 14px;
+font-weight: 600;
+color: #fff;
+text-align: center;
+}
+.mfg-quality__type {
+margin-left: 8px;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.14em;
+text-transform: uppercase;
+color: var(--md-gold, #c9a962);
+}
+.mfg-quality__controls {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 16px;
+margin-top: 16px;
+}
+.mfg-quality__arrow {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 44px;
+height: 44px;
+border-radius: 9999px;
+border: 1px solid rgba(255, 255, 255, 0.22);
+background: transparent;
+color: #fff;
+font-size: 20px;
+line-height: 1;
+cursor: pointer;
+transition: border-color 0.2s, color 0.2s;
+}
+.mfg-quality__arrow:hover {
+border-color: var(--md-gold, #c9a962);
+color: var(--md-gold, #c9a962);
+}
+.mfg-quality__dots {
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.mfg-quality__dot {
+width: 24px;
+height: 24px;
+padding: 0;
+border: 0;
+border-radius: 9999px;
+background: transparent;
+cursor: pointer;
+position: relative;
+}
+/* The visual dot is a pseudo-element so the button keeps a 24px target — a
+   6px button is not pressable and fails a touch-target check. */
+.mfg-quality__dot::after {
+content: '';
+position: absolute;
+inset: 9px 0;
+border-radius: 9999px;
+background: rgba(255, 255, 255, 0.28);
+transition: background 0.2s;
+}
+.mfg-quality__dot.is-active::after {
+background: var(--md-gold, #c9a962);
+}
+.mfg-quality__actions {
+display: flex;
+flex-wrap: wrap;
+gap: 12px;
+margin-top: 24px;
+}
+.mfg-quality__button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+padding: 12px 22px;
+border-radius: 8px;
+font-size: 14px;
+font-weight: 600;
+text-decoration: none;
+background: linear-gradient(to right, #c9a962, #d4b878);
+color: #1a1a1a;
+}
+.mfg-quality__chips {
+display: flex;
+flex-wrap: wrap;
+gap: 8px;
+margin-top: 18px;
+}
+.mfg-quality__chip {
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.06em;
+color: rgba(255, 255, 255, 0.78);
+border: 1px solid rgba(255, 255, 255, 0.14);
+border-radius: 9999px;
+padding: 5px 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+.mfg-quality__doc { transition: none; }
+}
