@@ -191,18 +191,17 @@ final class SeoCommandTest extends TestCase {
 	 * @return array{posts: array<string, array{id: int<1, max>, type: non-empty-string, title: string}>, meta: array<int, array<string, mixed>>, redirects: array<string, int<1, max>>}
 	 */
 	private function target_metas( string $faqs_ld ): array {
-		$inquiry     = 101;
-		$privacy     = 102;
-		$blog        = 103;
-		$thank_you   = 104;
-		$faqs        = 105;
-		$sample_page = 107;
-		$s_product   = 201;
-		$s_faq       = 202;
-		$s_article   = 203;
-		$redirect    = 301;
-		$config      = new Config();
-		$page_metas  = $config->page_metas( '' );
+		$inquiry    = 101;
+		$privacy    = 102;
+		$blog       = 103;
+		$thank_you  = 104;
+		$faqs       = 105;
+		$s_product  = 201;
+		$s_faq      = 202;
+		$s_article  = 203;
+		$redirect   = 301;
+		$config     = new Config();
+		$page_metas = $config->page_metas( '' );
 
 		$posts = array(
 			'inquiry'           => array(
@@ -224,11 +223,6 @@ final class SeoCommandTest extends TestCase {
 				'id'    => $thank_you,
 				'type'  => 'page',
 				'title' => 'Inquiry thank you',
-			),
-			'sample-page'       => array(
-				'id'    => $sample_page,
-				'type'  => 'page',
-				'title' => 'Sample Page',
 			),
 			'faqs'              => array(
 				'id'    => $faqs,
@@ -253,12 +247,11 @@ final class SeoCommandTest extends TestCase {
 		);
 
 		$meta = array(
-			$inquiry     => $page_metas['inquiry'],
-			$privacy     => $page_metas['privacy'],
-			$blog        => $page_metas['blog'],
-			$thank_you   => $page_metas['inquiry/thank-you'],
-			$sample_page => $page_metas['sample-page'],
-			$s_product   => array(
+			$inquiry   => $page_metas['inquiry'],
+			$privacy   => $page_metas['privacy'],
+			$blog      => $page_metas['blog'],
+			$thank_you => $page_metas['inquiry/thank-you'],
+			$s_product => array(
 				'_seopress_pro_rich_snippets_type'         => 'products',
 				'_seopress_pro_rich_snippets_rules'        => array(
 					array(
@@ -285,7 +278,7 @@ final class SeoCommandTest extends TestCase {
 				'_seopress_pro_rich_snippets_product_positive_notes' => 'none',
 				'_seopress_pro_rich_snippets_product_negative_notes' => 'none',
 			),
-			$s_faq       => array(
+			$s_faq     => array(
 				'_seopress_pro_rich_snippets_type'   => 'custom',
 				'_seopress_pro_rich_snippets_rules'  => array(
 					array(
@@ -298,7 +291,7 @@ final class SeoCommandTest extends TestCase {
 				),
 				'_seopress_pro_rich_snippets_custom' => $faqs_ld,
 			),
-			$s_article   => array(
+			$s_article => array(
 				'_seopress_pro_rich_snippets_type'         => 'articles',
 				'_seopress_pro_rich_snippets_rules'        => array(
 					array(
@@ -315,7 +308,7 @@ final class SeoCommandTest extends TestCase {
 				'_seopress_pro_rich_snippets_article_img'  => 'post_thumbnail',
 				'_seopress_pro_rich_snippets_article_author' => 'none',
 			),
-			$redirect    => array(
+			$redirect  => array(
 				'_seopress_redirections_enabled'       => 'yes',
 				'_seopress_redirections_type'          => '301',
 				'_seopress_redirections_value'         => '/',
