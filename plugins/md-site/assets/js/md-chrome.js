@@ -2355,14 +2355,40 @@
         return shown;
       };
 
+      // The tab highlight must tell the truth about what the list shows. The
+      // visual state on faqs.html lives in the Alpine component
+      // (activeFaqCategory drives the x-bind classes), while aria-pressed and
+      // .active are this filter's own; a search narrows the groups without
+      // touching any of them, so the old tab kept announcing a category the
+      // list no longer showed. cat is the category to highlight, or null when
+      // no single category owns the visible list — which is the explicit
+      // "all" tab on the faces that ship one (laser-cut-panels), and no
+      // highlight on the faces that do not (faqs).
+      var syncTabs = function (cat) {
+        if (cat === null) {
+          each(tabs, function (other) {
+            if (other.getAttribute('data-cat') === 'all') {
+              cat = 'all';
+            }
+          });
+        }
+        each(tabs, function (other) {
+          var on = cat !== null && other.getAttribute('data-cat') === cat;
+          other.classList.toggle('active', on);
+          other.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        var scope = window.Alpine && window.Alpine.$data && tabs.length
+          ? window.Alpine.$data(tabs[0])
+          : null;
+        if (scope && typeof scope.activeFaqCategory !== 'undefined') {
+          scope.activeFaqCategory = cat || '';
+        }
+      };
+
       tabs.forEach(function (tab) {
         tab.addEventListener('click', function () {
           activeCat = tab.getAttribute('data-cat');
-          each(tabs, function (other) {
-            var on = other === tab;
-            other.classList.toggle('active', on);
-            other.setAttribute('aria-pressed', on ? 'true' : 'false');
-          });
+          syncTabs(activeCat);
           apply();
         });
         tab.setAttribute('aria-pressed', tab.classList.contains('active') ? 'true' : 'false');
@@ -2372,6 +2398,19 @@
         search.addEventListener('input', function () {
           query = (search.value || '').trim().toLowerCase();
           apply();
+          if (!query) {
+            // Back to the tab the visitor chose (nothing when the list is
+            // unfiltered, which shows every group at once).
+            syncTabs(activeCat === 'all' ? null : activeCat);
+            return;
+          }
+          var visible = [];
+          groups.forEach(function (group) {
+            if (!group.hidden && visible.indexOf(group.getAttribute('data-cat')) === -1) {
+              visible.push(group.getAttribute('data-cat'));
+            }
+          });
+          syncTabs(visible.length === 1 ? visible[0] : null);
         });
       }
 
@@ -2730,10 +2769,17 @@
         }
         if (el.tagName === 'IMG') {
           el.src = value;
-          return;
-        }
-        if (el.tagName === 'A') {
-          el.href = value;
+          // The ladder has to move with the source. The detail image ships a
+          // srcset for the initial card; a leftover srcset keeps describing
+          // *that* picture's widths, so the browser satisfies the new layout
+          // from a stale candidate and the panel never changes. Cards without
+          // a ladder of their own drop the attribute so `src` alone decides.
+          var srcset = card.getAttribute('data-psd-image-srcset');
+          if (srcset) {
+            el.setAttribute('srcset', srcset);
+          } else {
+            el.removeAttribute('srcset');
+          }
           return;
         }
         el.textContent = value;
@@ -2771,11 +2817,15 @@
         set('label', card.getAttribute('data-psd-label') || '');
         set('title', card.getAttribute('data-psd-title') || '');
         set('desc', card.getAttribute('data-psd-desc') || '');
-        set('cta', card.getAttribute('data-psd-cta') || '');
 
+        // The CTA is an anchor with two independent values: where it goes
+        // (data-psd-url) and what it says (data-psd-cta). Routing it through
+        // set() made every value an href, so the label never replaced the
+        // initial card's "Browse geometric patterns" text.
         var link = detail.querySelector('[data-psd-detail-cta]');
         if (link) {
           link.href = card.getAttribute('data-psd-url') || '#';
+          link.textContent = card.getAttribute('data-psd-cta') || '';
         }
 
         var best = (card.getAttribute('data-psd-best') || '').split(',').map(function (item) {
