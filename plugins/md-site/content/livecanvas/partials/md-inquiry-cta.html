@@ -1,9 +1,21 @@
 <!-- The inquiry-CTA band (spec 19 §5.2, the T5 replacement of spec 19
-     §4.2): the single-source piece every converted form becomes — the
-     one inquiry link, the one WhatsApp number (+852 6473 16887, owner
-     ruling 2026-10-24), the one reply promise. Copy draft, T1
-     adversarial review pending (spec 08 §4.1). Styles: the
-     md-inquiry-cta rules of the cta-band volume. -->
+     §4.2): the page sections' link-only CTA — one inquiry link, the one
+     WhatsApp number (+852 6473 16887, owner ruling 2026-10-24), one reply
+     promise. Copy draft, T1 adversarial review pending (spec 08 §4.1).
+     Styles: the md-inquiry-cta rules of the cta-band volume.
+
+     This is a LINK band, not the form. Eighteen page sections include it
+     (home, the family faces, shop, gallery, about, manufacturing,
+     custom-screens, the series archive, blog-single), so it must stay free of
+     the form's markup: [md_inquiry_form] emits fixed ids (md-inquiry-name,
+     md-inquiry-source-*) and md-inquiry.js binds only the first
+     .md-inquiry-app on a page, so a form here would duplicate and collide on
+     every page and leave the real one inert.
+
+     The place that needs pattern context at the point of intent is the
+     footer's quote dialog, and that dialog places [md_inquiry_form] directly
+     (partials/footer.html) rather than this band. Do not swap this file's body
+     for the form; change the dialog instead. -->
 <div class="md-inquiry-cta">
 	<a class="md-inquiry-cta__primary" href="/inquiry/">Request a quote</a>
 	<a class="md-inquiry-cta__whatsapp" href="https://wa.me/85264731687" rel="noopener">Send via WhatsApp</a>

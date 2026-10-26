@@ -1169,6 +1169,44 @@ line-height: 1.6;
 color: rgba(255,255,255,.75);
 }
 
+/* The inquiry form inside the quote dialog (partials/footer.html). The
+   form's own markup supplies `.md-inquiry`, and inquiry.css gives that class
+   the inquiry PAGE's frame — a full-page gradient and 56px/88px vertical
+   padding. Inside a 420px dialog that frame is a picture-frame around a
+   picture-frame: it would add 144px of empty height above the first label and
+   push the send button below the fold on a 390px viewport. The field, action
+   and note rules are all scoped `.md-inquiry …`, so neutralising only the
+   frame keeps every control styled while the dialog stays compact. */
+.md-quote-modal__card .md-inquiry{
+background: none;
+padding: 0;
+}
+/* The dialog is already the surface; the form's own pattern row and card
+   chrome would double it. */
+.md-quote-modal__card .md-inquiry-app{
+background: none;
+border: 0;
+}
+.md-quote-modal__card .md-inquiry-field__hint{
+margin-top: 4px;
+}
+@media (max-width: 480px){
+/* 390 viewport: the dialog keeps a 16px gutter and the form must not scroll
+   horizontally. */
+.md-quote-modal__card .md-inquiry-field__input,
+.md-quote-modal__card textarea.md-inquiry-field__input{
+max-width: 100%;
+}
+.md-quote-modal__card .md-inquiry-actions{
+flex-direction: column;
+align-items: stretch;
+}
+.md-quote-modal__card .md-inquiry-submit,
+.md-quote-modal__card .md-inquiry-whatsapp{
+width: 100%;
+}
+}
+
 /* The home hero's quote card is placed by the template's own grid (the last
    row's `md:grid-cols-[1fr_auto]` + `justify-self-end`), exactly as the old
    section places it. Do not absolutely position it here: that collapsed the
