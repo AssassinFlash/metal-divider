@@ -1173,6 +1173,24 @@ transform: translateY(-2px);
 box-shadow: 0 12px 28px rgba(0,0,0,.28);
 }
 .md-whatsapp-float svg{ display: block; width: 30px; height: 30px; }
+
+/* WhatsApp's brand green takes a dark glyph, not a white one.
+ *
+ * White on #25d366 measures 1.98:1 — well under the 4.5:1 a 14px label needs,
+ * and under even the 3:1 large-text floor. The same pair is used by every
+ * in-page "Chat Now" / "Chat on WhatsApp" button across nine faces (measured
+ * on the dev instance 2026-10-26), so the label was hard to read everywhere
+ * the brand colour appears. The green itself stays: it is the recognition
+ * cue. Only the ink changes, to #0a2e14, which measures 8.6:1 on the same
+ * green — the same pairing WhatsApp's own product uses for text on brand. */
+.md-whatsapp-float{ color: #0a2e14; }
+/* `!important` because these buttons carry Tailwind's `text-white` utility,
+   which is what was painting the unreadable label in the first place. */
+a[href^="https://wa.me/"][class*="bg-[#25D366]"],
+a[href^="https://wa.me/"][class*="bg-emerald-500"],
+a[href^="https://wa.me/"].md-ta43cb577 {
+color: #0a2e14 !important;
+}
 .md-back-to-top{
 position: fixed;
 right: 30px;
