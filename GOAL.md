@@ -49,6 +49,30 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-26 间距尺度根因与全站控件修复(PR #113/#115/#116/#117/#119/#120/#121,生产已部署并读回)
+
+**根因**:旧站 `html{font-size:62.5%}` 被原样继承,而 Tailwind 的 spacing/radius/container 尺度是 rem。于是每个工具类只渲染出自身声明的 0.625 倍(`px-4` 10px 对 16px、`h-11` 27.5px 对 44px、`max-w-7xl` 800px 对 1280px)。#66 当年发现过同一问题但只修了字号尺度。此前所有"点击目标太小""内容离边 10px"的报告测的都是这一件事,当时在逐个选择器打补丁。
+
+**修法**:守住 10px 根(旧站搬来的 234 处 rem 因此保住原视觉),在 `@theme static` 里把三个尺度钉成 px;体积内 425 处 literal rem 工具类定义同步转 px(它们是同一批工具类的第二套定义,位置更靠后)。`md-volume-check` 新增"裸工具类不得声明 rem"的门,落地时立刻抓出手工转换漏掉的 12 处负值偏移。
+
+**同时修复**:询盘弹窗 1440 提交按钮落到折叠线下、psd 详情图 srcset 不换导致点了图不变、FAQ 搜索后分类高亮不同步、`hidden` 类与属性冲突导致面板点了不出现、ppr 卡片死交互、expanded-mesh 旧场景背景永不清除(多次滑动叠影)、抽屉触发器 aria 不更新、落地页残留触控目标。
+
+**流程缺陷**:`just py-test` 长期红在"体积文件必须等于生成器输出"——博客移动端样式被手工写进体积。已搬进 `assets/blog-index.append.css` 并让 `fork_volumes` 也追加 appendice。
+
+**生产读回**(真 Chrome,干净 profile):`px-4` 16px、`py-3` 12px、`h-11` 44px、`gap-4` 16px、`mb-8` 32px、`rounded-xl` 12px、`max-w-7xl` 1280px、`max-w-3xl` 768px;`1rem` 仍 10px、`text-sm` 仍 14px。28 项验收全过(尺度 9 项、交互 12 项、390/320 触控各 1 项、运行时内核 1 项),零控制台错误、零 4xx。部署 `20261026T130446316828Z-96a81b1`,WindPress 重编译 `1793007203 → 1793020521`(572444B)。
+
+**部署事故**:`just deploy prod --write` 在切换后卡在验证阶段(无子进程、CPU 近 0、8 分钟无进展),已停止。核实代码 md5 与本地一致、批次 `state=archived`、旧文件已归档,再手工补 WindPress 重编译与独立验收,以实测替代被中断的自动验证。
+
+**仍未完成**:Turnstile `not_configured`(需 Cloudflare 登录或密钥);GSC 属性未建;部分媒体最大变体仅 500–1024w,宽容器会放大。
+
+### 2026-10-26 移动端 App 化与全站交互(PR #84/#85/#90,生产已部署)
+
+**设计裁定**:旧站只提供设计语言,允许独立现代化设计,不设像素通过线。移动端以 App 质感为目标:44–54px 触控、16px 输入、全宽抽屉、底部筛选/询盘 sheet、卡片与统计层次、安全区和真实内容优先;悬浮 WhatsApp/回顶的突出层次保留,不机械遮挡治理。
+
+**实现与证据**:expanded mesh 场景与 FAQ、九类失效控件、定制页内联 `onclick` 全部接到现有运行时;证书/对比样式、重复 class 清理。移动全宽菜单、分类筛选、PDP 询盘条、表单、卡片、tab、制造长滚动与证书控制均已真 Chrome 实测 390/320。部署 `20261026T092337501384Z-9da89ab`,WindPress 重编译 568834B,anchors 全中,缓存 miss→miss→hit。生产移动截图与控制实测:抽屉关闭、筛选 10 系列、证书 EN 10204 切换、首页 hero 图片恢复。
+
+**仍未完成**:Turnstile 当前 `not_configured`(需 Cloudflare 登录或密钥);GSC 与 CookieYes 处置待完成;全站不能称全部验收完成。
+
 ### 2026-10-26 Woo 唯一资料源与全站交互整合(PR #71–#75,生产已部署并读回)
 
 **本批交付**:提交 `3a75a10`,分支 `integration/visual-parity`,PR #71。商品、系列与编辑精选只从当前 Woo 数据读取;PDP 两段文案、系列描述/缩略图、首页 featured 卡、定制页 `menu_order` 卡、计数和上下架联动已接通。卡片与瓦片 markup 落到仓库管理的 LiveCanvas partial,PHP 只做数据;部署依次执行 present → seed-series → seed-tiles → seo,后续 Woo 后台修改与有意移除不被 seed 回滚。
