@@ -171,4 +171,54 @@ final class MobileChromeTest extends TestCase {
 			'the floor is authoritative'
 		);
 	}
+
+	/**
+	 * The footer dock's three contracts.
+	 *
+	 * Ported from de-linker's footer on 2026-10-27, so the behaviour that
+	 * came with it needs holding in place:
+	 *
+	 * 1. The block is gated on `is-ready`, which `setupFooterDock()` adds.
+	 *    Before that class the dock is `display: none` and every panel shows —
+	 *    so a visitor without JavaScript reads all sixteen destinations
+	 *    instead of facing a control that cannot work.
+	 * 2. The tabs are real ARIA tabs: `role=tablist` on the dock, focus moved
+	 *    with the selection, and ArrowLeft/Right plus Home/End.
+	 * 3. The contact panel's quote button carries the site's `#open-quote`
+	 *    anchor and a `data-quote-source`, so it opens the same dialog as
+	 *    every other CTA and the record names footer-dock as the entry point.
+	 */
+	public function test_the_footer_dock_keeps_its_gate_and_tab_semantics(): void {
+		$css = $this->volume( 'footer.css' );
+
+		// The gate: hidden until ready, panels stacked until ready.
+		$this->assertMatchesRegularExpression(
+			'/\.md-footer__dock \{\s*display: none;/',
+			$css,
+			'the dock is hidden before the runtime marks the block ready'
+		);
+		$this->assertMatchesRegularExpression(
+			'/#md-footer\.is-ready \.md-footer__dock \{\s*display: grid;/',
+			$css,
+			'the dock appears once is-ready is set'
+		);
+		$this->assertMatchesRegularExpression(
+			'/#md-footer\.is-ready \.md-footer__panels \{\s*display: block;/',
+			$css,
+			'panels become a single visible one only when the dock can drive them'
+		);
+
+		$runtime = (string) file_get_contents( dirname( __DIR__, 4 ) . '/assets/js/md-chrome.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+		$this->assertStringContainsString( "root.classList.add('is-ready');", $runtime, 'setupFooterDock sets the gate' );
+		$this->assertStringContainsString( "dock.setAttribute('role', 'tablist');", $runtime, 'the dock is an ARIA tablist' );
+		$this->assertStringContainsString( "tab.setAttribute('role', 'tab');", $runtime, 'each dock item is a tab' );
+		$this->assertStringContainsString( 'ArrowRight', $runtime, 'arrow keys move between tabs' );
+		$this->assertStringContainsString( "event.key === 'Home'", $runtime, 'Home jumps to the first tab' );
+		$this->assertStringContainsString( 'setupFooterDock();', $runtime, 'the setup actually runs' );
+
+		$footer = (string) file_get_contents( dirname( __DIR__, 4 ) . '/content/livecanvas/partials/footer.html' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+		$this->assertStringContainsString( 'href="#open-quote"', $footer, 'the contact panel\'s quote button opens the site dialog' );
+		$this->assertStringContainsString( 'data-quote-source="footer-dock"', $footer, 'the record names this entry point' );
+		$this->assertStringContainsString( 'data-md-footer-tab="contact"', $footer, 'the contact tab exists' );
+	}
 }
