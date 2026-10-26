@@ -40,6 +40,12 @@ from typing import IO, Any, cast
 # should carry a credential (AGENTS.md §4).
 HOST = "hostinger-metal-divider"
 
+# This project's own batch namespace on the host account, and the root the
+# de-linker project owns and prunes. Both live under $HOME; see
+# backup_root() for the measurement that forced the split.
+NAMESPACE = "deploy-prev-metal-divider"
+LEGACY_ROOT = "deploy-prev"
+
 # The WordPress roots and addresses of the two remote targets. The path shape
 # is the platform's add-on-site convention (~/domains/<site>/public_html,
 # read on the same subscription 2026-10-24: de-linker.com and
@@ -651,17 +657,48 @@ def named_target(name: str) -> Target:
 
 
 def backup_root(target: Target) -> str:
-    """The host account's private per-site batch store; a local target's sibling.
+    """The host account's private per-site batch store for NEW batches.
 
-    The two remote sites share one host account (one subscription), so
-    `~/deploy-prev` is split per site — the domain directory the WordPress
-    root lives under — or a staging batch and a production batch would share
-    one `latest` pointer.
+    Two levels of separation, because two unrelated things share this account.
+
+    The two sites of this project share one host account, so the store is
+    split per site — the domain directory the WordPress root lives under — or
+    a staging batch and a production batch would share one `latest` pointer.
+
+    The account's `~/deploy-prev` is not this project's, though: the
+    de-linker project's deploy tool uses it as a *flat* root and, after every
+    successful archive, deletes every directory under it
+    (`linker_cutover/atomic.py`, "this root belongs only to deployment
+    batches"). This project's batches used to live at
+    `~/deploy-prev/<site>/`, i.e. inside that prune, so a de-linker archive
+    could remove this project's `latest` pointer and any pending batch with
+    it. Measured on the shared account 2026-10-26: `~/deploy-prev/latest`
+    carried a de-linker batch id while this project's own pointer sat one
+    level down, and the pending batch `20261026T042025478901Z-1be1823`
+    existed nowhere on disk afterwards. New batches therefore go to a
+    namespace of this project's own, outside de-linker's root;
+    `legacy_backup_root()` below still reads the old place.
     """
     if target.rsync_remote is None:
         return str(Path(target.root).parent / "deploy-prev")
     site = PurePosixPath(target.root).parent.name
-    return target.shell(f'printf "%s/deploy-prev/{site}" "$HOME"').strip()
+    return target.shell(f'printf "%s/{NAMESPACE}/{site}" "$HOME"').strip()
+
+
+def legacy_backup_root(target: Target) -> str:
+    """Where this project's batches lived before the namespace: read-only now.
+
+    Batches in here are still readable — a rollback or a resume of an
+    already-archived recovery point must keep working — but nothing new is
+    written here, because de-linker's archive prunes every directory under
+    `~/deploy-prev` and would take our files with it. On a local target the
+    two roots are the same place: the directory sits inside this project's own
+    instance tree, where no other project's pruning reaches.
+    """
+    if target.rsync_remote is None:
+        return str(Path(target.root).parent / "deploy-prev")
+    site = PurePosixPath(target.root).parent.name
+    return target.shell(f'printf "%s/{LEGACY_ROOT}/{site}" "$HOME"').strip()
 
 
 def _link_dest(earlier: Path | None) -> list[str]:
