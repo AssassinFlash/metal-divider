@@ -485,7 +485,7 @@ final class Shortcodes {
 		if ( '' === $alt && ! $decorative ) {
 			$alt = $fallback;
 		}
-		return $this->cards->slot_image( $id, $alt, $decorative );
+		return $this->cards->slot_image( $id, $alt, $decorative, $slot );
 	}
 
 	/**

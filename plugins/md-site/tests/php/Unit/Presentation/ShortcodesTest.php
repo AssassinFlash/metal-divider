@@ -1160,6 +1160,13 @@ final class ShortcodesTest extends TestCase {
 				) : array();
 			}
 		);
+		// The slots declare a ladder now, so the fixture answers WordPress's
+		// own read the way a real uploader does: each attachment has its own
+		// widths. The alt-role tests are about which attachment a slot picks,
+		// not about the ladder's contents.
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( int $id ): string => "https://site.test/uploads/{$id}-400w.webp 400w, https://site.test/uploads/{$id}-800w.webp 800w"
+		);
 	}
 
 	/**
@@ -1249,6 +1256,11 @@ final class ShortcodesTest extends TestCase {
 			static fn( int $id ): string => "https://site.test/uploads/{$id}.webp"
 		);
 		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->zeroOrMoreTimes()->andReturn( array() );
+		// A slot declares a ladder now, so the element asks for one; the counts
+		// this fixture tracks are the slot's own reads, not the ladder's.
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( int $id ): string => "https://site.test/uploads/{$id}-400w.webp 400w"
+		);
 
 		return array(
 			'counts' => $counts,
