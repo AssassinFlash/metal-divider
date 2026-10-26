@@ -2846,6 +2846,112 @@
     });
   }
 
+  // The perforated page's pattern-route cards: four `data-ppr-card` elements,
+  // each carrying its whole detail row as `data-ppr-*` attributes, over a
+  // single `data-ppr-detail` panel. The cards shipped `cursor-pointer` with no
+  // runtime behind it, so the detail never followed a click.
+  function setupPatternRouteCards() {
+    each(document.querySelectorAll('[data-ppr-card]'), function (card) {
+      var scope = card.closest('section') || document;
+      var detail = scope.querySelector('[data-ppr-detail]');
+      if (!detail) {
+        return;
+      }
+
+      var set = function (field, value) {
+        var el = detail.querySelector('[data-ppr-detail-' + field + ']');
+        if (!el) {
+          return;
+        }
+        if (el.tagName === 'IMG') {
+          // The cards carry one image URL each; a stale srcset would keep
+          // resolving to the previous card's variant.
+          el.removeAttribute('srcset');
+          el.src = value;
+          return;
+        }
+        if (el.tagName === 'A') {
+          el.href = value;
+          return;
+        }
+        el.textContent = value;
+      };
+
+      var apply = function () {
+        each(scope.querySelectorAll('[data-ppr-card]'), function (other) {
+          var active = other === card;
+          other.classList.toggle('is-active', active);
+          other.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+
+        var name = card.querySelector('h3');
+        set('img', card.getAttribute('data-ppr-image') || '');
+        var img = detail.querySelector('[data-ppr-detail-img]');
+        if (img && name) {
+          img.alt = name.textContent;
+        }
+        set('eyebrow', card.getAttribute('data-ppr-eyebrow') || '');
+        set('title', card.getAttribute('data-ppr-title') || '');
+        set('desc', card.getAttribute('data-ppr-desc') || '');
+
+        // The chips and the constraint rows are elements with their own
+        // classes, so the refill produces those rather than text nodes.
+        var chips = detail.querySelector('[data-ppr-detail-spaces]');
+        if (chips) {
+          chips.innerHTML = '';
+          (card.getAttribute('data-ppr-spaces') || '').split(',').forEach(function (value) {
+            value = value.trim();
+            if (!value) {
+              return;
+            }
+            var chip = document.createElement('span');
+            chip.className = 'text-sm border border-[#c9a962]/30 rounded-full px-4 py-2 text-white/80';
+            chip.textContent = value;
+            chips.appendChild(chip);
+          });
+        }
+        var notes = detail.querySelector('[data-ppr-detail-constraints]');
+        if (notes) {
+          notes.innerHTML = '';
+          (card.getAttribute('data-ppr-constraints') || '').split('\n').forEach(function (value) {
+            value = value.trim();
+            if (!value) {
+              return;
+            }
+            var row = document.createElement('div');
+            row.className = 'flex items-start gap-2.5 py-2.5 border-b border-white/[0.06]';
+            var dot = document.createElement('span');
+            dot.className = 'mt-[7px] w-1.5 h-1.5 rounded-full bg-[#c9a962] flex-shrink-0';
+            dot.setAttribute('aria-hidden', 'true');
+            var text = document.createElement('span');
+            text.className = 'text-sm text-white/75 leading-relaxed';
+            text.textContent = value;
+            row.appendChild(dot);
+            row.appendChild(text);
+            notes.appendChild(row);
+          });
+        }
+
+        set('cta-label', card.getAttribute('data-ppr-cta') || '');
+        var cta = detail.querySelector('[data-ppr-detail-cta]');
+        if (cta) {
+          cta.href = card.getAttribute('data-ppr-cta-url') || '#open-quote';
+        }
+      };
+
+      card.addEventListener('click', apply);
+      card.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+          event.preventDefault();
+          apply();
+        }
+      });
+      if (card.classList.contains('is-active')) {
+        apply();
+      }
+    });
+  }
+
   /* ================================================================== *
    * The custom-screens landing face
    *
@@ -3751,6 +3857,7 @@
     setupFaqFilter();
     setupPerforatedMarkers();
     setupCompareDrag();
+    setupPatternRouteCards();
     setupPredictiveSearchReset();
     setupSpecDecisionCards();
 

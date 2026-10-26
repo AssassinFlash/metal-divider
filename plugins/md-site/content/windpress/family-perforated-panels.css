@@ -177,6 +177,30 @@ pointer-events: none;
 [data-pa-rail-fill] { transition: none; }
 }
 
+/* The application panels switch by the `hidden` attribute the runtime sets.
+   The markup used to carry the Tailwind `hidden` class as well, and removing
+   the attribute left `.hidden{display:none}` in force — the second panel never
+   appeared. The class is gone; this guard keeps the attribute decisive even
+   where a display utility (`block` on panel 1) is compiled for the same
+   element, the same rule the expanded-metal volume carries. */
+[data-pa-panel][hidden],
+[data-pa-mobile-panel][hidden] {
+display: none;
+}
+
+/* The pattern-route cards: `cursor-pointer` with no runtime behind it, so the
+   detail panel never followed a click. The runtime (md-chrome.js
+   setupPatternRouteCards) toggles `aria-pressed` and `is-active` together;
+   the selected card is drawn from the attribute the runtime owns. */
+[data-ppr-card][aria-pressed="true"] {
+outline: 2px solid rgba(201, 169, 98, 0.7);
+outline-offset: 2px;
+}
+[data-ppr-card]:focus-visible {
+outline: 2px solid #ffffff;
+outline-offset: 2px;
+}
+
 @media (max-width: 749px) {
 [id*="21844034814205"] .tracking-\[0\.22em\],
 [id*="21844034814205"] .tracking-\[0\.2em\],

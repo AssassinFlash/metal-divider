@@ -87,7 +87,7 @@ transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tab:hover,
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tab:focus-visible,
-#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tab.is-active {
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tab[aria-selected="true"] {
 background: rgba(255, 255, 255, 0.04);
 border-color: rgba(201, 169, 98, 0.54);
 color: #ffffff;
