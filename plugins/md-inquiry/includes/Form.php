@@ -168,13 +168,6 @@ final class Form {
 		$out  = '<div class="md-inquiry-app" data-md-inquiry="' . \esc_attr( (string) \wp_json_encode( $this->config_json( $pattern, $source ) ) ) . '">';
 		$out .= '<div class="md-inquiry">';
 
-		if ( null !== $pattern ) {
-			$out .= $this->pattern_row( $pattern );
-		}
-		if ( $this->state->has_failed() ) {
-			$out .= '<p class="md-inquiry-notice md-inquiry-notice--error" role="alert">' . \esc_html( $this->notice( $this->state->notice_key() ) ) . '</p>';
-		}
-
 		$out .= '<form class="md-inquiry-form" method="post">';
 		$out .= \wp_nonce_field( Submission::ACTION, Submission::NONCE_FIELD, false, false );
 		$out .= '<input type="hidden" name="md_inquiry_action" value="submit">';
@@ -186,6 +179,13 @@ final class Form {
 		$out .= $this->source_input( 'module', $source['module'] );
 		$out .= $this->source_input( 'button', $source['button'] );
 
+		$out .= '<div class="md-inquiry-fields">';
+		if ( null !== $pattern ) {
+			$out .= $this->pattern_row( $pattern );
+		}
+		if ( $this->state->has_failed() ) {
+			$out .= '<p class="md-inquiry-notice md-inquiry-notice--error" role="alert">' . \esc_html( $this->notice( $this->state->notice_key() ) ) . '</p>';
+		}
 		$out .= $this->field( 'name', __( 'Name', 'md-inquiry' ), 'text', true, 'name', __( 'Jane Chan', 'md-inquiry' ) );
 		$out .= $this->field( 'email', __( 'Email', 'md-inquiry' ), 'email', true, 'email', __( 'jane@studio.com', 'md-inquiry' ) );
 		$out .= $this->field( 'company', __( 'Company (optional)', 'md-inquiry' ), 'text', false, 'organization', __( 'Chan Design Studio', 'md-inquiry' ) );
@@ -193,17 +193,17 @@ final class Form {
 
 		$out .= $this->honeypot();
 		$out .= $this->turnstile( $source );
+		$out .= '<p class="md-inquiry-note">' . \esc_html__( 'The WhatsApp button opens a chat pre-filled with your details and this pattern. Choosing WhatsApp does not submit this form.', 'md-inquiry' ) . '</p>';
+		$out .= '</div>';
 
 		$whatsapp = WhatsApp::url( WhatsApp::cta_text( $source['module'], $pattern, $source['page'] ) );
 		$out     .= '<div class="md-inquiry-actions">';
 		$out     .= '<button type="submit" class="md-inquiry-submit"' . ( $this->config->turnstile_is_configured() ? ' disabled' : '' ) . '>' . \esc_html__( 'Send inquiry', 'md-inquiry' ) . '</button>';
 		$out     .= '<a class="md-inquiry-whatsapp" href="' . \esc_url( $whatsapp ) . '" target="_blank" rel="noopener">' . \esc_html__( 'Send via WhatsApp instead', 'md-inquiry' ) . '</a>';
 		$out     .= '</div>';
-		$out     .= '<p class="md-inquiry-note">' . \esc_html__( 'The WhatsApp button opens a chat pre-filled with your details and this pattern. Choosing WhatsApp does not submit this form.', 'md-inquiry' ) . '</p>';
-
-		$out .= '</form>';
-		$out .= '</div>';
-		$out .= '</div>';
+		$out     .= '</form>';
+		$out     .= '</div>';
+		$out     .= '</div>';
 		return $out;
 	}
 

@@ -83,6 +83,7 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'maxlength="120"', $html );
 		$this->assertStringContainsString( 'name="website"', $html, 'the honeypot' );
 		$this->assertStringContainsString( 'class="md-inquiry-submit"', $html );
+		$this->assertStringContainsString( 'class="md-inquiry-fields"', $html, 'fields scroll independently of the sticky actions' );
 		$this->assertStringContainsString( 'class="md-inquiry-whatsapp" href="https://wa.me/85264731687?text=', $html );
 		$this->assertStringNotContainsString( ' style=', $html, 'zero inline styles, always' );
 		$this->assertStringNotContainsString( '<script', $html, 'no inline script: the CSP closes that door' );

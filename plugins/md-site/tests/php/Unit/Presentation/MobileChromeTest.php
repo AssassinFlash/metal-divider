@@ -1,0 +1,137 @@
+<?php
+/**
+ * Mobile app-chrome contracts for the header, forms, blog, FAQ and gallery.
+ *
+ * @package MetalDivider\Site
+ */
+
+declare( strict_types = 1 );
+
+namespace MetalDivider\Site\Tests\Unit\Presentation;
+
+use MetalDivider\Site\Presentation\Templates;
+use MetalDivider\Site\Tests\TestCase;
+
+/**
+ * The mobile pass is CSS and markup, on top of the existing chrome script.
+ * These assertions pin the contracts a phone actually depends on: a full-width
+ * drawer, a 44px close, the quote out of the top bar, an accessible search
+ * reset, and the blog / FAQ / gallery touch rules.
+ *
+ * @coversNothing
+ */
+final class MobileChromeTest extends TestCase {
+
+	/**
+	 * The drawer is a full-width sheet with a labelled 44px close and a bottom
+	 * quote, and it does not repeat the header's brand line.
+	 */
+	public function test_the_mobile_drawer_is_a_full_width_sheet_with_a_bottom_quote(): void {
+		$header = $this->template( 'partials/header.html' );
+		$css    = $this->volume( 'chrome.css' );
+
+		$this->assertStringNotContainsString( 'menu-hamburger-style1-top__brand', $header, 'the drawer must not repeat the header brand' );
+		$this->assertSame( 8, substr_count( $header, "aria-label='Close menu'" ), 'every drawer panel has a close control' );
+		$this->assertSame( 8, substr_count( $header, "class='md-drawer-cta'" ), 'every drawer panel keeps the quote that left the top bar' );
+		$this->assertStringContainsString( "href='#open-quote'", $header );
+		$this->assertStringContainsString( "data-quote-source='mobile-drawer'", $header );
+		$this->assertStringContainsString( 'width: 100%', $css, 'the drawer content is full width' );
+		$this->assertStringContainsString( 'min-height: 44px', $css );
+		$this->assertStringContainsString( '.xo-header-actions > .xo-btn-quote', $css, 'the top-bar quote is the one the mobile rule hides' );
+		$this->assertStringContainsString( 'display: none', $css );
+		$this->assertStringContainsString( 'class="xo-btn-quote"', $header, 'desktop still has the quote in the actions row' );
+	}
+
+	/**
+	 * Search reset is a real button with an accessible name, and the sheet's
+	 * field is 16px so a phone does not zoom it.
+	 */
+	public function test_the_search_reset_is_an_accessible_button(): void {
+		$header = $this->template( 'partials/header.html' );
+		$css    = $this->volume( 'chrome.css' );
+
+		$this->assertStringContainsString( "<form action='/shop/' method='get' role='search' class='search'>", $header );
+		$this->assertStringContainsString( "type='button' class='xo-predictive-search__clear'", $header );
+		$this->assertStringContainsString( "aria-label='Clear search'", $header );
+		$this->assertStringContainsString( "data-predictive-search-reset='header'", $header );
+		$this->assertStringContainsString( 'font-size: 16px', $css );
+		$this->assertStringContainsString( 'width: 44px', $css );
+		$this->assertStringContainsString( 'height: 44px', $css );
+	}
+
+	/**
+	 * WhatsApp and back-to-top stay on screen when content passes under them.
+	 * Overlap is not a hide. An open surface still covers them (next test).
+	 */
+	public function test_floats_stay_visible_when_content_passes_under_them(): void {
+		$js  = (string) file_get_contents( dirname( __DIR__, 4 ) . '/assets/js/md-chrome.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+		$css = $this->volume( 'chrome.css' );
+
+		$this->assertStringNotContainsString( 'md-float-yield', $js );
+		$this->assertStringNotContainsString( 'function floatCoversControl', $js );
+		$this->assertStringNotContainsString( 'elementsFromPoint', $js );
+		$this->assertStringNotContainsString( 'md-float-yield', $css );
+		$this->assertStringContainsString( 'function setupFloats()', $js );
+		$this->assertStringContainsString( 'window.scrollY < 400', $js, 'back-to-top still appears after the first viewport' );
+		$this->assertStringContainsString( '.md-whatsapp-float', $css );
+		$this->assertStringContainsString( '.md-back-to-top', $css );
+	}
+
+	/**
+	 * Floating controls yield to an open drawer and sit above the safe area,
+	 * and the inquiry page does not stack a second WhatsApp button on the form.
+	 */
+	public function test_floating_controls_yield_when_a_surface_is_open(): void {
+		$css = $this->volume( 'chrome.css' );
+
+		$this->assertStringContainsString( 'env(safe-area-inset-bottom)', $css );
+		$this->assertStringContainsString( 'html.md-modal-open :is(.md-whatsapp-float, .md-back-to-top)', $css );
+		$this->assertStringContainsString( 'body:has(#md-inquiry) .md-whatsapp-float', $css );
+		$this->assertStringContainsString( '.md-quote-modal__card .md-inquiry-actions', $css );
+	}
+
+	/**
+	 * Blog empty and tool links, FAQ chips and gallery filters meet the 44px
+	 * touch rule, and the gallery overlay is not hover-only.
+	 */
+	public function test_blog_faq_and_gallery_meet_the_mobile_touch_rules(): void {
+		$blog    = $this->volume( 'blog-index.css' );
+		$faq     = $this->volume( 'faq.css' );
+		$gallery = $this->volume( 'gallery.css' );
+		$faqs    = $this->template( 'faqs.html' );
+
+		$this->assertStringContainsString( '.journal-empty a', $blog );
+		$this->assertStringContainsString( 'min-height: 44px', $blog );
+		$this->assertStringContainsString( 'font-size: 16px', $blog );
+
+		$this->assertStringContainsString( 'data-md-faq-filter', $faqs );
+		$this->assertStringContainsString( 'id="faqs-download-faq-search"', $faqs );
+		$this->assertStringContainsString( 'class="cat-tab active', $faqs );
+		$this->assertStringContainsString( 'class="faq-item"', $faqs );
+		$this->assertStringContainsString( 'data-md-faq-empty', $faqs );
+		$this->assertStringContainsString( 'flex-wrap: nowrap', $gallery );
+		$this->assertStringContainsString( 'opacity: 1', $gallery );
+		$this->assertStringContainsString( '.cat-tab', $faq );
+		$this->assertStringContainsString( 'font: 400 16px/1.4 Inter, sans-serif', $faq );
+	}
+
+	/**
+	 * A repository file, comments stripped is not required — these are source
+	 * contracts, not rendered HTML.
+	 *
+	 * @param string $name Template path relative to content/livecanvas.
+	 */
+	private function template( string $name ): string {
+		return (string) file_get_contents( Templates::path( $name, true ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+	}
+
+	/**
+	 * A WindPress volume.
+	 *
+	 * @param string $name The volume file name.
+	 */
+	private function volume( string $name ): string {
+		$path = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/windpress/' . $name;
+		return (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+	}
+}

@@ -74,8 +74,18 @@ class="xo-container--box"
 
 <section id="pattern-catalog-template--21844031570173__pattern-catalog-main" class="pattern-catalog" data-section-name="collection-custom">
   <span id="product-catalog" class="pattern-catalog__anchor" aria-hidden="true"></span>
+  <button type="button" class="pattern-catalog__filter-backdrop" data-md-filter-close hidden aria-label="Close categories"></button>
+  <div class="pattern-catalog__quote-bar">
+    <a class="pattern-catalog__quote-bar-action" href="#open-quote" data-quote-source="pattern_catalog_bar">Request a quote</a>
+  </div>
   <div class="pattern-catalog__container">
-    <aside class="pattern-catalog__sidebar" aria-label="Pattern categories">
+    <aside id="pattern-catalog-filters" class="pattern-catalog__sidebar" aria-label="Pattern categories">
+      <div class="pattern-catalog__sheet-bar">
+        <span class="pattern-catalog__label">Categories</span>
+        <button type="button" class="pattern-catalog__filter-close" data-md-filter-close aria-label="Close categories">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+        </button>
+      </div>
       <div class="pattern-catalog__sidebar-intro">
         <span class="pattern-catalog__label">Categories</span>
         
@@ -117,8 +127,15 @@ class="xo-container--box"
         </div>
 
         <div class="pattern-catalog__tools">
+          <button type="button" class="pattern-catalog__filter-open" data-md-filter-open aria-controls="pattern-catalog-filters" aria-expanded="false">
+            <svg class="pattern-catalog__filter-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+            <span class="pattern-catalog__filter-copy">
+              <span class="pattern-catalog__filter-kicker">Categories</span>
+              <span class="pattern-catalog__filter-current">[md_series_current_label]</span>
+            </span>
+          </button>
           <form class="pattern-catalog__search" action="[md_archive_form_action]" method="get" role="search">
-            <input type="search" name="pattern_search" placeholder="Search pattern name or material" aria-label="Search patterns" value="[md_search_value]">
+            <input type="search" name="pattern_search" placeholder="Search patterns" aria-label="Search patterns" value="[md_search_value]">
             <!-- md-data: the order this archive is using, carried through a search submission -->
             [md_preserve_param name="sort_by" except="pattern_search"]
             <button class="pattern-catalog__search-button" type="submit" aria-label="Search patterns">

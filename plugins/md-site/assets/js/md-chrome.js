@@ -1460,7 +1460,25 @@
 
       var scrollTopFor = function (index) {
         var top = root.getBoundingClientRect().top + window.pageYOffset;
-        return top + (distance() * index) / count;
+        var total = distance();
+        if (total <= 0) {
+          return top;
+        }
+        // Each scene owns [index/count, (index+1)/count). Aiming a click at the
+        // leading edge lands on the previous scene: the browser stores an
+        // integer scroll offset, so the edge rounds one pixel short and
+        // floor() reports the slice before it. Measured on the home track at
+        // 390: Wall Cladding (index 5 of 6) arrived on scene 4. The last slice
+        // is therefore the end of the track, which sync already treats as the
+        // last scene. Earlier slices are aimed at their midpoint, one pixel
+        // inside the leading edge at minimum.
+        if (index >= count - 1) {
+          return top + total;
+        }
+        var start = (total * index) / count;
+        var end = (total * (index + 1)) / count;
+        var inset = Math.max(1, Math.min((end - start) / 2, end - start - 1));
+        return top + start + inset;
       };
 
       var sync = function () {
@@ -1476,11 +1494,15 @@
         } else if (progress > 1) {
           progress = 1;
         }
-        // A scene owns an equal slice of the track; the last slice absorbs the
-        // final pixel where progress reaches exactly 1.
-        var index = Math.floor(progress * count);
+        // The final pixel belongs to the last scene. A scroll that stops one
+        // pixel short of the track end — the integer clamp of scrollTo — must
+        // not fall back into the previous slice.
+        var index = travelled >= total - 1 ? count - 1 : Math.floor(progress * count);
         if (index > count - 1) {
           index = count - 1;
+        }
+        if (index < 0) {
+          index = 0;
         }
         apply(index);
       };
@@ -3123,7 +3145,8 @@
 
   // The back-to-top control is part of the first-party floating chrome
   // (ticket #67): it appears after the first viewport and returns to the
-  // top. The WhatsApp float needs no script.
+  // top. The WhatsApp float needs no script. Overlap is not a reason to hide
+  // either control — they stay visible and discoverable.
   function setupFloats() {
     var top = document.querySelector('.md-back-to-top');
     if (!top) {
@@ -3502,6 +3525,120 @@
     }
   }
 
+  // The catalog's category rail is a sidebar on wide screens and a bottom
+  // sheet on narrow ones. The stylesheet owns the sheet; this only opens and
+  // closes it, and steps aside when a quote dialog is already on the stack.
+  function setupCatalogFilter() {
+    var root = document.querySelector('.pattern-catalog');
+    if (!root) {
+      return;
+    }
+    var openButton = root.querySelector('[data-md-filter-open]');
+    var panel = root.querySelector('#pattern-catalog-filters');
+    if (!openButton || !panel) {
+      return;
+    }
+    var backdrop = root.querySelector('.pattern-catalog__filter-backdrop');
+    var mq = window.matchMedia('(max-width: 749px)');
+    var current = root.querySelector('.pattern-catalog__filter-current');
+    var activeName = root.querySelector('.pattern-catalog__nav-link.is-active span');
+    if (current && activeName && !(current.textContent || '').trim()) {
+      current.textContent = (activeName.textContent || '').trim();
+    }
+
+    var setOpen = function (open) {
+      if (!mq.matches) {
+        open = false;
+      }
+      panel.classList.toggle('is-open', open);
+      document.documentElement.classList.toggle('md-catalog-filter-open', open);
+      openButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) {
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-modal', 'true');
+        panel.removeAttribute('aria-hidden');
+      } else {
+        panel.removeAttribute('role');
+        panel.removeAttribute('aria-modal');
+        if (mq.matches) {
+          panel.setAttribute('aria-hidden', 'true');
+        } else {
+          panel.removeAttribute('aria-hidden');
+        }
+      }
+      if (backdrop) {
+        backdrop.hidden = !open;
+      }
+    };
+
+    var closeTo = function (restore) {
+      setOpen(false);
+      if (restore && typeof openButton.focus === 'function') {
+        openButton.focus();
+      }
+    };
+
+    openButton.addEventListener('click', function () {
+      setOpen(true);
+      var close = panel.querySelector('[data-md-filter-close]');
+      if (close && typeof close.focus === 'function') {
+        close.focus();
+      }
+    });
+    each(root.querySelectorAll('[data-md-filter-close]'), function (button) {
+      button.addEventListener('click', function () {
+        closeTo(true);
+      });
+    });
+    panel.addEventListener('click', function (event) {
+      if (event.target.closest('a')) {
+        closeTo(false);
+      }
+    });
+    document.addEventListener('keydown', function (event) {
+      if (!panel.classList.contains('is-open') || document.documentElement.classList.contains('md-modal-open')) {
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeTo(true);
+        return;
+      }
+      if (event.key !== 'Tab') {
+        return;
+      }
+      var focusables = focusablesIn(panel);
+      if (!focusables.length) {
+        event.preventDefault();
+        return;
+      }
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      var activeEl = document.activeElement;
+      if (event.shiftKey && (activeEl === first || !panel.contains(activeEl))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (activeEl === last || !panel.contains(activeEl))) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
+    var onViewport = function () {
+      if (!mq.matches) {
+        setOpen(false);
+      } else if (!panel.classList.contains('is-open')) {
+        panel.setAttribute('aria-hidden', 'true');
+      }
+    };
+    if (mq.addEventListener) {
+      mq.addEventListener('change', onViewport);
+    } else {
+      mq.addListener(onViewport);
+    }
+    onViewport();
+  }
+
   function start() {
     // Before any dialog can open: a page that renders the inquiry form itself
     // must not also carry the dialog's copy (duplicate ids, inert controls).
@@ -3547,6 +3684,8 @@
     setupMobileGallery();
     setupSectionModalClose();
     setupLandingNav();
+
+    setupCatalogFilter();
 
     // The catalog's sort select posts its form on change (the CSP blocks
     // inline handlers, so the behaviour lives here).

@@ -496,3 +496,259 @@ padding: 5px 12px;
 @media (prefers-reduced-motion: reduce) {
 .mfg-quality__doc { transition: none; }
 }
+
+/* Phone layout. The technique track is a click switch, not a scroll scene, so
+   the 600vh sticky only adds empty scroll. Utility wins are !important because
+   this volume is imported into the components layer. */
+@media (max-width: 767px) {
+#mfg-tech-outer-template--21844034879741__manufacturing_techniques.md-te1816706 {
+height: auto;
+min-height: 0;
+}
+#mfg-tech-stage-template--21844034879741__manufacturing_techniques {
+position: relative;
+top: auto;
+height: auto;
+min-height: min(82dvh, 680px);
+display: flex;
+flex-direction: column;
+justify-content: flex-end;
+gap: 14px;
+padding: 20px 16px calc(96px + env(safe-area-inset-bottom));
+overflow: hidden;
+border-radius: 0;
+}
+#mfg-tech-stage-template--21844034879741__manufacturing_techniques::after {
+content: "";
+position: absolute;
+inset: 0;
+z-index: 2;
+pointer-events: none;
+background: linear-gradient(to top, rgba(8,8,8,0.94) 0%, rgba(8,8,8,0.62) 46%, rgba(8,8,8,0.12) 100%);
+}
+#mfg-tech-outer-template--21844034879741__manufacturing_techniques .md-tf636bf81 {
+position: absolute;
+inset: 0;
+}
+#mfg-tech-outer-template--21844034879741__manufacturing_techniques .mfg-tech-content-slot-template--21844034879741__manufacturing_techniques {
+display: contents;
+}
+#mfg-tech-outer-template--21844034879741__manufacturing_techniques .md-t56105794 {
+position: relative;
+top: auto;
+left: auto;
+z-index: 4;
+order: 0;
+margin: 0;
+letter-spacing: 0.08em;
+font-size: 12px;
+}
+.mfg-tech-nav-template--21844034879741__manufacturing_techniques {
+position: relative;
+top: auto;
+left: auto;
+right: auto;
+transform: none;
+z-index: 4;
+order: 1;
+display: flex;
+flex-direction: row;
+flex-wrap: wrap;
+gap: 8px;
+width: 100%;
+margin: 0;
+padding: 0;
+border: 0;
+}
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques {
+min-height: 44px;
+padding: 0 14px;
+border: 1px solid rgba(255,255,255,0.2);
+border-radius: 999px;
+background: rgba(20,20,20,0.55);
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+color: #fff;
+font-size: 14px;
+flex-direction: row-reverse;
+gap: 8px;
+}
+.mfg-tech-nav-label-template--21844034879741__manufacturing_techniques {
+opacity: 1 !important;
+max-width: none !important;
+overflow: visible;
+flex: 0 1 auto;
+font-size: 13px;
+font-weight: 600;
+}
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques .md-td8ee4148 {
+color: inherit;
+flex: none;
+}
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques[aria-current="true"],
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.active,
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.mfg-tech-active {
+background: #c9a962;
+color: #141414;
+border-color: #c9a962;
+}
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques[aria-current="true"] .md-td8ee4148,
+.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.active .md-td8ee4148 {
+color: #141414;
+}
+.mfg-tech-content-template--21844034879741__manufacturing_techniques {
+display: none;
+position: relative;
+top: auto;
+left: auto;
+width: auto;
+max-width: none;
+transform: none;
+opacity: 1;
+z-index: 4;
+order: 2;
+pointer-events: none;
+}
+.mfg-tech-content-template--21844034879741__manufacturing_techniques.mfg-tech-active {
+display: block;
+top: auto;
+transform: none;
+opacity: 1;
+pointer-events: auto;
+}
+.mfg-tech-content-template--21844034879741__manufacturing_techniques h2 { font-size: 34px; }
+.mfg-tech-content-template--21844034879741__manufacturing_techniques p { font-size: 16px; }
+#mfg-tech-outer-template--21844034879741__manufacturing_techniques .md-td3457274 {
+min-height: 48px;
+border-radius: 12px;
+padding: 12px 18px;
+}
+#manufacturing-specs-template--21844034879741__manufacturing_specs > .mx-auto {
+padding-left: 16px;
+padding-right: 16px;
+}
+#manufacturing-specs-template--21844034879741__manufacturing_specs .tracking-\[0\.16em\],
+#manufacturing-specs-template--21844034879741__manufacturing_specs .tracking-\[0\.12em\] {
+letter-spacing: 0.08em !important;
+}
+#manufacturing-specs-template--21844034879741__manufacturing_specs .mb-10.flex > div {
+width: min(100%, 420px);
+}
+#manufacturing-specs-template--21844034879741__manufacturing_specs [data-mfg-spec-switch] {
+min-height: 44px !important;
+flex: 1 1 0;
+padding-left: 12px !important;
+padding-right: 12px !important;
+}
+#manufacturing-specs-template--21844034879741__manufacturing_specs [data-mfg-spec-tab] {
+min-height: 44px !important;
+border-radius: 12px;
+}
+#manufacturing-specs-template--21844034879741__manufacturing_specs [data-mfg-spec-panel="compare"] .h-64 {
+height: 200px !important;
+}
+.mfg-quality {
+padding: 48px 0 calc(28px + env(safe-area-inset-bottom));
+}
+.mfg-quality__inner { padding: 0 16px; gap: 28px; }
+.mfg-quality__eyebrow { letter-spacing: 0.08em; }
+.mfg-quality__heading { font-size: 32px; }
+.mfg-quality__feature {
+flex-direction: column;
+gap: 6px;
+padding: 14px 16px;
+border-radius: 14px;
+background: rgba(255,255,255,0.04);
+border: 1px solid rgba(255,255,255,0.1);
+}
+.mfg-quality__feature-title {
+margin: 0;
+font-size: 16px;
+font-weight: 650;
+line-height: 1.3;
+color: #fff;
+}
+.mfg-quality__feature-copy { margin: 0; }
+.mfg-quality__button {
+min-height: 48px;
+width: 100%;
+border-radius: 12px;
+}
+.mfg-quality__stage { height: auto; }
+.mfg-quality__stack {
+flex: none;
+height: 300px;
+min-height: 300px;
+}
+.mfg-quality__doc { width: min(100%, 300px); border-radius: 14px; }
+.mfg-quality__doc.is-active { transform: translate(-50%, -50%); }
+.mfg-quality__doc.is-next { transform: translate(calc(-50% + 12px), calc(-50% + 14px)) rotate(2deg) scale(0.96); }
+.mfg-quality__doc.is-prev { transform: translate(calc(-50% - 10px), calc(-50% + 10px)) rotate(-2deg) scale(0.94); }
+.mfg-quality__doc-image img { height: 132px; border-radius: 10px; }
+.mfg-quality__paper { padding: 12px; }
+.mfg-quality__controls { margin-top: 8px; gap: 4px; flex-wrap: wrap; max-width: 100%; }
+.mfg-quality__arrow {
+width: 44px;
+height: 44px;
+background: rgba(255,255,255,0.06);
+backdrop-filter: blur(8px);
+}
+.mfg-quality__dots { gap: 0; }
+.mfg-quality__dot { width: 44px; height: 44px; }
+.mfg-quality__dot::after {
+inset: auto;
+width: 8px;
+height: 8px;
+left: 50%;
+top: 50%;
+transform: translate(-50%, -50%);
+background: rgba(255,255,255,0.45);
+}
+.mfg-quality__dot.is-active::after {
+width: 22px;
+height: 8px;
+border-radius: 999px;
+background: #c9a962;
+}
+.mfg-quality__chip {
+min-height: 32px;
+display: inline-flex;
+align-items: center;
+font-size: 12px;
+letter-spacing: 0.04em;
+padding: 6px 12px;
+}
+[id*="21844034879741"] .tracking-\[0\.22em\],
+[id*="21844034879741"] .tracking-\[0\.2em\],
+[id*="21844034879741"] .tracking-\[0\.18em\],
+[id*="21844034879741"] .tracking-widest {
+letter-spacing: 0.08em !important;
+}
+[id*="21844034879741"] a[href="#open-quote"]:not([class*="min-h-"]),
+[id*="21844034879741"] a[href^="mailto:"],
+[id*="21844034879741"] a[href^="tel:"] {
+min-height: 48px !important;
+display: inline-flex !important;
+align-items: center;
+padding: 12px 18px !important;
+border-radius: 12px;
+border: 1px solid rgba(201,169,98,0.45);
+background: rgba(201,169,98,0.12);
+font-size: 16px !important;
+}
+[id*="21844034879741"] .overflow-x-auto:has(button) {
+scrollbar-width: thin;
+-webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent);
+mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent);
+}
+[id*="21844034879741"] .overflow-x-auto > button {
+min-height: 44px !important;
+display: inline-flex !important;
+align-items: center;
+scroll-snap-align: start;
+}
+[id*="21844034879741"][id*="cta"],
+#mfg-faq-template--21844034879741__manufacturing_faq {
+padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
+}

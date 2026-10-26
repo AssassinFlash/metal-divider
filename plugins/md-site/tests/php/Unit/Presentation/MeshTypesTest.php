@@ -195,6 +195,32 @@ final class MeshTypesTest extends TestCase {
 	 * mid-scroll would fight the handler. The click therefore scrolls, and the
 	 * same `apply()` decides what is visible either way.
 	 */
+	/**
+	 * The last chip must land inside its own slice, not on the leading edge.
+	 *
+	 * Wall Cladding is index 5 of 6. Aiming at `distance * 5 / 6` is the
+	 * boundary, and the browser's integer scroll offset falls one pixel short,
+	 * so floor() reports scene 4. The last slice is the end of the track; sync
+	 * already gives that pixel to the last scene.
+	 */
+	public function test_the_last_chip_aims_at_the_end_of_the_track_not_the_slice_edge(): void {
+		$block = $this->block();
+		$aim   = $this->between( $block, 'var scrollTopFor = function (index) {', 'var sync = function' );
+		$sync  = $this->between( $block, 'var sync = function () {', 'var frame = 0' );
+
+		$this->assertStringContainsString( 'index >= count - 1', $aim, 'the last chip is a special target' );
+		$this->assertStringContainsString( 'return top + total', $aim, 'the last chip scrolls to the end of the track' );
+		$this->assertDoesNotMatchRegularExpression(
+			'/return top \+ \(distance\(\) \* index\) \/ count/',
+			$aim,
+			'aiming at the leading edge rounds down into the previous scene'
+		);
+		$this->assertStringContainsString( 'travelled >= total - 1', $sync, 'the final pixel still belongs to the last scene' );
+	}
+
+	/**
+	 * A nav click travels to the scene rather than changing it in place.
+	 */
 	public function test_a_nav_click_scrolls_instead_of_setting_the_scene(): void {
 		$block = $this->block();
 
