@@ -221,4 +221,37 @@ final class MobileChromeTest extends TestCase {
 		$this->assertStringContainsString( 'data-quote-source="footer-dock"', $footer, 'the record names this entry point' );
 		$this->assertStringContainsString( 'data-md-footer-tab="contact"', $footer, 'the contact tab exists' );
 	}
+
+	/**
+	 * The footer's tap floor applies at every width, not just on phones.
+	 *
+	 * This is the failure the footer produced twice. The `min-height: 44px`
+	 * rules first lived only in the `max-width: 760px` block, so a
+	 * three-viewport sweep of all 21 page types passed at 390 and 320 and
+	 * failed at 1440 on every page with exactly three controls — the legal
+	 * row's Privacy, FAQ and Contact, at 26px (measured 2026-10-27).
+	 *
+	 * The assertion is on placement rather than on the value: each of these
+	 * three must carry its floor outside any media query, because a floor that
+	 * only some widths inherit is the defect itself.
+	 */
+	public function test_the_footer_tap_floor_is_not_confined_to_phones(): void {
+		$css = $this->volume( 'footer.css' );
+
+		// Split the sheet at its media queries; anything before the first one is
+		// the base layer.
+		$base = substr( $css, 0, (int) strpos( $css, '@media' ) );
+		$this->assertNotSame( '', $base, 'the sheet has a base layer before its media queries' );
+
+		foreach ( array( '.md-footer__identity-node', '.md-footer__copy', '.md-footer__bar-legal a' ) as $selector ) {
+			// `min-height` for rows that must grow, `height` for the fixed-size
+			// icon button: either satisfies the floor.
+			$pattern = '/' . preg_quote( $selector, '/' ) . '\s*\{[^}]*(?:min-)?height:\s*4[0-9]px/';
+			$this->assertMatchesRegularExpression(
+				$pattern,
+				$base,
+				$selector . ' must carry its tap floor in the base layer, not inside a phone-width media query'
+			);
+		}
+	}
 }

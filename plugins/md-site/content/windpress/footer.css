@@ -459,13 +459,13 @@
 	color: rgba(255, 255, 255, 0.5);
 	cursor: pointer;
 	display: grid;
-	height: 34px;
-	padding: 8px;
+	height: 44px;
+	padding: 12px;
 	place-items: center;
 	position: absolute;
-	right: 6px;
-	top: 4px;
-	width: 34px;
+	right: 0;
+	top: 0;
+	width: 44px;
 }
 
 .md-footer__copy:hover {
@@ -738,16 +738,6 @@
 
 	.md-footer__email-card a > span {
 		font-size: 9px;
-	}
-
-	/* de-linker shrinks this to 28px on phones; this site's floor is 44px for
-	   every control, so the button keeps its size and only the icon shrinks. */
-	.md-footer__copy {
-		height: 44px;
-		padding: 12px;
-		right: 0;
-		top: 0;
-		width: 44px;
 	}
 
 	.md-footer__copy svg {
