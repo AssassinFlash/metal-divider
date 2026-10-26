@@ -1,0 +1,315 @@
+/* md-site volume: footer.css — the site footer, written for the phone first.
+ *
+ * The carried footer stacked six full-width blocks (`.footer-v21__grid`
+ * `--xs: 12`), so on a 390px viewport it measured 1577px — nearly two
+ * screens of scrolling — and its own background token was never consumed,
+ * leaving the footer transparent. Both are fixed here rather than patched:
+ * this volume owns the footer outright.
+ *
+ * Every number is px, because base.css carries the old build's 62.5% root
+ * (1rem = 10px) and a rem figure would render at 0.625x what it says. The
+ * spacing rhythm is 8 / 12 / 16 / 24 / 32 / 48, the accent is the site gold
+ * and nothing else, and separation is drawn with hairlines instead of boxes
+ * so the block reads as one surface at every width.
+ *
+ * The mobile shape is the primary one: a single column, a two-up link grid
+ * that keeps all twenty destinations reachable without an accordion (so a
+ * visitor with JavaScript off loses nothing), contact as tappable rows, and
+ * the same ask the rest of the site makes — a quote — placed first rather
+ * than last. The desktop shape widens that into columns; it does not
+ * introduce a second design.
+ */
+
+.md-footer {
+	background: #141414;
+	color: rgba(255, 255, 255, 0.72);
+	font-size: 15px;
+	line-height: 1.6;
+}
+
+.md-footer__inner {
+	margin: 0 auto;
+	max-width: 1400px;
+	padding: 40px 16px 24px;
+}
+
+/* ── The ask ─────────────────────────────────────────────────────────── */
+
+.md-footer__cta {
+	border: 1px solid rgba(255, 255, 255, 0.09);
+	border-radius: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 20px 18px;
+	background:
+		radial-gradient(120% 140% at 0% 0%, rgba(201, 169, 98, 0.12), transparent 60%),
+		rgba(255, 255, 255, 0.02);
+}
+
+.md-footer__eyebrow {
+	color: var(--md-gold-light, #d4b878);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	margin: 0 0 8px;
+	text-transform: uppercase;
+}
+
+.md-footer__cta-title {
+	color: #ffffff;
+	font-family: var(--md-font-display, Georgia, serif);
+	font-size: 22px;
+	font-weight: 600;
+	line-height: 1.25;
+	margin: 0;
+}
+
+.md-footer__cta-lede {
+	font-size: 14px;
+	margin: 8px 0 0;
+}
+
+.md-footer__cta-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.md-footer__btn {
+	align-items: center;
+	border-radius: 10px;
+	display: inline-flex;
+	font-size: 15px;
+	font-weight: 600;
+	justify-content: center;
+	min-height: 48px;
+	padding: 0 20px;
+	text-decoration: none;
+	transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.md-footer__btn--primary {
+	background: var(--md-gold, #c9a962);
+	color: #141414;
+}
+
+.md-footer__btn--primary:hover,
+.md-footer__btn--primary:focus-visible {
+	background: var(--md-gold-light, #d4b878);
+	color: #141414;
+}
+
+.md-footer__btn--talk {
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	color: #ffffff;
+}
+
+.md-footer__btn--talk:hover,
+.md-footer__btn--talk:focus-visible {
+	border-color: var(--md-gold, #c9a962);
+	color: var(--md-gold-light, #d4b878);
+}
+
+.md-footer__btn-tail {
+	color: rgba(255, 255, 255, 0.55);
+	font-weight: 400;
+	margin-left: 6px;
+}
+
+/* ── Brand and contact ───────────────────────────────────────────────── */
+
+.md-footer__main {
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+	padding-top: 28px;
+}
+
+.md-footer__logo {
+	display: block;
+	height: 72px;
+	margin-bottom: 12px;
+	width: 72px;
+}
+
+.md-footer__tagline {
+	font-size: 14px;
+	margin: 0 0 16px;
+	max-width: 34em;
+}
+
+.md-footer__contact {
+	border-top: 1px solid rgba(255, 255, 255, 0.08);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.md-footer__contact li {
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.md-footer__contact a,
+.md-footer__place {
+	align-items: center;
+	display: flex;
+	gap: 10px;
+	min-height: 48px;
+	text-decoration: none;
+}
+
+.md-footer__contact a {
+	color: rgba(255, 255, 255, 0.86);
+	transition: color 160ms ease;
+}
+
+.md-footer__contact a:hover,
+.md-footer__contact a:focus-visible {
+	color: var(--md-gold-light, #d4b878);
+}
+
+.md-footer__contact svg {
+	color: var(--md-gold, #c9a962);
+	flex: none;
+}
+
+.md-footer__place {
+	color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── Link groups ─────────────────────────────────────────────────────── */
+
+.md-footer__links {
+	display: grid;
+	gap: 20px 16px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.md-footer__group-title {
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	margin: 0 0 8px;
+	text-transform: uppercase;
+}
+
+.md-footer__group ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.md-footer__group a {
+	align-items: center;
+	color: rgba(255, 255, 255, 0.78);
+	display: flex;
+	font-size: 14px;
+	min-height: 40px;
+	padding: 2px 0;
+	text-decoration: none;
+	transition: color 160ms ease;
+}
+
+.md-footer__group a:hover,
+.md-footer__group a:focus-visible {
+	color: var(--md-gold-light, #d4b878);
+}
+
+/* ── Small print ─────────────────────────────────────────────────────── */
+
+.md-footer__bottom {
+	border-top: 1px solid rgba(255, 255, 255, 0.08);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 28px;
+	padding-top: 20px;
+}
+
+.md-footer__legal,
+.md-footer__trust {
+	color: rgba(255, 255, 255, 0.45);
+	font-size: 12.5px;
+	margin: 0;
+}
+
+/* ── Wider screens: the same shapes, given room ──────────────────────── */
+
+@media (min-width: 768px) {
+	.md-footer__inner {
+		padding: 56px 24px 28px;
+	}
+
+	.md-footer__cta {
+		align-items: center;
+		flex-direction: row;
+		gap: 32px;
+		padding: 28px 32px;
+	}
+
+	.md-footer__cta-copy {
+		flex: 1 1 auto;
+	}
+
+	.md-footer__cta-title {
+		font-size: 26px;
+	}
+
+	.md-footer__cta-actions {
+		flex: none;
+		flex-direction: row;
+		gap: 12px;
+	}
+
+	.md-footer__btn {
+		padding: 0 24px;
+	}
+
+	.md-footer__links {
+		gap: 28px 24px;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.md-footer__bottom {
+		align-items: center;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+}
+
+@media (min-width: 1024px) {
+	.md-footer__inner {
+		padding: 64px 40px 32px;
+	}
+
+	.md-footer__main {
+		align-items: flex-start;
+		flex-direction: row;
+		gap: 56px;
+		padding-top: 40px;
+	}
+
+	.md-footer__brand {
+		flex: 0 0 340px;
+	}
+
+	.md-footer__logo {
+		height: 104px;
+		width: 104px;
+	}
+
+	.md-footer__links {
+		flex: 1 1 auto;
+		gap: 32px;
+	}
+
+	/* The contact rows stop being a list of taps once there is a pointer:
+	   the label and the value sit on one line, which is what the desktop
+	   footer's own rhythm wants. */
+	.md-footer__contact a,
+	.md-footer__place {
+		min-height: 44px;
+	}
+}

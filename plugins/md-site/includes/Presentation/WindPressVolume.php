@@ -173,6 +173,30 @@ final class WindPressVolume {
 			}
 		}
 		$this->import_from_entry( $data_dir . '/' . self::ENTRY, $imports );
+		// Self-check, then repair: `import_from_entry()` decides what to append
+		// from the entry's own text, and a volume file that appeared after the
+		// entry was last written can fall outside that decision (measured on the
+		// dev instance 2026-10-27: a new `footer.css` sat in `data/` while the
+		// entry imported 37 of 38 volumes, and `drift()` reported exactly that
+		// while `install()` wrote nothing). Re-reading through `drift()` — the
+		// same predicate the deploy asserts with — makes the two agree by
+		// construction instead of by two copies of the same rule drifting apart.
+		$entry   = $data_dir . '/' . self::ENTRY;
+		$missing = array();
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local volume file on disk, not a remote URL.
+		$text = is_readable( $entry ) ? (string) file_get_contents( $entry ) : '';
+		foreach ( $imports as $import ) {
+			if ( ! \str_contains( $text, '@import "' . $import . '" layer(components);' ) ) {
+				$missing[] = '@import "' . $import . '" layer(components);';
+			}
+		}
+		if ( array() !== $missing ) {
+			$theme_at = \strpos( $text, self::ENTRY_THEME_MARK );
+			$head     = false === $theme_at ? $text : \substr( $text, 0, $theme_at );
+			$tail     = false === $theme_at ? '' : \substr( $text, $theme_at );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- local volume file on disk, not a remote URL.
+			file_put_contents( $entry, \rtrim( $head ) . "\n" . \implode( "\n", $missing ) . "\n\n" . $tail );
+		}
 	}
 
 	/**
