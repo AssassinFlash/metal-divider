@@ -1679,3 +1679,17 @@ top: calc(var(--md-header-h, 113px) + 16px);
     min-height: 48px;
   }
 }
+
+/* Inline mailto links (audit 2026-10-26). The contact blocks print the
+   address as a run of body text, so it measured 17-21px tall — a tap target
+   a thumb cannot hit reliably, on every page that carries a contact band.
+   Phone widths only, and only the hit box: the address stays an inline text
+   link inside its sentence, with its type and colour unchanged. px, not rem,
+   because the carried 62.5% root renders a rem figure at 0.625x. */
+@media (max-width: 767px) {
+a[href^="mailto:info@metal-divider.com"] {
+display: inline-flex;
+align-items: center;
+min-height: 44px;
+}
+}
