@@ -165,12 +165,24 @@
     // anchor that targets #open-quote. The footer ships one dialog on every
     // page; a page with its own #quote-modal (custom-screens) keeps the page
     // dialog as the single open target, so the footer copy stays inert there.
+    //
+    // A page that already renders the inquiry form itself (the inquiry face)
+    // must not get a second copy inside the dialog: md-inquiry's markup
+    // carries fixed ids (md-inquiry-name, md-inquiry-source-*) and its script
+    // binds only the page's first .md-inquiry-app, so a dialog copy would both
+    // duplicate nine ids and sit inert. On such a page the CTA scrolls to the
+    // form that is already on screen instead of opening a dialog over it.
     Alpine.data('quoteModal', function () {
       return {
         isOpen: false,
         detail: null,
         open: function (detail) {
           if (document.getElementById('quote-modal') && this.$root.id !== 'quote-modal') {
+            return;
+          }
+          var page_form = pageInquiryForm();
+          if (page_form) {
+            focusInquiryForm(page_form);
             return;
           }
           this.detail = detail || null;
@@ -238,6 +250,45 @@
    * ------------------------------------------------------------------ */
   function each(list, fn) {
     Array.prototype.forEach.call(list, fn);
+  }
+
+  // The inquiry form a page renders for itself, outside the footer's quote
+  // dialog — the inquiry face is the only page that does. Null everywhere else.
+  function pageInquiryForm() {
+    var app = null;
+    each(document.querySelectorAll('.md-inquiry-app'), function (candidate) {
+      if (!app && !candidate.closest('#md-quote-modal')) {
+        app = candidate;
+      }
+    });
+    return app;
+  }
+
+  // Brings the page's own form into view and puts the caret in its first
+  // field: the quote CTA's intent is "start an inquiry", and on a page whose
+  // form is already on screen that is a scroll, not a dialog.
+  function focusInquiryForm(app) {
+    var target = app.querySelector('.md-inquiry-field__input') || app;
+    if (target.scrollIntoView) {
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    if (typeof target.focus === 'function') {
+      target.focus({ preventScroll: true });
+    }
+  }
+
+  // Drops the dialog's copy of the inquiry form on a page that already renders
+  // one. Leaving it would duplicate nine ids and, because md-inquiry's script
+  // binds only the first .md-inquiry-app on the page, also leave the dialog's
+  // copy inert. Runs once at start, before anything can be opened.
+  function dropDuplicateModalForm() {
+    var pageForm = pageInquiryForm();
+    if (!pageForm) {
+      return;
+    }
+    each(document.querySelectorAll('#md-quote-modal .md-inquiry-app'), function (duplicate) {
+      duplicate.parentNode.removeChild(duplicate);
+    });
   }
 
   function findModal(name) {
@@ -1557,6 +1608,9 @@
   }
 
   function start() {
+    // Before any dialog can open: a page that renders the inquiry form itself
+    // must not also carry the dialog's copy (duplicate ids, inert controls).
+    dropDuplicateModalForm();
     setupModals();
     setupTabs();
     // The cloned panels carry <img xo-src>, so the fill runs before the
