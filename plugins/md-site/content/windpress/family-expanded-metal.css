@@ -47,6 +47,16 @@ color: rgba(255, 255, 255, 0.8);
 #expanded-vs-perforated-template--22084675240189__expanded-vs-perforated [data-evp-tab-content][hidden] {
 display: none;
 }
+/* Touch targets (audit 2026-10-26): the switch pills measured 31px and the
+   tab pills 38px on 390 — Tailwind py-2/py-3 at the 62.5% root. Phone
+   widths take a 44px minimum; the pill look and the desktop sizes are
+   unchanged. */
+@media (max-width: 749px){
+#expanded-vs-perforated-template--22084675240189__expanded-vs-perforated [data-evp-switch],
+#expanded-vs-perforated-template--22084675240189__expanded-vs-perforated [data-evp-tab]{
+min-height: 44px;
+}
+}
 @keyframes emt-bg-enter-template--22084675240189__expanded-mesh-types {
 from { transform: translateY(100%); }
 to   { transform: translateY(0); }

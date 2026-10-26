@@ -616,6 +616,30 @@
     return surface;
   }
 
+  // A trigger that opens a surface must announce the surface's state. The
+  // drawer's triggers are the hamburger ("Open menu") and the sub-menu rows,
+  // none of which ship aria-expanded in the converted markup; without this the
+  // trigger still reads "Open menu" while the drawer is open (measured: the
+  // attribute stayed null through open and close).
+  function syncTriggerState(trigger, open) {
+    // Programmatic opens record document.activeElement, which can be <body>;
+    // only a real toggle control carries the state.
+    if (!trigger || trigger === document.body || trigger === document.documentElement) {
+      return;
+    }
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      var label = trigger.getAttribute('aria-label') || '';
+      if (/^Open\s/.test(label)) {
+        trigger.__mdClosedLabel = label;
+        trigger.setAttribute('aria-label', 'Close' + label.slice(4));
+      }
+    } else if (trigger.__mdClosedLabel) {
+      trigger.setAttribute('aria-label', trigger.__mdClosedLabel);
+      trigger.__mdClosedLabel = null;
+    }
+  }
+
   function openModal(modal, trigger) {
     if (!modal) {
       return;
@@ -627,6 +651,7 @@
     if (!modal.__mdOpener) {
       modal.__mdOpener = trigger || document.activeElement;
     }
+    syncTriggerState(modal.__mdOpener, true);
     labelModal(modal, trigger);
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
@@ -655,6 +680,7 @@
     // is never visibly interactive behind a still-visible overlay.
     popSurface(modal);
     restoreFocus(opener);
+    syncTriggerState(opener, false);
     modal.classList.remove('is-open');
     modal.setAttribute('aria-hidden', 'true');
   }

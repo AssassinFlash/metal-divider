@@ -503,7 +503,10 @@ border-radius: 0;
 height: 100vh;
 }
 .pattern-lightbox-image { max-height: 55vh; }
-.pattern-lightbox-arrow { width: 38px; height: 38px; font-size: 22px; }
+/* The arrows keep the base 44px box on phones (audit 2026-10-26): the 38px
+   that used to sit here was an under-sized grab target on 320-390. Only the
+   glyph stays at the smaller mobile size. */
+.pattern-lightbox-arrow { width: 44px; height: 44px; font-size: 22px; }
 .pattern-lightbox-arrow--prev { left: 10px; }
 .pattern-lightbox-arrow--next { right: 10px; }
 }
