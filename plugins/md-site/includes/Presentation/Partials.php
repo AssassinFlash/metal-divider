@@ -226,7 +226,14 @@ final class Partials {
 			$frame      = $item;
 			$frame['i'] = $index;
 			$frame['n'] = $index + 1;
-			$out       .= $this->render( $name, $frame );
+			// `render()` expands the partial it was given, and nothing more:
+			// `do_shortcode()` does not recurse into the string a shortcode
+			// just produced. When the partial's own body is another shortcode
+			// — which is exactly the `[md_media_*]` frame inside a card — the
+			// second layer stayed literal, and the hub printed nine cards
+			// whose every `src` was the text `[md_media_url]` (measured
+			// 2026-10-27, dev and production). This pass resolves that layer.
+			$out .= \do_shortcode( $this->render( $name, $frame ) );
 		}
 		return $out;
 	}

@@ -344,6 +344,41 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * Two shortcodes may never sit flush against each other in a partial.
+	 *
+	 * `[md_media_srcset …][md_media_dimensions]` — no space between — defeats
+	 * WordPress's shortcode regex: it reads the pair as one malformed tag and
+	 * expands *neither*. The whole attribute pair then ships as literal text.
+	 *
+	 * This is worth a guard because of how it failed: the markup looked
+	 * ordinary, every shortcode was registered, the same two tags expanded
+	 * fine one space apart, and the hub rendered nine cards whose every image
+	 * was the literal string `[md_media_url]` — nine broken images on the page
+	 * that introduces the catalog, on dev and production alike, through
+	 * several rounds of review (measured 2026-10-27).
+	 */
+	public function test_no_partial_puts_two_shortcodes_flush_against_each_other(): void {
+		$offenders = array();
+		$root      = dirname( \MetalDivider\Site\Presentation\Templates::path( 'x', true ) );
+
+		foreach ( (array) glob( $root . '/partials/*.html' ) as $path ) {
+			$contents = (string) file_get_contents( (string) $path ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+			$contents = (string) preg_replace( '/<!--.*?-->/s', '', $contents );
+			// Flush means no separator at all: one space already separates the
+			// tags for the regex, which is why the fix is a space.
+			if ( preg_match( '/\]\[(?:md_|lc_)/', $contents ) ) {
+				$offenders[] = basename( (string) $path );
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$offenders,
+			'these partials put two shortcodes flush against each other; WordPress reads the pair as one malformed tag and expands neither — separate them with a space: ' . implode( ', ', $offenders )
+		);
+	}
+
+	/**
 	 * How many blocks enclose a position in a stylesheet. Zero means the rule
 	 * sits at the top level; anything else means it is nested, and the only
 	 * things that nest rules here are media queries.

@@ -481,11 +481,25 @@ final class CardsTest extends TestCase {
 	 */
 	public function test_the_hub_series_card_is_rendered_from_the_partial(): void {
 		WP_Mock::userFunction( 'get_term_meta' )->once()->with( 18, 'thumbnail_id', true )->andReturn( '1502' );
-		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1502, 'full' )->andReturn( 'https://site.test/uploads/abstract.webp' );
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1502, 'large' )->andReturn( 'https://site.test/uploads/abstract-1024x1024.webp' );
+		// The card draws a ladder now, so the attachment's own srcset is part
+		// of its contract (the hub image measured 2048px in a 348px box).
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->once()->with( 1502, 'large' )->andReturn( 'abstract-480w.webp 480w, abstract-768w.webp 768w' );
+		// The `src` is the 1024px file, so the width/height attributes must be
+		// the 1024 file's numbers: reserving the master\'s 2048×2048 box for a
+		// 1024px image reflows the card on load.
 		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->once()->with( 1502 )->andReturn(
 			array(
 				'width'  => 2048,
 				'height' => 2048,
+				'file'   => '2026/10/abstract.webp',
+				'sizes'  => array(
+					'large' => array(
+						'file'   => 'abstract-1024x1024.webp',
+						'width'  => 1024,
+						'height' => 1024,
+					),
+				),
 			)
 		);
 		WP_Mock::userFunction( 'get_post_meta' )->once()->with( 1502, '_wp_attachment_image_alt', true )->andReturn( '' );
@@ -500,7 +514,12 @@ final class CardsTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( '<li><a class="cph__card" href="https://site.test/collections/pattern-abstract/">', $html );
-		$this->assertStringContainsString( '<img src="https://site.test/uploads/abstract.webp" alt="Abstract" loading="lazy" class="cph__media-image" width="2048" height="2048">', $html );
+		// The card draws a ladder now: without one the 2048px master went into a
+		// 348px box and was the LCP element on /collections/ (2026-10-27).
+		$this->assertMatchesRegularExpression(
+			'/<img src="abstract-480w\.webp" alt="Abstract" loading="lazy" class="cph__media-image"\s+srcset="[^"]*480w[^"]*" sizes="[^"]*348px[^"]*"\s+width="480" height="480">/',
+			$html
+		);
 		$this->assertStringContainsString( '<h3 class="cph__card-title">Abstract</h3>', $html );
 		$this->assertStringContainsString( '<p class="cph__card-copy">Flowing curves and organic shapes.</p>', $html );
 		$this->assertStringContainsString( '<span class="cph__card-cta">Explore</span>', $html );

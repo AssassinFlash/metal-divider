@@ -490,20 +490,32 @@ final class ShortcodesTest extends TestCase {
 			static fn( array $args = array() ): array => 'ids' === ( $args['fields'] ?? '' ) ? array( 7, 9 ) : array()
 		);
 		WP_Mock::userFunction( 'wp_get_object_terms' )->zeroOrMoreTimes()->andReturn( array( $term ) );
-		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1502, 'full' )->andReturn( 'https://site.test/uploads/aurum-2048w.webp' );
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1502, 'large' )->andReturn( 'https://site.test/uploads/aurum-1024w.webp' );
+		// The card draws a ladder now, so the attachment's own srcset is part
+		// of its contract (the hub image measured 2048px in a 348px box).
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->once()->with( 1502, 'large' )->andReturn( 'aurum-480w.webp 480w, aurum-1024w.webp 1024w' );
 		WP_Mock::userFunction( 'get_post_meta' )->once()->with( 1502, '_wp_attachment_image_alt', true )->andReturn( 'Aurum circle screen' );
 		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->once()->with( 1502 )->andReturn(
 			array(
 				'width'  => 2048,
 				'height' => 2048,
+				'file'   => '2026/10/aurum-2048w.webp',
+				'sizes'  => array(
+					'large' => array(
+						'file'   => 'aurum-1024w.webp',
+						'width'  => 1024,
+						'height' => 1024,
+					),
+				),
 			)
 		);
 
 		$cards = ( new Shortcodes() )->series_grid();
 
-		$this->assertStringContainsString( 'src="https://site.test/uploads/aurum-2048w.webp"', $cards );
+		$this->assertStringContainsString( 'src="aurum-480w.webp"', $cards, 'the source is the ladder\'s smallest rung: a 348–439px box, and a browser without srcset support should not fetch the master' );
+		$this->assertStringContainsString( 'srcset="', $cards, 'the card carries a ladder — the master in a 348px box was the LCP on /collections/' );
 		$this->assertStringContainsString( 'alt="Aurum circle screen"', $cards, 'the attachment’s own alt wins' );
-		$this->assertStringContainsString( 'width="2048" height="2048"', $cards, 'the numbers are the drawn file’s own' );
+		$this->assertStringContainsString( 'width="480" height="480"', $cards, 'the numbers are the drawn file’s own, not the master’s — otherwise the box reserves the wrong ratio' );
 		$this->assertStringContainsString( '<p class="cph__card-copy">Abstract decorative screen designs.</p>', $cards );
 		$this->assertStringContainsString( '<h3 class="cph__card-title">Abstract</h3>', $cards );
 		$this->assertStringNotContainsString( ' style=', $cards, 'zero inline styles (AGENTS.md §5)' );
@@ -546,7 +558,10 @@ final class ShortcodesTest extends TestCase {
 		WP_Mock::userFunction( 'get_term_link' )->once()->andReturn( 'https://site.test/collections/pattern-geometric/' );
 		$this->mock_hub_membership( $term );
 		WP_Mock::userFunction( 'get_term_meta' )->once()->with( 20, 'thumbnail_id', true )->andReturn( '1503' );
-		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1503, 'full' )->andReturn( 'https://site.test/uploads/grid-2048w.webp' );
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1503, 'large' )->andReturn( 'https://site.test/uploads/grid-1024w.webp' );
+		// The card draws a ladder now, so the attachment's own srcset is part
+		// of its contract (the hub image measured 2048px in a 348px box).
+		WP_Mock::userFunction( 'wp_get_attachment_image_srcset' )->once()->with( 1503, 'large' )->andReturn( 'grid-480w.webp 480w, grid-1024w.webp 1024w' );
 		WP_Mock::userFunction( 'get_post_meta' )->once()->with( 1503, '_wp_attachment_image_alt', true )->andReturn( '' );
 		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->once()->with( 1503 )->andReturn( array() );
 
@@ -570,6 +585,9 @@ final class ShortcodesTest extends TestCase {
 		WP_Mock::userFunction( 'get_term_link' )->once()->andReturn( 'https://site.test/collections/pattern-landscape/' );
 		$this->mock_hub_membership( $gone );
 		WP_Mock::userFunction( 'get_term_meta' )->once()->with( 22, 'thumbnail_id', true )->andReturn( '1601' );
+		// The card asks for `large` first and only falls back to `full` when
+		// that size is gone, so an unresolvable attachment answers both.
+		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1601, 'large' )->andReturn( false );
 		WP_Mock::userFunction( 'wp_get_attachment_image_url' )->once()->with( 1601, 'full' )->andReturn( false );
 
 		$cards = ( new Shortcodes() )->series_grid();

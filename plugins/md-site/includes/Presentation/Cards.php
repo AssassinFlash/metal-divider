@@ -63,6 +63,16 @@ final class Cards {
 	public const SERIES = 'hub-series-card';
 
 	/**
+	 * The hub series card's image box, for its `sizes` attribute: a single
+	 * column of 348px on a phone, two columns at 330px on a tablet, and the
+	 * 439px desktop cell. Measured in real Chrome on the dev instance
+	 * 2026-10-27 at 390 and 1440 (`.cph__media-image` reported 348×261 and
+	 * 439×329), not derived from a viewport formula — the grid's own gaps and
+	 * gutters decide the box, not the window.
+	 */
+	private const SERIES_SIZES = '(max-width: 640px) 348px, (max-width: 1024px) 330px, 439px';
+
+	/**
 	 * One PDP gallery-slot image.
 	 */
 	public const SLOT_IMAGE = 'pdp-image';
@@ -376,14 +386,49 @@ final class Cards {
 		$thumbnail = (int) \get_term_meta( $term_id, 'thumbnail_id', true );
 		$image     = array();
 		if ( $thumbnail > 0 ) {
-			$url = (string) \wp_get_attachment_image_url( $thumbnail, 'full' );
+			// A `large` source plus the attachment's own ladder, rather than
+			// the full file. The card draws a 348px box on a phone and 439px
+			// on a desktop, and this read `full` — so a 2048×2048 hero went
+			// out at 800–970KB per card, and on /collections/ it was the LCP
+			// element (measured 2026-10-27). The ladder is the same one every
+			// other card on the site uses.
+			$url = (string) \wp_get_attachment_image_url( $thumbnail, 'large' );
+			if ( '' === $url ) {
+				$url = (string) \wp_get_attachment_image_url( $thumbnail, 'full' );
+			}
 			if ( '' !== $url ) {
-				$metadata = \wp_get_attachment_metadata( $thumbnail );
-				$alt      = (string) \get_post_meta( $thumbnail, '_wp_attachment_image_alt', true );
-				$image[]  = array(
+				$pair = PatternFacts::attachment_srcset( $thumbnail, self::SERIES_SIZES );
+				// The pipeline's attachments carry no WordPress `large` size,
+				// so both lookups answered with the 2048px master — which then
+				// became the `src`, and a browser that ignores `srcset`
+				// downloaded it. The ladder's own smallest rung is the honest
+				// default for a 348–439px box.
+				if ( '' !== $pair['srcset'] ) {
+					$rungs = array();
+					foreach ( explode( ',', $pair['srcset'] ) as $rung ) {
+						$bits = preg_split( '/\s+/', trim( $rung ) );
+						if ( is_array( $bits ) && '' !== ( $bits[0] ?? '' ) ) {
+							$rungs[] = $bits[0];
+						}
+					}
+					if ( array() !== $rungs ) {
+						$url = $rungs[0];
+					}
+				}
+				$alt = (string) \get_post_meta( $thumbnail, '_wp_attachment_image_alt', true );
+				// The intrinsic size of the file `src` resolves to, not the
+				// original's: with `src` at `large` and the width/height
+				// attributes at the 2048px master, the box reserves the wrong
+				// ratio and the card reflows when the image lands.
+				$size    = self::attachment_size( $thumbnail, $url );
+				$image[] = array(
 					'url'    => $url,
-					'width'  => is_array( $metadata ) ? (int) ( $metadata['width'] ?? 0 ) : 0,
-					'height' => is_array( $metadata ) ? (int) ( $metadata['height'] ?? 0 ) : 0,
+					// `value_pair('srcset')` reads this key as the attribute
+					// pair itself (srcset + sizes), which is the shape every
+					// other image shortcode already supplies.
+					'srcset' => $pair,
+					'width'  => $size['width'],
+					'height' => $size['height'],
 					'alt'    => '' === $alt ? $name : $alt,
 				);
 			}
@@ -396,6 +441,55 @@ final class Cards {
 				'text'  => (string) $series['description'],
 				'image' => $image,
 			)
+		);
+	}
+
+	/**
+	 * The intrinsic width/height of the file a URL resolves to.
+	 *
+	 * A `src` at one size with `width`/`height` from the master reserves the
+	 * wrong box: the browser lays out the original's 2048×2048 ratio while
+	 * the bytes that arrive are 1024×1024, so the card reflows on load. The
+	 * metadata already names every size; this matches the URL against them
+	 * and falls back to the master when the URL is the master itself.
+	 *
+	 * @param int    $attachment_id The attachment id.
+	 * @param string $url           The URL `src` carries.
+	 * @return array{width: int, height: int} The file's own dimensions.
+	 */
+	private static function attachment_size( int $attachment_id, string $url ): array {
+		// A file named `…-<N>w.webp` is N pixels wide; the pipeline names its
+		// widths that way and the height follows the master's ratio, because
+		// every variant is a uniform resize. This is read from the URL rather
+		// than from `metadata['sizes']`: the pipeline's variants do not appear
+		// in that map (measured 2026-10-27 — the attachment's `sizes` was
+		// empty while fourteen width variants existed on disk), so a lookup
+		// there would have returned the 2048px master for a 480px file.
+		$metadata = \wp_get_attachment_metadata( $attachment_id );
+		$master_w = is_array( $metadata ) ? (int) ( $metadata['width'] ?? 0 ) : 0;
+		$master_h = is_array( $metadata ) ? (int) ( $metadata['height'] ?? 0 ) : 0;
+
+		if ( preg_match( '/-(\d+)w\.[a-z0-9]+$/i', $url, $hit ) ) {
+			$width = (int) $hit[1];
+			if ( $width > 0 && $master_w > 0 && $master_h > 0 ) {
+				return array(
+					'width'  => $width,
+					'height' => (int) round( $master_h * ( $width / $master_w ) ),
+				);
+			}
+		}
+
+		// WordPress's own resized files carry `-<W>x<H>` in the name.
+		if ( preg_match( '/-(\d+)x(\d+)\.[a-z0-9]+$/i', $url, $hit ) ) {
+			return array(
+				'width'  => (int) $hit[1],
+				'height' => (int) $hit[2],
+			);
+		}
+
+		return array(
+			'width'  => $master_w,
+			'height' => $master_h,
 		);
 	}
 }

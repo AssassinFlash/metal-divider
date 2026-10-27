@@ -795,7 +795,15 @@ final class Shortcodes {
 				)
 			);
 		}
-		return $out;
+		// The card partial hands back its own `[md_each …]`, and WordPress
+		// expands a shortcode's output only when something asks again —
+		// `do_shortcode()` does not recurse into the string it just produced.
+		// Without this pass the hub rendered nine cards whose every image was
+		// the literal text `[md_media_url]`: nine broken images on the page
+		// that introduces the whole catalog (measured 2026-10-27, dev and
+		// production). The inner fields are the same `md_*` shortcodes this
+		// class registers, so one more pass resolves them.
+		return \do_shortcode( $out );
 	}
 
 	/**
