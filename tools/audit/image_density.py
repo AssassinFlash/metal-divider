@@ -130,6 +130,15 @@ def main() -> int:
             found = candidates(tag)
             if not found:
                 continue
+            # A lightbox thumbnail declares 87px and shows an 87px image; the
+            # wider values in its `sizes` describe the stage that the thumbnail
+            # swaps into, so judging by them reports a defect that is not one.
+            # The class sits on the button wrapping the image, not on the image,
+            # so the check has to look at the element that encloses this tag.
+            position = match.start()
+            enclosing = html[max(0, position - 400):position]
+            if re.search(r'class="[^"]*(pattern-thumb|lightbox|thumb)[^"]*"', enclosing):
+                continue
             checked += 1
             available = max(width for _, width in found)
             if available and available < slot * MIN_SHARE:
