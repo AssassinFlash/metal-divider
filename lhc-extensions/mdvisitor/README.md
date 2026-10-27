@@ -15,13 +15,15 @@ Styles and the start-page script are extension assets. Their URLs are built from
 
 ## Start page
 
-Charcoal/brass is the default hero. `?mdvtheme=forest` sets `data-theme="forest"` on the card. Quick Connect cards, common-question chips, and every FAQ row write into the native `Question` field and focus it. They do not submit. The FAQ screen lists questions only; it carries no answer copy. The round control beside the question is the native start-chat send partial, which submits `#form-start-chat`. Home and FAQ are in-page views. The Chat tab is not a separate view: before a chat exists it returns to Home and focuses the same native question field, because there is no conversation to show yet. After the native form submits, LHC navigates to the chat page and the start-page tabs are gone. Escape closes the FAQ view. It does not close the parent window.
+Charcoal/brass is the default hero. `?mdvtheme=forest` sets `data-theme="forest"` on the card. Quick Connect cards, common-question chips, and every FAQ row write into the native `Question` field and focus it. They do not submit. The FAQ screen lists questions only; it carries no answer copy. The round control beside the question is the native start-chat send partial, which submits `#form-start-chat`. Home and FAQ are in-page views, online and offline. The Chat tab is not a separate view: before a chat exists it returns to Home and focuses the same native question field, because there is no conversation to show yet. After the native form submits, LHC navigates to the chat page and the start-page tabs are gone. Escape closes the FAQ view first; on Home it closes the card through the parent postMessage, falling back to `window.close()` when no parent origin resolves.
 
 The question textarea keeps the native `user_msg_height` inline style when that setting is greater than zero. That is the only inline style, and it is copied so a configured composer height still applies. Everything else is in the CSS files.
 
 ## Offline
 
 Outside the department duty window (staging: 01:00–13:00 UTC = 09:00–21:00 Beijing), the offline card says the desk is closed and does not claim an instant reply. The form underneath is LHC's native leave-message form: same action, same `onsubmit` (`lhinst.addCaptcha`), same field names (`Username`, `Email`, `Phone`, `Question`, terms, department, file). This theme does not add a second handler.
+
+The offline card keeps the same Home/Chat/FAQ tabs and FAQ list. FAQ rows prefill the native leave-message question field and never submit it.
 
 The card does not appear by itself. Two staging settings have to be on; both are applied on staging as of 2026-10-28:
 
@@ -41,11 +43,11 @@ Acceptance on 2026-10-28 (real Chrome via opencli): the native submit created `l
 
 ## Chat page
 
-`mdvisitor-chat.css` only restyles the server-rendered widget chat page (`body.widget-chat`): header, status/operator row, `#messages`, `.msgBlock`, message rows, `#CSChatMessage`, and `#lhc-send-icon`. The native status row is hidden because the header chip carries the same state; the native Typing bubble and operator profile block are hidden as well. It does not change send/poll JavaScript or message markup. The chat page does not receive `mdvtheme`; after submit, LHC navigates to `chatwidgetchat` without that query. The chat skin is charcoal. A forest chat skin would need a core or route change, which this extension does not add.
+`mdvisitor-chat.css` only restyles the server-rendered widget chat page (`body.widget-chat`): header, status/operator row, `#messages`, `.msgBlock`, message rows, `#CSChatMessage`, and `#lhc-send-icon`. The native status row is hidden because the header chip carries the same state; the native Typing bubble and operator profile block are hidden as well. The header title starts as `Metal Divider AI`, switches to the assigned operator's support name after a human accepts, and becomes `Metal Divider Support` plus `Chat closed` on a closed chat. The avatar dot follows the chip tone (AI/online green, pending gold, closed grey). It does not change send/poll JavaScript or message markup. The chat page does not receive `mdvtheme`; after submit, LHC navigates to `chatwidgetchat` without that query. The chat skin is charcoal. A forest chat skin would need a core or route change, which this extension does not add.
 
 ## Preview
 
-`preview/mdvisitor-preview.html` is a same-origin staging page, not the production embed. Open it on the staging host that serves `/chat/`. The launcher is a black pill, "Ask Metal Divider", with a gold MD mark and an online dot. The card is 400×680 and contains an iframe to `/chat/index.php/chat/chatwidget/(department)/1`; the preview appends a cache-buster so a reload does not serve an older widget document. Under 560px the card is full screen. The iframe close control posts the core string `lhc_chat_closed_explicit` to the parent origin resolved from `window.location.ancestorOrigins` (falling back to the referrer origin). It never posts to `*`. The preview page accepts that string, hides the card and restores focus to the launcher. The preview page has no second close button of its own; Escape also hides the card.
+`preview/mdvisitor-preview.html` is a same-origin staging page, not the production embed. Open it on the staging host that serves `/chat/`. The launcher is a black pill, "Ask Metal Divider", with a gold MD mark and an online dot. The card is 400×680 and contains an iframe to `/chat/index.php/chat/chatwidget/(department)/1`; the preview appends a cache-buster so a reload does not serve an older widget document. Under 560px the card is full screen. The iframe close control posts the core string `lhc_chat_closed_explicit` to the parent origin resolved from `window.location.ancestorOrigins` (falling back to the referrer origin). It never posts to `*`. When no parent origin resolves, it calls `window.close()` instead of doing nothing. The preview page accepts that string, hides the card and restores focus to the launcher. The preview page has no second close button of its own; Escape also hides the card.
 
 ## Deploy
 
