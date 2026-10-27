@@ -285,7 +285,10 @@ function md_wecom_notify_int_field( mixed $value ): ?int {
  * reminder only when the chat has waited: a pending chat for more than ten
  * minutes since its first card, or an active chat whose operator last spoke
  * more than three minutes ago (research/mobile-wecom-workflow §7; both
- * windows are the site's trade-off, not LHC's or WeCom's). A pending chat
+ * windows are the site's trade-off, not LHC's or WeCom's). An accepted chat
+ * whose operator has not spoken yet has no last-spoke time to wait for, so
+ * the visitor's message is carded at once; the connector's rate ceiling
+ * still applies. A pending chat
  * whose first card never left is not held back by that window: the next
  * event retries it, so a failed delivery cannot silence ten minutes of
  * visitor messages. A timestamp ahead of this server's clock is not a
@@ -382,10 +385,13 @@ function md_wecom_notify_gate( string $event_name, array $chat, array $body, int
 		} else {
 			$operator_spoke = md_wecom_notify_int_field( $chat['last_op_msg_time'] ?? null );
 			if ( null === $operator_spoke || $operator_spoke <= 0 ) {
+				// Accepted, but the operator has not spoken yet. That is not a
+				// reason to drop the visitor's first messages; the rate ceiling
+				// still applies.
 				return array(
-					'send'   => false,
-					'reason' => 'last_op_missing',
-					'window' => 0,
+					'send'   => true,
+					'reason' => '',
+					'window' => $window,
 				);
 			}
 			if ( $now < $operator_spoke ) {

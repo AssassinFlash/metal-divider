@@ -380,7 +380,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'Do you install the screens in Iceland?' ),
+				'body'   => array( 'q' => 'How do I clean the panels?' ),
 			)
 		);
 
@@ -389,7 +389,7 @@ final class KbEndpointTest extends TestCase {
 		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? null;
 		self::assertIsArray( $log );
 		self::assertCount( 1, $log );
-		self::assertSame( 'Do you install the screens in Iceland?', $log[0]['q'] );
+		self::assertSame( 'How do I clean the panels?', $log[0]['q'] );
 		self::assertSame( 1, $log[0]['n'] );
 		self::assertSame( 'no_context', $log[0]['reason'] );
 		self::assertIsInt( $log[0]['t'] );
@@ -406,13 +406,13 @@ final class KbEndpointTest extends TestCase {
 		md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'Do you install the screens in Iceland?' ),
+				'body'   => array( 'q' => 'How do I clean the panels?' ),
 			)
 		);
 
 		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? array();
 		self::assertCount( 1, $log );
-		self::assertSame( 'Do you install the screens in Iceland?', $log[0]['q'] );
+		self::assertSame( 'How do I clean the panels?', $log[0]['q'] );
 	}
 
 	/**
@@ -478,7 +478,7 @@ final class KbEndpointTest extends TestCase {
 	public function test_the_same_question_only_increments_its_count(): void {
 		$GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] = array(
 			array(
-				'q'      => 'Do You Install In Iceland?',
+				'q'      => 'How Do I Clean The Panels?',
 				't'      => 100,
 				'n'      => 1,
 				'reason' => 'grounding',
@@ -495,13 +495,13 @@ final class KbEndpointTest extends TestCase {
 		md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'do you install in iceland?' ),
+				'body'   => array( 'q' => 'how do i clean the panels?' ),
 			)
 		);
 
 		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? array();
 		self::assertCount( 2, $log );
-		self::assertSame( 'Do You Install In Iceland?', $log[0]['q'] );
+		self::assertSame( 'How Do I Clean The Panels?', $log[0]['q'] );
 		self::assertSame( 2, $log[0]['n'] );
 		self::assertGreaterThan( 100, $log[0]['t'] );
 		self::assertSame( 'no_context', $log[0]['reason'] );
@@ -575,7 +575,7 @@ final class KbEndpointTest extends TestCase {
 			$out = md_kb_endpoint_answer(
 				array(
 					'header' => $this->bearer(),
-					'body'   => array( 'q' => 'Do you install the screens in Iceland?' ),
+					'body'   => array( 'q' => 'How do I clean the panels?' ),
 				)
 			);
 
@@ -603,7 +603,7 @@ final class KbEndpointTest extends TestCase {
 		md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'Do you install the screens in Iceland?' ),
+				'body'   => array( 'q' => 'How do I clean the panels?' ),
 			)
 		);
 
@@ -1800,10 +1800,10 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * A shipping destination is not a commercial commitment: "deliver to
-	 * Dubai" still reaches the model and is not force-transferred.
+	 * A shipping destination is not a commercial commitment, but it is not
+	 * a published fact either: the team answers it without a shipping claim.
 	 */
-	public function test_a_shipping_destination_is_not_a_commercial_question(): void {
+	public function test_a_shipping_destination_is_handed_off_without_a_claim(): void {
 		$this->configure_kb(
 			array(),
 			$this->model_reply( 'Yes, we ship worldwide.', false, 'none' )
@@ -1816,8 +1816,40 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( '', $out['body']['action'] );
-		self::assertNotSame( array(), $this->recorded( 'md_mu_test_http' ) );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * Showroom visits, installation, thickness and weight have no consistent
+	 * public fact. They transfer without a number or promise, and the model
+	 * is not asked.
+	 */
+	public function test_unpublished_project_facts_are_handed_off_without_a_claim(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'A typical panel is about 2 mm thick and weighs 8 kg/m2.', false, 'none' )
+		);
+
+		$questions = array(
+			'Can I visit your showroom?',
+			'Do you install screens in Iceland?',
+			'What is the thickness of a typical panel?',
+			'How much does a panel weigh?',
+			'Do you ship to my country?',
+		);
+		foreach ( $questions as $q ) {
+			$out = md_kb_endpoint_answer(
+				array(
+					'header' => $this->bearer(),
+					'body'   => array( 'q' => $q ),
+				)
+			);
+			self::assertSame( 'transfer_operator', $out['body']['action'], $q );
+			self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), $out['body']['msg'], $q );
+		}
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
 
@@ -2126,10 +2158,10 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * "Ship to" names a destination, not a date. It still reaches the model,
-	 * as "deliver to Dubai" does.
+	 * "Ship to" names a destination, not a date, and no destination is a
+	 * published fact: the team answers it without a shipping claim.
 	 */
-	public function test_a_ship_to_destination_is_not_a_ship_date(): void {
+	public function test_a_ship_to_destination_is_handed_off_without_a_claim(): void {
 		$this->configure_kb(
 			array(),
 			$this->model_reply( 'Yes, we ship worldwide.', false, 'none' )
@@ -2142,9 +2174,9 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( '', $out['body']['action'] );
-		self::assertSame( 'Yes, we ship worldwide.', $out['body']['msg'] );
-		self::assertNotSame( array(), $this->recorded( 'md_mu_test_http' ) );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
 	/**
@@ -2447,11 +2479,70 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * Thickness and weight are knowledge, not a pattern fact. A question
-	 * that names no pattern does not gain a product sentence.
+	 * A CAD request against a pattern with no published status must not be
+	 * answered with a promise: no status line is not confirmation.
 	 */
-	public function test_a_knowledge_answer_does_not_gain_a_pattern_fact(): void {
-		$reply = 'A typical panel is about 2 mm thick; weight depends on the sheet.';
+	public function test_a_cad_request_without_a_published_status_transfers(): void {
+		$this->plant_pattern(
+			array(
+				'fields' => array(
+					'open_area' => '32',
+				),
+			)
+		);
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'CAD files are available.', false, 'none' )
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Can you send CAD files for Agave?' ),
+			)
+		);
+
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertStringContainsString( md_kb_endpoint_drawing_check_message(), (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( 'CAD files are available', (string) $out['body']['msg'] );
+	}
+
+	/**
+	 * The promise regex catches the common phrasings a model may use, so a
+	 * gated pattern does not leak "we have CAD files" or "the DXF is ready".
+	 */
+	public function test_cad_promise_phrasings_are_removed(): void {
+		$this->plant_pattern(
+			array(
+				'fields' => array(
+					'open_area'  => '32',
+					'cad_status' => 'gated',
+				),
+			)
+		);
+		foreach ( array( 'CAD files are available.', 'We have CAD files.', 'The DXF is ready.' ) as $reply ) {
+			$this->configure_kb(
+				array(),
+				$this->model_reply( $reply, false, 'none' )
+			);
+			$GLOBALS['md_mu_test_fields'][101]['cad_status'] = 'gated';
+			$out = md_kb_endpoint_answer(
+				array(
+					'header' => $this->bearer(),
+					'body'   => array( 'q' => 'Can you send CAD files for Agave?' ),
+				)
+			);
+			self::assertSame( 'transfer_operator', $out['body']['action'], $reply );
+			self::assertStringContainsString( md_kb_endpoint_drawing_check_message(), (string) $out['body']['msg'], $reply );
+			self::assertStringNotContainsString( $reply, (string) $out['body']['msg'], $reply );
+		}
+	}
+
+	/**
+	 * Thickness and weight are not consistent public facts. The question is
+	 * handed off without a number, and the model is not asked.
+	 */
+	public function test_a_thickness_question_is_handed_off_without_a_number(): void {
 		$this->configure_kb(
 			array(
 				array(
@@ -2461,7 +2552,7 @@ final class KbEndpointTest extends TestCase {
 					'content'   => 'Typical thickness is 2 mm.',
 				),
 			),
-			$this->model_reply( $reply, false, 'none' )
+			$this->model_reply( 'A typical panel is about 2 mm thick; weight depends on the sheet.', false, 'none' )
 		);
 		$this->plant_pattern();
 
@@ -2472,11 +2563,13 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( $reply, $out['body']['msg'] );
-		self::assertSame( '', $out['body']['action'] );
-		self::assertSame( array( 'knowledge#9 Panel thickness' ), $out['body']['sources'] );
+		self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), $out['body']['msg'] );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array(), $out['body']['sources'] );
 		self::assertStringNotContainsString( 'Agave', (string) $out['body']['msg'] );
 		self::assertStringNotContainsString( '32%', (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( '2 mm', (string) $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
 	/**

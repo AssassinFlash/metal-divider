@@ -108,7 +108,18 @@ function md_kb_endpoint_answer( array $input ): array {
 	$pattern  = md_kb_endpoint_pattern_lookup( $q );
 	$page     = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null ) : array( 'context' => '' );
 	$resolved = '' !== $pattern['context'] ? $pattern['context'] : $page['context'];
-	// A confirmed fact the question asked for stays. The commercial remainder still transfers, and the model is not asked to invent it.
+	// A confirmed fact the question asked for stays. Neither a commercial
+	// commitment nor an unpublished project fact is invented by the model.
+	if ( md_kb_endpoint_asks_unverified_fact( $q ) ) {
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'msg'     => md_kb_endpoint_unverified_fact_reply( $q, $resolved ),
+				'action'  => 'transfer_operator',
+				'sources' => $pattern['sources'],
+			),
+		);
+	}
 	if ( md_kb_endpoint_asks_commercial( $q ) ) {
 		return array(
 			'status' => 200,
@@ -252,6 +263,50 @@ function md_kb_endpoint_commercial_reply( string $q, string $context ): string {
 }
 
 /**
+ * Whether the question asks for a project fact the public site does not
+ * publish consistently: a showroom visit, a destination, installation,
+ * thickness or weight. The model must not turn a guess into a fact for
+ * any of them; the team confirms the actual project.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether the team must answer it.
+ */
+function md_kb_endpoint_asks_unverified_fact( string $q ): bool {
+	return 1 === preg_match(
+		'/\b(?:showroom|show\s+room|visit\s+(?:the\s+)?(?:factory|office|showroom)|thickness|how\s+thick|weight|weigh(?:s|t)?|how\s+heavy|kg\s*\/\s*m|ship\s+to|deliver\s+to|install(?:ation)?\s+(?:in|at|for)|do\s+you\s+install|ship\s+(?:internationally|worldwide)|deliver\s+(?:internationally|worldwide))\b|展厅|参观|厚度|多厚|重量|多重|安装|发货到|送到|运到|发到/iu',
+		$q
+	);
+}
+
+/**
+ * The showroom, destination, installation, thickness or weight handoff.
+ * No number or promise is stated; the team confirms the project.
+ *
+ * @return string The visitor-facing handoff sentence.
+ */
+function md_kb_endpoint_unverified_fact_handoff_message(): string {
+	return 'That project detail is confirmed by our team — I am connecting you with them.';
+}
+
+/**
+ * The unverified-fact handoff, with any confirmed pattern fact the question
+ * also asked for kept in front of it.
+ *
+ * @param string $q       The visitor's question.
+ * @param string $context The resolved pattern facts, '' when none.
+ * @return string The visitor-facing reply.
+ */
+function md_kb_endpoint_unverified_fact_reply( string $q, string $context ): string {
+	$parts = array();
+	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
+	if ( '' !== $facts ) {
+		$parts[] = $facts;
+	}
+	$parts[] = md_kb_endpoint_unverified_fact_handoff_message();
+	return implode( ' ', $parts );
+}
+
+/**
  * The sentence used when a drawing was asked for and the published CAD
  * status does not confirm one. It does not say the drawing is available.
  *
@@ -357,8 +412,7 @@ function md_kb_endpoint_guard_unverified_cad( string $q, string $context, array 
 	$reply   = md_kb_endpoint_with_kept_facts( $missing, $reply );
 	$handed  = str_contains( $reply, md_kb_endpoint_drawing_check_message() )
 		|| str_contains( $reply, md_kb_endpoint_remainder_message() )
-		|| str_contains( $reply, md_kb_endpoint_no_answer_message() )
-		|| str_contains( strtolower( $reply ), 'team' );
+		|| str_contains( $reply, md_kb_endpoint_no_answer_message() );
 	if ( ! $handed ) {
 		$reply = '' !== $reply
 			? rtrim( $reply ) . ' ' . md_kb_endpoint_drawing_check_message()
@@ -406,8 +460,8 @@ function md_kb_endpoint_cad_status_wording( string $status ): string {
 
 /**
  * Whether an asked-for drawing is not confirmed by the resolved facts.
- * A context with no CAD status line is not treated as unverified here:
- * page facts omit that line, and the prompt still forbids inventing one.
+ * A question that asks for a file must transfer unless every resolved
+ * status confirms one; absence of a status line is not confirmation.
  *
  * @param string $q       The visitor's question.
  * @param string $context The resolved pattern facts, '' when none.
@@ -428,7 +482,7 @@ function md_kb_endpoint_unverified_cad_must_transfer( string $q, string $context
 			$all_confirm = false;
 		}
 	}
-	return $saw && ! $all_confirm;
+	return ! $saw || ! $all_confirm;
 }
 
 /**
@@ -439,7 +493,7 @@ function md_kb_endpoint_unverified_cad_must_transfer( string $q, string $context
  */
 function md_kb_endpoint_promises_drawing( string $message ): bool {
 	return 1 === preg_match(
-		'/\b(?:drawing|cad(?:\s+file)?|dxf)\s+is\s+(?:available|ready|attached)\b|\b(?:drawing|dxf|cad)\s+available\b|\b(?:can|will)\s+(?:send|provide|email)\b.{0,40}\b(?:drawing|cad|dxf)\b|\bhave\s+(?:a|the)\s+(?:drawing|cad|dxf)\b/iu',
+		'/\b(?:drawings?|cad(?:\s+files?)?|dxf)\s+(?:are|is)\s+(?:available|ready|attached)\b|\b(?:drawing|dxf|cad)\s+available\b|\b(?:can|will|are\s+able\s+to)\s+(?:send|provide|email|share)\b.{0,40}\b(?:drawing|cad|dxf)\b|\bhave\s+(?:a|the)?\s*(?:drawing|cad(?:\s+files?)?|dxf)\b/iu',
 		$message
 	);
 }

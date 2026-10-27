@@ -725,8 +725,8 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertSame( 'pnd_time_missing', $pending_missing['reason'] );
 
 		$active_missing = md_wecom_notify_gate( 'chat.addmsguser', array( 'status' => 1 ), array(), $now );
-		$this->assertFalse( $active_missing['send'] );
-		$this->assertSame( 'last_op_missing', $active_missing['reason'] );
+		$this->assertTrue( $active_missing['send'] );
+		$this->assertSame( 180, $active_missing['window'] );
 
 		$numeric_strings_chat = array(
 			'status'   => '0',
@@ -741,8 +741,8 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertSame( 'pnd_time_missing', $pending_epoch['reason'] );
 
 		$active_epoch = md_wecom_notify_gate( 'chat.addmsguser', $this->active_chat( 0 ), array(), $now );
-		$this->assertFalse( $active_epoch['send'] );
-		$this->assertSame( 'last_op_missing', $active_epoch['reason'] );
+		$this->assertTrue( $active_epoch['send'] );
+		$this->assertSame( 180, $active_epoch['window'] );
 	}
 
 	/**
@@ -757,14 +757,14 @@ final class WecomNotifyTest extends TestCase {
 	}
 
 	/**
-	 * An active chat whose operator last spoke at the epoch has no real
-	 * last-spoke time: 0 is the missing sentinel, not a chat silent since
-	 * 1970, so the reminder is not sent.
+	 * An active chat whose operator has not spoken yet is still an accepted
+	 * chat: the visitor's message is carded, not dropped. The rate ceiling
+	 * still protects the recipient.
 	 */
-	public function testAnswersLastOpMissingForAnActiveVisitorMessageAtEpoch(): void {
+	public function testCardsAnActiveVisitorMessageWhenTheOperatorHasNotSpoken(): void {
 		$gate = md_wecom_notify_gate( 'chat.addmsguser', $this->active_chat( 0 ), array(), 1790000000 );
-		$this->assertFalse( $gate['send'] );
-		$this->assertSame( 'last_op_missing', $gate['reason'] );
+		$this->assertTrue( $gate['send'] );
+		$this->assertSame( 180, $gate['window'] );
 	}
 
 	/**
