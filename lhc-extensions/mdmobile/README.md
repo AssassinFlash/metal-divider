@@ -1,8 +1,8 @@
 # mdmobile — 移动值班工作台(Dashboard extension for Live Helper Chat)
 
-面向单坐席、企业微信入口的响应式坐席工作台:手机列表/会话、桌面三栏工作台、WeCom 深度链接、原生快捷回复与可编辑私密备注。
+面向单坐席、企业微信入口的响应式坐席工作台:手机列表/会话、桌面三栏工作台、WeCom 深度链接、原生快捷回复、可编辑私密备注与原生关闭会话。
 
-不新建数据表:快捷回复读原生 `lh_canned_msg`(经 `erLhcoreClassModelCannedMsg::getCannedMessages()`/`groupItems()`),备注写原生 `chat/saveremarks`。
+不新建数据表:快捷回复读原生 `lh_canned_msg`(经 `erLhcoreClassModelCannedMsg::getCannedMessages()`/`groupItems()`),备注写原生 `chat/saveremarks`,关闭写原生 `chat/changestatus`(POST `ChatStatus=2` + `X-CSRFToken`)。关闭入口只在同时满足读、写、`lhchat/canchangechatstatus` 与(本会话 owner 或 `allowcloseremote`)时出现;备注在关闭后能否编辑取决于 `allowopenclosedchats` 与写权限。
 
 ## 安装与部署
 
