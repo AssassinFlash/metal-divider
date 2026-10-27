@@ -401,7 +401,8 @@
                 }
                 return;
             }
-            setPageLink(root.querySelector('#md-older'), count >= limit, offset + limit);
+            var more = root.hasAttribute('data-has-more') ? root.getAttribute('data-has-more') === '1' : null;
+            setPageLink(root.querySelector('#md-older'), more === null ? count >= limit : more, offset + limit);
         }
 
         function selectedId() {
@@ -465,7 +466,34 @@
             if (!/\/mdmobile\/chat\/\d+/.test(href)) {
                 return '';
             }
-            return safeUrl(href.replace(/\/mdmobile\/chat\/\d+/, '/mdmobile/chat/' + id));
+            return withChatQuery(safeUrl(href.replace(/\/mdmobile\/chat\/\d+/, '/mdmobile/chat/' + id)));
+        }
+
+        function withChatQuery(url) {
+            var safe = safeUrl(url);
+            if (safe === '') {
+                return '';
+            }
+            var base = view.location ? view.location.href : 'http://local.invalid/';
+            try {
+                var parsed = new URL(safe, base);
+                var values = formValues();
+                if (!parsed.searchParams.has('q') && values.q !== '') {
+                    parsed.searchParams.set('q', values.q);
+                }
+                if (!parsed.searchParams.has('status') && values.status !== '') {
+                    parsed.searchParams.set('status', values.status);
+                }
+                if (!parsed.searchParams.has('offset') && currentOffset() > 0) {
+                    parsed.searchParams.set('offset', String(currentOffset()));
+                }
+                if (/^[a-z][a-z0-9+.-]*:/i.test(safe)) {
+                    return parsed.toString();
+                }
+                return parsed.pathname + parsed.search + parsed.hash;
+            } catch (error) {
+                return safe;
+            }
         }
 
         function ensureChild(parent, selector, tag, className) {
@@ -561,7 +589,7 @@
         }
 
         function updateThread(li, item, currentId) {
-            var url = item.url || deriveChatUrl(item.id);
+            var url = withChatQuery(item.url || deriveChatUrl(item.id));
             var link = ensureLink(li, url);
             link.setAttribute('data-id', item.id);
             if (url && link.setAttribute) {
@@ -718,6 +746,11 @@
                         root.setAttribute('data-limit', String(nextLimit));
                     }
                 }
+                if (result.data && Object.prototype.hasOwnProperty.call(result.data, 'has_more')) {
+                    root.setAttribute('data-has-more', result.data.has_more ? '1' : '0');
+                } else {
+                    root.removeAttribute('data-has-more');
+                }
                 var shown = reconcile(items);
                 updatePager(shown);
                 pollWait = POLL_MS;
@@ -792,6 +825,7 @@
                         event.preventDefault();
                     }
                     setOffset(0);
+                    root.removeAttribute('data-has-more');
                     updatePager(null);
                     syncAddress(formValues());
                     poll(true);
@@ -804,6 +838,7 @@
                         return;
                     }
                     setOffset(0);
+                    root.removeAttribute('data-has-more');
                     updatePager(null);
                     syncAddress(formValues());
                     poll(true);
@@ -821,6 +856,7 @@
                     searchTimer = setTimeoutImpl(function () {
                         searchTimer = null;
                         setOffset(0);
+                        root.removeAttribute('data-has-more');
                         updatePager(null);
                         syncAddress(formValues());
                         poll(true);

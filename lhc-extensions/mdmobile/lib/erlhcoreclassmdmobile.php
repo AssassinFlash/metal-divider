@@ -16,6 +16,8 @@ class erLhcoreClassMdMobile
 
     const INBOX_LIMIT = 20;
 
+    const INBOX_BATCH = 20;
+
     const INBOX_QUERY_LIMIT = 80;
 
     const KIND_VISITOR = 'visitor';
@@ -695,23 +697,26 @@ class erLhcoreClassMdMobile
      * Department limitation is applied by the caller before this query is used.
      * false, empty, or a non-string means no list, not an unfiltered list.
      * Search stays out of customfilter so the nick is quoted at the call site.
+     * $rawOffset counts rows already read. It is not the visible page offset.
+     * One call is one batch; the collector advances the raw offset itself.
      *
      * @param mixed $q
      * @param mixed $status
-     * @param mixed $offset
+     * @param mixed $rawOffset
      * @param mixed $limitation
+     * @param mixed $batchSize
      * @return array<string, mixed>|null
      */
-    public static function inboxQuery($q, $status, $offset, $limitation)
+    public static function inboxQuery($q, $status, $rawOffset, $limitation, $batchSize = null)
     {
         if ($limitation !== true && (!is_string($limitation) || $limitation === '')) {
             return null;
         }
 
-        $request = self::inboxRequest($q, $status, $offset);
+        $request = self::inboxRequest($q, $status, 0);
         $query = array(
-            'limit' => self::INBOX_LIMIT,
-            'offset' => $request['offset'],
+            'limit' => self::inboxBatchLimit($batchSize),
+            'offset' => self::afterId($rawOffset),
             'sort' => 'GREATEST(`time`, `last_user_msg_time`, `last_op_msg_time`) DESC, `id` DESC',
         );
         if ($request['status'] !== '') {
@@ -789,6 +794,35 @@ class erLhcoreClassMdMobile
     public static function inboxReturnPath($q, $status, $offset)
     {
         $path = 'mdmobile/chats';
+        $query = self::inboxQueryString(self::inboxRequest($q, $status, $offset));
+        if ($query === '') {
+            return $path;
+        }
+
+        return $path . '?' . $query;
+    }
+
+    /**
+     * Deep link plus the current desk filter. An empty filter stays a bare
+     * mdmobile/chat/<id> path. An unsafe base is omitted, not rewritten.
+     *
+     * @param mixed $siteBase
+     * @param mixed $chatId
+     * @param mixed $q
+     * @param mixed $status
+     * @param mixed $offset
+     * @return string|null
+     */
+    public static function inboxChatUrl($siteBase, $chatId, $q, $status, $offset)
+    {
+        $id = self::positiveInt($chatId);
+        if ($id < 1) {
+            return null;
+        }
+        $path = self::deskUrl($siteBase, 'mdmobile/chat/' . $id);
+        if ($path === null) {
+            return null;
+        }
         $query = self::inboxQueryString(self::inboxRequest($q, $status, $offset));
         if ($query === '') {
             return $path;
@@ -928,20 +962,108 @@ class erLhcoreClassMdMobile
     }
 
     /**
-     * The caller has already applied the department list limitation and offset.
-     * This only drops rows hasAccessToRead rejects. It does not backfill the page.
+     * Read raw batches until readable rows cover the visible window, or a
+     * batch comes back short. The visible offset is never a SQL offset: each
+     * fetch starts where the previous raw count stopped. This does not preview.
+     *
+     * @param callable $fetch function (int $rawOffset, int $limit): array
+     * @param callable $canRead
+     * @param mixed $offset Visible offset.
+     * @param mixed $limit Visible page size. Null uses INBOX_LIMIT.
+     * @param mixed $batchSize Raw batch size. Null uses INBOX_BATCH.
+     * @return array{chats: array<int, object|array<string, mixed>>, exhausted: bool, batches: int, raw_read: int}
+     */
+    public static function collectReadableInbox($fetch, $canRead, $offset = 0, $limit = null, $batchSize = null)
+    {
+        $empty = array(
+            'chats' => array(),
+            'exhausted' => true,
+            'batches' => 0,
+            'raw_read' => 0,
+        );
+        if (!is_callable($fetch) || !is_callable($canRead)) {
+            return $empty;
+        }
+
+        $needed = self::afterId($offset) + self::inboxPageLimit($limit) + 1;
+        $batch = self::inboxBatchLimit($batchSize);
+        $readable = array();
+        $seen = array();
+        $rawOffset = 0;
+        $batches = 0;
+        $exhausted = false;
+
+        while (count($readable) < $needed) {
+            $batchRows = $fetch($rawOffset, $batch);
+            $batches += 1;
+            if (!is_array($batchRows)) {
+                $exhausted = true;
+                break;
+            }
+            $count = count($batchRows);
+            $rawOffset += $count;
+            $fresh = 0;
+            foreach ($batchRows as $chat) {
+                if (!is_array($chat) && !is_object($chat)) {
+                    continue;
+                }
+                $id = self::positiveInt(self::recordValue($chat, 'id'));
+                if ($id < 1 || isset($seen[$id])) {
+                    continue;
+                }
+                $seen[$id] = true;
+                $fresh += 1;
+                if ($canRead($chat) !== true) {
+                    continue;
+                }
+                $readable[] = $chat;
+            }
+            if ($count < $batch || $fresh === 0) {
+                $exhausted = true;
+                break;
+            }
+        }
+
+        usort(
+            $readable,
+            static function ($left, $right) {
+                return self::compareInboxActivity($left, $right);
+            }
+        );
+
+        return array(
+            'chats' => $readable,
+            'exhausted' => $exhausted,
+            'batches' => $batches,
+            'raw_read' => $rawOffset,
+        );
+    }
+
+    /**
+     * The caller has already applied the department list limitation. Rows
+     * hasAccessToRead rejects are dropped before the visible offset, so a
+     * rejected row does not consume a page slot. Preview runs only for this
+     * page and the one extra row that decides has_more. The extra row is not
+     * returned. Omitting offset and limit keeps the first page of 20.
      *
      * @param array<int, object|array<string, mixed>> $chats
      * @param callable $canRead
      * @param callable $previewFor
      * @param mixed $siteBase
+     * @param mixed $offset Visible offset, not a raw SQL offset.
+     * @param mixed $limit Visible page size. Null or out of range uses INBOX_LIMIT.
+     * @param bool|null $hasMore Set when the filtered slice is longer than the page.
      * @return array<int, array<string, mixed>>
      */
-    public static function visibleInbox($chats, $canRead, $previewFor, $siteBase)
+    public static function visibleInbox($chats, $canRead, $previewFor, $siteBase, $offset = 0, $limit = null, &$hasMore = null)
     {
+        $hasMore = false;
         if (!is_array($chats) || !is_callable($canRead) || !is_callable($previewFor)) {
             return array();
         }
+
+        $visibleOffset = self::afterId($offset);
+        $visibleLimit = self::inboxPageLimit($limit);
 
         $accepted = array();
         $seen = array();
@@ -966,23 +1088,17 @@ class erLhcoreClassMdMobile
         usort(
             $accepted,
             static function ($left, $right) {
-                $leftTime = self::activityStamp($left);
-                $rightTime = self::activityStamp($right);
-                $leftTime = $leftTime === null ? 0 : $leftTime;
-                $rightTime = $rightTime === null ? 0 : $rightTime;
-                if ($leftTime !== $rightTime) {
-                    return $rightTime <=> $leftTime;
-                }
-
-                return self::positiveInt(self::recordValue($right, 'id')) <=> self::positiveInt(self::recordValue($left, 'id'));
+                return self::compareInboxActivity($left, $right);
             }
         );
 
+        $window = array_slice($accepted, $visibleOffset, $visibleLimit + 1);
+        $hasMore = count($window) > $visibleLimit;
         $items = array();
-        foreach (array_slice($accepted, 0, self::INBOX_LIMIT) as $chat) {
+        foreach ($window as $chat) {
             $id = self::positiveInt(self::recordValue($chat, 'id'));
             $item = self::inboxItem($chat, $previewFor($chat), self::deskUrl($siteBase, 'mdmobile/chat/' . $id));
-            if ($item !== null) {
+            if ($item !== null && count($items) < $visibleLimit) {
                 $items[] = $item;
             }
         }
@@ -997,9 +1113,10 @@ class erLhcoreClassMdMobile
      * @param mixed $offset
      * @param mixed $currentId
      * @param mixed $siteBase
+     * @param mixed $hasMore True only when the filtered slice had a row past this page.
      * @return array<string, mixed>
      */
-    public static function inboxResult($chats, $q, $status, $offset, $currentId, $siteBase)
+    public static function inboxResult($chats, $q, $status, $offset, $currentId, $siteBase, $hasMore = false)
     {
         $request = self::inboxRequest($q, $status, $offset);
         $listUrl = self::inboxListUrl($siteBase, $request['q'], $request['status'], $request['offset']);
@@ -1014,6 +1131,7 @@ class erLhcoreClassMdMobile
             'current_id' => self::positiveInt($currentId),
             'offset' => $request['offset'],
             'limit' => self::INBOX_LIMIT,
+            'has_more' => $hasMore === true,
         );
     }
 
@@ -1022,9 +1140,10 @@ class erLhcoreClassMdMobile
      * @param mixed $offset
      * @param mixed $q
      * @param mixed $status
+     * @param mixed $hasMore
      * @return array<string, mixed>
      */
-    public static function inboxJson($chats, $offset, $q, $status)
+    public static function inboxJson($chats, $offset, $q, $status, $hasMore = false)
     {
         $request = self::inboxRequest($q, $status, $offset);
 
@@ -1034,6 +1153,7 @@ class erLhcoreClassMdMobile
             'limit' => self::INBOX_LIMIT,
             'q' => $request['q'],
             'status' => $request['status'],
+            'has_more' => $hasMore === true,
         );
     }
 
@@ -2025,6 +2145,52 @@ class erLhcoreClassMdMobile
     }
 
     /**
+     * @param mixed $limit
+     * @return int
+     */
+    private static function inboxPageLimit($limit)
+    {
+        $page = self::positiveInt($limit);
+        if ($page < 1 || $page > self::INBOX_LIMIT) {
+            return self::INBOX_LIMIT;
+        }
+
+        return $page;
+    }
+
+    /**
+     * @param mixed $batchSize
+     * @return int
+     */
+    private static function inboxBatchLimit($batchSize)
+    {
+        $batch = self::positiveInt($batchSize);
+        if ($batch < 1) {
+            return self::INBOX_BATCH;
+        }
+
+        return $batch;
+    }
+
+    /**
+     * @param object|array<string, mixed> $left
+     * @param object|array<string, mixed> $right
+     * @return int
+     */
+    private static function compareInboxActivity($left, $right)
+    {
+        $leftTime = self::activityStamp($left);
+        $rightTime = self::activityStamp($right);
+        $leftTime = $leftTime === null ? 0 : $leftTime;
+        $rightTime = $rightTime === null ? 0 : $rightTime;
+        if ($leftTime !== $rightTime) {
+            return $rightTime <=> $leftTime;
+        }
+
+        return self::positiveInt(self::recordValue($right, 'id')) <=> self::positiveInt(self::recordValue($left, 'id'));
+    }
+
+    /**
      * @param object|array<string, mixed> $chat
      * @return int|null
      */
@@ -2052,11 +2218,61 @@ class erLhcoreClassMdMobile
             return null;
         }
         $url = trim($url);
-        if ($url === '' || strlen($url) > self::URL_LIMIT || strpos($url, '?') !== false || strpos($url, '#') !== false) {
+        if ($url === '' || strlen($url) > self::URL_LIMIT || strpos($url, '#') !== false) {
             return null;
         }
+        $query = '';
+        $cut = strpos($url, '?');
+        if ($cut !== false) {
+            $query = substr($url, $cut + 1);
+            $url = substr($url, 0, $cut);
+            if (!self::canonicalInboxQuery($query)) {
+                return null;
+            }
+        }
+        $path = self::acceptedDeskUrl($url, 'mdmobile/chat/' . $chatId);
+        if ($path === null) {
+            return null;
+        }
+        if ($query === '') {
+            return $path;
+        }
 
-        return self::acceptedDeskUrl($url, 'mdmobile/chat/' . $chatId);
+        return $path . '?' . $query;
+    }
+
+    /**
+     * Only the canonical q/status/offset string produced for the desk filter.
+     *
+     * @param mixed $query
+     * @return bool
+     */
+    private static function canonicalInboxQuery($query)
+    {
+        if (!is_string($query) || $query === '' || strpos($query, '#') !== false || strpos($query, '?') !== false) {
+            return false;
+        }
+        if (preg_match('/[\x00-\x20\x7F]/', $query) === 1) {
+            return false;
+        }
+        $params = array();
+        parse_str($query, $params);
+        if (!is_array($params) || $params === array()) {
+            return false;
+        }
+        $allowed = array('q' => true, 'status' => true, 'offset' => true);
+        foreach ($params as $key => $value) {
+            if (!isset($allowed[$key]) || !is_string($value)) {
+                return false;
+            }
+        }
+        $canonical = self::inboxQueryString(self::inboxRequest(
+            isset($params['q']) ? $params['q'] : '',
+            isset($params['status']) ? $params['status'] : '',
+            isset($params['offset']) ? $params['offset'] : 0
+        ));
+
+        return $canonical !== '' && $canonical === $query;
     }
 
     /**

@@ -929,10 +929,11 @@ if (!function_exists('mdmobile_known_chats_url')) {
 }
 
 if (!function_exists('mdmobile_thread_url')) {
-    function mdmobile_thread_url($item, $messagesUrl, $chatsUrl)
+    function mdmobile_thread_url($item, $messagesUrl, $chatsUrl, $query = null)
     {
-        if (is_array($item) && !empty($item['url'])) {
-            return $item['url'];
+        $direct = is_array($item) && !empty($item['url']) ? $item['url'] : '';
+        if ($direct !== '') {
+            return is_array($query) ? mdmobile_with_list_query($direct, isset($query['q']) ? $query['q'] : '', isset($query['status']) ? $query['status'] : '', isset($query['offset']) ? $query['offset'] : 0) : $direct;
         }
         $id = is_array($item) && isset($item['id']) ? $item['id'] : '';
         if (!preg_match('/^[1-9]\d*$/', (string) $id)) {
@@ -944,14 +945,23 @@ if (!function_exists('mdmobile_thread_url')) {
             '/mdmobile/chat/' . $id . '$1$2'
         );
         if ($fromMessages !== '') {
-            return $fromMessages;
+            if (!is_array($query)) {
+                return $fromMessages;
+            }
+
+            return mdmobile_with_list_query($fromMessages, isset($query['q']) ? $query['q'] : '', isset($query['status']) ? $query['status'] : '', isset($query['offset']) ? $query['offset'] : 0);
         }
 
-        return mdmobile_rewrite_url(
+        $derived = mdmobile_rewrite_url(
             $chatsUrl,
             '~\/mdmobile\/chats\/?(\?[^#]*)?(#.*)?$~',
             '/mdmobile/chat/' . $id . '$1$2'
         );
+        if ($derived === '' || !is_array($query)) {
+            return $derived;
+        }
+
+        return mdmobile_with_list_query($derived, isset($query['q']) ? $query['q'] : '', isset($query['status']) ? $query['status'] : '', isset($query['offset']) ? $query['offset'] : 0);
     }
 }
 
@@ -1071,6 +1081,20 @@ if (!function_exists('mdmobile_nonneg_int')) {
     }
 }
 
+if (!function_exists('mdmobile_bool_flag')) {
+    function mdmobile_bool_flag($value)
+    {
+        if ($value === true || $value === 1 || $value === '1' || $value === 'true') {
+            return true;
+        }
+        if ($value === false || $value === 0 || $value === '0' || $value === 'false') {
+            return false;
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('mdmobile_url_base')) {
     function mdmobile_url_base($url)
     {
@@ -1109,6 +1133,72 @@ if (!function_exists('mdmobile_page_url')) {
         }
 
         return $base . '?' . implode('&', $parts);
+    }
+}
+
+if (!function_exists('mdmobile_query_names')) {
+    function mdmobile_query_names($url)
+    {
+        $names = array();
+        $query = '';
+        $pos = strpos($url, '?');
+        if ($pos !== false) {
+            $query = substr($url, $pos + 1);
+            $hash = strpos($query, '#');
+            if ($hash !== false) {
+                $query = substr($query, 0, $hash);
+            }
+        }
+        if ($query === '') {
+            return $names;
+        }
+        foreach (explode('&', $query) as $part) {
+            if ($part === '') {
+                continue;
+            }
+            $eq = strpos($part, '=');
+            $name = $eq === false ? $part : substr($part, 0, $eq);
+            $name = rawurldecode($name);
+            if ($name !== '') {
+                $names[$name] = true;
+            }
+        }
+
+        return $names;
+    }
+}
+
+if (!function_exists('mdmobile_with_list_query')) {
+    function mdmobile_with_list_query($url, $q, $status, $offset)
+    {
+        $url = mdmobile_app_url($url);
+        if ($url === '') {
+            return '';
+        }
+        $hash = '';
+        $hashPos = strpos($url, '#');
+        if ($hashPos !== false) {
+            $hash = substr($url, $hashPos);
+            $url = substr($url, 0, $hashPos);
+        }
+        $names = mdmobile_query_names($url);
+        $extra = array();
+        if (!isset($names['q']) && mdmobile_text($q) !== '') {
+            $extra[] = 'q=' . rawurlencode(mdmobile_text($q));
+        }
+        if (!isset($names['status']) && mdmobile_filter_status($status) !== '') {
+            $extra[] = 'status=' . rawurlencode(mdmobile_filter_status($status));
+        }
+        $offset = mdmobile_nonneg_int($offset);
+        if (!isset($names['offset']) && $offset > 0) {
+            $extra[] = 'offset=' . $offset;
+        }
+        if ($extra === array()) {
+            return $url . $hash;
+        }
+        $url .= (strpos($url, '?') === false ? '?' : '&') . implode('&', $extra);
+
+        return $url . $hash;
     }
 }
 
@@ -1162,6 +1252,7 @@ if (!function_exists('mdmobile_inbox_normalize')) {
             'current_id' => mdmobile_item_id(mdmobile_inbox_pick($raw, array('current_id'))),
             'offset' => mdmobile_nonneg_int(mdmobile_inbox_pick($raw, array('offset'))),
             'limit' => $limit,
+            'has_more' => is_array($raw) && array_key_exists('has_more', $raw) ? mdmobile_bool_flag($raw['has_more']) : null,
             'statuses' => mdmobile_status_options(isset($raw['statuses']) ? $raw['statuses'] : null, $status),
         );
     }
@@ -1316,12 +1407,12 @@ if (!function_exists('mdmobile_thread_time_html')) {
 }
 
 if (!function_exists('mdmobile_render_thread')) {
-    function mdmobile_render_thread($item, $selectedId, $messagesUrl, $chatsUrl)
+    function mdmobile_render_thread($item, $selectedId, $messagesUrl, $chatsUrl, $query = null)
     {
         if (!is_array($item) || empty($item['id'])) {
             return '';
         }
-        $url = mdmobile_thread_url($item, $messagesUrl, $chatsUrl);
+        $url = mdmobile_thread_url($item, $messagesUrl, $chatsUrl, $query);
         $tag = $url !== '' ? 'a' : 'div';
         $name = $item['nick'] !== '' && strcasecmp($item['nick'], 'Visitor') !== 0 ? $item['nick'] : 'Visitor #' . $item['id'];
         $current = $selectedId !== '' && $selectedId === $item['id'];
@@ -1404,7 +1495,8 @@ if (!function_exists('mdmobile_render_pager')) {
         }
         $html .= '>Newer<span class="md-sr"> conversations</span></a>';
         $html .= '<a id="md-older" class="md-page" href="' . mdmobile_esc($olderHref) . '" data-offset="' . mdmobile_esc((string) $olderOffset) . '"';
-        if ($count < $limit) {
+        $showOlder = array_key_exists('has_more', $inbox) && $inbox['has_more'] !== null ? $inbox['has_more'] === true : $count >= $limit;
+        if (!$showOlder) {
             $html .= ' hidden';
         }
         $html .= '>Older<span class="md-sr"> conversations</span></a></nav>';
@@ -1434,6 +1526,9 @@ if (!function_exists('mdmobile_render_rail')) {
         if ($pageBase !== '') {
             $html .= ' data-page-base="' . mdmobile_esc($pageBase) . '"';
         }
+        if (array_key_exists('has_more', $inbox) && $inbox['has_more'] !== null) {
+            $html .= ' data-has-more="' . ($inbox['has_more'] ? '1' : '0') . '"';
+        }
         $html .= '><' . $heading . ' class="md-rail-title" id="md-inbox-title">Conversations</' . $heading . '>';
         $html .= mdmobile_render_filters($inbox, $pageBase);
         $html .= '<p id="md-inbox-status" class="md-inbox-status" role="status" aria-live="polite" aria-atomic="true"></p>';
@@ -1443,8 +1538,13 @@ if (!function_exists('mdmobile_render_rail')) {
         }
         $html .= '>' . mdmobile_esc(mdmobile_empty_copy($inbox)) . '</p>';
         $html .= '<ul id="md-inbox-list" class="md-inbox-list">';
+        $threadQuery = array(
+            'q' => isset($inbox['q']) ? $inbox['q'] : '',
+            'status' => isset($inbox['status']) ? $inbox['status'] : '',
+            'offset' => $offset,
+        );
         foreach ($inbox['items'] as $item) {
-            $html .= mdmobile_render_thread($item, $selectedId, $messagesUrl, $chatsUrl);
+            $html .= mdmobile_render_thread($item, $selectedId, $messagesUrl, $chatsUrl, $threadQuery);
         }
         $html .= '</ul>';
         $html .= mdmobile_render_pager($inbox, $pageBase);

@@ -137,11 +137,11 @@ final class MdMobileInboxTest extends TestCase
     public function testInboxQueryAppliesLimitationBeforeRowChecks(): void
     {
         $limitation = '(`lh_chat`.`dep_id` IN (1,2) AND (`user_id` = 7 OR (`user_id` = 0 AND `status` = 0)))';
-        $query = erLhcoreClassMdMobile::inboxQuery(' ada ', 'active', 20, $limitation);
+        $query = erLhcoreClassMdMobile::inboxQuery(' ada ', 'active', 0, $limitation);
 
         self::assertIsArray($query);
-        self::assertSame(20, $query['limit']);
-        self::assertSame(20, $query['offset']);
+        self::assertSame(erLhcoreClassMdMobile::INBOX_BATCH, $query['limit']);
+        self::assertSame(0, $query['offset']);
         self::assertSame(
             'GREATEST(`time`, `last_user_msg_time`, `last_op_msg_time`) DESC, `id` DESC',
             $query['sort']
@@ -347,9 +347,10 @@ final class MdMobileInboxTest extends TestCase
         $json = erLhcoreClassMdMobile::inboxJson($chats, 20, ' ada ', 'active');
 
         self::assertSame(
-            array('chats', 'q', 'status', 'list_url', 'list_endpoint', 'current_id', 'offset', 'limit'),
+            array('chats', 'q', 'status', 'list_url', 'list_endpoint', 'current_id', 'offset', 'limit', 'has_more'),
             array_keys($inbox)
         );
+        self::assertSame(false, $inbox['has_more']);
         self::assertSame('ada', $inbox['q']);
         self::assertSame('active', $inbox['status']);
         self::assertSame(self::BASE . '/mdmobile/chats?q=ada&status=active&offset=20', $inbox['list_url']);
@@ -361,9 +362,10 @@ final class MdMobileInboxTest extends TestCase
         self::assertTrue($inbox['chats'][0]['unread']);
         self::assertArrayNotHasKey('email', $inbox['chats'][0]);
         self::assertSame(
-            array('chats', 'offset', 'limit', 'q', 'status'),
+            array('chats', 'offset', 'limit', 'q', 'status', 'has_more'),
             array_keys($json)
         );
+        self::assertSame(false, $json['has_more']);
         self::assertSame($inbox['chats'], $json['chats']);
         self::assertSame('mdmobile/chats?q=a%20b&status=bot&offset=40', erLhcoreClassMdMobile::inboxReturnPath('a b', 'bot', 40));
         self::assertSame('mdmobile/chats', erLhcoreClassMdMobile::inboxReturnPath('', 'nope', 0));
@@ -562,5 +564,372 @@ final class MdMobileInboxTest extends TestCase
         self::assertStringContainsString('HTTP_X_CSRFTOKEN', $read);
         self::assertStringNotContainsString("\$_GET['csfr_token']", $read);
         self::assertStringNotContainsString("\$_GET['csrf']", $read);
+    }
+
+    public function testInboxChatUrlKeepsTheDeepLinkAndTheCurrentFilter(): void
+    {
+        self::assertSame(
+            self::BASE . '/mdmobile/chat/15?q=ada&status=active&offset=20',
+            erLhcoreClassMdMobile::inboxChatUrl(self::BASE . '/', 15, ' ada ', 'active', '20')
+        );
+        self::assertSame(
+            self::BASE . '/mdmobile/chat/15',
+            erLhcoreClassMdMobile::inboxChatUrl(self::BASE, 15, " \n ", 'Pending', 0)
+        );
+        self::assertSame(
+            self::BASE . '/mdmobile/chat/8?q=a%20b&status=bot&offset=40',
+            erLhcoreClassMdMobile::inboxChatUrl(self::BASE, '8', 'a b', 'bot', 40)
+        );
+        self::assertSame(
+            self::BASE . '/mdmobile/chat/8?q=ada',
+            erLhcoreClassMdMobile::inboxChatUrl(self::BASE, 8, 'ada', 'nope', '0abc')
+        );
+        self::assertNull(erLhcoreClassMdMobile::inboxChatUrl('javascript:alert(1)', 15, 'ada', 'active', 20));
+        self::assertNull(erLhcoreClassMdMobile::inboxChatUrl('//evil.example/admin', 15, 'ada', '', 0));
+        self::assertNull(erLhcoreClassMdMobile::inboxChatUrl(self::BASE, 0, 'ada', 'active', 20));
+
+        $url = erLhcoreClassMdMobile::inboxChatUrl(self::BASE, 15, 'ada', 'active', 20);
+        $kept = erLhcoreClassMdMobile::inboxResult(
+            array(
+                array(
+                    'id' => 15,
+                    'url' => $url,
+                    'nick' => 'Ada',
+                    'unread' => false,
+                    'email' => 'ada@example.com',
+                ),
+            ),
+            'ada',
+            'active',
+            20,
+            15,
+            self::BASE
+        );
+        self::assertSame($url, $kept['chats'][0]['url']);
+        self::assertStringStartsWith(self::BASE . '/mdmobile/chat/15', $kept['chats'][0]['url']);
+        self::assertStringContainsString('q=ada', $kept['chats'][0]['url']);
+        self::assertStringContainsString('status=active', $kept['chats'][0]['url']);
+        self::assertStringContainsString('offset=20', $kept['chats'][0]['url']);
+        self::assertArrayNotHasKey('email', $kept['chats'][0]);
+
+        $hostile = erLhcoreClassMdMobile::inboxResult(
+            array(
+                array('id' => 16, 'url' => self::BASE . '/mdmobile/chat/16?next=1', 'unread' => false),
+                array('id' => 17, 'url' => self::BASE . '/mdmobile/chat/17?q=ada&next=1', 'unread' => false),
+                array('id' => 18, 'url' => self::BASE . '/mdmobile/chat/18#ada', 'unread' => false),
+            ),
+            'ada',
+            '',
+            0,
+            0,
+            self::BASE
+        );
+        self::assertSame(array(), $hostile['chats']);
+    }
+
+    public function testInboxQueryUsesRawOffsetAndAFixedBatch(): void
+    {
+        self::assertSame(20, erLhcoreClassMdMobile::INBOX_BATCH);
+        $query = erLhcoreClassMdMobile::inboxQuery(' ada ', 'active', 40, true);
+
+        self::assertIsArray($query);
+        self::assertSame(40, $query['offset']);
+        self::assertSame(20, $query['limit']);
+        self::assertSame(
+            'GREATEST(`time`, `last_user_msg_time`, `last_op_msg_time`) DESC, `id` DESC',
+            $query['sort']
+        );
+        self::assertSame(array('status' => 1), $query['filter']);
+        self::assertSame(array('nick' => 'ada'), $query['search']);
+        self::assertNotSame(41, $query['limit']);
+
+        self::assertSame(0, erLhcoreClassMdMobile::inboxQuery('', '', 0, true)['offset']);
+        self::assertSame(20, erLhcoreClassMdMobile::inboxQuery('', '', 0, true)['limit']);
+        self::assertSame(0, erLhcoreClassMdMobile::inboxQuery('', '', '20abc', true)['offset']);
+        self::assertSame(50, erLhcoreClassMdMobile::inboxQuery('', '', 0, true, 50)['limit']);
+    }
+
+    public function testVisibleInboxSkipsRejectedRowsAndLetsTheExtraItemDecideHasMore(): void
+    {
+        $chats = array();
+        for ($id = 30; $id >= 1; $id--) {
+            $chats[] = array(
+                'id' => $id,
+                'time' => $id,
+                'nick' => 'N' . $id,
+                'has_unread_messages' => $id === 27 ? 1 : 0,
+            );
+        }
+        $previewed = array();
+        $hasMore = null;
+        $items = erLhcoreClassMdMobile::visibleInbox(
+            $chats,
+            static function ($chat) {
+                return (int) $chat['id'] < 28;
+            },
+            static function ($chat) use (&$previewed) {
+                $previewed[] = (int) $chat['id'];
+
+                return 'p' . $chat['id'];
+            },
+            self::BASE,
+            0,
+            20,
+            $hasMore
+        );
+
+        self::assertSame(range(27, 8), array_column($items, 'id'));
+        self::assertSame(true, $hasMore);
+        self::assertSame(range(27, 7), $previewed);
+        self::assertSame(self::BASE . '/mdmobile/chat/27', $items[0]['url']);
+        self::assertTrue($items[0]['unread']);
+        self::assertNotContains(30, $previewed);
+        self::assertNotContains(1, $previewed);
+
+        $previewed = array();
+        $hasMore = true;
+        $later = erLhcoreClassMdMobile::visibleInbox(
+            $chats,
+            static function ($chat) {
+                return (int) $chat['id'] < 28;
+            },
+            static function ($chat) use (&$previewed) {
+                $previewed[] = (int) $chat['id'];
+
+                return 'later';
+            },
+            self::BASE,
+            20,
+            20,
+            $hasMore
+        );
+        self::assertSame(array(7, 6, 5, 4, 3, 2, 1), array_column($later, 'id'));
+        self::assertSame(false, $hasMore);
+        self::assertSame(array(7, 6, 5, 4, 3, 2, 1), $previewed);
+
+        $previewed = array();
+        $hasMore = null;
+        $exact = erLhcoreClassMdMobile::visibleInbox(
+            array_slice($chats, 10, 20),
+            static function () {
+                return true;
+            },
+            static function ($chat) use (&$previewed) {
+                $previewed[] = (int) $chat['id'];
+
+                return null;
+            },
+            self::BASE,
+            0,
+            null,
+            $hasMore
+        );
+        self::assertCount(20, $exact);
+        self::assertSame(false, $hasMore);
+        self::assertCount(20, $previewed);
+
+        $previewed = array();
+        $hasMore = false;
+        $three = array(
+            array('id' => 3, 'time' => 1, 'has_unread_messages' => 0),
+            array('id' => 9, 'time' => 9, 'has_unread_messages' => 0),
+            array('id' => 4, 'time' => 4, 'has_unread_messages' => 0),
+            array('id' => 8, 'time' => 8, 'has_unread_messages' => 0),
+        );
+        $window = erLhcoreClassMdMobile::visibleInbox(
+            $three,
+            static function ($chat) {
+                return (int) $chat['id'] !== 8;
+            },
+            static function ($chat) use (&$previewed) {
+                $previewed[] = (int) $chat['id'];
+
+                return 'x';
+            },
+            self::BASE,
+            1,
+            1,
+            $hasMore
+        );
+        self::assertSame(array(4), array_column($window, 'id'));
+        self::assertSame(true, $hasMore);
+        self::assertSame(array(4, 3), $previewed);
+    }
+
+    public function testInboxPayloadsCarryHasMoreAndListPassesItThrough(): void
+    {
+        $chats = array(
+            array(
+                'id' => 15,
+                'url' => self::BASE . '/mdmobile/chat/15',
+                'unread' => false,
+            ),
+        );
+        $inbox = erLhcoreClassMdMobile::inboxResult($chats, 'ada', 'active', 20, 15, self::BASE, true);
+        $json = erLhcoreClassMdMobile::inboxJson($chats, 20, 'ada', 'active', true);
+
+        self::assertSame(true, $inbox['has_more']);
+        self::assertSame(true, $json['has_more']);
+        self::assertSame(false, erLhcoreClassMdMobile::inboxResult($chats, '', '', 0, 0, self::BASE)['has_more']);
+        self::assertSame(false, erLhcoreClassMdMobile::inboxJson($chats, 0, '', '')['has_more']);
+        self::assertSame(
+            array('chats', 'q', 'status', 'list_url', 'list_endpoint', 'current_id', 'offset', 'limit', 'has_more'),
+            array_keys($inbox)
+        );
+        self::assertSame(
+            array('chats', 'offset', 'limit', 'q', 'status', 'has_more'),
+            array_keys($json)
+        );
+
+        $root = dirname(__DIR__) . '/modules/lhmdmobile/';
+        $gate = file_get_contents($root . 'gate.php');
+        $list = file_get_contents($root . 'list.php');
+        $module = file_get_contents($root . 'module.php');
+        self::assertIsString($gate);
+        self::assertIsString($list);
+        self::assertIsString($module);
+        self::assertStringContainsString('inboxChatUrl', $gate);
+        self::assertMatchesRegularExpression(
+            "/visibleInbox\\(\\s*\\\$rows,[\\s\\S]*\\\$base,\\s*\\\$state\\['offset'\\],\\s*erLhcoreClassMdMobile::INBOX_LIMIT,\\s*\\\$hasMore\\s*\\)/",
+            $gate
+        );
+        self::assertStringContainsString('has_more', $list);
+        self::assertMatchesRegularExpression(
+            "/\\\$ViewList\\['chat'\\][\\s\\S]*'uparams' => array\\('q', 'status', 'offset'\\)/",
+            $module
+        );
+    }
+
+    public function testReadableInboxContinuesAfterRejectedRowsLeaveTheFirstBatchShort(): void
+    {
+        $rows = array();
+        for ($id = 50; $id >= 1; $id--) {
+            $rows[] = array(
+                'id' => $id,
+                'time' => $id,
+                'nick' => 'N' . $id,
+                'has_unread_messages' => 0,
+            );
+        }
+        $calls = array();
+        $collected = erLhcoreClassMdMobile::collectReadableInbox(
+            static function ($rawOffset, $limit) use ($rows, &$calls) {
+                $calls[] = array((int) $rawOffset, (int) $limit);
+
+                return array_slice($rows, (int) $rawOffset, (int) $limit);
+            },
+            static function ($chat) {
+                return (int) $chat['id'] <= 35;
+            },
+            0,
+            20,
+            20
+        );
+
+        self::assertSame(array(array(0, 20), array(20, 20)), $calls);
+        self::assertSame(false, $collected['exhausted']);
+        self::assertSame(2, $collected['batches']);
+        self::assertSame(40, $collected['raw_read']);
+        self::assertSame(range(35, 11), array_column($collected['chats'], 'id'));
+
+        $previewed = array();
+        $hasMore = false;
+        $items = erLhcoreClassMdMobile::visibleInbox(
+            $collected['chats'],
+            static function () {
+                return true;
+            },
+            static function ($chat) use (&$previewed) {
+                $previewed[] = (int) $chat['id'];
+
+                return 'kept';
+            },
+            self::BASE,
+            0,
+            20,
+            $hasMore
+        );
+
+        self::assertSame(range(35, 16), array_column($items, 'id'));
+        self::assertSame(true, $hasMore);
+        self::assertSame(range(35, 15), $previewed);
+        self::assertNotContains(50, $previewed);
+        self::assertNotContains(14, $previewed);
+        self::assertNotContains(10, $previewed);
+
+        $gate = file_get_contents(dirname(__DIR__) . '/modules/lhmdmobile/gate.php');
+        self::assertIsString($gate);
+        self::assertStringContainsString('collectReadableInbox', $gate);
+        self::assertStringNotContainsString(
+            "inboxQuery(\$state['q'], \$state['status'], \$state['offset']",
+            $gate
+        );
+    }
+
+    public function testReadableInboxStopsWhenRawRowsRunOut(): void
+    {
+        $rows = array();
+        for ($id = 25; $id >= 1; $id--) {
+            $rows[] = array(
+                'id' => $id,
+                'time' => $id,
+                'has_unread_messages' => 0,
+            );
+        }
+        $calls = array();
+        $fetch = static function ($rawOffset, $limit) use ($rows, &$calls) {
+            $calls[] = array((int) $rawOffset, (int) $limit);
+
+            return array_slice($rows, (int) $rawOffset, (int) $limit);
+        };
+        $canRead = static function ($chat) {
+            return (int) $chat['id'] <= 7;
+        };
+        $collected = erLhcoreClassMdMobile::collectReadableInbox($fetch, $canRead, 0, 20, 20);
+
+        self::assertSame(array(array(0, 20), array(20, 20)), $calls);
+        self::assertSame(true, $collected['exhausted']);
+        self::assertSame(25, $collected['raw_read']);
+        self::assertSame(array(7, 6, 5, 4, 3, 2, 1), array_column($collected['chats'], 'id'));
+
+        $previewed = array();
+        $hasMore = true;
+        $items = erLhcoreClassMdMobile::visibleInbox(
+            $collected['chats'],
+            static function () {
+                return true;
+            },
+            static function ($chat) use (&$previewed) {
+                $previewed[] = (int) $chat['id'];
+
+                return null;
+            },
+            self::BASE,
+            0,
+            20,
+            $hasMore
+        );
+        self::assertSame(array(7, 6, 5, 4, 3, 2, 1), array_column($items, 'id'));
+        self::assertSame(false, $hasMore);
+        self::assertSame(array(7, 6, 5, 4, 3, 2, 1), $previewed);
+
+        $calls = array();
+        $paged = erLhcoreClassMdMobile::collectReadableInbox($fetch, $canRead, 20, 20, 20);
+        self::assertSame(array(array(0, 20), array(20, 20)), $calls);
+        self::assertSame(true, $paged['exhausted']);
+        self::assertSame(array(), erLhcoreClassMdMobile::visibleInbox(
+            $paged['chats'],
+            static function () {
+                return true;
+            },
+            static function () {
+                return 'no';
+            },
+            self::BASE,
+            20,
+            20,
+            $hasMore
+        ));
+        self::assertSame(false, $hasMore);
     }
 }

@@ -29,6 +29,7 @@ echo erLhcoreClassChat::safe_json_encode(erLhcoreClassMdMobile::inboxJson(
     $inbox['chats'],
     $inbox['offset'],
     $inbox['q'],
-    $inbox['status']
+    $inbox['status'],
+    isset($inbox['has_more']) && $inbox['has_more'] === true
 ));
 exit;

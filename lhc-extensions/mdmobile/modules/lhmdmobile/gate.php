@@ -95,7 +95,10 @@ function mdmobile_inbox_state($params)
 /**
  * Native department limitation first, then per-row hasAccessToRead.
  * A false limitation does not run a query. Search is quoted before it is
- * added to the query. This function does not write unread state.
+ * added to the query. Raw batches continue until the filtered rows cover
+ * the visible page plus one, or the raw result runs out. The visible offset
+ * is not a SQL offset. Chat links keep the deep link and gain the current
+ * filter after the items exist. This function does not write unread state.
  *
  * @param array{q: string, status: string, offset: int} $state
  * @param mixed $currentId
@@ -107,11 +110,11 @@ function mdmobile_load_inbox($state, $currentId)
     if (class_exists('erLhcoreClassChat')) {
         $limitation = erLhcoreClassChat::getDepartmentLimitation('lh_chat', array('check_list_permissions' => true));
     }
-    $query = erLhcoreClassMdMobile::inboxQuery($state['q'], $state['status'], $state['offset'], $limitation);
+    $template = erLhcoreClassMdMobile::inboxQuery($state['q'], $state['status'], 0, $limitation);
     $rows = array();
-    if ($query !== null) {
-        $search = isset($query['search']) ? $query['search'] : null;
-        unset($query['search']);
+    if ($template !== null) {
+        $search = isset($template['search']) ? $template['search'] : null;
+        unset($template['search']);
         $ready = true;
         if ($search !== null) {
             $fragment = null;
@@ -123,19 +126,35 @@ function mdmobile_load_inbox($state, $currentId)
             if (!is_string($fragment) || $fragment === '') {
                 $ready = false;
             } else {
-                if (!isset($query['customfilter']) || !is_array($query['customfilter'])) {
-                    $query['customfilter'] = array();
+                if (!isset($template['customfilter']) || !is_array($template['customfilter'])) {
+                    $template['customfilter'] = array();
                 }
-                $query['customfilter'][] = $fragment;
+                $template['customfilter'][] = $fragment;
             }
         }
         if ($ready) {
-            $listed = erLhcoreClassModelChat::getList($query);
-            $rows = is_array($listed) ? $listed : array();
+            $collected = erLhcoreClassMdMobile::collectReadableInbox(
+                static function ($rawOffset, $limit) use ($template) {
+                    $query = $template;
+                    $query['offset'] = (int) $rawOffset;
+                    $query['limit'] = (int) $limit;
+                    $listed = erLhcoreClassModelChat::getList($query);
+
+                    return is_array($listed) ? $listed : array();
+                },
+                static function ($chat) {
+                    return is_object($chat) && erLhcoreClassChat::hasAccessToRead($chat) === true;
+                },
+                $state['offset'],
+                erLhcoreClassMdMobile::INBOX_LIMIT,
+                erLhcoreClassMdMobile::INBOX_BATCH
+            );
+            $rows = isset($collected['chats']) && is_array($collected['chats']) ? $collected['chats'] : array();
         }
     }
 
     $base = mdmobile_admin_base();
+    $hasMore = false;
     $chats = erLhcoreClassMdMobile::visibleInbox(
         $rows,
         static function ($chat) {
@@ -157,8 +176,26 @@ function mdmobile_load_inbox($state, $currentId)
                 erLhcoreClassMdMobile::rowsFromMessages($messages)
             );
         },
-        $base
+        $base,
+        $state['offset'],
+        erLhcoreClassMdMobile::INBOX_LIMIT,
+        $hasMore
     );
+    foreach ($chats as $index => $chat) {
+        if (!is_array($chat)) {
+            continue;
+        }
+        $url = erLhcoreClassMdMobile::inboxChatUrl(
+            $base,
+            isset($chat['id']) ? $chat['id'] : 0,
+            $state['q'],
+            $state['status'],
+            $state['offset']
+        );
+        if (is_string($url) && $url !== '') {
+            $chats[$index]['url'] = $url;
+        }
+    }
 
     return erLhcoreClassMdMobile::inboxResult(
         $chats,
@@ -166,7 +203,8 @@ function mdmobile_load_inbox($state, $currentId)
         $state['status'],
         $state['offset'],
         $currentId,
-        $base
+        $base,
+        $hasMore
     );
 }
 

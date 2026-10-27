@@ -1,5 +1,7 @@
 <?php
-require_once erLhcoreClassDesign::designtpl('lhmdmobile/helpers.php');
+require_once class_exists('erLhcoreClassDesign')
+    ? erLhcoreClassDesign::designtpl('lhmdmobile/helpers.php')
+    : __DIR__ . '/helpers.php';
 
 if ((!isset($Result) || !is_array($Result)) && isset($GLOBALS['Result']) && is_array($GLOBALS['Result'])) {
     $Result = $GLOBALS['Result'];
