@@ -19,6 +19,24 @@ Charcoal/brass is the default hero. `?mdvtheme=forest` sets `data-theme="forest"
 
 The question textarea keeps the native `user_msg_height` inline style when that setting is greater than zero. That is the only inline style, and it is copied so a configured composer height still applies. Everything else is in the CSS files.
 
+## Offline
+
+After 21:00 Beijing time the desk is closed until 09:00. The offline card says that, and it does not claim an instant reply. The form underneath is LHC's native leave-message form: same action, same `onsubmit` (`lhinst.addCaptcha`), same field names (`Username`, `Email`, `Phone`, `Question`, terms, department, file). This theme does not add a second handler.
+
+The card does not appear by itself. Two staging settings have to be on, and neither is on today:
+
+- `lh_chat_config.start_chat_data.force_leave_a_message` must be true. The admin checkbox is `ForceLeaveMessage` (`lib/core/lhchat/lhchatadminvalidatorhelper.php:850-852`, label in `design/defaulttheme/tpl/lhchat/startchatformsettings/form.tpl.php:49`). `modules/lhchat/chatwidget.php:288` copies it into `$leaveamessage`. Staging has no `lh_chat_start_settings` row, so the global `start_chat_data` row is the one that counts (`chatwidget.php:172` then `:176-177`). Current value: false.
+- Department 1 `bot_configuration.bot_foh` must be true. The checkbox is "Bot follows online hours" (`design/defaulttheme/tpl/lhdepartment/parts/bot_configuration.tpl.php:49`, written at `lib/core/lhdepartament/lhdepartament.php:786-789`). Without it, `erLhcoreClassChat::isOnline` returns true whenever `bot_id` is set (`lib/core/lhchat/lhchat.php:1127` and `:1191`), including outside the duty window. Department 1 has `bot_id` 3 and no `bot_foh`.
+
+Duty hours are department custom work hours, every day, start `100` end `1300`, compared as `date('G').date('i')` against the server clock (`lhchat.php:1088-1090`). The server zone is UTC, so that window is 09:00–21:00 Beijing. With both settings on, the widget's else branch (`chatwidget.tpl.php`) includes the offline form. With either still off, a visitor at 01:30 Beijing still gets the online Welcome form, or, once the bot stops covering the hours but leave-a-message stays off, the core "Chat is currently unavailable" include.
+
+A submitted message is a pending chat, not a closed ticket. `saveOfflineRequest` (`lib/core/lhchat/lhchatvalidator.php:2227`) writes `lh_chat.status` `0` (`STATUS_PENDING_CHAT`), `status_sub` `7` (`STATUS_SUB_OFFLINE_REQUEST`), `time` and `pnd_time` as `time()`, and the question as `lh_msg` with `user_id` `-1`. It does not dispatch `chat.addmsguser`. The controller then dispatches `chat.chat_offline_request_saved` (`modules/lhchat/chatwidget.php:360-397`).
+
+The WeCom connector accepts that one event and cards it immediately, because it is not a later visitor message. It still ignores every other event. Two staging facts keep the card from leaving until someone applies them, and this ticket does not write them:
+
+- `lh_webhook` has rows only for `chat.genericbot_chat_command_transfer`, `chat.chat_transfered`, and `chat.addmsguser`. A row for `chat.chat_offline_request_saved` with `trigger_id` `1` and `disabled` `0` is required. Trigger 1 already posts to `/wp-json/md/v1/wecom/notify`. Missing `{{args.is_online}}` and `{{args.action.content.command}}` render as JSON `null` (`lhgenericbotactionrestapi.php:1055`), so the existing body stays valid.
+- Do not create `lh_chat_config.offline_settings` with `do_not_save_offline` `1` (the message is not stored) or `close_offline` `1` (the chat is closed before the event, and the connector refuses status `2`). There is no `offline_settings` row today. `suggest_leave_msg` is `1` and is not the form switch.
+
 ## Chat page
 
 `mdvisitor-chat.css` only restyles the server-rendered widget chat page (`body.widget-chat`): header, status/operator row, `#messages`, `.msgBlock`, message rows, `#CSChatMessage`, and `#lhc-send-icon`. The native status row is hidden because the header chip carries the same state; the native Typing bubble and operator profile block are hidden as well. It does not change send/poll JavaScript or message markup. The chat page does not receive `mdvtheme`; after submit, LHC navigates to `chatwidgetchat` without that query. The chat skin is charcoal. A forest chat skin would need a core or route change, which this extension does not add.
@@ -52,7 +70,7 @@ Remove `mdvisitor` from `site.extensions`, delete `chat/extension/mdvisitor`, an
 
 - Staging currently hides name, email, and phone. This template still includes those native branches. If a later setting shows one of them, it renders in the composer stack above the question; it is not dropped. The same is true for department (when the URL has no department), product, timezone, and terms.
 - If the question field is hidden (`message_hidden`, bot-only hide, or message not visible in the page widget), `$hasExtraField` is set and the native `StartChatAction` button is shown. Do not hide `.btn-group` in that case; it is the only submit control.
-- Offline mode still includes `lhchat/offline_form.tpl.php`. That form is not restyled as a Knocket screen.
+- Offline mode includes the native `lhchat/offline_form.tpl.php` inside a Knocket card. The include keeps the native field names, hidden inputs, captcha `onsubmit`, and submit. See Offline above for the settings that actually show that card.
 - An LHC upgrade that changes `chatwidget.tpl.php`, `chat_status.tpl.php`, or the chat message class names (`.message-row.response`, `.message-row.message-admin`, `#CSChatMessage`, `#lhc-send-icon`) will need this override re-diffed. Extension template priority means a stale override keeps winning after an upgrade.
 - The preview iframe assumes department id `1` exists on staging. If it does not, the start page will show LHC's department error inside the card.
 - The staging acceptance used real Chrome at 390, 400×680 and 1440 widths. The screenshots, DOM/DB readbacks, and the B0 run log live under `.scratch/verify-162/`, outside this tracked directory. The tracked extension is not a substitute for that evidence; re-run the acceptance after changing any template, CSS or JS.

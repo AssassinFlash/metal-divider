@@ -305,3 +305,67 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
 .md-start button:focus-visible,.md-start summary:focus-visible,.md-start input:focus-visible,.md-start textarea:focus-visible{outline:2px solid #c9a962;outline-offset:2px}
 .md-start .md-hero h1{overflow-wrap:anywhere}
 
+/* Offline leave-message. The card reuses the start-page shell; the form is the native offline include. */
+.md-offline{height:100%!important;max-height:100%!important}
+.md-offline .md-hero{flex:0 0 auto}
+.md-offline .md-hero h1{font-size:30px;letter-spacing:-.03em}
+.md-pulse-off{background:#c9a962;box-shadow:0 0 0 4px rgba(201,169,98,.16)}
+.md-offline-panel{display:flex;flex-direction:column;gap:10px;padding:16px 16px 14px}
+.md-offline .offline-intro{display:none}
+.md-offline form{display:flex;flex-direction:column;gap:10px;margin:0}
+.md-offline .row{display:flex;flex-direction:column;gap:10px;margin:0}
+.md-offline .row > [class*="col-"]{width:100%;max-width:100%;padding:0;flex:1 1 auto}
+.md-offline .form-group{margin:0}
+.md-offline label,
+.md-offline .col-form-label{display:block;margin:0 0 5px;color:#8a7b5d;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.md-offline .form-control,
+.md-offline select.form-control,
+.md-offline input[type="text"],
+.md-offline input[type="email"],
+.md-offline input[type="file"],
+.md-offline textarea{
+  width:100%;
+  min-height:42px;
+  padding:10px 12px;
+  border:1px solid #ded4c1;
+  border-radius:14px;
+  background:#fffdf8;
+  color:#26241f;
+  font-size:14px;
+  line-height:1.4;
+  box-shadow:none;
+}
+.md-offline textarea{min-height:112px;resize:vertical}
+.md-offline .form-control:focus,
+.md-offline input:focus,
+.md-offline textarea:focus,
+.md-offline select:focus{border-color:#b9a275;box-shadow:0 0 0 3px rgba(201,169,98,.13);outline:none}
+.md-offline .form-check,
+.md-offline .form-group .btn-group{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.md-offline .btn,
+.md-offline input[type="submit"],
+.md-offline button[type="submit"]{
+  min-height:44px;
+  padding:0 16px;
+  border:0;
+  border-radius:999px;
+  background:#1b3b2c;
+  color:#f7f3ea;
+  font-size:13px;
+  font-weight:650;
+  letter-spacing:.01em;
+}
+.md-offline .btn-secondary,
+.md-offline .btn-outline-secondary{background:transparent;border:1px solid #d9cdb6;color:#7d6434}
+.md-offline .alert{margin:0;padding:12px 14px;border:1px solid var(--line);border-radius:16px;background:var(--paper);color:#2c2a24;font-size:13.5px;line-height:1.5}
+.md-offline .alert-success{border-color:#c9d7c4;background:#f4f8f2}
+.md-offline .alert-danger,
+.md-offline .is-invalid{border-color:#b42318}
+.md-offline .md-panel-foot{margin-top:auto}
+@media (max-width:400px){
+  .md-offline .md-hero{padding:13px 16px 14px}
+  .md-offline .md-hero h1{font-size:28px}
+  .md-offline .md-hero-sub{font-size:14px}
+  .md-offline-panel{padding:14px 14px 12px}
+}
+

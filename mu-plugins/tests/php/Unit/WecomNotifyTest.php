@@ -340,12 +340,12 @@ final class WecomNotifyTest extends TestCase {
 	}
 
 	/**
-	 * The webhooks this connector serves are the two transfer events and
-	 * the visitor message, and nothing else: another event of the same site
-	 * — a chat closed, a mail ticket — is acknowledged and ignored, with
-	 * not one upstream call and no chat recorded. One webhook per event is
-	 * how the LHC dispatches; the connector does not become an
-	 * every-event platform.
+	 * The webhooks this connector serves are the two transfer events, the
+	 * visitor message, and the saved offline leave-message. Another event
+	 * of the same site — a chat closed, a mail ticket — is acknowledged
+	 * and ignored, with not one upstream call and no chat recorded. One
+	 * webhook per event is how the LHC dispatches; the connector does not
+	 * become an every-event platform.
 	 */
 	public function testIgnoresEventsThatAreNotTransfers(): void {
 		$this->configure();
@@ -388,6 +388,51 @@ final class WecomNotifyTest extends TestCase {
 		$send_body = json_decode( (string) $this->calls()[2][1]['body'], true );
 		$this->assertStringContainsString( 'Contractor', (string) $send_body['textcard']['title'] );
 		$this->assertSame( 'Open the live chat conversation and reply to the visitor.', (string) $send_body['textcard']['description'] );
+	}
+
+	/**
+	 * A saved offline leave-message is pending, not a later visitor message.
+	 * saveOfflineRequest does not dispatch chat.addmsguser, so the card
+	 * must leave on chat.chat_offline_request_saved at once. The addmsguser
+	 * window must not hold a message that has only just been left. A chat
+	 * already closed (offline_settings.close_offline) is still not an
+	 * inbox item.
+	 */
+	public function testSendsACardForASavedOfflineLeaveMessage(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$saved = md_wecom_notify_handle(
+			$this->event(
+				88,
+				'chat.chat_offline_request_saved',
+				$this->pending_chat( time() - 5 ),
+				null,
+				null
+			)
+		);
+		$this->assertSame( 200, $saved['status'] );
+		$this->assertSame( array( 'sent' => true ), $saved['body'] );
+		$this->assertCount( 3, $this->calls() );
+
+		$closed = md_wecom_notify_handle(
+			$this->event(
+				89,
+				'chat.chat_offline_request_saved',
+				array( 'status' => 2 ),
+				null,
+				null
+			)
+		);
+		$this->assertSame( 200, $closed['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'status_not_notifiable',
+			),
+			$closed['body']
+		);
+		$this->assertCount( 3, $this->calls() );
 	}
 
 	/**

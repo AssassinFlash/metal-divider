@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: MD WeCom notify
- * Description: The LHC notification connector: POST /wp-json/md/v1/wecom/notify — a bearer-authenticated transfer-to-human event, or a visitor message that has waited past its reminder window, becomes a fresh one-time LHC autologin link and a WeCom textcard to the one configured member (#138, #154, research/lhc-wechat-channel §6 and research/mobile-wecom-workflow §7).
+ * Description: The LHC notification connector: POST /wp-json/md/v1/wecom/notify — a bearer-authenticated transfer-to-human event, a saved offline leave-message, or a visitor message that has waited past its reminder window, becomes a fresh one-time LHC autologin link and a WeCom textcard to the one configured member (#138, #154, research/lhc-wechat-channel §6 and research/mobile-wecom-workflow §7).
  *
  * A must-use plugin: the connector is a property of the site itself, and it
  * must keep answering while a regular plugin is being activated, updated or
@@ -101,7 +101,17 @@ function md_wecom_notify_handle( array $input ): array {
 		);
 	}
 
-	if ( ! in_array( $event_name, array( 'chat.genericbot_chat_command_transfer', 'chat.chat_transfered', 'chat.addmsguser' ), true ) ) {
+	// The saved leave-message is not a later visitor message, so the addmsguser window does not hold it.
+	if ( ! in_array(
+		$event_name,
+		array(
+			'chat.genericbot_chat_command_transfer',
+			'chat.chat_transfered',
+			'chat.addmsguser',
+			'chat.chat_offline_request_saved',
+		),
+		true
+	) ) {
 		md_wecom_notify_log_skip( $chat_id, $event_name, 'ignored' );
 		return array(
 			'status' => 200,
@@ -499,7 +509,7 @@ function md_wecom_notify_remember_send(): void {
 /**
  * Records a skipped card that must not be silent: the route adapter's 204
  * carries no body, so every skip's reason lands in the site's error log —
- * an event outside the three the connector serves, a chat the gate will
+ * an event outside the four the connector serves, a chat the gate will
  * not card, a busy lock, a cooldown, the rate ceiling, or a payload shape
  * the LHC template did not carry. The reason is one of the connector's
  * own strings, so the line carries no visitor text and no credential.

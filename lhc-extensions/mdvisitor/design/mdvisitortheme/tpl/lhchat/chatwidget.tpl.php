@@ -1,5 +1,5 @@
 <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_pre_multiinclude.tpl.php'));?>
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor.css?v=20261028v', ENT_QUOTES, 'UTF-8'); ?>">
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor.css?v=20261028w', ENT_QUOTES, 'UTF-8'); ?>">
 
 <?php if (isset($maintenance_mode)) : ?>
     <div class="pt-2">
@@ -312,23 +312,34 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
 
 <?php else : ?>
 
+<?php $mdvTheme = (isset($_GET['mdvtheme']) && $_GET['mdvtheme'] === 'forest') ? 'forest' : 'charcoal'; ?>
+<div class="md-card md-start md-offline" data-theme="<?php echo $mdvTheme; ?>">
+  <header class="md-hero">
+    <div class="md-topline">
+      <div class="md-brand"><svg class="md-brand-mark" viewBox="0 0 28 28" aria-hidden="true"><rect x="0.75" y="0.75" width="26.5" height="26.5" fill="none" stroke="currentColor" stroke-width="1"/><text x="14" y="17.5" text-anchor="middle" font-size="9" font-family="Georgia, Times New Roman, serif" fill="currentColor">MD</text></svg><span class="md-brand-name">Metal Divider</span><span class="md-brand-tag">Desk closed</span></div>
+      <button class="md-icon-btn md-close" type="button" data-mdv-close aria-label="Close assistant">×</button>
+    </div>
+    <div class="md-avatar md-avatar-hero" aria-hidden="true"><svg viewBox="0 0 32 32"><text x="16" y="20" text-anchor="middle" font-size="11" font-family="Georgia, Times New Roman, serif" fill="currentColor">MD</text></svg></div>
+    <h1>Leave a message</h1>
+    <p class="md-hero-sub">The desk is closed right now. Leave a message and the team will read it when the desk opens.</p>
+    <div class="md-status"><span class="md-pulse md-pulse-off"></span><span>Desk closed</span><span class="md-status-sep">·</span><span>Leave a message</span></div>
+  </header>
+  <div class="md-panel md-scroll md-offline-panel">
     <?php if (isset($start_data_fields['pre_offline_chat_html']) && $start_data_fields['pre_offline_chat_html'] != '') : ?>
         <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/pre_offline_chat_html.tpl.php'));?>
     <?php endif?>
 
 	<?php if (isset($start_data_fields['show_operator_profile']) && $start_data_fields['show_operator_profile'] == true) : ?>
-	
 		<div class="pl10 position-relative float-end">
 		<?php $rightLanguage = true;?>
 		<?php include(erLhcoreClassDesign::designtpl('pagelayouts/parts/switch_language.tpl.php'));?>
 		</div>
-	
 	<?php endif;?>
 
 	<?php if (isset($errors)) : ?>
 		<?php include(erLhcoreClassDesign::designtpl('lhkernel/validation_error.tpl.php'));?>
 	<?php endif; ?>
-	
+
 	<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_pre_offline_form_multiinclude.tpl.php'));?>
 
 	<?php include(erLhcoreClassDesign::designtpl('lhchat/offline_form.tpl.php'));?>
@@ -338,6 +349,10 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
     <?php endif?>
 
 	<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_post_offline_form_multiinclude.tpl.php'));?>
+    <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="https://wa.me/85264731687" target="_blank" rel="noopener">WhatsApp</a><span class="md-foot-dot"></span><a href="mailto:info@metal-divider.com">Email</a></div>
+  </div>
+</div>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028t', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 <?php endif;?>
 
