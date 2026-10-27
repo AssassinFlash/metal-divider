@@ -28,24 +28,20 @@
  *                  [--workers 2] [--gap-ms 1500]
  *   just pixel-check dev            # from the repo root
  *
- * Setup (once per machine, both tool dirs):
- *   npm install && npx playwright install chromium   # in tools/pixel-baseline
+ * Setup (once per machine):
  *   npm install                                       # in tools/pixel-check
+ *
+ * Captures are taken by capture_opencli.py through opencli against the
+ * owner's own Chrome. No Playwright (AGENTS §7): the driver this file used to
+ * import is gone, and there is no fallback path.
  */
-import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
-import {
-  ALL_VIEWPORTS,
-  KILL_CSS,
-  contextOptions,
-  captureOne,
-  sha256,
-  warmup,
-} from '../pixel-baseline/lib.mjs';
+import { ALL_VIEWPORTS, sha256 } from '../pixel-baseline/lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');
@@ -384,11 +380,31 @@ console.log(
     `viewports: ${args.viewportList.map((v) => v.name).join(',')}, masks: ${masks.length}, base: ${args.base}`
 );
 
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
-let pwVersion = 'unknown';
-try {
-  pwVersion = JSON.parse(fs.readFileSync(new URL('./node_modules/playwright/package.json', import.meta.url), 'utf8')).version;
-} catch {}
+// The capture driver: opencli, via the Python library beside this file.
+const CAPTURE_PY = path.join(HERE, 'capture_opencli.py');
+const PX_SESSION = process.env.MD_PIXEL_SESSION || 'mdpx';
+
+/**
+ * One capture, through opencli. Returns the record capture_opencli.py built:
+ * file, bytes, sha256, capturedWidth/Height, banner state, style bytes.
+ */
+function captureViaOpencli(t, vp, width, out, opts = {}) {
+  const payload = JSON.stringify({
+    url: t.url,
+    session: PX_SESSION,
+    width,
+    height: vp.height,
+    out,
+    maskSelectors: opts.maskSelectors,
+    geometrySelectors: opts.geometrySelectors,
+  });
+  const out_json = execFileSync(
+    'python3',
+    [CAPTURE_PY, '--json', payload],
+    { encoding: 'utf8', timeout: PER_CAPTURE_BUDGET_MS, env: process.env }
+  );
+  return JSON.parse(out_json.trim().split('\n').pop());
+}
 const report = {
   ticket: 'AssassinFlash/metal-divider#30',
   generated_at: new Date().toISOString(),
@@ -399,7 +415,7 @@ const report = {
   config: {
     viewports: args.viewportList.map((v) => v.name),
     protocol: 'tools/pixel-baseline/lib.mjs (shared with the #21 baseline capture)',
-    playwright: pwVersion,
+    driver: 'opencli', 
     killCss: KILL_CSS,
     pixelmatchThreshold: 0.1,
     workers: args.workers,
@@ -432,13 +448,16 @@ async function processOne(context, entry, vp) {
   try {
     let res;
     try {
-      res = await Promise.race([
-        captureOne(context, target, vp, path.join(outDir, 'current'), {
+      res = captureViaOpencli(
+        target,
+        vp,
+        vp.width,
+        path.join(outDir, 'current', `${target.type}-${target.slug}-${vp.name}.png`),
+        {
           maskSelectors: maskSelectors.length ? maskSelectors : undefined,
           geometrySelectors: geometrySelectors.length ? geometrySelectors : undefined,
-        }),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('capture budget exceeded')), PER_CAPTURE_BUDGET_MS)),
-      ]);
+        }
+      );
     } catch (e) {
       return { status: 'error', error: e.message };
     }
@@ -528,8 +547,14 @@ async function processOne(context, entry, vp) {
 }
 
 async function worker(queue, viewport) {
-  const context = await browser.newContext(contextOptions(viewport));
-  await warmup(context, `${args.base}/`);
+  // One warmup visit per viewport, so consent state is stored before the
+  // first saved capture (the banner never appears inside a screenshot).
+  captureViaOpencli(
+    { url: `${args.base}/`, type: 'warmup', slug: 'home' },
+    viewport,
+    viewport.width,
+    path.join(outDir, '_warmup', `warmup-${viewport.name}.png`)
+  );
   while (queue.length > 0 && consecutiveFails < MAX_CONSECUTIVE_FAILURES) {
     const entry = queue.shift();
     if (!entry) break;

@@ -41,6 +41,7 @@ import json
 import os
 import struct
 import subprocess
+import sys
 import time
 from typing import Any
 
@@ -205,7 +206,74 @@ def settle(session: str, style_bytes_floor: int = 20000, timeout_s: float = 90.0
     }
 
 
-def capture(url: str, session: str, width: int, out: str, height: int = 900) -> dict[str, Any]:
+MEASURE_BOXES_JS = """(() => {{
+  const sels = {selectors};
+  return JSON.stringify(sels.map((sel) => {{
+    const el = document.querySelector(sel);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return {{
+      selector: sel,
+      x: r.left + window.scrollX,
+      y: r.top + window.scrollY,
+      width: r.width,
+      height: r.height,
+    }};
+  }}));
+}})()"""
+
+MEASURE_GEOMETRY_JS = """(() => {{
+  const sels = {selectors};
+  return JSON.stringify(sels.map((sel) => {{
+    const el = document.querySelector(sel);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    return {{
+      selector: sel,
+      x: Math.round((r.left + window.scrollX) * 10) / 10,
+      y: Math.round((r.top + window.scrollY) * 10) / 10,
+      width: Math.round(r.width * 10) / 10,
+      height: Math.round(r.height * 10) / 10,
+      fontFamily: cs.fontFamily,
+      fontSize: cs.fontSize,
+      lineHeight: cs.lineHeight,
+    }};
+  }}));
+}})()"""
+
+
+def measure_boxes(session: str, selectors: list[str]) -> list[Any]:
+    """Document-coordinate boxes for the selectors that exist."""
+    if not selectors:
+        return []
+    raw = evaluate(session, MEASURE_BOXES_JS.format(selectors=json.dumps(selectors)))
+    if not isinstance(raw, str):
+        return []
+    parsed = json.loads(raw)
+    return [item for item in parsed if item]
+
+
+def measure_geometry(session: str, selectors: list[str]) -> list[Any]:
+    """Computed geometry for the selectors that exist (the M2 fingerprint)."""
+    if not selectors:
+        return []
+    raw = evaluate(session, MEASURE_GEOMETRY_JS.format(selectors=json.dumps(selectors)))
+    if not isinstance(raw, str):
+        return []
+    parsed = json.loads(raw)
+    return [item for item in parsed if item]
+
+
+def capture(
+    url: str,
+    session: str,
+    width: int,
+    out: str,
+    height: int = 900,
+    mask_selectors: list[str] | None = None,
+    geometry_selectors: list[str] | None = None,
+) -> dict[str, Any]:
     """One page at one width. Returns the record the manifest stores."""
     started = time.time()
     opened = call(session, ["open", url], timeout=300)
@@ -214,6 +282,12 @@ def capture(url: str, session: str, width: int, out: str, height: int = 900) -> 
 
     call(session, ["wait", "selector", "main"], timeout=120)
     state = settle(session)
+
+    extras: dict[str, Any] = {}
+    if mask_selectors:
+        extras["maskBoxes"] = measure_boxes(session, mask_selectors)
+    if geometry_selectors:
+        extras["geometry"] = measure_geometry(session, geometry_selectors)
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
     shot = call(
@@ -236,4 +310,38 @@ def capture(url: str, session: str, width: int, out: str, height: int = 900) -> 
         "finalUrl": evaluate(session, "location.href"),
         "ms": int((time.time() - started) * 1000),
         **state,
+        **extras,
     }
+
+
+def main() -> int:
+    """Command-line entry: one capture described by a JSON payload on argv.
+
+    check.mjs calls this per page, so the interface is one JSON object in and
+    one JSON object out — no argument parsing to drift from what the caller
+    sends.
+    """
+    if len(sys.argv) < 3 or sys.argv[1] != "--json":
+        print("usage: capture_opencli.py --json '<payload>'", file=sys.stderr)
+        return 2
+    try:
+        payload = json.loads(sys.argv[2])
+    except json.JSONDecodeError as error:
+        print("payload is not JSON: " + str(error), file=sys.stderr)
+        return 2
+
+    result = capture(
+        str(payload["url"]),
+        str(payload.get("session", "mdpx")),
+        int(payload["width"]),
+        str(payload["out"]),
+        int(payload.get("height", 900)),
+        payload.get("maskSelectors") or None,
+        payload.get("geometrySelectors") or None,
+    )
+    print(json.dumps(result))
+    return 0 if result.get("ok") else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

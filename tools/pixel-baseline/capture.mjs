@@ -22,21 +22,39 @@
  * <out>/<page-type>/<slug>-<1440|390>.png; manifest.json lands in <out>.
  *
  * Setup (once per machine):
- *   npm install && npx playwright install chromium
+ *   npm install
+ *
+ * Captures come from opencli against the owner's own Chrome (AGENTS §7); the
+ * Playwright driver is gone and there is no fallback.
  */
-import { chromium } from 'playwright';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  UA,
-  ALL_VIEWPORTS,
-  KILL_CSS,
-  COOKIE_ACCEPT_SELECTORS,
-  BANNER_DETECTORS,
-  contextOptions,
-  captureOne,
-  warmup,
-} from './lib.mjs';
+import { fileURLToPath } from 'node:url';
+import { UA, ALL_VIEWPORTS, sha256 } from './lib.mjs';
+
+const CAPTURE_PY = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'pixel-check',
+  'capture_opencli.py'
+);
+
+function captureViaOpencli(t, vp, out) {
+  const payload = JSON.stringify({
+    url: t.url,
+    session: process.env.MD_PIXEL_SESSION || 'mdpx',
+    width: vp.width,
+    height: vp.height,
+    out,
+  });
+  const json = execFileSync('python3', [CAPTURE_PY, '--json', payload], {
+    encoding: 'utf8',
+    timeout: 240_000,
+    env: process.env,
+  });
+  return JSON.parse(json.trim().split('\n').pop());
+}
 
 const BASE = 'https://metalpartition.com';
 const WORKERS = 2;
@@ -105,12 +123,7 @@ async function main() {
   }
   console.log(`targets: ${targets.length}, viewports: ${args.viewportList.map((v) => v.name).join(',')}`);
 
-  let pwVersion = 'unknown';
-  try {
-    pwVersion = JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url), 'utf8')).dependencies.playwright;
-  } catch {}
-
-  const browser = await chromium.launch({ channel: 'chrome', headless: true });
+  const driver = 'opencli';
   const results = new Map(); // target index -> per-viewport result
   targets.forEach((t) => results.set(t, {}));
   const masks = new Map(); // selector -> [pages]
@@ -119,8 +132,11 @@ async function main() {
   const total = targets.length * args.viewportList.length;
 
   async function worker(queue, viewport) {
-    const context = await browser.newContext(contextOptions(viewport));
-    await warmup(context, `${BASE}/`);
+    await captureViaOpencli(
+      { url: `${BASE}/` },
+      viewport,
+      path.join(outDir, '_warmup', `warmup-${viewport.name}.png`)
+    );
     while (queue.length > 0 && consecutiveFails < MAX_CONSECUTIVE_FAILURES) {
       const t = queue.shift();
       if (!t) break;
@@ -129,7 +145,7 @@ async function main() {
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           const capped = Promise.race([
-            captureOne(context, t, viewport, outDir),
+            captureViaOpencli(t, viewport, path.join(outDir, t.type, `${t.slug}-${viewport.name}.png`)),
             new Promise((_, rej) => setTimeout(() => rej(new Error('capture budget exceeded')), PER_CAPTURE_BUDGET_MS)),
           ]);
           res = await capped;
@@ -180,8 +196,8 @@ async function main() {
       base: BASE,
       final: final,
       config: {
-        browser: 'playwright chromium (headless)',
-        playwright: pwVersion,
+        browser: 'opencli -> real Chrome (channel chrome)',
+        driver: driver,
         userAgent: UA,
         locale: 'en-US',
         timezone: 'UTC',

@@ -196,6 +196,8 @@ attachment-map name="dev":
 # diff them against the metalpartition.com baseline (tools/pixel-check,
 # ticket #30). Baseline = data/pixel-baseline of this checkout; extra args
 # pass through (e.g. `just pixel-check dev --filter '^home' --viewports 1440`).
+# Captures are taken through opencli against the owner's Chrome; the npm
+# install here is pixelmatch and pngjs only — no browser is downloaded.
 [positional-arguments]
 pixel-check name="dev" *args:
     #!/usr/bin/env bash
@@ -206,10 +208,6 @@ pixel-check name="dev" *args:
     registry="${MD_LOCAL_HOME:-$HOME/metal-divider-local}/instances.toml"
     port=$(awk -v n="$name" '$0 == "[" n "]" { f=1; next } f && $1 == "port" { gsub(/[^0-9]/, "", $3); print $3; exit }' "$registry")
     [ -n "$port" ] || { echo "pixel-check: no instance '$name' in $registry" >&2; exit 1; }
-    if [ ! -d tools/pixel-baseline/node_modules ]; then
-        echo "pixel-check: installing tools/pixel-baseline (npm ci)"
-        (cd tools/pixel-baseline && npm ci --no-fund --no-audit)
-    fi
     if [ ! -d tools/pixel-check/node_modules ]; then
         echo "pixel-check: installing tools/pixel-check (npm ci)"
         (cd tools/pixel-check && npm ci --no-fund --no-audit)
