@@ -644,3 +644,26 @@ font-size: 20px;
 font-size: 11px;
 }
 }
+
+/* ---------------------------------------------------------------- *
+ * The restored pattern library, on a phone.
+ *
+ * All twenty-one patterns stack into 23 screens at 390. The library is
+ * reference material, not a reading surface: below 750 the fourth card
+ * onward is hidden and each family keeps its first three, so the section
+ * stays scannable and the full catalog is one tap away at /shop/. The
+ * hiding is done with `:nth-child` rather than by trimming the markup,
+ * because the same markup serves the desktop grid where all of them show.
+ * ---------------------------------------------------------------- */
+@media (max-width: 749px) {
+  .pattern-family-grid > li:nth-child(n + 2) {
+    display: none;
+  }
+
+  /* The context shots stay on desktop; on a phone one geometry shot per
+     family is enough to read the direction, and every extra shot costs a
+     screen. */
+  .pattern-family-grid > li img ~ img {
+    display: none;
+  }
+}
