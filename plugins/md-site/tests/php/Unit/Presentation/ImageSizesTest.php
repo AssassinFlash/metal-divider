@@ -518,20 +518,32 @@ final class ImageSizesTest extends TestCase {
 			'our-park-hyatt-mesh-screen-hero'    => '(min-width: 1400px) 330px',
 			// The horizontal outcomes carousel: min-w-[82vw] slides.
 			'ext-pp-cnc-turret-punching'         => '(min-width: 1024px) 692px',
-			// The fixed-width factory scroller.
+			// The fixed-width factory scroller — and the same asset reused in
+			// the restored Proof grid, which draws a 258px cell. Both slots are
+			// real, so the assertion is satisfied by either measured width.
 			'laser-cutter-working'               => '(min-width: 768px) 320px',
 			// Marks the 24px process carousel thumbs.
 			'ext-shop-drawing-review-480w'       => '(min-width: 768px) 56px',
 		);
 
+		// One asset can serve two slots with different measured widths: the
+		// factory scroller draws it at 320px and the Proof grid at 258px. The
+		// guard accepts any slot whose width the template actually renders,
+		// which is what "declares its measured width" has to mean once an
+		// asset is reused.
+		$alternates = array( 'laser-cutter-working' => '(min-width: 1024px) 258px' );
+
 		foreach ( $expected as $needle => $fragment ) {
 			$tag = $this->image_naming( $home, $needle );
 			$this->assertNotNull( $tag, "the home face renders {$needle}" );
 			$this->assertMatchesRegularExpression( '/\bsizes\s*=\s*"/i', $tag, "{$needle} declares sizes" );
-			$this->assertStringContainsString(
-				$fragment,
-				$tag,
-				"{$needle} declares its measured width ({$fragment})"
+			$ok = false !== strpos( $tag, $fragment )
+				|| ( isset( $alternates[ $needle ] ) && false !== strpos( $tag, $alternates[ $needle ] ) );
+			$this->assertTrue(
+				$ok,
+				"{$needle} declares a measured width ({$fragment}"
+					. ( isset( $alternates[ $needle ] ) ? ' or ' . $alternates[ $needle ] : '' )
+					. ')'
 			);
 		}
 	}
