@@ -39,10 +39,22 @@ except ImportError:  # pragma: no cover
     print("Pillow is required: python3 -m pip install pillow", file=sys.stderr)
     sys.exit(2)
 
-# Two pixels closer than this are the same colour. The site's dark palette
-# sits within 12 of itself (`#1a1a1a` / `#141414` / `#0a0a0a` are all meant to
-# read as "background"), so a tight tolerance would call its own bands content.
-TOLERANCE = 12
+# Two pixels closer than this are the same colour.
+#
+# 12 was too tight in the other direction: a photograph shot in low light sits
+# 15-20 luminance points above the page's #141414 base across its whole area,
+# so the analyser called an 8036px-tall image band "no ink anywhere" and the
+# finding was the design, not a defect. Measured on the home page at 390:
+# the flagged band reads p50=36, p95=40 against a base of 20.
+#
+# The palette itself is still what decides background; this only widens the
+# distance at which a pixel counts as a *different* colour from it.
+TOLERANCE = 8
+
+# A band also fails as "empty" only if it is flat: a low-contrast photograph has
+# real variation across the row even when its mean luminance is near the base.
+# Reported so a reader can tell the two apart instead of trusting one number.
+MIN_BAND_CONTRAST = 3.0
 
 # Rows are sampled every this many pixels vertically, columns every SCAN_STEP.
 SCAN_STEP = 4
@@ -95,7 +107,19 @@ def is_bg(pixel: tuple[int, int, int], pal: list[tuple[int, int, int]]) -> bool:
 def row_profile(im: Image.Image, pal: list[tuple[int, int, int]]) -> list[tuple[int, float, int, int]]:
     """Per-band ink share and the blank margins either side of the ink."""
     width = im.width
-    columns = list(range(0, width, SCAN_STEP))
+    # Exclude the scrollbar. A capture at 390 includes a ~12px scrollbar whose
+    # single column reads as "ink" in every row, so `left_blank` came back 387
+    # and `right_blank` 2 for bands that are genuinely flat across the content
+    # area — the finding described the scrollbar, not the page.
+    edge = 0
+    for probe in range(width - 1, width - 20, -1):
+        column = [im.getpixel((probe, y)) for y in range(0, im.height, max(1, im.height // 40))]
+        if len(set(column)) <= 2 and len(column) > 0:
+            edge = width - probe
+        else:
+            break
+    usable = width - edge
+    columns = list(range(0, usable, SCAN_STEP))
     profile = []
     for top in range(0, im.height, ROW_STEP):
         band_rows = range(top, min(top + ROW_STEP, im.height))
@@ -115,8 +139,8 @@ def row_profile(im: Image.Image, pal: list[tuple[int, int, int]]) -> list[tuple[
                     first_ink = x
                 last_ink = x
         share = inked / len(columns) if columns else 0.0
-        left = first_ink if first_ink is not None else width
-        right = (width - last_ink) if last_ink is not None else width
+        left = first_ink if first_ink is not None else usable
+        right = (usable - last_ink) if last_ink is not None else usable
         profile.append((top, share, left, right))
     return profile
 
