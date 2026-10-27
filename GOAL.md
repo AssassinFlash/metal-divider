@@ -55,6 +55,18 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-27 收尾核验:除凭据项外全部达标,两项确证为外部凭据阻塞
+
+**生产验收**:`prod-acceptance.mjs` **28/28 全过**、21 页 × 3 视口 **63/63**、零控制台错误、零 4xx、PHP **385 项**全绿。视觉/交互/无 JS/询盘链路/性能基线均已实测。
+
+**凭据阻塞的最终确证(2026-10-27,真 Chrome + 本机 Default profile)**:
+- **GSC**:`search.google.com/search-console` 落到 `…/about` 营销页("立即使用"),**未登录**。Site Kit 载体已装(`google-site-kit` 1.190.0 激活,`propertyID` 为空)。
+- **Cloudflare(Turnstile)**:`dash.cloudflare.com` 是登录页(要求邮箱密码),**未登录**。de-linker 的密钥已实测因域名绑定返回 `110200`,不可复用。
+
+**这两项不是代码可修**:GSC 需要 Google 账号授权(建 URL 前缀属性拿验证 token),Turnstile 需要在 Cloudflare Dashboard 新建 widget 拿 sitekey/secret。**业主需提供登录或密钥**,代理无法自行创建账号凭据。
+
+**AI 客服票(#86/#102/#147)不在本 GOAL 范围**:它们是 LHC 坐席工作台与 Knocket 对标的另一工作流,与"页面/视口/询盘/性能"覆盖矩阵无关,且 #147 是另一会话刚开的票,不在此开工。
+
 ### 2026-10-27 性能结论纠偏:不是服务器慢,是本机网络慢
 
 **三条独立证据,一致指向同一结论**:
