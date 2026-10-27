@@ -269,7 +269,7 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
     </nav>
   </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028v', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028x', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 <?php if (isset($start_data_fields['pre_chat_html']) && $start_data_fields['pre_chat_html'] != '') : ?>
     <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/post_chat_html.tpl.php'));?>
@@ -314,6 +314,8 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
 
 <?php $mdvTheme = (isset($_GET['mdvtheme']) && $_GET['mdvtheme'] === 'forest') ? 'forest' : 'charcoal'; ?>
 <div class="md-card md-start md-offline" data-theme="<?php echo $mdvTheme; ?>">
+  <div id="mdv-live" class="md-sr" aria-live="polite"></div>
+  <div class="md-view md-home is-active" data-mdv-view="home">
   <header class="md-hero">
     <div class="md-topline">
       <div class="md-brand"><svg class="md-brand-mark" viewBox="0 0 28 28" aria-hidden="true"><rect x="0.75" y="0.75" width="26.5" height="26.5" fill="none" stroke="currentColor" stroke-width="1"/><text x="14" y="17.5" text-anchor="middle" font-size="9" font-family="Georgia, Times New Roman, serif" fill="currentColor">MD</text></svg><span class="md-brand-name">Metal Divider</span><span class="md-brand-tag">Desk closed</span></div>
@@ -351,8 +353,37 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
 	<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_post_offline_form_multiinclude.tpl.php'));?>
     <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="https://wa.me/85264731687" target="_blank" rel="noopener">WhatsApp</a><span class="md-foot-dot"></span><a href="mailto:info@metal-divider.com">Email</a></div>
   </div>
+  <nav class="md-tabs" aria-label="Assistant sections">
+    <button class="is-active" type="button" data-mdv-go="home" aria-label="Home" aria-current="page"><span class="md-tab-icon" aria-hidden="true">⌂</span><span class="md-tab-label">Home</span></button>
+    <button type="button" data-mdv-go="chat" aria-label="Chat"><span class="md-tab-icon" aria-hidden="true">◌</span><span class="md-tab-label">Chat</span></button>
+    <button type="button" data-mdv-go="faq" aria-label="FAQ"><span class="md-tab-icon" aria-hidden="true">?</span><span class="md-tab-label">FAQ</span></button>
+  </nav>
+  </div>
+  <div class="md-view md-faq" data-mdv-view="faq">
+    <header class="md-faq-head">
+      <button class="md-icon-btn md-back" type="button" data-mdv-go="home" aria-label="Back">‹</button>
+      <div><p class="md-eyebrow">Help centre</p><h2>Common questions</h2></div>
+      <button class="md-icon-btn md-close" type="button" data-mdv-close aria-label="Close assistant">×</button>
+    </header>
+    <div class="md-panel md-scroll">
+      <label class="md-search"><span>⌕</span><input id="mdv-faq-search" placeholder="Search questions" aria-label="Search questions"></label>
+      <div class="md-faq-list">
+        <button class="md-faq-q" type="button" data-mdv-fill="What is your typical lead time?"><span>What is your typical lead time?</span><i>→</i></button>
+        <button class="md-faq-q" type="button" data-mdv-fill="Can you match a pattern from my drawing?"><span>Can you match a custom pattern?</span><i>→</i></button>
+        <button class="md-faq-q" type="button" data-mdv-fill="Do you ship to my country?"><span>Do you ship internationally?</span><i>→</i></button>
+        <button class="md-faq-q" type="button" data-mdv-fill="What materials and finishes do you offer?"><span>What materials do you use?</span><i>→</i></button>
+        <button class="md-faq-q" type="button" data-mdv-fill="Can you send CAD files for a pattern?"><span>Can you send CAD files?</span><i>→</i></button>
+      </div>
+      <button class="md-primary" type="button" data-mdv-go="chat">Ask the assistant <span>→</span></button>
+    </div>
+    <nav class="md-tabs" aria-label="Assistant sections">
+      <button type="button" data-mdv-go="home" aria-label="Home"><span class="md-tab-icon" aria-hidden="true">⌂</span><span class="md-tab-label">Home</span></button>
+      <button type="button" data-mdv-go="chat" aria-label="Chat"><span class="md-tab-icon" aria-hidden="true">◌</span><span class="md-tab-label">Chat</span></button>
+      <button class="is-active" type="button" data-mdv-go="faq" aria-label="FAQ" aria-current="page"><span class="md-tab-icon" aria-hidden="true">?</span><span class="md-tab-label">FAQ</span></button>
+    </nav>
+  </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028v', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028x', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 <?php endif;?>
 

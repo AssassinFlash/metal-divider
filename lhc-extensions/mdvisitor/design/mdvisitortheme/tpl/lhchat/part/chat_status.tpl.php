@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028v', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028w', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -9,13 +9,24 @@
         if ($mdvStatus === erLhcoreClassModelChat::STATUS_PENDING_CHAT) { $mdvLabel = 'Connecting you to the team'; $mdvTone = 'pending'; }
         elseif ($mdvStatus === erLhcoreClassModelChat::STATUS_ACTIVE_CHAT) { $mdvLabel = 'Team online'; $mdvTone = 'online'; }
         elseif ($mdvStatus === erLhcoreClassModelChat::STATUS_CLOSED_CHAT) { $mdvLabel = 'Chat closed'; $mdvTone = 'closed'; }
+
+        $mdvTitle = 'Metal Divider AI';
+        if ($mdvStatus === erLhcoreClassModelChat::STATUS_ACTIVE_CHAT || $mdvStatus === erLhcoreClassModelChat::STATUS_CLOSED_CHAT) {
+            $mdvTitle = 'Metal Divider Support';
+            if (($mdvOperator = $chat->user) !== false) {
+                $mdvOperatorName = trim((string) $mdvOperator->name_support);
+                if ($mdvOperatorName !== '') {
+                    $mdvTitle = $mdvOperatorName;
+                }
+            }
+        }
         ?>
         <div class="mdv-chat-head">
             <div class="mdv-chat-id">
-                <span class="mdv-chat-avatar">MD<i></i></span>
-                <div class="mdv-chat-name"><strong>Metal Divider AI</strong><small><span class="mdv-chat-state mdv-chat-state-<?php echo $mdvTone;?>"><i></i><?php echo htmlspecialchars($mdvLabel);?></span></small></div>
+                <span class="mdv-chat-avatar" data-tone="<?php echo $mdvTone;?>">MD<i></i></span>
+                <div class="mdv-chat-name"><strong id="mdv-chat-title"><?php echo htmlspecialchars($mdvTitle);?></strong><small><span class="mdv-chat-state mdv-chat-state-<?php echo $mdvTone;?>"><i></i><?php echo htmlspecialchars($mdvLabel);?></span></small></div>
             </div>
-            <button class="mdv-chat-close" type="button" aria-label="Close chat" onclick="(function(){var t='';try{var a=window.location.ancestorOrigins;if(a&&a.length)t=a[0];else if(document.referrer)t=new URL(document.referrer).origin}catch(e){}if(t&&window.parent!==window)window.parent.postMessage('lhc_chat_closed_explicit',t);})()">×</button>
+            <button class="mdv-chat-close" type="button" aria-label="Close chat" onclick="(function(){var t='';try{var a=window.location.ancestorOrigins;if(a&&a.length)t=a[0];else if(document.referrer)t=new URL(document.referrer).origin}catch(e){}if(t&&window.parent!==window){window.parent.postMessage('lhc_chat_closed_explicit',t);}else{window.close();}})()">×</button>
         </div>
         <div id="status-chat">
             <?php if (!($chat->status == erLhcoreClassModelChat::STATUS_BOT_CHAT && $chat->bot !== null && isset($chat->bot->configuration_array['profile_hide']) && $chat->bot->configuration_array['profile_hide'] == true)) : ?>
@@ -40,6 +51,8 @@
 <script>
 (function () {
   var chip = document.querySelector('.mdv-chat-head .mdv-chat-state');
+  var title = document.getElementById('mdv-chat-title');
+  var avatar = document.querySelector('.mdv-chat-head .mdv-chat-avatar');
   function setPlaceholder() {
     var composer = document.getElementById('CSChatMessage');
     if (composer) { composer.placeholder = 'Type your message…'; }
@@ -48,7 +61,11 @@
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', setPlaceholder); }
   window.setTimeout(setPlaceholder, 500);
   if (!chip) { return; }
+  function setTitle(name) {
+    if (title && name && title.textContent.trim() !== name) { title.textContent = name; }
+  }
   function setChip(label, tone) {
+    if (avatar) { avatar.setAttribute('data-tone', tone); }
     if (chip.textContent.trim() === label) { return; }
     chip.className = 'mdv-chat-state mdv-chat-state-' + tone;
     chip.textContent = '';
@@ -56,18 +73,27 @@
     chip.appendChild(dot);
     chip.appendChild(document.createTextNode(label));
   }
+  function operatorName(status) {
+    var node = status.querySelector('.op-name-widget');
+    return node ? (node.textContent || '').trim() : '';
+  }
   function sync() {
     var status = document.getElementById('status-chat');
     if (!status) { return; }
     var statusText = status.textContent || '';
-    if ((status.querySelector('h4') || status.querySelector('h6')) && /closed/i.test(statusText)) { setChip('Chat closed', 'closed'); return; }
-    if (/pending a support staff member|pending confirm|queue|wait/i.test(statusText)) { setChip('Connecting you to the team', 'pending'); return; }
-    var rows = document.querySelectorAll('#messages .message-row.message-admin .op-nick-title');
-    for (var i = rows.length - 1; i >= 0; i -= 1) {
-      var name = (rows[i].textContent || '').trim();
-      if (name && !/ai assistant|metal divider ai/i.test(name)) { setChip(name, 'online'); return; }
+    if ((status.querySelector('h4') || status.querySelector('h6')) && /closed/i.test(statusText)) { setTitle('Metal Divider Support'); setChip('Chat closed', 'closed'); return; }
+    if (/pending a support staff member|pending confirm|queue|wait/i.test(statusText)) { setTitle('Metal Divider AI'); setChip('Connecting you to the team', 'pending'); return; }
+    var name = operatorName(status);
+    if (!name) {
+      var rows = document.querySelectorAll('#messages .message-row.message-admin .op-nick-title');
+      for (var i = rows.length - 1; i >= 0; i -= 1) {
+        var rowName = (rows[i].textContent || '').trim();
+        if (rowName && !/ai assistant|metal divider ai/i.test(rowName)) { name = rowName; break; }
+      }
     }
-    setChip('AI assistant', 'ai');
+    if (name) { setTitle(name); setChip('Team online', 'online'); return; }
+    setTitle('Metal Divider Support');
+    setChip('Team online', 'online');
   }
   var messages = document.getElementById('messages');
   if (messages && window.MutationObserver) {
