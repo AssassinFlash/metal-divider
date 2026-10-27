@@ -8,7 +8,7 @@ if ((!isset($Result) || !is_array($Result)) && isset($GLOBALS['Result']) && is_a
 }
 
 $mdSet = array();
-foreach (array('chat_id', 'after_id', 'latest_id', 'messages_url', 'send_url', 'csrf', 'csrf_token', 'sender', 'messages', 'title', 'nick', 'context', 'read_url', 'list_url') as $mdName) {
+foreach (array('chat_id', 'after_id', 'latest_id', 'messages_url', 'send_url', 'csrf', 'csrf_token', 'sender', 'messages', 'title', 'nick', 'context', 'read_url', 'list_url', 'remarks', 'remarks_url', 'canned') as $mdName) {
     if (isset(${$mdName})) {
         $mdSet[$mdName] = ${$mdName};
     }
@@ -89,8 +89,22 @@ $mdKindLabel = array(
     'system' => 'System',
     'bot' => 'Bot',
 );
-$mdChatAttr = (is_numeric($mdChatId) && (int) $mdChatId > 0) ? (string) (int) $mdChatId : '';
+$mdRemarks = mdmobile_pick($mdSources, array('remarks'));
+$mdRemarksUrl = mdmobile_pick($mdSources, array('remarks_url'));
+$mdCanned = mdmobile_pick($mdSources, array('canned'));
 $mdView = mdmobile_view($mdContext);
+$mdChatAttr = (is_numeric($mdChatId) && (int) $mdChatId > 0) ? (string) (int) $mdChatId : '';
+$mdRemarksHtml = $mdChatAttr !== ''
+    ? mdmobile_render_remarks(
+        array(
+            'value' => is_string($mdRemarks) ? $mdRemarks : '',
+            'url' => is_string($mdRemarksUrl) ? $mdRemarksUrl : '',
+        ),
+        'md-drawer'
+    )
+    : '';
+$mdCannedHtml = $mdChatAttr !== '' ? mdmobile_render_canned($mdCanned) : '';
+$mdDrawer = $mdView['drawer'] || $mdRemarksHtml !== '';
 $mdHasNick = $mdNick !== '';
 $mdHasGlance = $mdView['chips'] !== array() || is_array($mdView['source']);
 $mdInboxRaw = null;
@@ -148,7 +162,7 @@ if ($mdHasInbox) {
 <p class="md-name"><?php echo mdmobile_esc($mdNick); ?></p>
 <?php endif; ?>
 </div>
-<?php if ($mdView['drawer']) : ?>
+<?php if ($mdDrawer) : ?>
 <button type="button" id="md-details" class="md-details" aria-expanded="false" aria-controls="md-drawer" aria-haspopup="dialog">Details</button>
 <?php endif; ?>
 </header>
@@ -196,12 +210,16 @@ if ($mdHasInbox) {
 <div class="md-composer" data-md-backdrop>
 <p id="md-status" class="md-status" role="status" aria-live="polite" aria-atomic="true"></p>
 <div class="md-compose-row">
+<?php if ($mdCannedHtml !== '') : ?>
+<button type="button" id="md-quick" class="md-quick" aria-label="Quick replies" aria-expanded="false" aria-controls="md-canned-dialog" aria-haspopup="dialog"><svg class="md-quick-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h11M4 18h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<?php endif; ?>
 <label class="md-sr" for="md-draft">Type a message</label>
 <textarea id="md-draft" class="md-draft" rows="1" placeholder="Type a message" autocomplete="off" autocapitalize="sentences" enterkeyhint="enter"></textarea>
 <button type="button" id="md-send" class="md-send">Send</button>
 </div>
 </div>
-<?php if ($mdView['drawer']) : ?>
+<?php echo $mdCannedHtml; ?>
+<?php if ($mdDrawer) : ?>
 <div id="md-sheet" class="md-sheet" hidden>
 <div id="md-mask" class="md-mask" aria-hidden="true"></div>
 <div id="md-drawer" class="md-drawer" role="dialog" aria-modal="true" aria-labelledby="md-drawer-title" tabindex="-1">
@@ -212,6 +230,7 @@ if ($mdHasInbox) {
 </div>
 <div class="md-drawer-body">
 <?php echo mdmobile_render_fields($mdView['fields']); ?>
+<?php echo $mdRemarksHtml; ?>
 <?php echo mdmobile_render_history($mdView['history'], 'md-history-title'); ?>
 </div>
 </div>
@@ -221,7 +240,14 @@ if ($mdHasInbox) {
 <?php
 if ($mdHasInbox) {
     echo '</div>';
-    echo mdmobile_render_context($mdView, true);
+    echo mdmobile_render_context(
+        $mdView,
+        true,
+        array(
+            'value' => is_string($mdRemarks) ? $mdRemarks : '',
+            'url' => is_string($mdRemarksUrl) ? $mdRemarksUrl : '',
+        )
+    );
     echo '</div>';
 }
 ?>

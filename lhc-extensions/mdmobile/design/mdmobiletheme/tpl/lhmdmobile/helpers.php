@@ -503,13 +503,6 @@ if (!function_exists('mdmobile_clock_stamp')) {
     }
 }
 
-if (!function_exists('mdmobile_notes_label')) {
-    function mdmobile_notes_label($label)
-    {
-        return mdmobile_label_is($label, array('remarks', 'remark', 'notes', 'note', '备注'));
-    }
-}
-
 if (!function_exists('mdmobile_view')) {
     function mdmobile_view($raw)
     {
@@ -1303,11 +1296,7 @@ if (!function_exists('mdmobile_render_fields')) {
             if (!is_array($field) || !isset($field['label'], $field['value'])) {
                 continue;
             }
-            $html .= '<div class="md-field"><dt>' . mdmobile_esc($field['label']) . '</dt><dd';
-            if (mdmobile_notes_label($field['label'])) {
-                $html .= ' class="md-notes"';
-            }
-            $html .= '>';
+            $html .= '<div class="md-field"><dt>' . mdmobile_esc($field['label']) . '</dt><dd>';
             $stamp = mdmobile_clock_stamp($field['label'], $field['value'], isset($field['timestamp']) ? $field['timestamp'] : null);
             if ($stamp > 0) {
                 $html .= mdmobile_time_html(mdmobile_utc_label($stamp, 'datetime'), $stamp, 'datetime');
@@ -1554,22 +1543,109 @@ if (!function_exists('mdmobile_render_rail')) {
     }
 }
 
+if (!function_exists('mdmobile_render_remarks')) {
+    function mdmobile_render_remarks($remarks, $suffix = 'md-drawer')
+    {
+        $value = '';
+        $url = '';
+        if (is_array($remarks)) {
+            $value = isset($remarks['value']) ? (string) $remarks['value'] : '';
+            $url = mdmobile_app_url(isset($remarks['url']) ? $remarks['url'] : '');
+        }
+        if ($url === '') {
+            return '';
+        }
+        $suffix = (string) $suffix;
+        if (preg_match('/^[A-Za-z][A-Za-z0-9_-]*$/', $suffix) !== 1) {
+            $suffix = 'md-drawer';
+        }
+        $inputId = 'md-remarks-' . $suffix;
+        $titleId = 'md-remarks-title-' . $suffix;
+        $statusId = 'md-remarks-status-' . $suffix;
+        $html = '<section class="md-remarks" aria-labelledby="' . mdmobile_esc($titleId) . '" data-md-remarks data-save-url="' . mdmobile_esc($url) . '">';
+        $html .= '<h3 id="' . mdmobile_esc($titleId) . '" class="md-remarks-title">Remarks</h3>';
+        $html .= '<label class="md-sr" for="' . mdmobile_esc($inputId) . '">Private remarks</label>';
+        $html .= '<textarea id="' . mdmobile_esc($inputId) . '" class="md-remarks-input" data-md-remarks-input rows="3" placeholder="Private remarks. Visitors never see these.">' . mdmobile_esc($value) . '</textarea>';
+        $html .= '<p id="' . mdmobile_esc($statusId) . '" class="md-remarks-status" data-md-remarks-status role="status" aria-live="polite" aria-atomic="true"></p>';
+        $html .= '</section>';
+
+        return $html;
+    }
+}
+
+if (!function_exists('mdmobile_render_canned')) {
+    function mdmobile_render_canned($groups)
+    {
+        if (!is_array($groups) || $groups === array()) {
+            return '';
+        }
+        $sections = '';
+        foreach ($groups as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+            $label = mdmobile_text(isset($group['label']) ? $group['label'] : '');
+            $items = isset($group['items']) && is_array($group['items']) ? $group['items'] : array();
+            $rows = '';
+            foreach ($items as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+                $id = isset($item['id']) ? (int) $item['id'] : 0;
+                $text = isset($item['text']) ? (string) $item['text'] : '';
+                if ($id < 1 || trim($text) === '') {
+                    continue;
+                }
+                $title = mdmobile_text(isset($item['title']) ? $item['title'] : '');
+                $rows .= '<li><button type="button" class="md-canned-item" data-md-canned-id="' . mdmobile_esc((string) $id) . '">';
+                if ($title !== '') {
+                    $rows .= '<span class="md-canned-title">' . mdmobile_esc($title) . '</span>';
+                }
+                $rows .= '<span class="md-canned-text">' . mdmobile_esc($text) . '</span></button></li>';
+            }
+            if ($rows === '') {
+                continue;
+            }
+            $sections .= '<section class="md-canned-group">';
+            if ($label !== '') {
+                $sections .= '<h3 class="md-canned-group-title">' . mdmobile_esc($label) . '</h3>';
+            }
+            $sections .= '<ul class="md-canned-list">' . $rows . '</ul></section>';
+        }
+        if ($sections === '') {
+            return '';
+        }
+
+        return '<div id="md-canned-sheet" class="md-sheet md-canned-sheet" hidden>'
+            . '<div id="md-canned-mask" class="md-mask" aria-hidden="true"></div>'
+            . '<div id="md-canned-dialog" class="md-drawer md-canned-dialog" role="dialog" aria-modal="true" aria-labelledby="md-canned-title" tabindex="-1">'
+            . '<div class="md-drawer-bar" aria-hidden="true"></div>'
+            . '<div class="md-drawer-head"><h2 id="md-canned-title" class="md-drawer-title">Quick replies</h2>'
+            . '<button type="button" id="md-canned-close" class="md-drawer-close">Close</button></div>'
+            . '<div class="md-canned-body"><p class="md-canned-hint">Inserts into the message box. Edit before sending.</p>'
+            . $sections
+            . '</div></div></div>';
+    }
+}
+
 if (!function_exists('mdmobile_render_context')) {
-    function mdmobile_render_context($view, $hasChat)
+    function mdmobile_render_context($view, $hasChat, $remarks = null)
     {
         if (!is_array($view)) {
             $view = array('fields' => array(), 'history' => array());
         }
         $fields = isset($view['fields']) && is_array($view['fields']) ? $view['fields'] : array();
         $history = isset($view['history']) && is_array($view['history']) ? $view['history'] : array();
+        $remarksHtml = $hasChat === true ? mdmobile_render_remarks($remarks, 'md-context') : '';
         $html = '<aside id="md-context" class="md-context" aria-labelledby="md-context-title">';
         $html .= '<h2 id="md-context-title" class="md-context-title">Visitor details</h2><div class="md-context-body">';
         if ($hasChat !== true) {
             $html .= '<p class="md-context-empty">Select a conversation to see visitor details.</p>';
-        } elseif ($fields === array() && $history === array()) {
+        } elseif ($fields === array() && $history === array() && $remarksHtml === '') {
             $html .= '<p class="md-context-empty">No visitor details</p>';
         } else {
             $html .= mdmobile_render_fields($fields);
+            $html .= $remarksHtml;
             $html .= mdmobile_render_history($history, 'md-context-history-title');
         }
         $html .= '</div></aside>';

@@ -66,6 +66,53 @@
         };
     }
 
+    function insertTextAtCaret(field, text) {
+        var value = text === null || text === undefined ? '' : String(text);
+        if (!field || typeof field.value !== 'string') {
+            return value;
+        }
+        if (value === '') {
+            return field.value;
+        }
+        var start = typeof field.selectionStart === 'number' ? field.selectionStart : field.value.length;
+        var end = typeof field.selectionEnd === 'number' ? field.selectionEnd : start;
+        if (start < 0) {
+            start = 0;
+        }
+        if (start > field.value.length) {
+            start = field.value.length;
+        }
+        if (end < start) {
+            end = start;
+        }
+        if (end > field.value.length) {
+            end = field.value.length;
+        }
+        field.value = field.value.slice(0, start) + value + field.value.slice(end);
+        if (typeof field.setSelectionRange === 'function') {
+            try {
+                field.setSelectionRange(start + value.length, start + value.length);
+            } catch (error) {
+                return field.value;
+            }
+        }
+        return field.value;
+    }
+
+    function buildRemarksRequest(value, csrf) {
+        return {
+            method: 'POST',
+            credentials: 'same-origin',
+            keepalive: true,
+            headers: {
+                'X-CSRFToken': String(csrf || ''),
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: 'data=' + encodeURIComponent(value === null || value === undefined ? '' : String(value))
+        };
+    }
+
     function sendSucceeded(data) {
         return !!data && typeof data === 'object' && (data.error === 'false' || data.error === false);
     }
@@ -824,6 +871,342 @@
             }
         }
 
+        var quickButton = root.querySelector('#md-quick');
+        var cannedSheet = root.querySelector('#md-canned-sheet');
+        var cannedDialog = root.querySelector('#md-canned-dialog');
+        var cannedMask = root.querySelector('#md-canned-mask');
+        var cannedClose = root.querySelector('#md-canned-close');
+        var cannedListening = false;
+        var cannedLastFocus = null;
+
+        function cannedClosed() {
+            return !cannedSheet || cannedSheet.hasAttribute('hidden');
+        }
+
+        function setCannedClosed(closed) {
+            if (!cannedSheet) {
+                return;
+            }
+            if (closed) {
+                cannedSheet.setAttribute('hidden', '');
+                cannedSheet.hidden = true;
+            } else {
+                cannedSheet.removeAttribute('hidden');
+                cannedSheet.hidden = false;
+            }
+        }
+
+        function onCannedKey(event) {
+            if (cannedClosed()) {
+                return;
+            }
+            if (event.key === 'Escape' || event.key === 'Esc') {
+                event.preventDefault();
+                closeCanned();
+                return;
+            }
+            if (event.key !== 'Tab') {
+                return;
+            }
+            var items = focusableIn(cannedDialog);
+            if (items.length === 0) {
+                event.preventDefault();
+                if (cannedDialog && cannedDialog.focus) {
+                    cannedDialog.focus();
+                }
+                return;
+            }
+            var first = items[0];
+            var last = items[items.length - 1];
+            var active = doc ? doc.activeElement : null;
+            var inside = active === cannedDialog || items.indexOf(active) !== -1;
+            if (!inside) {
+                event.preventDefault();
+                (event.shiftKey ? last : first).focus();
+                return;
+            }
+            if (event.shiftKey && (active === first || active === cannedDialog)) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && (active === last || active === cannedDialog)) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+
+        function listenCanned(on) {
+            if (!doc || !doc.addEventListener || !doc.removeEventListener) {
+                return;
+            }
+            if (on && !cannedListening) {
+                doc.addEventListener('keydown', onCannedKey, true);
+                cannedListening = true;
+            } else if (!on && cannedListening) {
+                doc.removeEventListener('keydown', onCannedKey, true);
+                cannedListening = false;
+            }
+        }
+
+        function openCanned() {
+            if (!quickButton || !cannedSheet || !cannedDialog || !cannedClosed()) {
+                return false;
+            }
+            if (!sheetClosed()) {
+                closeDrawer();
+            }
+            cannedLastFocus = doc ? doc.activeElement : null;
+            if (draft && draft.blur) {
+                draft.blur();
+            }
+            setCannedClosed(false);
+            pinKeyboard();
+            quickButton.setAttribute('aria-expanded', 'true');
+            setBackdropHidden(true);
+            listenCanned(true);
+            var firstItem = cannedDialog.querySelector('.md-canned-item');
+            if (firstItem && firstItem.focus) {
+                firstItem.focus();
+            }
+            if ((!doc || doc.activeElement !== firstItem) && cannedDialog.focus) {
+                cannedDialog.focus();
+            }
+            return true;
+        }
+
+        function closeCanned() {
+            if (!cannedSheet || cannedClosed()) {
+                return false;
+            }
+            setCannedClosed(true);
+            if (quickButton) {
+                quickButton.setAttribute('aria-expanded', 'false');
+            }
+            setBackdropHidden(false);
+            listenCanned(false);
+            var back = quickButton;
+            if (cannedLastFocus && cannedLastFocus.focus && root.contains && root.contains(cannedLastFocus)) {
+                back = cannedLastFocus;
+            }
+            if (back && back.focus) {
+                back.focus();
+            }
+            return true;
+        }
+
+        function applyQuickReply(item) {
+            if (!item || !draft) {
+                return false;
+            }
+            var textNode = item.querySelector('.md-canned-text');
+            var text = textNode ? String(textNode.textContent || '') : '';
+            if (text === '') {
+                return false;
+            }
+            insertTextAtCaret(draft, text);
+            persistDraft();
+            grow();
+            syncButton();
+            closeCanned();
+            if (draft.focus) {
+                draft.focus();
+            }
+            return true;
+        }
+
+        function bindQuick() {
+            if (!quickButton || !cannedSheet || !cannedDialog || quickButton.getAttribute('data-md-bound') === '1') {
+                return;
+            }
+            quickButton.setAttribute('data-md-bound', '1');
+            quickButton.addEventListener('click', function () {
+                if (cannedClosed()) {
+                    openCanned();
+                } else {
+                    closeCanned();
+                }
+            });
+            if (cannedClose) {
+                cannedClose.addEventListener('click', closeCanned);
+            }
+            if (cannedMask) {
+                cannedMask.addEventListener('click', closeCanned);
+            }
+            var nodes = cannedDialog.querySelectorAll('.md-canned-item');
+            var index;
+            for (index = 0; index < nodes.length; index += 1) {
+                nodes[index].addEventListener('click', function (event) {
+                    if (applyQuickReply(event.currentTarget)) {
+                        event.preventDefault();
+                    }
+                });
+            }
+        }
+
+        var remarkBlocks = [];
+
+        function setRemarkStatus(state, text, isError) {
+            if (!state || !state.status) {
+                return;
+            }
+            state.status.textContent = text || '';
+            if (isError) {
+                state.status.classList.add('is-error');
+            } else {
+                state.status.classList.remove('is-error');
+            }
+        }
+
+        function remarkFailureText(result, data) {
+            var raw = data && typeof data.result === 'string' ? data.result : '';
+            if (raw === '') {
+                raw = result && typeof result.text === 'string' ? result.text : '';
+            }
+            var text = plainError(raw);
+            return text === '' ? 'Could not save remarks' : text;
+        }
+
+        function mirrorRemark(source, value) {
+            var index;
+            for (index = 0; index < remarkBlocks.length; index += 1) {
+                var other = remarkBlocks[index];
+                if (other === source || other.input === source.input) {
+                    continue;
+                }
+                if (doc && doc.activeElement === other.input) {
+                    continue;
+                }
+                if (other.timer) {
+                    clearTimeoutImpl(other.timer);
+                    other.timer = null;
+                }
+                if (other.input.value !== value) {
+                    other.input.value = value;
+                }
+                other.saved = value;
+            }
+        }
+
+        function scheduleRemarks(state) {
+            if (!state) {
+                return;
+            }
+            if (state.timer) {
+                clearTimeoutImpl(state.timer);
+            }
+            state.timer = setTimeoutImpl(function () {
+                state.timer = null;
+                saveRemarks(state);
+            }, 600);
+        }
+
+        function saveRemarks(state) {
+            if (!state) {
+                return;
+            }
+            if (state.timer) {
+                clearTimeoutImpl(state.timer);
+                state.timer = null;
+            }
+            var value = state.input.value;
+            if (state.saving) {
+                state.pending = true;
+                return;
+            }
+            if (value === state.saved) {
+                return;
+            }
+            if (typeof fetchImpl !== 'function') {
+                setRemarkStatus(state, 'This browser cannot save remarks', true);
+                return;
+            }
+            state.saving = true;
+            fetchImpl(state.url, buildRemarksRequest(value, root.getAttribute('data-csrf') || '')).then(readPayload).then(function (result) {
+                var data = result.data;
+                if (data && typeof data.token === 'string' && data.token !== '') {
+                    root.setAttribute('data-csrf', data.token);
+                }
+                if (result.ok && sendSucceeded(data)) {
+                    state.saved = value;
+                    setRemarkStatus(state, 'Saved', false);
+                    mirrorRemark(state, value);
+                } else {
+                    setRemarkStatus(state, remarkFailureText(result, data), true);
+                }
+            }).catch(function () {
+                setRemarkStatus(state, 'Could not save remarks', true);
+            }).then(function () {
+                state.saving = false;
+                if (state.pending) {
+                    state.pending = false;
+                    if (state.input.value !== state.saved) {
+                        scheduleRemarks(state);
+                    }
+                }
+            });
+        }
+
+        function bindRemarkBlock(block) {
+            if (!block || block.getAttribute('data-md-bound') === '1') {
+                return;
+            }
+            var input = block.querySelector('[data-md-remarks-input]');
+            var status = block.querySelector('[data-md-remarks-status]');
+            var url = block.getAttribute('data-save-url') || '';
+            if (!input || !status || url === '') {
+                return;
+            }
+            block.setAttribute('data-md-bound', '1');
+            var state = {
+                block: block,
+                input: input,
+                status: status,
+                url: url,
+                saved: input.value,
+                timer: null,
+                saving: false,
+                pending: false
+            };
+            remarkBlocks.push(state);
+            input.addEventListener('input', function () {
+                scheduleRemarks(state);
+            });
+            input.addEventListener('blur', function () {
+                saveRemarks(state);
+            });
+        }
+
+        function bindRemarks() {
+            var nodes = null;
+            if (doc && doc.querySelectorAll) {
+                nodes = doc.querySelectorAll('[data-md-remarks]');
+            }
+            if (!nodes) {
+                return;
+            }
+            var index;
+            for (index = 0; index < nodes.length; index += 1) {
+                bindRemarkBlock(nodes[index]);
+            }
+        }
+
+        function flushRemarks() {
+            var index;
+            for (index = 0; index < remarkBlocks.length; index += 1) {
+                var state = remarkBlocks[index];
+                if (state.timer) {
+                    clearTimeoutImpl(state.timer);
+                    state.timer = null;
+                    saveRemarks(state);
+                }
+            }
+        }
+
+        function onRemarksHidden() {
+            if (pageHidden()) {
+                flushRemarks();
+            }
+        }
+
         function start() {
             if (started) {
                 return;
@@ -831,6 +1214,8 @@
             started = true;
             renderLocalTimes(root);
             bindDetails();
+            bindQuick();
+            bindRemarks();
             restoreDraft();
             grow();
             syncButton();
@@ -846,6 +1231,7 @@
             });
             if (doc && doc.addEventListener) {
                 doc.addEventListener('visibilitychange', onVisible);
+                doc.addEventListener('visibilitychange', onRemarksHidden);
             }
             if (view.addEventListener) {
                 view.addEventListener('pagehide', persistDraft);
@@ -861,9 +1247,14 @@
         function stop() {
             stopped = true;
             clearTimer();
+            flushRemarks();
             if (drawerListening) {
                 setBackdropHidden(false);
                 listenDrawer(false);
+            }
+            if (cannedListening) {
+                setBackdropHidden(false);
+                listenCanned(false);
             }
         }
 
@@ -909,6 +1300,8 @@
         parseAfter: parseAfter,
         kindOf: kindOf,
         buildSendRequest: buildSendRequest,
+        buildRemarksRequest: buildRemarksRequest,
+        insertTextAtCaret: insertTextAtCaret,
         sendSucceeded: sendSucceeded,
         formatTime: formatTime,
         renderLocalTimes: renderLocalTimes,

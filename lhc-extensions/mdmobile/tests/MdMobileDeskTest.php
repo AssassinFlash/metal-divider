@@ -120,6 +120,21 @@ final class MdMobileDeskTest extends TestCase
             'https://lhc.test/index.php/site_admin/chat/addmsgadmin/15',
             $bag['send_url']
         );
+        self::assertSame(
+            'https://lhc.test/index.php/site_admin/chat/saveremarks/15',
+            $bag['remarks_url']
+        );
+        self::assertArrayNotHasKey('remarks', $bag);
+        $annotated = erLhcoreClassMdMobile::templateBag(
+            15,
+            $payload,
+            $urls,
+            'csrf-token',
+            '',
+            null,
+            "  call back\r\nweekday  "
+        );
+        self::assertSame("call back\nweekday", $annotated['remarks']);
         self::assertSame('site_admin', erLhcoreClassMdMobile::adminSiteAccess(array('site_admin')));
         self::assertSame('site_admin', erLhcoreClassMdMobile::adminSiteAccess('../evil'));
     }
@@ -221,10 +236,11 @@ final class MdMobileDeskTest extends TestCase
                 array('label' => 'Started', 'value' => gmdate('Y-m-d H:i', $stamp), 'timestamp' => $stamp),
                 array('label' => 'Handoff', 'value' => gmdate('Y-m-d H:i', $pending), 'timestamp' => $pending),
                 array('label' => 'Wait', 'value' => '1m 30s'),
-                array('label' => 'Remarks', 'value' => "call back\nweekday"),
             ),
             $context['fields']
         );
+        self::assertNotContains('Remarks', array_column($context['fields'], 'label'));
+        self::assertSame("call back\nweekday", erLhcoreClassMdMobile::remarksText("call back\r\nweekday"));
         self::assertCount(5, $context['history']);
         self::assertSame(
             array('id' => 1, 'time' => 101, 'preview' => 'earlier 1', 'status' => 'closed'),
@@ -354,7 +370,8 @@ final class MdMobileDeskTest extends TestCase
         self::assertSame('http://example.com/a?q=1', $labels['Page']['url']);
         self::assertArrayNotHasKey('Source', $labels);
         self::assertSame('2001:db8::1', $labels['IP']['value']);
-        self::assertSame("ab\nc", $labels['Remarks']['value']);
+        self::assertArrayNotHasKey('Remarks', $labels);
+        self::assertSame("ab\nc", erLhcoreClassMdMobile::remarksText("a\x00b\r\nc"));
         self::assertSame('1h 1m', $labels['Wait']['value']);
         self::assertNotContains('1h 1m', $linked['summary']);
         self::assertNotContains('1 小时 1 分', $linked['summary']);
@@ -608,5 +625,71 @@ final class MdMobileDeskTest extends TestCase
             $timed['context']['fields']
         );
         self::assertSame($payload['messages'], $timed['messages']);
+    }
+
+    public function testRemarksTextKeepsMultilineAndBoundsLength(): void
+    {
+        self::assertNull(erLhcoreClassMdMobile::remarksText(null));
+        self::assertNull(erLhcoreClassMdMobile::remarksText(array('notes')));
+        self::assertNull(erLhcoreClassMdMobile::remarksText(" \n\t "));
+        self::assertSame('a b', erLhcoreClassMdMobile::remarksText(" a\x01 b "));
+        self::assertSame(
+            str_repeat('x', 1000) . '…',
+            erLhcoreClassMdMobile::remarksText(str_repeat('x', 1200))
+        );
+    }
+
+    public function testCannedGroupsNormalizesNativeMessages(): void
+    {
+        $groups = erLhcoreClassMdMobile::cannedGroups(
+            array(
+                '0_4' => array(
+                    array('id' => 9, 'msg_to_user' => "Hello {nick}\nHow can I help?", 'title' => 'Greeting'),
+                    array('id' => 11, 'msg_to_user' => "First line\nsecond line\n[html_snippet]3[/html_snippet]", 'title' => ''),
+                    array('id' => 0, 'msg_to_user' => 'junk id'),
+                    array('id' => 12, 'msg_to_user' => "  \n  "),
+                    array('id' => 13, 'msg_to_user' => 'No title here'),
+                ),
+                '1_7' => array(
+                    array('id' => 21, 'msg_to_user' => ' Mine ', 'title' => 'Mine'),
+                ),
+                '2_0' => array(
+                    array('id' => 31, 'msg_to_user' => "Multi\r\nline", 'title' => 'Global one'),
+                ),
+                'junk' => array(array('id' => 41, 'msg_to_user' => 'ignored')),
+                '3_9' => array(array('id' => 51, 'msg_to_user' => 'unknown type')),
+            ),
+            ' Sales '
+        );
+
+        self::assertCount(3, $groups);
+        self::assertSame(array('label', 'items'), array_keys($groups[0]));
+        self::assertSame('Sales', $groups[0]['label']);
+        self::assertSame('Personal', $groups[1]['label']);
+        self::assertSame('Global', $groups[2]['label']);
+        self::assertSame(
+            array(
+                array('id' => 9, 'title' => 'Greeting', 'text' => "Hello {nick}\nHow can I help?"),
+                array('id' => 11, 'title' => null, 'text' => "First line\nsecond line"),
+                array('id' => 13, 'title' => null, 'text' => 'No title here'),
+            ),
+            $groups[0]['items']
+        );
+        self::assertSame(
+            array(array('id' => 21, 'title' => 'Mine', 'text' => 'Mine')),
+            $groups[1]['items']
+        );
+        self::assertSame(
+            array(array('id' => 31, 'title' => 'Global one', 'text' => "Multi\nline")),
+            $groups[2]['items']
+        );
+
+        $unnamed = erLhcoreClassMdMobile::cannedGroups(
+            array('0_4' => array(array('id' => 9, 'msg_to_user' => 'Hi'))),
+            ''
+        );
+        self::assertSame('Department', $unnamed[0]['label']);
+        self::assertSame(array(), erLhcoreClassMdMobile::cannedGroups(array()));
+        self::assertSame(array(), erLhcoreClassMdMobile::cannedGroups('nope'));
     }
 }

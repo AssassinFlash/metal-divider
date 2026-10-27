@@ -65,14 +65,31 @@ if ($historyQuery !== null) {
         }
     );
 }
+$canned = array();
+if (class_exists('erLhcoreClassModelCannedMsg')) {
+    $cannedItems = erLhcoreClassModelCannedMsg::getCannedMessages(
+        (int) $chat->dep_id,
+        (int) $gate['user']->getUserID()
+    );
+    if (is_array($cannedItems) && $cannedItems !== array()) {
+        $cannedItems = erLhcoreClassModelCannedMsg::groupItems(
+            $cannedItems,
+            $chat,
+            $gate['user']->getUserData(true)
+        );
+    }
+    $canned = erLhcoreClassMdMobile::cannedGroups($cannedItems, $department);
+}
 $bag = erLhcoreClassMdMobile::templateBag(
     (int) $chat->id,
     $payload,
     $urls,
     $gate['user']->getCSFRToken(),
     isset($chat->nick) ? $chat->nick : '',
-    erLhcoreClassMdMobile::visitorContext($chat, $department, $history)
+    erLhcoreClassMdMobile::visitorContext($chat, $department, $history),
+    isset($chat->remarks) ? $chat->remarks : ''
 );
+$bag['canned'] = $canned;
 $state = mdmobile_inbox_state(isset($Params) ? $Params : array());
 $inbox = mdmobile_load_inbox($state, (int) $chat->id);
 if (isset($inbox['list_url']) && $inbox['list_url'] !== '') {

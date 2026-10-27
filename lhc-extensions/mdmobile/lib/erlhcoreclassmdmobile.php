@@ -82,6 +82,7 @@ class erLhcoreClassMdMobile
         $list = self::deskUrl($base, 'mdmobile/chats');
         $endpoint = self::deskUrl($base, 'mdmobile/list');
         $read = self::deskUrl($base, 'mdmobile/read/' . $chatId);
+        $remarks = self::deskUrl($base, 'chat/saveremarks/' . $chatId);
         if ($list !== null) {
             $urls['list_url'] = $list;
         }
@@ -90,6 +91,9 @@ class erLhcoreClassMdMobile
         }
         if ($read !== null) {
             $urls['read_url'] = $read;
+        }
+        if ($remarks !== null) {
+            $urls['remarks_url'] = $remarks;
         }
 
         return $urls;
@@ -337,9 +341,10 @@ class erLhcoreClassMdMobile
      * @param array{messages: array<int, array<string, mixed>>, latest_id: int} $payload
      * @param array{messages_url: string, send_url: string} $urls
      * @param array<string, mixed>|null $context
+     * @param mixed $remarks Current operator remarks, editable through saveremarks
      * @return array<string, mixed>
      */
-    public static function templateBag($chatId, array $payload, array $urls, $csrf, $nick = '', $context = null)
+    public static function templateBag($chatId, array $payload, array $urls, $csrf, $nick = '', $context = null, $remarks = '')
     {
         $bag = array(
             'chat_id' => (int) $chatId,
@@ -359,12 +364,19 @@ class erLhcoreClassMdMobile
         }
 
         $bag['context'] = self::normalizeContext($context);
+        $remarksText = self::remarksText($remarks);
+        if ($remarksText !== null) {
+            $bag['remarks'] = $remarksText;
+        }
         $desk = self::bagDeskUrls($urls, (int) $chatId);
         if (isset($desk['list_url'])) {
             $bag['list_url'] = $desk['list_url'];
         }
         if (isset($desk['read_url'])) {
             $bag['read_url'] = $desk['read_url'];
+        }
+        if (isset($desk['remarks_url'])) {
+            $bag['remarks_url'] = $desk['remarks_url'];
         }
 
         return $bag;
@@ -1274,7 +1286,7 @@ class erLhcoreClassMdMobile
      * Visitor facts for the desk. Missing values are omitted, never filled in.
      *
      * Field labels, when present: Status Name Email Phone Location Language
-     * Device IP Page Source Department Started Handoff Wait Remarks. Status is
+     * Device IP Page Source Department Started Handoff Wait. Status is
      * the real chat status with a capital first letter, never a guessed
      * Online. Summary is only Email, Phone, Location, Language, Device, and
      * Department. History status stays pending, active, closed, chatbox,
@@ -1351,8 +1363,6 @@ class erLhcoreClassMdMobile
 
         $wait = self::waitText(self::recordValue($chat, 'wait_time'));
         self::addField($fields, 'Wait', $wait);
-
-        self::addField($fields, 'Remarks', self::remarkText(self::recordValue($chat, 'remarks')));
 
         return self::normalizeContext(array(
             'summary' => $summary,
@@ -1582,10 +1592,13 @@ class erLhcoreClassMdMobile
     }
 
     /**
+     * Operator-only remarks, kept out of visitorContext because they are
+     * edited rather than read back as a field. Null when empty or junk.
+     *
      * @param mixed $value
      * @return string|null
      */
-    private static function remarkText($value)
+    public static function remarksText($value)
     {
         $text = self::fieldValue($value);
         if ($text === null) {
@@ -1593,6 +1606,138 @@ class erLhcoreClassMdMobile
         }
 
         return self::shorten($text, self::REMARK_LIMIT);
+    }
+
+    /**
+     * Native canned messages grouped for the desk. Each item keeps the id, a
+     * one-line title, and the full reply text. The html_snippet marker is
+     * stripped together with the snippet itself, so a snippet-only canned
+     * message has no text and is dropped: the desk inserts text, never HTML.
+     * Group keys come from erLhcoreClassModelCannedMsg::groupItems as
+     * "type_id": 0 department, 1 personal, 2 global.
+     *
+     * @param mixed $grouped
+     * @param mixed $departmentLabel
+     * @return array<int, array{label: string, items: array<int, array{id: int, title: string, text: string}>}>
+     */
+    public static function cannedGroups($grouped, $departmentLabel = '')
+    {
+        $groups = array();
+        if (!is_array($grouped)) {
+            return $groups;
+        }
+        $department = self::plainText($departmentLabel);
+        if ($department === null) {
+            $department = 'Department';
+        }
+        foreach ($grouped as $key => $items) {
+            $key = (is_string($key) || is_int($key)) ? (string) $key : '';
+            if (preg_match('/^([0-9]+)_([0-9]+)$/', $key, $match) !== 1) {
+                continue;
+            }
+            $type = (int) $match[1];
+            if ($type === 0) {
+                $label = $department;
+            } elseif ($type === 1) {
+                $label = 'Personal';
+            } elseif ($type === 2) {
+                $label = 'Global';
+            } else {
+                continue;
+            }
+            $rows = array();
+            foreach ((is_array($items) ? $items : array()) as $item) {
+                $id = self::positiveInt(self::cannedValue($item, 'id'));
+                $text = self::cannedText(self::cannedValue($item, 'msg_to_user'));
+                if ($text === null) {
+                    $text = self::cannedText(self::cannedValue($item, 'msg'));
+                }
+                if ($id < 1 || $text === null) {
+                    continue;
+                }
+                // Read the raw title column: the native message_title accessor
+                // falls back to the full message text, which would print every
+                // untitled reply twice.
+                $title = self::cannedTitle(self::cannedText(self::cannedValue($item, 'title')));
+                $rows[] = array(
+                    'id' => $id,
+                    'title' => $title,
+                    'text' => $text,
+                );
+            }
+            if ($rows !== array()) {
+                $groups[] = array(
+                    'label' => $label,
+                    'items' => $rows,
+                );
+            }
+        }
+
+        return $groups;
+    }
+
+    /**
+     * @param mixed $item
+     * @param string $key
+     * @return mixed
+     */
+    private static function cannedValue($item, $key)
+    {
+        if (is_array($item)) {
+            return array_key_exists($key, $item) ? $item[$key] : null;
+        }
+        if (!is_object($item)) {
+            return null;
+        }
+        if (property_exists($item, $key)) {
+            return $item->$key;
+        }
+        if (method_exists($item, '__get')) {
+            $value = $item->$key;
+            if (is_string($value)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param mixed $value
+     * @return string|null
+     */
+    private static function cannedText($value)
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+        $text = str_replace(array("\r\n", "\r"), "\n", $value);
+        $text = preg_replace('/\[html_snippet\]\d+\[\/html_snippet\]/i', '', $text);
+        if (!is_string($text)) {
+            return null;
+        }
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $text);
+        if (!is_string($text)) {
+            return null;
+        }
+        $text = trim($text);
+
+        return $text === '' ? null : $text;
+    }
+
+    /**
+     * @param mixed $text
+     * @return string|null
+     */
+    private static function cannedTitle($text)
+    {
+        if (!is_string($text)) {
+            return null;
+        }
+        $lines = explode("\n", $text);
+        $first = isset($lines[0]) ? $lines[0] : '';
+
+        return self::previewText($first === '' ? $text : $first);
     }
 
     /**
@@ -1927,6 +2072,7 @@ class erLhcoreClassMdMobile
         $desk = array();
         $list = self::acceptedDeskUrl(isset($urls['list_url']) ? $urls['list_url'] : null, 'mdmobile/chats');
         $read = self::acceptedDeskUrl(isset($urls['read_url']) ? $urls['read_url'] : null, 'mdmobile/read/' . (int) $chatId);
+        $remarks = self::acceptedDeskUrl(isset($urls['remarks_url']) ? $urls['remarks_url'] : null, 'chat/saveremarks/' . (int) $chatId);
         if ($list === null || $read === null) {
             $derived = self::deskUrlsFromMessages(isset($urls['messages_url']) ? $urls['messages_url'] : '', $chatId);
             if ($list === null && $derived !== null) {
@@ -1941,6 +2087,9 @@ class erLhcoreClassMdMobile
         }
         if ($read !== null) {
             $desk['read_url'] = $read;
+        }
+        if ($remarks !== null) {
+            $desk['remarks_url'] = $remarks;
         }
 
         return $desk;
@@ -2049,7 +2198,7 @@ class erLhcoreClassMdMobile
         if ($path === 'mdmobile/chats' || $path === 'mdmobile/list') {
             return $path;
         }
-        if (!is_string($path) || preg_match('/^mdmobile\/(chat|read)\/([1-9]\d*)$/', $path, $match) !== 1) {
+        if (!is_string($path) || preg_match('#^(mdmobile/(?:chat|read)|chat/saveremarks)/([1-9]\d*)$#', $path, $match) !== 1) {
             return null;
         }
         $id = self::canonicalInt($match[2]);
@@ -2057,7 +2206,7 @@ class erLhcoreClassMdMobile
             return null;
         }
 
-        return 'mdmobile/' . $match[1] . '/' . $id;
+        return $match[1] . '/' . $id;
     }
 
     /**
