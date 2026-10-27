@@ -177,7 +177,11 @@ final class TemplatePlaceholderTest extends TestCase {
 		$html = (string) file_get_contents( Templates::path( 'project-gallery' ) );
 
 		$starts = array();
-		if ( preg_match_all( '/<div\s+class="project-card"/', $html, $matches, PREG_OFFSET_CAPTURE ) ) {
+		// The card div may carry other attributes before `class` (role, data-*),
+		// so match the class anywhere in the opening tag rather than assuming it
+		// comes first. Anchoring on `<div\s+class=` silently found zero cards once
+		// a `role` attribute was added ahead of it.
+		if ( preg_match_all( '/<div\b[^>]*\bclass="project-card"/', $html, $matches, PREG_OFFSET_CAPTURE ) ) {
 			foreach ( $matches[0] as $match ) {
 				$starts[] = (int) $match[1];
 			}
