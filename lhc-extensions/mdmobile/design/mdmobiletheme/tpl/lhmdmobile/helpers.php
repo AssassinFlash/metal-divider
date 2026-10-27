@@ -1543,14 +1543,49 @@ if (!function_exists('mdmobile_render_rail')) {
     }
 }
 
+if (!function_exists('mdmobile_render_close')) {
+    function mdmobile_render_close($url, $closed, $canClose, $suffix = 'md-composer')
+    {
+        $url = mdmobile_app_url($url);
+        $closed = $closed === true;
+        $canClose = $canClose === true;
+        if ($url === '' || (!$closed && !$canClose)) {
+            return '';
+        }
+        $suffix = (string) $suffix;
+        if (preg_match('/^[A-Za-z][A-Za-z0-9_-]*$/', $suffix) !== 1) {
+            $suffix = 'md-composer';
+        }
+        $panelId = 'md-close-panel-' . $suffix;
+        $questionId = 'md-close-question-' . $suffix;
+        $statusId = 'md-close-status-' . $suffix;
+        $html = '<div class="md-close" data-md-close data-close-url="' . mdmobile_esc($url) . '">';
+        $html .= '<p class="md-close-note" data-md-close-note' . ($closed ? '' : ' hidden') . '>Conversation closed.</p>';
+        $html .= '<button type="button" class="md-close-trigger" data-md-close-trigger aria-expanded="false" aria-controls="'
+            . mdmobile_esc($panelId) . '"' . ($closed ? ' hidden' : '') . '>Close conversation</button>';
+        $html .= '<div class="md-close-panel" id="' . mdmobile_esc($panelId) . '" data-md-close-panel role="group" aria-labelledby="' . mdmobile_esc($questionId) . '" hidden>';
+        $html .= '<p class="md-close-question" id="' . mdmobile_esc($questionId) . '">Close this conversation? It will show as closed in the chat list.</p>';
+        $html .= '<div class="md-close-actions">';
+        $html .= '<button type="button" class="md-close-cancel" data-md-close-cancel>Cancel</button>';
+        $html .= '<button type="button" class="md-close-submit" data-md-close-submit aria-describedby="' . mdmobile_esc($questionId) . '">Close conversation</button>';
+        $html .= '</div></div>';
+        $html .= '<p class="md-close-status" id="' . mdmobile_esc($statusId) . '" data-md-close-status role="status" aria-live="polite" aria-atomic="true"></p>';
+        $html .= '</div>';
+
+        return $html;
+    }
+}
+
 if (!function_exists('mdmobile_render_remarks')) {
     function mdmobile_render_remarks($remarks, $suffix = 'md-drawer')
     {
         $value = '';
         $url = '';
+        $disabled = false;
         if (is_array($remarks)) {
             $value = isset($remarks['value']) ? (string) $remarks['value'] : '';
             $url = mdmobile_app_url(isset($remarks['url']) ? $remarks['url'] : '');
+            $disabled = isset($remarks['disabled']) && $remarks['disabled'] === true;
         }
         if ($url === '') {
             return '';
@@ -1565,7 +1600,10 @@ if (!function_exists('mdmobile_render_remarks')) {
         $html = '<section class="md-remarks" aria-labelledby="' . mdmobile_esc($titleId) . '" data-md-remarks data-save-url="' . mdmobile_esc($url) . '">';
         $html .= '<h3 id="' . mdmobile_esc($titleId) . '" class="md-remarks-title">Remarks</h3>';
         $html .= '<label class="md-sr" for="' . mdmobile_esc($inputId) . '">Private remarks</label>';
-        $html .= '<textarea id="' . mdmobile_esc($inputId) . '" class="md-remarks-input" data-md-remarks-input rows="3" placeholder="Private remarks. Visitors never see these.">' . mdmobile_esc($value) . '</textarea>';
+        $html .= '<textarea id="' . mdmobile_esc($inputId) . '" class="md-remarks-input" data-md-remarks-input rows="3" placeholder="Private remarks. Visitors never see these."' . ($disabled ? ' disabled' : '') . '>' . mdmobile_esc($value) . '</textarea>';
+        if ($disabled) {
+            $html .= '<p class="md-remarks-note">Read-only after closing: this account cannot edit remarks on a closed conversation.</p>';
+        }
         $html .= '<p id="' . mdmobile_esc($statusId) . '" class="md-remarks-status" data-md-remarks-status role="status" aria-live="polite" aria-atomic="true"></p>';
         $html .= '</section>';
 
@@ -1629,7 +1667,7 @@ if (!function_exists('mdmobile_render_canned')) {
 }
 
 if (!function_exists('mdmobile_render_context')) {
-    function mdmobile_render_context($view, $hasChat, $remarks = null)
+    function mdmobile_render_context($view, $hasChat, $remarks = null, $close = null)
     {
         if (!is_array($view)) {
             $view = array('fields' => array(), 'history' => array());
@@ -1637,13 +1675,23 @@ if (!function_exists('mdmobile_render_context')) {
         $fields = isset($view['fields']) && is_array($view['fields']) ? $view['fields'] : array();
         $history = isset($view['history']) && is_array($view['history']) ? $view['history'] : array();
         $remarksHtml = $hasChat === true ? mdmobile_render_remarks($remarks, 'md-context') : '';
+        $closeHtml = '';
+        if ($hasChat === true && is_array($close)) {
+            $closeHtml = mdmobile_render_close(
+                isset($close['url']) ? $close['url'] : '',
+                isset($close['closed']) && $close['closed'] === true,
+                isset($close['can_close']) && $close['can_close'] === true,
+                'md-context'
+            );
+        }
         $html = '<aside id="md-context" class="md-context" aria-labelledby="md-context-title">';
         $html .= '<h2 id="md-context-title" class="md-context-title">Visitor details</h2><div class="md-context-body">';
         if ($hasChat !== true) {
             $html .= '<p class="md-context-empty">Select a conversation to see visitor details.</p>';
-        } elseif ($fields === array() && $history === array() && $remarksHtml === '') {
+        } elseif ($fields === array() && $history === array() && $remarksHtml === '' && $closeHtml === '') {
             $html .= '<p class="md-context-empty">No visitor details</p>';
         } else {
+            $html .= $closeHtml;
             $html .= mdmobile_render_fields($fields);
             $html .= $remarksHtml;
             $html .= mdmobile_render_history($history, 'md-context-history-title');

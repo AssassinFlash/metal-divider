@@ -11,7 +11,7 @@ namespace Md\Mu\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
-// phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv, WordPress.PHP.DevelopmentFunctions.error_log_var_export, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- this test runs outside WordPress: it drives the connector's handler directly over the option, transient and HTTP stand-ins the bootstrap provides, names the failing case in its own assertion messages (var_export), injects and clears the environment's secret override around one call (putenv), and checks the card against the Basic header's own encoding (base64_encode).
+// phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv, WordPress.PHP.DevelopmentFunctions.error_log_var_export, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode, WordPress.WP.AlternativeFunctions.file_system_operations_file, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.PHP.IniSet -- this test runs outside WordPress: it drives the connector's handler directly over the option, transient and HTTP stand-ins the bootstrap provides, names the failing case in its own assertion messages (var_export), injects and clears the environment's secret override around one call (putenv), checks the card against the Basic header's own encoding (base64_encode), and points error_log at a throwaway file for one call (ini_set, file, unlink).
 
 /**
  * The connector's contract, one slice per test: what the LHC event turns
@@ -28,9 +28,37 @@ final class WecomNotifyTest extends TestCase {
 		parent::setUp();
 		$GLOBALS['md_mu_test_options']        = array();
 		$GLOBALS['md_mu_test_transients']     = array();
+		$GLOBALS['md_mu_test_transient_ttls'] = array();
 		$GLOBALS['md_mu_test_http']           = array();
 		$GLOBALS['md_mu_test_routes']         = array();
 		$GLOBALS['md_mu_test_http_responder'] = null;
+	}
+
+	/**
+	 * The skip lines the connector wrote while $callback ran: error_log is
+	 * pointed at a throwaway file for that span, then put back.
+	 *
+	 * @param callable(): void $callback The handler call whose skips are captured.
+	 * @return array<int, string> The lines, without their trailing newlines.
+	 */
+	private function captured_skips( callable $callback ): array {
+		$log      = tempnam( sys_get_temp_dir(), 'md-wecom-notify-' );
+		$previous = ini_get( 'error_log' );
+		$logging  = ini_get( 'log_errors' );
+		ini_set( 'log_errors', '1' );
+		ini_set( 'error_log', false === $log ? '/dev/null' : $log );
+		try {
+			$callback();
+		} finally {
+			ini_set( 'error_log', false === $previous ? '' : $previous );
+			ini_set( 'log_errors', false === $logging ? '' : $logging );
+		}
+		if ( false === $log || ! is_file( $log ) ) {
+			return array();
+		}
+		$lines = file( $log, FILE_IGNORE_NEW_LINES );
+		unlink( $log );
+		return is_array( $lines ) ? $lines : array();
 	}
 
 	/**
@@ -88,30 +116,72 @@ final class WecomNotifyTest extends TestCase {
 	}
 
 	/**
-	 * A transfer event the way the LHC webhook's REST action posts it: the
-	 * event's own name (a constant the operator writes into the action's
-	 * template, one webhook per event), the chat object the dispatcher
-	 * passes, and — only for events that carry one — the msg object
-	 * (dispatch.tpl.php's argument table; lhgenericbotactionrestapi's
-	 * {{args.*}} placeholders).
+	 * An event the way the LHC webhook's REST action posts it: the event's
+	 * own name (a constant the operator writes into the action's template,
+	 * one webhook per event), the chat object the dispatcher passes, the
+	 * msg object for the events that carry one, and the transfer command's
+	 * is_online flag. The defaults describe a chat an operator can still
+	 * join: active (1), accepted two hours ago — the gate's status and
+	 * windows are what a test narrows when it cares (dispatch.tpl.php's
+	 * argument table; lhgenericbotactionrestapi's {{args.*}} placeholders).
 	 *
-	 * @param int|string                $chat_id The chat the event is about; LHC's JSON template emits either representation.
-	 * @param string                    $event   The event's name.
-	 * @param array<string, mixed>      $chat The chat object's fields.
-	 * @param array<string, mixed>|null $msg The msg object, null for none.
+	 * @param int|string                $chat_id  The chat the event is about; LHC's JSON template emits either representation.
+	 * @param string                    $event    The event's name.
+	 * @param array<string, mixed>      $chat     The chat object's fields; these win over the defaults.
+	 * @param array<string, mixed>|null $msg      The msg object, null for none.
+	 * @param bool|null                 $is_online The transfer command's flag; null omits it, as the other events do.
 	 * @return array<string, mixed> The request: header and body.
 	 */
-	private function event( int|string $chat_id, string $event = 'chat.genericbot_chat_command_transfer', array $chat = array( 'nick' => 'Jane Architect' ), ?array $msg = array( 'msg' => 'Need a quote for metal screens' ) ): array {
+	private function event( int|string $chat_id, string $event = 'chat.genericbot_chat_command_transfer', array $chat = array( 'nick' => 'Jane Architect' ), ?array $msg = array( 'msg' => 'Need a quote for metal screens' ), ?bool $is_online = true ): array {
 		$body = array(
 			'event' => $event,
-			'chat'  => array_merge( array( 'id' => $chat_id ), $chat ),
+			'chat'  => array_merge(
+				array(
+					'id'               => $chat_id,
+					'status'           => 1,
+					'pnd_time'         => time() - 7200,
+					'last_op_msg_time' => time() - 7200,
+				),
+				$chat
+			),
 		);
 		if ( null !== $msg ) {
 			$body['msg'] = $msg;
 		}
+		if ( 'chat.genericbot_chat_command_transfer' === $event && null !== $is_online ) {
+			$body['is_online'] = $is_online;
+		}
 		return array(
 			'header' => 'Bearer inbound-secret',
 			'body'   => $body,
+		);
+	}
+
+	/**
+	 * A chat the bot handed over and no operator has accepted: the transfer
+	 * command's STATUS_PENDING_CHAT and the moment it started waiting.
+	 *
+	 * @param int $pending_since The time the chat started waiting.
+	 * @return array<string, mixed> The chat fields the gate reads.
+	 */
+	private function pending_chat( int $pending_since ): array {
+		return array(
+			'status'   => 0,
+			'pnd_time' => $pending_since,
+		);
+	}
+
+	/**
+	 * A chat an operator accepted: STATUS_ACTIVE_CHAT and the time the
+	 * operator last spoke.
+	 *
+	 * @param int $operator_spoke The time the operator last spoke.
+	 * @return array<string, mixed> The chat fields the gate reads.
+	 */
+	private function active_chat( int $operator_spoke ): array {
+		return array(
+			'status'           => 1,
+			'last_op_msg_time' => $operator_spoke,
 		);
 	}
 
@@ -270,10 +340,10 @@ final class WecomNotifyTest extends TestCase {
 	}
 
 	/**
-	 * The webhooks this connector serves are the two transfer events, and
-	 * nothing else: another event of the same site — a visitor message, a
-	 * chat closed, a mail ticket — is acknowledged and ignored, with not
-	 * one upstream call and no chat recorded. One webhook per event is
+	 * The webhooks this connector serves are the two transfer events and
+	 * the visitor message, and nothing else: another event of the same site
+	 * — a chat closed, a mail ticket — is acknowledged and ignored, with
+	 * not one upstream call and no chat recorded. One webhook per event is
 	 * how the LHC dispatches; the connector does not become an
 	 * every-event platform.
 	 */
@@ -281,7 +351,7 @@ final class WecomNotifyTest extends TestCase {
 		$this->configure();
 		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
 
-		foreach ( array( 'chat.addmsguser', 'chat.close', 'chat.chat_started', 'chat.web_add_msg_admin', 'mail.conversation_started' ) as $event ) {
+		foreach ( array( 'chat.close', 'chat.chat_started', 'chat.web_add_msg_admin', 'mail.conversation_started' ) as $event ) {
 			$result = md_wecom_notify_handle( $this->event( 123, $event ) );
 
 			$this->assertSame( 200, $result['status'], $event );
@@ -301,6 +371,10 @@ final class WecomNotifyTest extends TestCase {
 	/**
 	 * The department transfer notifies too: its event carries no msg
 	 * object, so a fixed explanation fills WeCom's required description.
+	 *
+	 * A transfer is not the visitor's next message: it has a new
+	 * recipient, so the reminder windows do not hold it back (a handoff of
+	 * an active chat cards at once, #154's gate docblock).
 	 */
 	public function testNotifiesAChatTransferedEventWithoutAMessage(): void {
 		$this->configure();
@@ -359,57 +433,78 @@ final class WecomNotifyTest extends TestCase {
 	}
 
 	/**
-	 * A chat notifies once: the second event for the same chat is answered
-	 * without a card, and without a single upstream call — the member is
-	 * not buzzed for every follow-up message of a chat already handed
-	 * over. A different chat still gets its own card.
+	 * A chat's card starts a cooldown, not a permanent silence: a second
+	 * event inside the active chat's three-minute window is answered
+	 * without a card or an upstream call, an event after the window sends
+	 * a fresh card with its own one-time link, and a different chat has
+	 * its own window.
 	 */
-	public function testNotifiesAChatOnceAndOnlyOnce(): void {
+	public function testNotifiesAChatOncePerCooldownWindow(): void {
 		$this->configure();
-		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
-
-		$event = static fn( int $chat_id ): array => array(
-			'header' => 'Bearer inbound-secret',
-			'body'   => array(
-				'event' => 'chat.genericbot_chat_command_transfer',
-				'chat'  => array( 'id' => $chat_id ),
-				'msg'   => array( 'msg' => 'message body' ),
-			),
+		$links                                = array(
+			'https://lhc.test/site_admin/user/autologin/HASH1',
+			'https://lhc.test/site_admin/user/autologin/HASH2',
+			'https://lhc.test/site_admin/user/autologin/HASH3',
 		);
+		$GLOBALS['md_mu_test_http_responder'] = static function ( string $url ) use ( &$links ): array {
+			if ( str_contains( $url, 'generateautologin' ) ) {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '{"error":false,"result":' . json_encode( array_shift( $links ) ) . '}',
+				);
+			}
+			if ( str_contains( $url, 'gettoken' ) ) {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '{"errcode":0,"errmsg":"ok","access_token":"TOK-1","expires_in":7200}',
+				);
+			}
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => '{"errcode":0,"errmsg":"ok"}',
+			);
+		};
 
-		$first = md_wecom_notify_handle( $event( 123 ) );
+		$first = md_wecom_notify_handle( $this->event( 123 ) );
 		$this->assertSame( 200, $first['status'] );
 		$this->assertSame( array( 'sent' => true ), $first['body'] );
 
-		$again = md_wecom_notify_handle( $event( 123 ) );
+		$again = md_wecom_notify_handle( $this->event( 123 ) );
 		$this->assertSame( 200, $again['status'] );
 		$this->assertSame(
 			array(
 				'sent'   => false,
-				'reason' => 'duplicate',
+				'reason' => 'cooldown',
 			),
 			$again['body']
 		);
 		$this->assertCount( 3, $this->calls() );
 
-		$other = md_wecom_notify_handle( $event( 124 ) );
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_chats'][123] = time() - 181;
+		$later = md_wecom_notify_handle( $this->event( 123 ) );
+		$this->assertSame( array( 'sent' => true ), $later['body'] );
+
+		$other = md_wecom_notify_handle( $this->event( 124 ) );
 		$this->assertSame( array( 'sent' => true ), $other['body'] );
 		$calls = $this->calls();
-		$this->assertCount( 5, $calls );
-		$this->assertSame( 'mdmobile/chat/124', json_decode( (string) $calls[3][1]['body'], true )['r'] );
+		$this->assertCount( 7, $calls );
+		$this->assertSame( 'mdmobile/chat/124', json_decode( (string) $calls[5][1]['body'], true )['r'] );
+		$second_123_card = json_decode( (string) $calls[4][1]['body'], true );
+		$this->assertSame( 'https://lhc.test/site_admin/user/autologin/HASH2', $second_123_card['textcard']['url'] );
 	}
 
 	/**
-	 * A chat's record is not kept forever: the notified set is pruned by
-	 * its own timestamps, so a chat from a week past can notify again.
+	 * A chat's cooldown record is not kept forever: the map is pruned by
+	 * its own timestamps on every read, so a chat whose card is an hour
+	 * past is not carrying a stale window into the next event.
 	 */
-	public function testPrunesTheNotifiedSetByAge(): void {
+	public function testPrunesTheCooldownSetByAge(): void {
 		$this->configure();
 		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
 
 		$GLOBALS['md_mu_test_options']['md_wecom_notify_chats'] = array(
 			'555' => time() - 8 * 24 * 3600,
-			'123' => time(),
+			'123' => time() - 3601,
 		);
 
 		$result = md_wecom_notify_handle(
@@ -422,8 +517,502 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertSame( array( 'sent' => true ), $result['body'] );
 		$stored = $GLOBALS['md_mu_test_options']['md_wecom_notify_chats'];
 		$this->assertArrayHasKey( '555', $stored );
-		$this->assertArrayHasKey( '123', $stored );
-		$this->assertGreaterThan( time() - 8 * 24 * 3600, $stored['555'] );
+		$this->assertArrayNotHasKey( '123', $stored );
+		$this->assertGreaterThan( time() - 10, $stored['555'] );
+	}
+
+	/**
+	 * The transfer command's offline branch: the visitor gets no operator, LHC
+	 * leaves the chat's status untouched and dispatches the same event with
+	 * is_online false (lhgenericbotactioncommand.php:44-56). Nothing is sent,
+	 * no cooldown is started, no rate slot is spent and no lock is left — the
+	 * event is an acknowledgement, not a notification.
+	 */
+	public function testSendsNothingForTheOfflineTransferBranch(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$result = md_wecom_notify_handle( $this->event( 123, 'chat.genericbot_chat_command_transfer', array( 'status' => 5 ), array( 'msg' => 'Anybody there?' ), false ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'offline',
+			),
+			$result['body']
+		);
+		$this->assertSame( array(), $this->calls() );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_chats', $GLOBALS['md_mu_test_options'] );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_sends', $GLOBALS['md_mu_test_options'] );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_lock_123', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * An online transfer of a chat outside the operator's inbox is the
+	 * status, not the flag: status 5 with is_online true is a bot chat the
+	 * operator cannot join, so the reason is status_not_notifiable.
+	 */
+	public function testAnswersStatusNotNotifiableForAnOnlineTransferOutsideTheInbox(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$result = md_wecom_notify_handle( $this->event( 123, 'chat.genericbot_chat_command_transfer', array( 'status' => 5 ), null, true ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'status_not_notifiable',
+			),
+			$result['body']
+		);
+		$this->assertSame( array(), $this->calls() );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_chats', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * The online flag is the transfer command's, and its absence is a broken
+	 * payload, not an online event: the connector answers the reason and
+	 * leaves every record alone rather than guess the operator was there.
+	 */
+	public function testSendsNothingForATransferWithoutItsOnlineFlag(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$result = md_wecom_notify_handle( $this->event( 123, 'chat.genericbot_chat_command_transfer', array(), null, null ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'is_online_missing',
+			),
+			$result['body']
+		);
+		$this->assertSame( array(), $this->calls() );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_chats', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * A chat's status is what makes a card useful: without it the connector
+	 * does not know whether the visitor is waiting or already served, so it
+	 * answers the missing field instead of inventing one.
+	 */
+	public function testSendsNothingWithoutTheChatsStatus(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$result = md_wecom_notify_handle( $this->event( 123, 'chat.genericbot_chat_command_transfer', array( 'status' => null ) ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'status_missing',
+			),
+			$result['body']
+		);
+		$this->assertSame( array(), $this->calls() );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_chats', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * Only a pending (0) or active (1) chat is an operator's inbox: closed,
+	 * chatbox, operators-only and bot chats — and any status LHC adds later —
+	 * are answered without a card (erlhcoreclassmodelchat.php:728-733).
+	 */
+	public function testSendsNothingForChatsOutsideTheOperatorsInbox(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		foreach ( array( 2, 3, 4, 5, '7', 99 ) as $status ) {
+			$result = md_wecom_notify_handle( $this->event( 123, 'chat.genericbot_chat_command_transfer', array( 'status' => $status ) ) );
+
+			$this->assertSame( 200, $result['status'], (string) $status );
+			$this->assertSame(
+				array(
+					'sent'   => false,
+					'reason' => 'status_not_notifiable',
+				),
+				$result['body'],
+				(string) $status
+			);
+		}
+		$this->assertSame( array(), $this->calls() );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_chats', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * The visitor-message windows, at their boundaries: a pending chat whose
+	 * card already left is a reminder after ten more minutes without an
+	 * acceptance, an active chat after three minutes since the operator last
+	 * spoke (research §7; site trade-offs, not LHC's or WeCom's). A pending
+	 * chat with no delivered card is not held back — the first card's
+	 * failure is retried by the next event. A missing timestamp is answered
+	 * as missing, and a numeric string is the same fact LHC's JSON emits.
+	 */
+	public function testHoldsAVisitorMessageUntilItsReminderWindowOpens(): void {
+		$now = 1790000000;
+
+		$pending_closed = md_wecom_notify_gate( 'chat.addmsguser', $this->pending_chat( $now - 600 ), array(), $now, true );
+		$this->assertFalse( $pending_closed['send'] );
+		$this->assertSame( 'not_due', $pending_closed['reason'] );
+
+		$pending_open = md_wecom_notify_gate( 'chat.addmsguser', $this->pending_chat( $now - 601 ), array(), $now, true );
+		$this->assertTrue( $pending_open['send'] );
+		$this->assertSame( 600, $pending_open['window'] );
+
+		$pending_retry = md_wecom_notify_gate( 'chat.addmsguser', $this->pending_chat( $now - 10 ), array(), $now );
+		$this->assertTrue( $pending_retry['send'] );
+		$this->assertSame( 600, $pending_retry['window'] );
+
+		$active_closed = md_wecom_notify_gate( 'chat.addmsguser', $this->active_chat( $now - 180 ), array(), $now );
+		$this->assertFalse( $active_closed['send'] );
+		$this->assertSame( 'not_due', $active_closed['reason'] );
+
+		$active_open = md_wecom_notify_gate( 'chat.addmsguser', $this->active_chat( $now - 181 ), array(), $now );
+		$this->assertTrue( $active_open['send'] );
+		$this->assertSame( 180, $active_open['window'] );
+
+		$pending_missing = md_wecom_notify_gate( 'chat.addmsguser', array( 'status' => 0 ), array(), $now );
+		$this->assertFalse( $pending_missing['send'] );
+		$this->assertSame( 'pnd_time_missing', $pending_missing['reason'] );
+
+		$active_missing = md_wecom_notify_gate( 'chat.addmsguser', array( 'status' => 1 ), array(), $now );
+		$this->assertFalse( $active_missing['send'] );
+		$this->assertSame( 'last_op_missing', $active_missing['reason'] );
+
+		$numeric_strings_chat = array(
+			'status'   => '0',
+			'pnd_time' => (string) ( $now - 601 ),
+		);
+		$numeric_strings      = md_wecom_notify_gate( 'chat.addmsguser', $numeric_strings_chat, array(), $now, true );
+		$this->assertTrue( $numeric_strings['send'] );
+		$this->assertSame( 600, $numeric_strings['window'] );
+
+		$pending_epoch = md_wecom_notify_gate( 'chat.addmsguser', $this->pending_chat( 0 ), array(), $now );
+		$this->assertFalse( $pending_epoch['send'] );
+		$this->assertSame( 'pnd_time_missing', $pending_epoch['reason'] );
+
+		$active_epoch = md_wecom_notify_gate( 'chat.addmsguser', $this->active_chat( 0 ), array(), $now );
+		$this->assertFalse( $active_epoch['send'] );
+		$this->assertSame( 'last_op_missing', $active_epoch['reason'] );
+	}
+
+	/**
+	 * A pending chat whose wait started at the epoch has no real pending
+	 * time: 0 is the missing sentinel, not a chat that has waited since
+	 * 1970, so the reminder is not sent.
+	 */
+	public function testAnswersPndTimeMissingForAPendingVisitorMessageAtEpoch(): void {
+		$gate = md_wecom_notify_gate( 'chat.addmsguser', $this->pending_chat( 0 ), array(), 1790000000 );
+		$this->assertFalse( $gate['send'] );
+		$this->assertSame( 'pnd_time_missing', $gate['reason'] );
+	}
+
+	/**
+	 * An active chat whose operator last spoke at the epoch has no real
+	 * last-spoke time: 0 is the missing sentinel, not a chat silent since
+	 * 1970, so the reminder is not sent.
+	 */
+	public function testAnswersLastOpMissingForAnActiveVisitorMessageAtEpoch(): void {
+		$gate = md_wecom_notify_gate( 'chat.addmsguser', $this->active_chat( 0 ), array(), 1790000000 );
+		$this->assertFalse( $gate['send'] );
+		$this->assertSame( 'last_op_missing', $gate['reason'] );
+	}
+
+	/**
+	 * A timestamp ahead of the connector's clock is not a closed window:
+	 * the reminder is answered timestamp_in_future rather than silently
+	 * held as not_due, so a skewed clock is visible in the skip log.
+	 */
+	public function testAnswersTimestampInFutureForAChatWhoseClockLeads(): void {
+		$now = 1790000000;
+
+		$pending = md_wecom_notify_gate( 'chat.addmsguser', $this->pending_chat( $now + 5 ), array(), $now, true );
+		$this->assertFalse( $pending['send'] );
+		$this->assertSame( 'timestamp_in_future', $pending['reason'] );
+
+		$active = md_wecom_notify_gate( 'chat.addmsguser', $this->active_chat( $now + 5 ), array(), $now );
+		$this->assertFalse( $active['send'] );
+		$this->assertSame( 'timestamp_in_future', $active['reason'] );
+	}
+
+	/**
+	 * The bot's closechat command dispatches the transfer event's name while
+	 * the chat is still open and about to close (lhgenericbotactioncommand.php:216-267).
+	 * The card is refused for that command, not by accident of a missing
+	 * is_online flag; the ordinary stopchat handoff still cards.
+	 */
+	public function testSendsNothingForTheBotsCloseCommand(): void {
+		$now  = 1790000000;
+		$chat = array(
+			'status'   => 0,
+			'pnd_time' => $now - 10,
+		);
+
+		$closing = md_wecom_notify_gate(
+			'chat.genericbot_chat_command_transfer',
+			$chat,
+			array(
+				'is_online' => true,
+				'command'   => 'closechat',
+			),
+			$now
+		);
+		$this->assertFalse( $closing['send'] );
+		$this->assertSame( 'closing', $closing['reason'] );
+
+		$stopchat = md_wecom_notify_gate(
+			'chat.genericbot_chat_command_transfer',
+			$chat,
+			array(
+				'is_online' => true,
+				'command'   => 'stopchat',
+			),
+			$now
+		);
+		$this->assertTrue( $stopchat['send'] );
+	}
+
+	/**
+	 * A pending chat whose first card never left — the send failed, the
+	 * upstream answered 502 — retries on the visitor's next message instead
+	 * of waiting out the ten minutes; once a card has left, the same
+	 * message is held by the reminder window.
+	 */
+	public function testRetriesAPendingChatWhoseFirstCardNeverLeft(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$first = md_wecom_notify_handle( $this->event( 123, 'chat.addmsguser', $this->pending_chat( time() - 10 ), array( 'msg' => 'Any update?' ) ) );
+		$this->assertSame( 200, $first['status'] );
+		$this->assertSame( array( 'sent' => true ), $first['body'] );
+		$this->assertCount( 3, $this->calls() );
+		$this->assertArrayHasKey( 123, $GLOBALS['md_mu_test_options']['md_wecom_notify_chats'] );
+
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_chats'][124] = time() - 30;
+		$held = md_wecom_notify_handle( $this->event( 124, 'chat.addmsguser', $this->pending_chat( time() - 10 ) ) );
+		$this->assertSame( 200, $held['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'not_due',
+			),
+			$held['body']
+		);
+		$this->assertCount( 3, $this->calls() );
+	}
+
+	/**
+	 * A visitor message on a chat that has waited long enough earns the
+	 * reminder card, and the chat's window becomes a cooldown; a message
+	 * inside an active chat's three minutes is answered without a card.
+	 */
+	public function testSendsAReminderForAVisitorMessagePastItsWindow(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$result = md_wecom_notify_handle( $this->event( 123, 'chat.addmsguser', $this->pending_chat( time() - 601 ), array( 'msg' => 'Any update on the quote?' ) ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( array( 'sent' => true ), $result['body'] );
+		$this->assertCount( 3, $this->calls() );
+		$send_body = json_decode( (string) $this->calls()[2][1]['body'], true );
+		$this->assertStringContainsString( 'Any update on the quote?', (string) $send_body['textcard']['description'] );
+		$this->assertArrayHasKey( 123, $GLOBALS['md_mu_test_options']['md_wecom_notify_chats'] );
+		$this->assertCount( 1, $GLOBALS['md_mu_test_options']['md_wecom_notify_sends'] );
+
+		$fresh = md_wecom_notify_handle( $this->event( 124, 'chat.addmsguser', $this->active_chat( time() - 60 ) ) );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'not_due',
+			),
+			$fresh['body']
+		);
+		$this->assertCount( 3, $this->calls() );
+	}
+
+	/**
+	 * A reminder inside the chat's own cooldown is skipped and does not
+	 * touch the record: the card already sent still owns the window, so an
+	 * immediate visitor message is not a second buzz.
+	 */
+	public function testHoldsAReminderInsideTheChatsCooldown(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+		$sent_at = time() - 60;
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_chats'] = array( 123 => $sent_at );
+
+		$result = md_wecom_notify_handle( $this->event( 123, 'chat.addmsguser', $this->active_chat( time() - 181 ) ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'cooldown',
+			),
+			$result['body']
+		);
+		$this->assertSame( array(), $this->calls() );
+		$this->assertSame( $sent_at, $GLOBALS['md_mu_test_options']['md_wecom_notify_chats'][123] );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_sends', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * Every card carries a link generated for that card: the one-time
+	 * autologin link expires after its 3600 seconds (autologin.php:78-79),
+	 * so reusing the previous card's url would hand the operator a dead
+	 * link. The second card asks LHC again and carries the second answer.
+	 */
+	public function testRegeneratesTheLinkForEveryCard(): void {
+		$this->configure();
+		$links                                = array(
+			'https://lhc.test/site_admin/user/autologin/HASH1',
+			'https://lhc.test/site_admin/user/autologin/HASH2',
+		);
+		$GLOBALS['md_mu_test_http_responder'] = static function ( string $url ) use ( &$links ): array {
+			if ( str_contains( $url, 'generateautologin' ) ) {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '{"error":false,"result":' . json_encode( array_shift( $links ) ) . '}',
+				);
+			}
+			if ( str_contains( $url, 'gettoken' ) ) {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '{"errcode":0,"errmsg":"ok","access_token":"TOK-1","expires_in":7200}',
+				);
+			}
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => '{"errcode":0,"errmsg":"ok"}',
+			);
+		};
+
+		$this->assertSame( array( 'sent' => true ), md_wecom_notify_handle( $this->event( 123 ) )['body'] );
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_chats'][123] = time() - 181;
+		$this->assertSame( array( 'sent' => true ), md_wecom_notify_handle( $this->event( 123, 'chat.addmsguser', $this->active_chat( time() - 181 ) ) )['body'] );
+
+		$calls = $this->calls();
+		$this->assertCount( 5, $calls );
+		$first_autologin  = json_decode( (string) $calls[0][1]['body'], true );
+		$second_autologin = json_decode( (string) $calls[3][1]['body'], true );
+		$this->assertSame( 3600, $first_autologin['t'] );
+		$this->assertSame( 3600, $second_autologin['t'] );
+		$this->assertSame( 'mdmobile/chat/123', $first_autologin['r'] );
+		$this->assertSame( 'mdmobile/chat/123', $second_autologin['r'] );
+
+		$first_card  = json_decode( (string) $calls[2][1]['body'], true );
+		$second_card = json_decode( (string) $calls[4][1]['body'], true );
+		$this->assertSame( 'https://lhc.test/site_admin/user/autologin/HASH1', $first_card['textcard']['url'] );
+		$this->assertSame( 'https://lhc.test/site_admin/user/autologin/HASH2', $second_card['textcard']['url'] );
+		$this->assertNotSame( $first_card['textcard']['url'], $second_card['textcard']['url'] );
+	}
+
+	/**
+	 * WeCom drops what exceeds 30 messages to one member in a minute
+	 * (message/send: "每应用对同一个成员不可超过30次/分钟，1000次/小时，超过部分会被丢弃不下发").
+	 * The connector answers the ceiling's reason and spends nothing: no
+	 * upstream call, no cooldown, no rate slot, no lock.
+	 */
+	public function testSkipsWhenTheMinuteCeilingIsReached(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+		$recent = array_fill( 0, 30, time() - 10 );
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_sends'] = $recent;
+
+		$result = md_wecom_notify_handle( $this->event( 123 ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'rate_limited_minute',
+			),
+			$result['body']
+		);
+		$this->assertSame( array(), $this->calls() );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_chats', $GLOBALS['md_mu_test_options'] );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_lock_123', $GLOBALS['md_mu_test_options'] );
+		$this->assertSame( $recent, $GLOBALS['md_mu_test_options']['md_wecom_notify_sends'] );
+	}
+
+	/**
+	 * The hour's own ceiling: 1000 cards inside the hour (none of them in
+	 * the last minute) is the ticket's official limit and still blocks the
+	 * next card, with the same accounted skip.
+	 */
+	public function testSkipsWhenTheHourCeilingIsReached(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+		$hour = array_fill( 0, 1000, time() - 120 );
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_sends'] = $hour;
+
+		$result = md_wecom_notify_handle( $this->event( 123 ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'rate_limited_hour',
+			),
+			$result['body']
+		);
+		$this->assertSame( array(), $this->calls() );
+		$this->assertArrayNotHasKey( 'md_wecom_notify_chats', $GLOBALS['md_mu_test_options'] );
+		$this->assertSame( $hour, $GLOBALS['md_mu_test_options']['md_wecom_notify_sends'] );
+	}
+
+	/**
+	 * A skip is not only an answer: the route adapter turns every 200 into
+	 * an empty 204, so the reason is written to the site's error log. The
+	 * line names the chat, the event and the reason, and nothing of the
+	 * visitor.
+	 */
+	public function testLogsTheSkipReasonTheRouteCannotCarry(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$result = array();
+		$lines  = $this->captured_skips(
+			function () use ( &$result ): void {
+				$result = md_wecom_notify_handle( $this->event( 123, 'chat.genericbot_chat_command_transfer', array( 'status' => 5 ), array( 'msg' => 'Anybody there?' ), false ) );
+			}
+		);
+
+		$this->assertSame(
+			array(
+				'sent'   => false,
+				'reason' => 'offline',
+			),
+			$result['body']
+		);
+		$this->assertNotSame( array(), array_filter( $lines, static fn( string $line ): bool => str_contains( $line, '[md-wecom-notify] skipped chat #123 event chat.genericbot_chat_command_transfer: offline' ) ) );
+	}
+
+	/**
+	 * The last slot inside both ceilings is still a send: 29 in the last
+	 * minute and 999 in the hour is inside WeCom's allowance, and the card
+	 * that uses it is recorded so the next event sees the full window.
+	 */
+	public function testSendsWhileTheCeilingsHaveRoom(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+		$sends = array_merge( array_fill( 0, 29, time() - 10 ), array_fill( 0, 970, time() - 120 ) );
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_sends'] = $sends;
+
+		$result = md_wecom_notify_handle( $this->event( 123 ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( array( 'sent' => true ), $result['body'] );
+		$this->assertCount( 3, $this->calls() );
+		$recorded = $GLOBALS['md_mu_test_options']['md_wecom_notify_sends'];
+		$this->assertCount( 1000, $recorded );
+		$this->assertGreaterThan( time() - 5, end( $recorded ) );
+		$this->assertArrayHasKey( 123, $GLOBALS['md_mu_test_options']['md_wecom_notify_chats'] );
 	}
 
 	/**
@@ -635,6 +1224,15 @@ final class WecomNotifyTest extends TestCase {
 		$calls = $this->calls();
 		$this->assertCount( 5, $calls );
 		$this->assertStringContainsString( 'access_token=TOK-2', (string) $calls[4][0] );
+
+		$cached = $GLOBALS['md_mu_test_transients']['md_wecom_notify_token'];
+		$this->assertIsArray( $cached );
+		$this->assertGreaterThan( time(), (int) $cached['expires'] );
+		$ttl = $GLOBALS['md_mu_test_transient_ttls']['md_wecom_notify_token'];
+		$this->assertIsInt( $ttl );
+		$this->assertLessThan( 7200, $ttl );
+		$this->assertGreaterThanOrEqual( 60, $ttl );
+		$this->assertEqualsWithDelta( (int) $cached['expires'] - time(), $ttl, 2 );
 	}
 
 	/**

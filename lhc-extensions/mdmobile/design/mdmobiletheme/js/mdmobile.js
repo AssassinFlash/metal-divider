@@ -113,6 +113,19 @@
         };
     }
 
+    function buildCloseRequest(csrf) {
+        return {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRFToken': String(csrf || ''),
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: 'ChatStatus=2'
+        };
+    }
+
     function sendSucceeded(data) {
         return !!data && typeof data === 'object' && (data.error === 'false' || data.error === false);
     }
@@ -258,6 +271,25 @@
         var pollWait = POLL_MS;
         var stickyError = false;
         var statusToken = 0;
+        var closeBlocks = [];
+        var closing = false;
+        var closed = root.getAttribute('data-state') === 'closed';
+
+        function chatClosed() {
+            return closed;
+        }
+
+        function closeRemoteAllowed() {
+            return root.getAttribute('data-allow-close-remote') === '1';
+        }
+
+        function openClosedAllowed() {
+            return root.getAttribute('data-allow-open-closed') === '1';
+        }
+
+        function writeAllowed() {
+            return root.getAttribute('data-can-write') === '1';
+        }
 
         function chatId() {
             return root.getAttribute('data-chat-id') || '';
@@ -329,7 +361,7 @@
         }
 
         function restoreDraft() {
-            if (!storage || draft.value !== '') {
+            if (!storage || draft.value !== '' || chatClosed()) {
                 return;
             }
             try {
@@ -356,7 +388,7 @@
 
         function syncButton() {
             var empty = draft.value.replace(/^\s+|\s+$/g, '') === '';
-            sendButton.disabled = sending || empty;
+            sendButton.disabled = sending || empty || chatClosed();
         }
 
         function scrollToEnd() {
@@ -476,7 +508,9 @@
                 var data = result.data;
                 if (!result.ok || !data || typeof data !== 'object' || !Array.isArray(data.messages)) {
                     pollWait = Math.min(POLL_MAX_MS, pollWait * 2);
-                    setStatusIfIdle('Messages could not be refreshed', true);
+                    if (!chatClosed()) {
+                        setStatusIfIdle('Messages could not be refreshed', true);
+                    }
                     return false;
                 }
                 if (data.latest_id !== undefined && data.latest_id !== null && String(data.latest_id) !== '') {
@@ -490,7 +524,9 @@
                 return true;
             }).catch(function () {
                 pollWait = Math.min(POLL_MAX_MS, pollWait * 2);
-                setStatusIfIdle('Messages could not be refreshed', true);
+                if (!chatClosed()) {
+                    setStatusIfIdle('Messages could not be refreshed', true);
+                }
                 return false;
             });
             var tracked;
@@ -540,6 +576,14 @@
 
         function send() {
             var text = draft.value.replace(/^\s+|\s+$/g, '');
+            if (chatClosed()) {
+                setStatus('This conversation is closed', true, true);
+                return Promise.resolve(false);
+            }
+            if (closing) {
+                setStatus('Wait for the close request to finish', true, true);
+                return Promise.resolve(false);
+            }
             if (sending) {
                 return Promise.resolve(false);
             }
@@ -569,6 +613,7 @@
                 }
                 if (result.ok && sendSucceeded(data)) {
                     releaseSentText(sent);
+                    markChatStatusAccepted();
                     flash('Sent');
                     return poll(true).then(function () {
                         scrollToEnd();
@@ -948,7 +993,7 @@
         }
 
         function openCanned() {
-            if (!quickButton || !cannedSheet || !cannedDialog || !cannedClosed()) {
+            if (chatClosed() || !quickButton || !cannedSheet || !cannedDialog || !cannedClosed()) {
                 return false;
             }
             if (!sheetClosed()) {
@@ -994,7 +1039,7 @@
         }
 
         function applyQuickReply(item) {
-            if (!item || !draft) {
+            if (chatClosed() || !item || !draft) {
                 return false;
             }
             var textNode = item.querySelector('.md-canned-text');
@@ -1201,6 +1246,290 @@
             }
         }
 
+        function setCloseStatus(state, text, isError) {
+            if (!state || !state.status) {
+                return;
+            }
+            state.status.textContent = text || '';
+            if (isError) {
+                state.status.classList.add('is-error');
+            } else {
+                state.status.classList.remove('is-error');
+            }
+        }
+
+        function closePanel(state, focusTrigger) {
+            if (!state || !state.panel) {
+                return;
+            }
+            state.panel.hidden = true;
+            if (state.trigger) {
+                state.trigger.setAttribute('aria-expanded', 'false');
+                if (focusTrigger && state.trigger.focus) {
+                    state.trigger.focus();
+                }
+            }
+        }
+
+        function openClosePanel(state) {
+            if (!state || !state.panel || !state.trigger || chatClosed()) {
+                return;
+            }
+            state.panel.hidden = false;
+            state.trigger.setAttribute('aria-expanded', 'true');
+            if (state.cancel && state.cancel.focus) {
+                state.cancel.focus();
+            }
+        }
+
+        function setChatStatusPill(label, tone) {
+            var pill = root.querySelector('#md-chat-status');
+            if (!pill) {
+                return;
+            }
+            while (pill.firstChild) {
+                pill.removeChild(pill.firstChild);
+            }
+            if (doc && doc.createElement) {
+                var dot = doc.createElement('span');
+                dot.className = 'md-dot';
+                dot.setAttribute('aria-hidden', 'true');
+                pill.appendChild(dot);
+                pill.appendChild(doc.createTextNode(label));
+            } else {
+                pill.textContent = label;
+            }
+            pill.setAttribute('data-tone', tone);
+        }
+
+        function chatStatusPillText() {
+            var pill = root.querySelector('#md-chat-status');
+            if (!pill) {
+                return '';
+            }
+            return String(pill.textContent || '').replace(/^\s+|\s+$/g, '');
+        }
+
+        // Sending from a pending chat accepts it: LHC flips the status to active
+        // and posts "has accepted the pending chat by sending a message". Without
+        // this the server-rendered pill keeps saying Pending until a reload.
+        function markChatStatusAccepted() {
+            var label = chatStatusPillText().toLowerCase();
+            if (label !== 'pending' && label !== 'waiting' && label !== '等待') {
+                return;
+            }
+            setChatStatusPill('Active', 'online');
+            markRailStatus('Active', 'online');
+        }
+
+        function markChatStatusClosed() {
+            setChatStatusPill('Closed', 'offline');
+        }
+
+        function markRailStatus(label, tone) {
+            var id = chatId();
+            if (!doc || !doc.getElementById || id === '') {
+                return;
+            }
+            var rail = doc.getElementById('md-inbox');
+            var links = rail && rail.querySelectorAll ? rail.querySelectorAll('.md-thread-link') : [];
+            for (var index = 0; index < links.length; index += 1) {
+                if (links[index].getAttribute && links[index].getAttribute('data-id') === id) {
+                    var status = links[index].querySelector ? links[index].querySelector('.md-thread-status') : null;
+                    if (status) {
+                        status.textContent = label;
+                        status.setAttribute('data-tone', tone);
+                    }
+                    return;
+                }
+            }
+        }
+
+        function markRailClosed() {
+            markRailStatus('Closed', 'offline');
+        }
+
+        function applyClosedState() {
+            closed = true;
+            root.setAttribute('data-state', 'closed');
+            var index;
+            for (index = 0; index < closeBlocks.length; index += 1) {
+                var state = closeBlocks[index];
+                if (state.note) {
+                    state.note.hidden = false;
+                }
+                if (state.trigger) {
+                    state.trigger.hidden = true;
+                    state.trigger.setAttribute('aria-expanded', 'false');
+                }
+                if (state.panel) {
+                    state.panel.hidden = true;
+                }
+                setCloseStatus(state, '', false);
+            }
+            if (draft) {
+                draft.disabled = true;
+            }
+            if (sendButton) {
+                sendButton.disabled = true;
+            }
+            if (quickButton) {
+                closeCanned();
+                quickButton.hidden = true;
+            }
+            if (sheet && !sheetClosed()) {
+                closeDrawer();
+            }
+            if (!openClosedAllowed() || !writeAllowed()) {
+                for (index = 0; index < remarkBlocks.length; index += 1) {
+                    var remark = remarkBlocks[index];
+                    if (remark.timer) {
+                        clearTimeoutImpl(remark.timer);
+                        remark.timer = null;
+                    }
+                    if (remark.input) {
+                        remark.input.disabled = true;
+                    }
+                    setRemarkStatus(remark, 'Read-only after closing', false);
+                }
+            }
+            markChatStatusClosed();
+            markRailClosed();
+            setStatus('Conversation closed', false, false);
+        }
+
+        function closeChat(state) {
+            if (!state || closing) {
+                return Promise.resolve(false);
+            }
+            if (chatClosed()) {
+                setCloseStatus(state, 'This conversation is already closed.', false);
+                return Promise.resolve(false);
+            }
+            if (sending) {
+                setCloseStatus(state, 'Wait for the message to finish sending.', true);
+                return Promise.resolve(false);
+            }
+            if (state.url === '') {
+                setCloseStatus(state, 'This page is missing the close address.', true);
+                return Promise.resolve(false);
+            }
+            if (typeof fetchImpl !== 'function') {
+                setCloseStatus(state, 'This browser cannot close conversations.', true);
+                return Promise.resolve(false);
+            }
+            closing = true;
+            if (state.submit) {
+                state.submit.disabled = true;
+            }
+            if (state.cancel) {
+                state.cancel.disabled = true;
+            }
+            setCloseStatus(state, 'Closing…', false);
+            return fetchImpl(state.url, buildCloseRequest(root.getAttribute('data-csrf') || '')).then(readPayload).then(function (result) {
+                var data = result.data;
+                if (data && typeof data.token === 'string' && data.token !== '') {
+                    root.setAttribute('data-csrf', data.token);
+                }
+                if (!result.ok || !sendSucceeded(data)) {
+                    var reason = '';
+                    if (data && typeof data.result === 'string') {
+                        reason = plainError(data.result);
+                    } else if (data === null) {
+                        // Native changestatus.php answers an HTML page (no JSON) when
+                        // hasAccessToRead/hasAccessToWrite denies the request.
+                        reason = 'The close request was not accepted. Reload this page and try again.';
+                    }
+                    setCloseStatus(state, reason || plainError(result.text) || 'Could not close this conversation.', true);
+                    return false;
+                }
+                if (data.is_owner !== true && !closeRemoteAllowed()) {
+                    setCloseStatus(state, 'Close was not confirmed: this chat is assigned to another operator and this account cannot close remote chats. Reload this page to check its status.', true);
+                    return false;
+                }
+                applyClosedState();
+                if (state.note && state.note.focus) {
+                    state.note.setAttribute('tabindex', '-1');
+                    state.note.focus();
+                }
+                return true;
+            }).catch(function () {
+                setCloseStatus(state, 'Could not close this conversation.', true);
+                return false;
+            }).then(function (ok) {
+                closing = false;
+                if (!chatClosed()) {
+                    if (state.submit) {
+                        state.submit.disabled = false;
+                    }
+                    if (state.cancel) {
+                        state.cancel.disabled = false;
+                    }
+                    // Keep the panel open on failure so the error stays visible.
+                    if (ok) {
+                        closePanel(state, false);
+                    }
+                }
+                if (ok) {
+                    schedule(pollWait);
+                }
+                return ok;
+            });
+        }
+
+        function bindCloseBlock(block) {
+            if (!block || block.getAttribute('data-md-bound') === '1') {
+                return;
+            }
+            block.setAttribute('data-md-bound', '1');
+            var state = {
+                block: block,
+                trigger: block.querySelector('[data-md-close-trigger]'),
+                panel: block.querySelector('[data-md-close-panel]'),
+                cancel: block.querySelector('[data-md-close-cancel]'),
+                submit: block.querySelector('[data-md-close-submit]'),
+                note: block.querySelector('[data-md-close-note]'),
+                status: block.querySelector('[data-md-close-status]'),
+                url: block.getAttribute('data-close-url') || ''
+            };
+            closeBlocks.push(state);
+            if (!state.trigger || !state.panel || !state.submit) {
+                return;
+            }
+            state.trigger.addEventListener('click', function () {
+                if (state.panel.hidden) {
+                    openClosePanel(state);
+                } else {
+                    closePanel(state, true);
+                }
+            });
+            if (state.cancel) {
+                state.cancel.addEventListener('click', function () {
+                    closePanel(state, true);
+                });
+            }
+            state.submit.addEventListener('click', function () {
+                closeChat(state);
+            });
+            block.addEventListener('keydown', function (event) {
+                if ((event.key === 'Escape' || event.key === 'Esc') && !state.panel.hidden) {
+                    event.preventDefault();
+                    closePanel(state, true);
+                }
+            });
+        }
+
+        function bindClose() {
+            // The desktop context column lives outside #md-mobile-app, so the
+            // binding walks the whole document, like the remarks blocks do.
+            var scope = doc && doc.querySelectorAll ? doc : root;
+            var nodes = scope.querySelectorAll('[data-md-close]');
+            var index;
+            for (index = 0; index < nodes.length; index += 1) {
+                bindCloseBlock(nodes[index]);
+            }
+        }
+
         function onRemarksHidden() {
             if (pageHidden()) {
                 flushRemarks();
@@ -1216,10 +1545,14 @@
             bindDetails();
             bindQuick();
             bindRemarks();
+            bindClose();
             restoreDraft();
             grow();
             syncButton();
             scrollToEnd();
+            if (chatClosed()) {
+                applyClosedState();
+            }
             draft.addEventListener('input', function () {
                 persistDraft();
                 grow();
@@ -1301,6 +1634,7 @@
         kindOf: kindOf,
         buildSendRequest: buildSendRequest,
         buildRemarksRequest: buildRemarksRequest,
+        buildCloseRequest: buildCloseRequest,
         insertTextAtCaret: insertTextAtCaret,
         sendSucceeded: sendSucceeded,
         formatTime: formatTime,

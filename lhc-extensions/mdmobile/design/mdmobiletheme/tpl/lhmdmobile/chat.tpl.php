@@ -8,7 +8,7 @@ if ((!isset($Result) || !is_array($Result)) && isset($GLOBALS['Result']) && is_a
 }
 
 $mdSet = array();
-foreach (array('chat_id', 'after_id', 'latest_id', 'messages_url', 'send_url', 'csrf', 'csrf_token', 'sender', 'messages', 'title', 'nick', 'context', 'read_url', 'list_url', 'remarks', 'remarks_url', 'canned') as $mdName) {
+foreach (array('chat_id', 'after_id', 'latest_id', 'messages_url', 'send_url', 'csrf', 'csrf_token', 'sender', 'messages', 'title', 'nick', 'context', 'read_url', 'list_url', 'remarks', 'remarks_url', 'canned', 'close_url', 'status', 'allow_close_remote', 'allow_open_closed', 'can_close', 'can_write') as $mdName) {
     if (isset(${$mdName})) {
         $mdSet[$mdName] = ${$mdName};
     }
@@ -92,18 +92,45 @@ $mdKindLabel = array(
 $mdRemarks = mdmobile_pick($mdSources, array('remarks'));
 $mdRemarksUrl = mdmobile_pick($mdSources, array('remarks_url'));
 $mdCanned = mdmobile_pick($mdSources, array('canned'));
+$mdCloseUrl = mdmobile_app_url(mdmobile_pick($mdSources, array('close_url')));
+$mdStatus = mdmobile_pick($mdSources, array('status'));
+$mdAllowCloseRemote = mdmobile_bool_flag(mdmobile_pick($mdSources, array('allow_close_remote'))) === true;
+$mdAllowOpenClosed = mdmobile_bool_flag(mdmobile_pick($mdSources, array('allow_open_closed'))) === true;
+$mdCanClose = mdmobile_bool_flag(mdmobile_pick($mdSources, array('can_close'))) === true;
+$mdCanWrite = mdmobile_bool_flag(mdmobile_pick($mdSources, array('can_write'))) === true;
+$mdStatusLabel = mdmobile_status_label($mdStatus);
+$mdClosed = $mdStatusLabel === 'Closed';
 $mdView = mdmobile_view($mdContext);
+$mdPills = array();
+if ($mdStatusLabel !== '') {
+    $mdPills[] = array('text' => $mdStatusLabel, 'tone' => mdmobile_status_tone($mdStatusLabel), 'chat' => true);
+}
+foreach ($mdView['statuses'] as $mdStatusRow) {
+    $mdStatusText = isset($mdStatusRow['text']) ? mdmobile_text($mdStatusRow['text']) : '';
+    if ($mdStatusText === '') {
+        continue;
+    }
+    if ($mdStatusLabel !== '' && strcasecmp($mdStatusText, $mdStatusLabel) === 0) {
+        continue;
+    }
+    $mdPills[] = array('text' => $mdStatusText, 'tone' => isset($mdStatusRow['tone']) ? $mdStatusRow['tone'] : 'neutral', 'chat' => false);
+}
 $mdChatAttr = (is_numeric($mdChatId) && (int) $mdChatId > 0) ? (string) (int) $mdChatId : '';
 $mdRemarksHtml = $mdChatAttr !== ''
     ? mdmobile_render_remarks(
         array(
             'value' => is_string($mdRemarks) ? $mdRemarks : '',
             'url' => is_string($mdRemarksUrl) ? $mdRemarksUrl : '',
+            'disabled' => $mdClosed && (!$mdAllowOpenClosed || !$mdCanWrite),
         ),
         'md-drawer'
     )
     : '';
 $mdCannedHtml = $mdChatAttr !== '' ? mdmobile_render_canned($mdCanned) : '';
+$mdCloseHtml = $mdChatAttr !== '' ? mdmobile_render_close($mdCloseUrl, $mdClosed, $mdCanClose, 'md-composer') : '';
+if ($mdCloseHtml !== '') {
+    $mdCloseHtml = '<div class="md-close-composer">' . $mdCloseHtml . '</div>';
+}
 $mdDrawer = $mdView['drawer'] || $mdRemarksHtml !== '';
 $mdHasNick = $mdNick !== '';
 $mdHasGlance = $mdView['chips'] !== array() || is_array($mdView['source']);
@@ -139,21 +166,24 @@ if ($mdHasInbox && !$mdShowApp) {
 }
 $mdBack = mdmobile_back_link($mdListUrl !== '' ? $mdListUrl : $mdChatsUrl);
 $mdReadAttr = $mdReadUrl !== '' ? ' data-read-url="' . mdmobile_esc($mdReadUrl) . '"' : '';
+$mdCloseAttr = ($mdCloseHtml !== '' && $mdChatAttr !== '' && $mdCloseUrl !== '') ? ' data-close-url="' . mdmobile_esc($mdCloseUrl) . '"' : '';
+$mdStateAttr = $mdClosed ? ' data-state="closed"' : '';
+$mdAppClass = 'md-app' . ($mdHasInbox ? ' md-has-context' : '');
 if ($mdHasInbox) {
     echo mdmobile_desk_open('chat', $mdChatAttr, $mdListUrl, $mdReadUrl);
     echo mdmobile_render_rail($mdInbox, $mdChatAttr, 'chat', is_string($mdMessagesUrl) ? $mdMessagesUrl : '');
     echo '<div class="md-stage">';
 }
-?><div id="md-mobile-app" class="md-app" data-chat-id="<?php echo mdmobile_esc($mdChatAttr); ?>" data-after-id="<?php echo mdmobile_esc($mdAfterId); ?>" data-messages-url="<?php echo mdmobile_esc($mdMessagesUrl); ?>" data-send-url="<?php echo mdmobile_esc($mdSendUrl); ?>" data-csrf="<?php echo mdmobile_esc($mdCsrf); ?>" data-sender="<?php echo mdmobile_esc($mdSender); ?>"<?php echo $mdReadAttr; ?>>
+?><div id="md-mobile-app" class="<?php echo $mdAppClass; ?>" data-chat-id="<?php echo mdmobile_esc($mdChatAttr); ?>" data-after-id="<?php echo mdmobile_esc($mdAfterId); ?>" data-messages-url="<?php echo mdmobile_esc($mdMessagesUrl); ?>" data-send-url="<?php echo mdmobile_esc($mdSendUrl); ?>" data-csrf="<?php echo mdmobile_esc($mdCsrf); ?>" data-sender="<?php echo mdmobile_esc($mdSender); ?>" data-allow-close-remote="<?php echo $mdAllowCloseRemote ? '1' : '0'; ?>" data-allow-open-closed="<?php echo $mdAllowOpenClosed ? '1' : '0'; ?>" data-can-write="<?php echo $mdCanWrite ? '1' : '0'; ?>"<?php echo $mdReadAttr; ?><?php echo $mdCloseAttr; ?><?php echo $mdStateAttr; ?>>
 <header class="md-top" data-md-backdrop>
 <?php echo $mdBack; ?>
 <div class="md-identity<?php echo $mdHasNick ? ' is-named' : ''; ?>">
 <div class="md-title-row">
 <h1 class="md-title">Visitor<?php if (!$mdHasNick && $mdChatAttr !== '') : ?> #<?php echo mdmobile_esc($mdChatAttr); ?><?php endif; ?></h1>
-<?php if ($mdView['statuses'] !== array()) : ?>
+<?php if ($mdPills !== array()) : ?>
 <p class="md-pills">
-<?php foreach ($mdView['statuses'] as $mdStatus) : ?>
-<span class="md-pill" data-tone="<?php echo mdmobile_esc($mdStatus['tone']); ?>"><span class="md-dot" aria-hidden="true"></span><?php echo mdmobile_esc($mdStatus['text']); ?></span>
+<?php foreach ($mdPills as $mdPill) : ?>
+<span class="md-pill<?php echo $mdPill['chat'] ? ' md-pill-chat' : ''; ?>"<?php echo $mdPill['chat'] ? ' id="md-chat-status" data-md-chat-status="1"' : ''; ?> data-tone="<?php echo mdmobile_esc($mdPill['tone']); ?>"><span class="md-dot" aria-hidden="true"></span><?php echo mdmobile_esc($mdPill['text']); ?></span>
 <?php endforeach; ?>
 </p>
 <?php endif; ?>
@@ -208,17 +238,18 @@ if ($mdHasInbox) {
 <?php endif; ?>
 </div>
 <div class="md-composer" data-md-backdrop>
+<?php echo $mdCloseHtml; ?>
 <p id="md-status" class="md-status" role="status" aria-live="polite" aria-atomic="true"></p>
 <div class="md-compose-row">
-<?php if ($mdCannedHtml !== '') : ?>
+<?php if ($mdCannedHtml !== '' && !$mdClosed) : ?>
 <button type="button" id="md-quick" class="md-quick" aria-label="Quick replies" aria-expanded="false" aria-controls="md-canned-dialog" aria-haspopup="dialog"><svg class="md-quick-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h11M4 18h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 <?php endif; ?>
 <label class="md-sr" for="md-draft">Type a message</label>
-<textarea id="md-draft" class="md-draft" rows="1" placeholder="Type a message" autocomplete="off" autocapitalize="sentences" enterkeyhint="enter"></textarea>
-<button type="button" id="md-send" class="md-send">Send</button>
+<textarea id="md-draft" class="md-draft" rows="1" placeholder="Type a message" autocomplete="off" autocapitalize="sentences" enterkeyhint="enter"<?php echo $mdClosed ? ' disabled' : ''; ?>></textarea>
+<button type="button" id="md-send" class="md-send"<?php echo $mdClosed ? ' disabled' : ''; ?>>Send</button>
 </div>
 </div>
-<?php echo $mdCannedHtml; ?>
+<?php echo $mdClosed ? '' : $mdCannedHtml; ?>
 <?php if ($mdDrawer) : ?>
 <div id="md-sheet" class="md-sheet" hidden>
 <div id="md-mask" class="md-mask" aria-hidden="true"></div>
@@ -246,6 +277,12 @@ if ($mdHasInbox) {
         array(
             'value' => is_string($mdRemarks) ? $mdRemarks : '',
             'url' => is_string($mdRemarksUrl) ? $mdRemarksUrl : '',
+            'disabled' => $mdClosed && (!$mdAllowOpenClosed || !$mdCanWrite),
+        ),
+        array(
+            'url' => $mdCloseUrl,
+            'closed' => $mdClosed,
+            'can_close' => $mdCanClose,
         )
     );
     echo '</div>';

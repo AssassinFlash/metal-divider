@@ -194,12 +194,12 @@ final class WecomNotifySmokeTest extends TestCase {
 	}
 
 	/**
-	 * An event the connector does not serve — a visitor message, not a
-	 * transfer — is acknowledged and ignored, with no upstream call:
-	 * nothing here reaches WeCom or the LHC.
+	 * An event the connector does not serve — a chat closed, not a transfer
+	 * or a visitor message — is acknowledged and ignored, with no upstream
+	 * call: nothing here reaches WeCom or the LHC.
 	 */
 	public function test_the_route_ignores_events_that_are_not_transfers(): void {
-		$response = self::ask( 'Bearer ' . self::$token, '{"event":"chat.addmsguser","chat":{"id":123,"nick":"Jane"},"msg":{"msg":"hello"}}' );
+		$response = self::ask( 'Bearer ' . self::$token, '{"event":"chat.close","chat":{"id":123,"nick":"Jane"},"msg":{"msg":"hello"}}' );
 
 		self::assertSame( 204, $response['status'] );
 		self::assertSame( '', $response['body'] );

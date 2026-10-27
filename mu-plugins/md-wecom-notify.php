@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: MD WeCom notify
- * Description: The LHC transfer connector: POST /wp-json/md/v1/wecom/notify — a bearer-authenticated transfer-to-human event becomes a one-time LHC autologin link and a WeCom textcard to the one configured member (#138, research/lhc-wechat-channel §6's notification tier).
+ * Description: The LHC notification connector: POST /wp-json/md/v1/wecom/notify — a bearer-authenticated transfer-to-human event, or a visitor message that has waited past its reminder window, becomes a fresh one-time LHC autologin link and a WeCom textcard to the one configured member (#138, #154, research/lhc-wechat-channel §6 and research/mobile-wecom-workflow §7).
  *
  * A must-use plugin: the connector is a property of the site itself, and it
  * must keep answering while a regular plugin is being activated, updated or
@@ -64,11 +64,15 @@ function md_wecom_notify_bearer_ok( string $header ): bool {
 
 /**
  * The notification request, end to end: the bearer gate, the event's
- * validation, the one-time link, the card. The input is what the route
- * adapter receives (the Authorization header and the decoded JSON body).
- * The return is this handler's own result — a status and a body — not the
- * HTTP response. The route adapter turns every 200 into an empty 204, and
- * sends a body only when the status is not 200.
+ * validation, the chat's state gate and cooldown, the rate ceiling, the
+ * fresh one-time link, the card. The input is what the route adapter
+ * receives (the Authorization header and the decoded JSON body). The
+ * return is this handler's own result — a status and a body — not the
+ * HTTP response. The route adapter turns every 200 into an empty 204, so
+ * every skip's reason is recorded here and written to the site's error
+ * log: an ignored event, a chat the gate will not card, a busy lock, a
+ * cooldown, the rate ceiling, and a payload the template did not carry.
+ * A card that never left is never silent.
  *
  * @param array<string, mixed> $input The request: 'header' the Authorization header, 'body' the decoded JSON body.
  * @return array{status: int, body: array<string, mixed>} The handler's result, not the HTTP response the route sends.
@@ -97,7 +101,8 @@ function md_wecom_notify_handle( array $input ): array {
 		);
 	}
 
-	if ( ! in_array( $event_name, array( 'chat.genericbot_chat_command_transfer', 'chat.chat_transfered' ), true ) ) {
+	if ( ! in_array( $event_name, array( 'chat.genericbot_chat_command_transfer', 'chat.chat_transfered', 'chat.addmsguser' ), true ) ) {
+		md_wecom_notify_log_skip( $chat_id, $event_name, 'ignored' );
 		return array(
 			'status' => 200,
 			'body'   => array(
@@ -117,7 +122,21 @@ function md_wecom_notify_handle( array $input ): array {
 		}
 	}
 
+	$now  = time();
+	$gate = md_wecom_notify_gate( $event_name, $chat, $body, $now, array_key_exists( $chat_id, md_wecom_notify_notified_chats() ) );
+	if ( ! $gate['send'] ) {
+		md_wecom_notify_log_skip( $chat_id, $event_name, $gate['reason'] );
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'sent'   => false,
+				'reason' => $gate['reason'],
+			),
+		);
+	}
+
 	if ( ! md_wecom_notify_lock( $chat_id ) ) {
+		md_wecom_notify_log_skip( $chat_id, $event_name, 'busy' );
 		return array(
 			'status' => 200,
 			'body'   => array(
@@ -129,12 +148,25 @@ function md_wecom_notify_handle( array $input ): array {
 
 	try {
 		$notified = md_wecom_notify_notified_chats();
-		if ( array_key_exists( $chat_id, $notified ) ) {
+		if ( array_key_exists( $chat_id, $notified ) && $now - $notified[ $chat_id ] < $gate['window'] ) {
+			md_wecom_notify_log_skip( $chat_id, $event_name, 'cooldown' );
 			return array(
 				'status' => 200,
 				'body'   => array(
 					'sent'   => false,
-					'reason' => 'duplicate',
+					'reason' => 'cooldown',
+				),
+			);
+		}
+
+		$rate_reason = md_wecom_notify_rate_reason( md_wecom_notify_recent_sends() );
+		if ( '' !== $rate_reason ) {
+			md_wecom_notify_log_skip( $chat_id, $event_name, $rate_reason );
+			return array(
+				'status' => 200,
+				'body'   => array(
+					'sent'   => false,
+					'reason' => $rate_reason,
 				),
 			);
 		}
@@ -158,6 +190,7 @@ function md_wecom_notify_handle( array $input ): array {
 		}
 
 		md_wecom_notify_remember_chat( $chat_id );
+		md_wecom_notify_remember_send();
 	} finally {
 		md_wecom_notify_unlock( $chat_id );
 	}
@@ -203,17 +236,187 @@ function md_wecom_notify_unlock( int $chat_id ): void {
 }
 
 /**
- * The chats this site has already notified, pruned to the last seven days
- * in the same read: a record's age, not a cron, ends a chat's silence.
+ * A chat field's integer value: LHC's raw JSON template writes numbers,
+ * and a quoted template field hands the same value over as a numeric
+ * string.
  *
- * @return array<int, int> The chat IDs still inside the window, each with the time it notified.
+ * @param mixed $value The field's value.
+ * @return int|null The integer, or null when the value is not a non-negative integer.
+ */
+function md_wecom_notify_int_field( mixed $value ): ?int {
+	if ( is_int( $value ) ) {
+		return $value;
+	}
+	if ( is_string( $value ) && '' !== $value && ctype_digit( $value ) ) {
+		return (int) $value;
+	}
+	return null;
+}
+
+/**
+ * Whether this event may become a card, and why not when it may not.
+ *
+ * The chat's status is the fact the first connector ignored (#154): the
+ * transfer command marks a bot-accepted chat STATUS_PENDING_CHAT (0), and
+ * a human acceptance moves it to STATUS_ACTIVE_CHAT (1); a closed (2),
+ * chatbox (3), operators (4) or bot (5) chat is not a conversation an
+ * operator can join from a card (lib/models/lhchat/erlhcoreclassmodelchat.php:728-733).
+ * The transfer command's offline branch dispatches the same event with
+ * is_online false and leaves the chat's status untouched
+ * (lib/core/lhgenericbot/actionTypes/lhgenericbotactioncommand.php:44-56),
+ * so that event never cards. The closechat command dispatches the same
+ * event name while the chat is still open but about to close, and carries
+ * no is_online either (lhgenericbotactioncommand.php:216-267), so the
+ * command the REST template carries is what refuses it: a card that opens
+ * an inbox for a chat the bot closes in the same breath is useless.
+ *
+ * A transfer event cards immediately: a handoff has a new recipient, and
+ * the transfer is not the visitor's next message. A visitor message is a
+ * reminder only when the chat has waited: a pending chat for more than ten
+ * minutes since its first card, or an active chat whose operator last spoke
+ * more than three minutes ago (research/mobile-wecom-workflow §7; both
+ * windows are the site's trade-off, not LHC's or WeCom's). A pending chat
+ * whose first card never left is not held back by that window: the next
+ * event retries it, so a failed delivery cannot silence ten minutes of
+ * visitor messages. A timestamp ahead of this server's clock is not a
+ * window: it is answered as such, not folded into not_due.
+ *
+ * @param string               $event_name The event's LHC name.
+ * @param array<string, mixed> $chat       The event's chat object.
+ * @param array<string, mixed> $body       The whole event body, is_online's and command's home.
+ * @param int                  $now        The time the decision is made at.
+ * @param bool                 $carded     Whether this chat already has a delivered card inside the cooldown horizon.
+ * @return array{send: bool, reason: string, window: int} Whether to send, the reason when not, and the chat's cooldown window in seconds.
+ */
+function md_wecom_notify_gate( string $event_name, array $chat, array $body, int $now, bool $carded = false ): array {
+	$status = md_wecom_notify_int_field( $chat['status'] ?? null );
+	if ( null === $status ) {
+		return array(
+			'send'   => false,
+			'reason' => 'status_missing',
+			'window' => 0,
+		);
+	}
+
+	// The transfer command's offline branch leaves the chat's status
+	// untouched (a stopchat leaves STATUS_BOT_CHAT, 5) and dispatches the
+	// same event with is_online false. That fact is the reason, so it is
+	// read before the inbox check; an online transfer of a chat outside
+	// the inbox is still status_not_notifiable.
+	if ( 'chat.genericbot_chat_command_transfer' === $event_name ) {
+		if ( isset( $body['command'] ) && 'closechat' === $body['command'] ) {
+			return array(
+				'send'   => false,
+				'reason' => 'closing',
+				'window' => 0,
+			);
+		}
+		if ( ! array_key_exists( 'is_online', $body ) ) {
+			return array(
+				'send'   => false,
+				'reason' => 'is_online_missing',
+				'window' => 0,
+			);
+		}
+		if ( false === $body['is_online'] ) {
+			return array(
+				'send'   => false,
+				'reason' => 'offline',
+				'window' => 0,
+			);
+		}
+		if ( true !== $body['is_online'] ) {
+			return array(
+				'send'   => false,
+				'reason' => 'is_online_invalid',
+				'window' => 0,
+			);
+		}
+	}
+
+	if ( 0 !== $status && 1 !== $status ) {
+		return array(
+			'send'   => false,
+			'reason' => 'status_not_notifiable',
+			'window' => 0,
+		);
+	}
+	$window = 0 === $status ? 600 : 180;
+
+	if ( 'chat.addmsguser' === $event_name ) {
+		if ( 0 === $status ) {
+			$pending_since = md_wecom_notify_int_field( $chat['pnd_time'] ?? null );
+			if ( null === $pending_since || $pending_since <= 0 ) {
+				return array(
+					'send'   => false,
+					'reason' => 'pnd_time_missing',
+					'window' => 0,
+				);
+			}
+			if ( $carded ) {
+				if ( $now < $pending_since ) {
+					return array(
+						'send'   => false,
+						'reason' => 'timestamp_in_future',
+						'window' => 0,
+					);
+				}
+				if ( $now - $pending_since <= 600 ) {
+					return array(
+						'send'   => false,
+						'reason' => 'not_due',
+						'window' => 0,
+					);
+				}
+			}
+		} else {
+			$operator_spoke = md_wecom_notify_int_field( $chat['last_op_msg_time'] ?? null );
+			if ( null === $operator_spoke || $operator_spoke <= 0 ) {
+				return array(
+					'send'   => false,
+					'reason' => 'last_op_missing',
+					'window' => 0,
+				);
+			}
+			if ( $now < $operator_spoke ) {
+				return array(
+					'send'   => false,
+					'reason' => 'timestamp_in_future',
+					'window' => 0,
+				);
+			}
+			if ( $now - $operator_spoke <= 180 ) {
+				return array(
+					'send'   => false,
+					'reason' => 'not_due',
+					'window' => 0,
+				);
+			}
+		}
+	}
+
+	return array(
+		'send'   => true,
+		'reason' => '',
+		'window' => $window,
+	);
+}
+
+/**
+ * The chats with a card inside the cooldown horizon, pruned on the same
+ * read: the map is [chat ID => the time of its last delivered card], and
+ * an entry older than the hour that holds both windows is dropped. A
+ * record's age, not a cron, ends a chat's cooldown; an offline event or
+ * a skipped send never writes one (#154).
+ *
+ * @return array<int, int> The chat IDs inside the horizon, each with the time it last notified.
  */
 function md_wecom_notify_notified_chats(): array {
 	$stored = get_option( 'md_wecom_notify_chats', array() );
 	if ( ! is_array( $stored ) ) {
 		return array();
 	}
-	$horizon = time() - 7 * 24 * 3600;
+	$horizon = time() - 3600;
 	$chats   = array();
 	foreach ( $stored as $id => $when ) {
 		if ( is_numeric( $id ) && is_int( $when ) && $when > $horizon ) {
@@ -224,14 +427,90 @@ function md_wecom_notify_notified_chats(): array {
 }
 
 /**
- * Records a chat as notified, pruning the expired records the same write.
+ * Records one delivered card as the chat's cooldown, pruning the expired
+ * records in the same write. This is the only writer: a card that did not
+ * leave leaves no record, so the next event can still try.
  *
- * @param int $chat_id The chat that just notified.
+ * @param int $chat_id The chat that just received a card.
  */
 function md_wecom_notify_remember_chat( int $chat_id ): void {
 	$chats             = md_wecom_notify_notified_chats();
 	$chats[ $chat_id ] = time();
 	update_option( 'md_wecom_notify_chats', $chats );
+}
+
+/**
+ * The delivered cards inside WeCom's one-hour window, pruned on read.
+ *
+ * @return array<int, int> The send times inside the hour.
+ */
+function md_wecom_notify_recent_sends(): array {
+	$stored = get_option( 'md_wecom_notify_sends', array() );
+	if ( ! is_array( $stored ) ) {
+		return array();
+	}
+	$horizon = time() - 3600;
+	$sends   = array();
+	foreach ( $stored as $when ) {
+		if ( is_int( $when ) && $when > $horizon ) {
+			$sends[] = $when;
+		}
+	}
+	return $sends;
+}
+
+/**
+ * Why the next card would break WeCom's own ceiling, '' while it would
+ * not: 30 messages per minute and 1000 per hour to one member of one
+ * application, with the overflow dropped without delivery (WeCom,
+ * message/send, https://developer.work.weixin.qq.com/document/path/90236:
+ * "每应用对同一个成员不可超过30次/分钟，1000次/小时，超过部分会被丢弃不下发";
+ * the ticket states the same policy, #154).
+ *
+ * @param array<int, int> $sends The delivered cards inside the hour.
+ * @return string The skip's reason, '' when the card is inside the ceiling.
+ */
+function md_wecom_notify_rate_reason( array $sends ): string {
+	$now         = time();
+	$last_minute = 0;
+	foreach ( $sends as $when ) {
+		if ( $when > $now - 60 ) {
+			++$last_minute;
+		}
+	}
+	if ( $last_minute >= 30 ) {
+		return 'rate_limited_minute';
+	}
+	if ( count( $sends ) >= 1000 ) {
+		return 'rate_limited_hour';
+	}
+	return '';
+}
+
+/**
+ * Records one delivered card in the rate ceiling's sliding window.
+ */
+function md_wecom_notify_remember_send(): void {
+	$sends   = md_wecom_notify_recent_sends();
+	$sends[] = time();
+	update_option( 'md_wecom_notify_sends', $sends );
+}
+
+/**
+ * Records a skipped card that must not be silent: the route adapter's 204
+ * carries no body, so every skip's reason lands in the site's error log —
+ * an event outside the three the connector serves, a chat the gate will
+ * not card, a busy lock, a cooldown, the rate ceiling, or a payload shape
+ * the LHC template did not carry. The reason is one of the connector's
+ * own strings, so the line carries no visitor text and no credential.
+ *
+ * @param int    $chat_id    The chat the card was for.
+ * @param string $event_name The event's name, as the webhook named it.
+ * @param string $reason     The connector's own reason the card was skipped.
+ */
+function md_wecom_notify_log_skip( int $chat_id, string $event_name, string $reason ): void {
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- the site's own error log channel; the line carries no credential and no visitor text.
+	error_log( sprintf( '[md-wecom-notify] skipped chat #%d event %s: %s', $chat_id, $event_name, $reason ) );
 }
 
 /**
@@ -353,7 +632,7 @@ function md_wecom_notify_send_card( int $chat_id, string $link, array $chat, arr
 			'title'       => sprintf( 'Live chat #%d — %s', $chat_id, $nick ),
 			'description' => mb_substr( $text, 0, 120 ),
 			'url'         => $link,
-			'btntxt'      => 'Open chat',
+			'btntxt'      => 'Open', // WeCom's button text is at most four characters (message/send: btntxt), so the longer label would be truncated.
 		),
 	);
 
@@ -465,7 +744,7 @@ function md_wecom_notify_access_token( bool $fresh = false ): ?string {
 			'token'   => $token,
 			'expires' => $expires,
 		),
-		$expires
+		max( 60, $expires - time() )
 	);
 
 	return $token;
@@ -545,7 +824,7 @@ function md_wecom_notify_callback_handle( array $query ): array {
 }
 
 /**
- * The route adapter. Successful webhook deliveries and dedup acknowledgements
+ * The route adapter. Successful webhook deliveries and skip acknowledgements
  * have no response body, so LHC does not insert its own JSON into the chat.
  *
  * @param \WP_REST_Request $request The request the webhook sent.

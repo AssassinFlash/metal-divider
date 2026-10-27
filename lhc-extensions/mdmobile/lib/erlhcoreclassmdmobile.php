@@ -65,7 +65,7 @@ class erLhcoreClassMdMobile
     }
 
     /**
-     * @return array{messages_url: string, send_url: string}
+     * @return array{messages_url: string, send_url: string, list_url?: string, list_endpoint?: string, read_url?: string, remarks_url?: string, close_url?: string}
      */
     public static function endpointUrls($siteBase, $chatId)
     {
@@ -83,6 +83,7 @@ class erLhcoreClassMdMobile
         $endpoint = self::deskUrl($base, 'mdmobile/list');
         $read = self::deskUrl($base, 'mdmobile/read/' . $chatId);
         $remarks = self::deskUrl($base, 'chat/saveremarks/' . $chatId);
+        $close = self::deskUrl($base, 'chat/changestatus/' . $chatId);
         if ($list !== null) {
             $urls['list_url'] = $list;
         }
@@ -94,6 +95,9 @@ class erLhcoreClassMdMobile
         }
         if ($remarks !== null) {
             $urls['remarks_url'] = $remarks;
+        }
+        if ($close !== null) {
+            $urls['close_url'] = $close;
         }
 
         return $urls;
@@ -377,6 +381,9 @@ class erLhcoreClassMdMobile
         }
         if (isset($desk['remarks_url'])) {
             $bag['remarks_url'] = $desk['remarks_url'];
+        }
+        if (isset($desk['close_url'])) {
+            $bag['close_url'] = $desk['close_url'];
         }
 
         return $bag;
@@ -688,6 +695,19 @@ class erLhcoreClassMdMobile
             'operators' => 4,
             'bot' => 5,
         );
+    }
+
+    /**
+     * Native STATUS_CLOSED_CHAT from lib/models/lhchat/erlhcoreclassmodelchat.php.
+     * changestatus.php accepts only these numeric statuses, and the closed one
+     * is the only value that removes the conversation from the active desk.
+     *
+     * @param mixed $status
+     * @return bool
+     */
+    public static function closedStatus($status)
+    {
+        return self::canonicalInt($status) === 2;
     }
 
     /**
@@ -2073,6 +2093,7 @@ class erLhcoreClassMdMobile
         $list = self::acceptedDeskUrl(isset($urls['list_url']) ? $urls['list_url'] : null, 'mdmobile/chats');
         $read = self::acceptedDeskUrl(isset($urls['read_url']) ? $urls['read_url'] : null, 'mdmobile/read/' . (int) $chatId);
         $remarks = self::acceptedDeskUrl(isset($urls['remarks_url']) ? $urls['remarks_url'] : null, 'chat/saveremarks/' . (int) $chatId);
+        $close = self::acceptedDeskUrl(isset($urls['close_url']) ? $urls['close_url'] : null, 'chat/changestatus/' . (int) $chatId);
         if ($list === null || $read === null) {
             $derived = self::deskUrlsFromMessages(isset($urls['messages_url']) ? $urls['messages_url'] : '', $chatId);
             if ($list === null && $derived !== null) {
@@ -2090,6 +2111,9 @@ class erLhcoreClassMdMobile
         }
         if ($remarks !== null) {
             $desk['remarks_url'] = $remarks;
+        }
+        if ($close !== null) {
+            $desk['close_url'] = $close;
         }
 
         return $desk;
@@ -2198,7 +2222,7 @@ class erLhcoreClassMdMobile
         if ($path === 'mdmobile/chats' || $path === 'mdmobile/list') {
             return $path;
         }
-        if (!is_string($path) || preg_match('#^(mdmobile/(?:chat|read)|chat/saveremarks)/([1-9]\d*)$#', $path, $match) !== 1) {
+        if (!is_string($path) || preg_match('#^(mdmobile/(?:chat|read)|chat/saveremarks|chat/changestatus)/([1-9]\d*)$#', $path, $match) !== 1) {
             return null;
         }
         $id = self::canonicalInt($match[2]);

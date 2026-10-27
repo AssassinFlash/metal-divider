@@ -90,6 +90,24 @@ $bag = erLhcoreClassMdMobile::templateBag(
     isset($chat->remarks) ? $chat->remarks : ''
 );
 $bag['canned'] = $canned;
+$bag['status'] = (int) $chat->status;
+$bag['closed'] = erLhcoreClassMdMobile::closedStatus($chat->status);
+$allowCloseRemote = $gate['user']->hasAccessTo('lhchat', 'allowcloseremote') === true;
+$bag['allow_close_remote'] = $allowCloseRemote;
+$bag['allow_open_closed'] = $gate['user']->hasAccessTo('lhchat', 'allowopenclosedchats') === true;
+// Native saveremarks.php gates on hasAccessToRead + hasAccessToWrite and has no
+// chat-status test, so closed-chat remarks are only valid with both rights.
+$bag['can_write'] = erLhcoreClassChat::hasAccessToWrite($chat) === true;
+// Native changestatus.php requires hasAccessToRead + hasAccessToWrite, and its
+// route itself requires the lhchat/canchangechatstatus function
+// (modules/lhchat/module.php). Write access does not imply that function, so an
+// operator without it would see a Close that the route answers with an HTML
+// permission page. The helper closes only for the chat owner or
+// allowcloseremote and reports success even when the close branch was skipped.
+$bag['can_close'] = $bag['closed'] === false
+    && $bag['can_write'] === true
+    && $gate['user']->hasAccessTo('lhchat', 'canchangechatstatus') === true
+    && ($allowCloseRemote || ((int) $chat->user_id > 0 && (int) $chat->user_id === (int) $gate['user']->getUserID()));
 $state = mdmobile_inbox_state(isset($Params) ? $Params : array());
 $inbox = mdmobile_load_inbox($state, (int) $chat->id);
 if (isset($inbox['list_url']) && $inbox['list_url'] !== '') {

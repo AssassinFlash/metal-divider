@@ -59,10 +59,11 @@ function remove_action( string $hook, string|callable $callback, int $priority =
 // The options, transients and HTTP the endpoint-shaped plugins read, served
 // from the arrays and callables the tests set (the md-kb-endpoint precedent,
 // mu-plugins/tests/php/bootstrap.php of impl/118-kb-endpoint).
-$GLOBALS['md_mu_test_options']    = array();
-$GLOBALS['md_mu_test_transients'] = array();
-$GLOBALS['md_mu_test_http']       = array();
-$GLOBALS['md_mu_test_routes']     = array();
+$GLOBALS['md_mu_test_options']        = array();
+$GLOBALS['md_mu_test_transients']     = array();
+$GLOBALS['md_mu_test_transient_ttls'] = array();
+$GLOBALS['md_mu_test_http']           = array();
+$GLOBALS['md_mu_test_routes']         = array();
 
 /**
  * What the REST infrastructure provides, recorded the same way: the routes a
@@ -103,8 +104,10 @@ function update_option( string $name, mixed $value ): bool {
 /**
  * The transients a plugin's token cache lives in, served from the array the
  * test sets ($GLOBALS['md_mu_test_transients'], a transient name to its
- * value); expiry is recorded but not enforced — the cache's own expiry
- * timestamp is what the code prunes by.
+ * value). The TTL argument is stored beside it
+ * ($GLOBALS['md_mu_test_transient_ttls']) so a test can tell a remaining
+ * lifetime from an absolute expiry; expiry itself is not enforced — the
+ * cache's own expiry timestamp is what the code prunes by.
  *
  * @param string $name The transient's name.
  * @return mixed The transient's value, false when it holds none.
@@ -122,7 +125,8 @@ function get_transient( string $name ): mixed {
  * @return bool Always true, as WordPress's own.
  */
 function set_transient( string $name, mixed $value, int $expiry = 0 ): bool {
-	$GLOBALS['md_mu_test_transients'][ $name ] = $value;
+	$GLOBALS['md_mu_test_transients'][ $name ]     = $value;
+	$GLOBALS['md_mu_test_transient_ttls'][ $name ] = $expiry;
 	return true;
 }
 
