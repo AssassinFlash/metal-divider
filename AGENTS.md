@@ -82,6 +82,7 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 - **进展截图(业主 2026-10-27)**:每次打开页面、改配置、部署、验收或遇到故障,先截图再继续;汇报带最新截图,不靠口头进度。
 - 每张票一个新会话;执行者在自己的工作树和本地实例里干活,不部署、不合并、不写生产(票面另有授权除外)。
 - 生产写入分层:**代码部署** = 部署自带的数据库快照 + 原子切换保留上一版代码;**数据写入**(导入、批量修改、删表)前做完整备份;完整备份每周另做一次。备份只存本机,不占服务器空间;每次备份成功后按第 0 节回收冗余历史。密钥、令牌永不进仓库。
+- **部署被「上一批未 archive」挡住时先收尾,不要重试**(2026-10-28 实测):切换完成但 verify/archive 没跑完就退出的那批会留下 pending 标记,下一次 `just deploy prod` 会以 `deployment <id> still needs verify/archive or rollback` 直接失败——**重跑多少次都一样**。正确动作是 `just deploy resume-deploy --target prod --write`(它会补做 verify 并归档),或 `just deploy rollback --target <t> --write` 撤销,然后再部署。判断依据:`ssh hostinger-metal-divider 'ls -d /home/u388076051/deploy-prev-metal-divider/metal-divider.com/2026* | tail -1'` 里最新那条如果**不带 pending 后缀以外的归档目录**且 `latest` 指向它,就是没归档。另:`just deploy snapshot` 只能从**本机**取快照,失败不影响线上。
 - **视觉与体验验收**:旧站用于提取设计语言,新站允许独立、现代化设计,不设逐像素通过线。按页型以真 Chrome 检查视觉质量、响应式布局、内容、交互、键盘可访问性和实测性能;截图与像素差值只作定位证据,不用于把独立设计判为失败。移除旧通道前的对等承载指外观与行为满足当前设计要求,不是像素复制。
 - **移除旧通道前必须先证明新通道对等承载(先删后证同罪)**:Shopify 解约、旧 DNS 摘除、旧代码删除之前,新站的外观与行为 parity 必须实证;301 生效实证之后才解约 Shopify。
 - 询盘链的验收包含按业主路径在线上实走:浏览 → 图案清单 → 询盘提交 → 通知与确认 → WhatsApp 路由。

@@ -329,7 +329,12 @@ def publish(
         _, prior = latest_manifest(target)
         if prior.state == "pending":
             raise DeployError(
-                f"deployment {prior.deploy_id} still needs verify/archive or rollback"
+                f"deployment {prior.deploy_id} still needs verify/archive or rollback. "
+                "A deploy that is interrupted between the switch and its verify "
+                "leaves this marker, and the next deploy refuses to stack on top of "
+                "it. Finish it with `just deploy resume-deploy --target "
+                f"{target.label} --write` (or `just deploy rollback --target "
+                f"{target.label} --write` to undo it), then deploy again."
             )
     for artifact in artifacts:
         names = _siblings(artifact.relative)
