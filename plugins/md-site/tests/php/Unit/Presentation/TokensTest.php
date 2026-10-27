@@ -36,8 +36,13 @@ final class TokensTest extends TestCase {
 	 * header band's measured height (73/76/113px across its three tiers),
 	 * which the sticky rails and every in-page anchor offset now read
 	 * instead of hard-coding a guess.
+	 *
+	 * Re-pinned 2026-10-27 for `--md-gold-ink`: the palette had one gold and
+	 * used it for both fills and text, so every gold word on a cream or white
+	 * panel measured 2.14–3.28:1 — the whole light-surface half of the site
+	 * (`--md-gold-ink` holds 4.86:1 there). Same hue, separate role.
 	 */
-	private const NORMALIZED_SHA256 = 'da795c06d66f9521ab64ec2b01b95c995c4e517684721becef9be05ac6bb03ee';
+	private const NORMALIZED_SHA256 = 'b88b51007b5df807785b2e327fac2e13cce746064e91d469848094e9d0c22be4';
 
 	/**
 	 * The exported stylesheet carries the design tokens of the MASTER.md

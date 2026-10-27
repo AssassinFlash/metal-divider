@@ -33,6 +33,19 @@
   --md-gold-light: #d4b878;
   --md-gold-dark: #a88a4a;
   --md-gold-accent: #d4af37;
+  /* Gold as *text* on a light surface. The palette's gold is a light value:
+     #c9a962 measures 2.14:1 on cream (#faf9f7), 2.25:1 on white — under
+     4.5:1 at every size, so every gold word sitting on a cream or white
+     panel was unreadable, not merely faint (the journal eyebrow and "Read
+     more", the FAQ's selected tab, the article CTA pair all measured there
+     on 2026-10-27). Same hue and saturation, held to a luminance that
+     clears the floor: 4.92:1 on cream, 5.17:1 on white, 4.88:1 on #f7f8f8.
+     Use it wherever the text is gold AND the panel behind it is light; on
+     dark surfaces the light gold stays correct (7.6:1 on #1a1a1a) — that
+     pairing is the site's signature and is not the defect. The mirror case
+     (white text on a gold fill) is also under the floor at 2.25:1; those
+     swap the type to --md-bg-darkest, which measures 7.6:1 on the fill. */
+  --md-gold-ink: #85692e;
   --md-cream: #faf9f7;
   --md-whatsapp: #25D366;
   --md-font-display: "Playfair Display", Georgia, serif;

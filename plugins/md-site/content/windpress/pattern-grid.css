@@ -367,8 +367,11 @@ display: inline-flex;
 font-size: 14px;
 font-weight: 700;
 justify-content: center;
-min-height: 42px;
-min-width: 42px;
+/* 44px tap floor. The class-only .page-numbers rule below is already
+   44px, but this ID rule wins, so the floor has to live here
+   (measured 42×42, Next 62×42, every width, 2026-10-27). */
+min-height: 44px;
+min-width: 44px;
 padding: 0 14px;
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__pagination a:hover,

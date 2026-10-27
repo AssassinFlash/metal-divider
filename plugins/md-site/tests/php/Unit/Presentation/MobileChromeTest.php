@@ -126,6 +126,93 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * The header rail's tap floor, and the one control that had no
+	 * destination.
+	 *
+	 * Measured 2026-10-27 at 1440: the seven top-level links were 15.8px tall
+	 * and the sub-menu rows 32.5px — every other control on the site meets
+	 * 44px, and the rail is the primary way around it. The same pass found
+	 * Resources shipping as `<a href="#">`: a row announced as a link that
+	 * navigated nowhere, whose sub-menu only opened on hover, so it was
+	 * unreachable by click and by keyboard. Both are pinned here.
+	 *
+	 * The floor is asserted at *brace depth zero* rather than "before the
+	 * first `@media`": chrome.css opens with media blocks for other rules, so
+	 * position alone proves nothing here, while depth is exactly the property
+	 * that matters. A floor written inside a phone-only block is the defect
+	 * this site shipped twice (footer #144, #146) — every wider width keeps
+	 * the small target while the phone looks fixed.
+	 */
+	public function test_the_header_rail_meets_the_tap_floor_and_its_one_disclosure_is_a_button(): void {
+		$header = $this->template( 'partials/header.html' );
+		$css    = $this->volume( 'chrome.css' );
+		$clean  = (string) preg_replace( '/\/\*.*?\*\//s', '', $css );
+
+		foreach ( array( '.xo-menu-horizontal-v1__link{', '.xo-menu-horizontal-v1__link--sub{' ) as $selector ) {
+			// Comments go first: this volume carries long prose between
+			// declarations, and a `}` inside a comment would otherwise cut the
+			// rule short while braces inside one would corrupt the depth count.
+			$offset = strpos( $clean, $selector );
+			$this->assertNotFalse( $offset, $selector . ' must exist in chrome.css' );
+			$this->assertSame(
+				0,
+				$this->depth_at( $clean, (int) $offset ),
+				$selector . ' must hold its floor at the top level, not inside a media query — a floor in a breakpoint block leaves every wider width unfixed'
+			);
+			$close = strpos( $clean, '}', (int) $offset );
+			$this->assertNotFalse( $close, $selector . ' must be a closed rule' );
+			$body = substr( $clean, (int) $offset, (int) $close - (int) $offset );
+			$this->assertStringContainsString( 'min-height: 44px', $body, $selector . ' must carry the 44px tap floor' );
+		}
+
+		$this->assertStringNotContainsString(
+			"href='#'",
+			$header,
+			'a header row with no destination must not ship as a link — it is a disclosure button'
+		);
+		$this->assertStringContainsString( 'data-nav-disclosure', $header );
+		$this->assertStringContainsString( "aria-controls='header-resources-menu'", $header );
+		$this->assertStringContainsString( "id='header-resources-menu'", $header, 'the control names the panel it opens' );
+		$this->assertStringContainsString( 'is-disclosure-open', $css, 'the click state shows the same panel the hover state does' );
+	}
+
+	/**
+	 * How many blocks enclose a position in a stylesheet. Zero means the rule
+	 * sits at the top level; anything else means it is nested, and the only
+	 * things that nest rules here are media queries.
+	 *
+	 * @param string $css    The stylesheet.
+	 * @param int    $offset The position to measure.
+	 */
+	private function depth_at( string $css, int $offset ): int {
+		$length = min( $offset, strlen( $css ) );
+		$opens  = substr_count( substr( $css, 0, $length ), '{' );
+		$closes = substr_count( substr( $css, 0, $length ), '}' );
+		return max( 0, $opens - $closes );
+	}
+
+	/**
+	 * The predictive search has to answer with this site's own patterns.
+	 *
+	 * It shipped revealing an empty box on every keystroke and issuing no
+	 * request at all (measured 2026-10-27: typing "leaf" opened a zero-height
+	 * result region, zero network calls) — a search field that promises
+	 * suggestions and never has any. The contract is that the script asks the
+	 * product collection, so a suggestion cannot name a pattern the catalog
+	 * does not carry.
+	 */
+	public function test_the_predictive_search_asks_the_catalogue(): void {
+		$script = (string) file_get_contents( // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../assets/js/md-chrome.js'
+		);
+
+		$this->assertStringContainsString( '/wp-json/wp/v2/product', $script, 'suggestions come from the same collection the catalog reads' );
+		$this->assertStringContainsString( 'xo-predictive-search__hit', $script, 'the result region is filled, not merely revealed' );
+		$this->assertStringContainsString( 'AbortController', $script, 'a superseded query is cancelled instead of racing the newer one' );
+		$this->assertStringContainsString( "'[data-predictive-search-result=\"'", $script, 'the region is looked up by the name the markup carries' );
+	}
+
+	/**
 	 * A WindPress volume.
 	 *
 	 * @param string $name The volume file name.

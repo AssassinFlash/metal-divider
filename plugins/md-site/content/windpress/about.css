@@ -10,3 +10,8 @@
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .md-t09274b5a { --pt: 20;--pb: 20 }
 .md-td7f9427b { -webkit-overflow-scrolling: touch;scrollbar-width: none }
+/* Project-card badges. The 9px/10px sizes are generated utilities, so this
+   wins by specificity and only on these cards — family swatches share the
+   utility and must keep their own size. Measured 9px at 320/390. */
+.project-card-hover .text-\[9px\],
+.project-card-hover .text-\[10px\] { font-size: 11px }

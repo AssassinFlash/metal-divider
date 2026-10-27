@@ -47,7 +47,7 @@ padding-bottom: 80px;
 .md-t66682c10 { left: 50% }
 .md-t5e79aea9 { background-image: radial-gradient(circle, #c9a962 1px, transparent 1px);background-size: 24px 24px }
 .md-t3f9c748b { padding-top: 80px;padding-bottom: 88px }
-.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-tcc07631f { padding-top: 64px;padding-bottom: 64px }
 .md-t78970fa2 { text-wrap: pretty }
 .md-tba09eb61 { background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%) }
 .md-te05c0d99 { background-image: radial-gradient(circle at center, rgba(201,169,98,.16) 0%, transparent 68%) }
@@ -246,7 +246,7 @@ border: 1px solid rgba(201,169,98,0.45);
 background: rgba(201,169,98,0.12);
 font-size: 16px !important;
 }
-[id*="21844034814205"][id*="cta"],
+[id*="21844034814205"][id*="cta"]:not([id*="mid"]),
 [id*="21844034814205"][id*="faq"] {
 padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
 }

@@ -12,6 +12,13 @@
   margin: 0 auto;
   padding: 0 20px;
 }
+/* TOC anchors measured 20.3px from 768 up. The 44px floor in chrome.css
+   only covers max-width: 767px, so the floor lives here, before any query. */
+.privacy-toc a {
+  align-items: center;
+  display: inline-flex;
+  min-height: 44px;
+}
 @media (min-width: 750px) {
   .md-privacy .container-narrow { padding: 0 40px; }
 }

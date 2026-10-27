@@ -104,9 +104,9 @@
 
 .md-footer__identity-intro {
 	align-items: center;
-	color: rgba(255, 255, 255, 0.45);
+	color: rgba(255, 255, 255, 0.6);
 	display: flex;
-	font-size: 10px;
+	font-size: 11px;
 	font-weight: 600;
 	gap: 9px;
 	letter-spacing: 0.14em;
@@ -510,7 +510,10 @@
 	color: #ffffff;
 }
 
-.md-footer__quote {
+/* `#md-footer a` is (1, 0, 1) and sets color: inherit, so a class-only
+   color never lands — measured rgba(255,255,255,.78) on #c9a962, 1.91:1.
+   The link selector has to outrank that. #141414 on this gold is 8.19:1. */
+#md-footer a.md-footer__quote {
 	align-items: center;
 	background: var(--md-gold, #c9a962);
 	border-radius: 12px;
@@ -524,8 +527,8 @@
 	padding: 0 20px;
 }
 
-.md-footer__quote:hover,
-.md-footer__quote:focus-visible {
+#md-footer a.md-footer__quote:hover,
+#md-footer a.md-footer__quote:focus-visible {
 	background: var(--md-gold-light, #d4b878);
 	color: #141414;
 }
@@ -550,16 +553,15 @@
 	gap: 18px;
 }
 
-/* The same 44px floor every control on this site holds to. Applied with
-   padding and inline-flex so the legal row's type and rhythm do not move —
-   and at the base layer, because a mobile-only version left the desktop row
-   at 26px (measured 2026-10-27 at 1440: Privacy, FAQ and Contact all under
-   the floor while the phone widths passed). */
+/* The same 44px floor every control on this site holds to, on both axes.
+   Height alone left FAQ at 25.3px wide (measured 2026-10-27 at 320). 14px
+   of horizontal padding puts the shortest label over 44px. It lives in the
+   base layer — a phone-only floor left the desktop row short once already. */
 .md-footer__bar-legal a {
 	align-items: center;
 	display: inline-flex;
 	min-height: 44px;
-	padding: 0 4px;
+	padding: 0 14px;
 }
 
 .md-footer__bar-legal a:hover,
@@ -778,7 +780,7 @@
 	}
 
 	.md-footer__identity-intro {
-		font-size: 9px;
+		font-size: 11px;
 		letter-spacing: 0.12em;
 	}
 

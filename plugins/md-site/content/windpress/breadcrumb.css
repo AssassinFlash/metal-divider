@@ -47,6 +47,21 @@ height: 100%;
 background-size: cover;
 background-position: center;
 }
+/* Tap floor, in the base layer so 390, 768 and 1440 all inherit it.
+   Measured 2026-10-27: .breadcrumb__link is 36×44 at 390 (the phone-only
+   floor in chrome.css stops at 767px) and 36×24 at 768/1440; .clb__link
+   is 36×16 at every width. The hit box grows; type and colour do not. */
+.xo-section[class*="__breadcrumb"] .breadcrumb__item a,
+.xo-section[class*="__breadcrumb"] .breadcrumb__link,
+#collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link{
+align-items: center;
+box-sizing: border-box;
+display: inline-flex;
+justify-content: center;
+max-width: 100%;
+min-height: 44px;
+min-width: 44px;
+}
 .xo-section[class*="__breadcrumb"] .breadcrumb{ display: block; }
 @media (max-width: 767px){
 .xo-section[class*="__breadcrumb"] .breadcrumb{ display: var(--display-mobile, block); }

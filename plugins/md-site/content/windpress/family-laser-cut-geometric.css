@@ -2,6 +2,12 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
+/* Hero stats strip sits on px-3 (12px) below 640. Floor is 16px at every width;
+   sm:px-4 is already 16px, so this does not tighten 768/1440. */
+#laser-cut-hero-template--21873710563581__laser_cut_hero > .px-3 {
+padding-left: 16px !important;
+padding-right: 16px !important;
+}
 #laser-cut-solutions-template--21873710563581__laser_cut_solutions {
 padding-top: 72px;
 padding-bottom: 72px;
@@ -170,7 +176,7 @@ flex: 0 0 78%;
 .md-t4d66bb95 { background-color: #141414;padding-top: 80px;padding-bottom: 80px }
 .md-taf3fcd44 { scrollbar-width: none;-ms-overflow-style: none }
 .md-t80e98d4a { mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);-webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent) }
-.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-tcc07631f { padding-top: 64px;padding-bottom: 64px }
 .md-t131d2146 { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%);padding-top: 96px;padding-bottom: 96px }
 .md-t42d1ef2e { font-variant-numeric: tabular-nums }
 .md-t5790ffba { display: none }
@@ -307,7 +313,7 @@ background: rgba(201,169,98,0.12);
 font-size: 16px !important;
 }
 [id*="21873710563581"][id*="contact"],
-[id*="21873710563581"][id*="cta"] {
+[id*="21873710563581"][id*="cta"]:not([id*="mid"]) {
 padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
 }
 }

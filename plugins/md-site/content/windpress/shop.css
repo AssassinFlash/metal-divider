@@ -15,6 +15,7 @@ text-decoration: none;
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__container {
 margin: 0 auto;
 max-width: 1400px;
+min-width: 0;
 }
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__header {
 align-items: end;
@@ -62,8 +63,15 @@ text-wrap: pretty;
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__tabs {
 border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 display: flex;
+/* nowrap + a hidden scrollbar left later tabs past the viewport
+   (last tab right edge 779px at 320, 392px at 390, 2026-10-27) while
+   the page itself did not scroll. Wrap so every tab stays visible
+   and tappable; min-width: 0 keeps the strip from widening the page. */
+flex-wrap: wrap;
 gap: 12px;
 margin-bottom: 24px;
+max-width: 100%;
+min-width: 0;
 overflow-x: auto;
 padding-bottom: 10px;
 scrollbar-width: none;

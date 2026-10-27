@@ -157,7 +157,7 @@ height: calc(100dvh - var(--header-height, 80px));
 .md-td8ee4148 { font-variant-numeric: tabular-nums;font-weight: 600;font-size: 14px;color: #c9a962;min-width: 22px;text-align: right }
 .md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }
 .md-t2abb772b { width: 380px;height: 520px }
-.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-tcc07631f { padding-top: 64px;padding-bottom: 64px }
 .md-t9edacfd5 { background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);padding-top: 96px;padding-bottom: 96px }
 .md-t5790ffba { display: none }
 .md-tecede96f { background-color: #141414 }
@@ -651,7 +651,7 @@ border-radius: 12px;
 height: 200px !important;
 }
 .mfg-quality {
-padding: 48px 0 calc(28px + env(safe-area-inset-bottom));
+padding: 64px 0;
 }
 .mfg-quality__inner { padding: 0 16px; gap: 28px; }
 .mfg-quality__eyebrow { letter-spacing: 0.08em; }
@@ -750,8 +750,8 @@ display: inline-flex !important;
 align-items: center;
 scroll-snap-align: start;
 }
-[id*="21844034879741"][id*="cta"],
 #mfg-faq-template--21844034879741__manufacturing_faq {
-padding-bottom: calc(28px + env(safe-area-inset-bottom));
+padding-top: 64px;
+padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
 }

@@ -2363,6 +2363,101 @@
     });
   }
 
+  // The blog article's reading map: names the share links for screen
+  // readers, opens the TOC disclosure at desktop widths, and builds the
+  // section list from the article's own headings.
+  //
+  // This ran as an inline `<script>` inside the LiveCanvas template, which the
+  // site's CSP blocks (`script-src` carries no `'unsafe-inline'`) — every
+  // article paid for a console error and got none of the behaviour: zero
+  // sections in the map, zero share links with a name (measured 2026-10-27 at
+  // both 1440 and 390). The behaviour belongs in this file by the site's own
+  // ruling, not in the template.
+  function setupBlogArticleMap() {
+    var root = document.getElementById('md-blog-single');
+    if (!root) {
+      return;
+    }
+
+    each(root.querySelectorAll('.reader-share-links a'), function (link) {
+      var name = (link.textContent || '').trim();
+      if (name) {
+        link.setAttribute('aria-label', name);
+        link.setAttribute('title', name);
+      }
+    });
+
+    var disclosure = root.querySelector('.reader-toc');
+    var desktop = window.matchMedia('(min-width:1000px)');
+    if (disclosure) {
+      var sizeDisclosure = function () {
+        disclosure.open = desktop.matches;
+      };
+      sizeDisclosure();
+      if (desktop.addEventListener) {
+        desktop.addEventListener('change', sizeDisclosure);
+      }
+    }
+
+    var content = root.querySelector('.md-blog-single-content');
+    var map = root.querySelector('.md-blog-single-map-nav');
+    var first = map && map.querySelector('a[href="#md-blog-single-body"]');
+    var relatedLink = map && map.querySelector('a[href="#md-blog-single-related"]');
+    if (relatedLink && !root.querySelector('.md-blog-single-related-card')) {
+      relatedLink.remove();
+    }
+    if (!content || !first) {
+      return;
+    }
+
+    var headings = [].filter.call(content.querySelectorAll('h2'), function (heading) {
+      return !heading.closest('.md-inquiry-cta');
+    });
+
+    var previous = first;
+    headings.forEach(function (heading, index) {
+      if (!heading.id) {
+        var base = 'md-article-section-' + (index + 1);
+        var id = base;
+        var suffix = 2;
+        while (document.getElementById(id)) {
+          id = base + '-' + suffix++;
+        }
+        heading.id = id;
+      }
+
+      var link = document.createElement('a');
+      link.className = 'md-blog-single-map-section';
+      link.href = '#' + heading.id;
+
+      var line = document.createElement('span');
+      line.className = 'md-blog-single-map-line';
+      line.setAttribute('aria-hidden', 'true');
+
+      var label = document.createElement('span');
+      label.textContent = (heading.textContent || '').trim();
+
+      link.appendChild(line);
+      link.appendChild(label);
+      if (previous.insertAdjacentElement) {
+        previous.insertAdjacentElement('afterend', link);
+      }
+      previous = link;
+    });
+
+    var markCurrent = function () {
+      each(map.querySelectorAll('a[href^="#"]'), function (link) {
+        if (link.hash === window.location.hash && link.hash !== '') {
+          link.setAttribute('aria-current', 'location');
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      });
+    };
+    markCurrent();
+    window.addEventListener('hashchange', markCurrent);
+  }
+
   // Laser-cut panels' FAQ: category tabs, a text filter, collapsible groups and
   // per-question answers. All four were drawn and none of them worked.
   function setupFaqFilter() {
@@ -2773,6 +2868,14 @@
   // The header's predictive search: a text field, a clear control and a result
   // container. The field is a real form input, so submitting works; the reset
   // clears the query and the result region.
+  //
+  // The result region used to be revealed on every keystroke and never
+  // filled — a promise of suggestions that always came back empty (measured
+  // 2026-10-27: typing "leaf" opened a zero-height box, zero requests). It now
+  // asks this site's own REST collection: `/wp-json/wp/v2/product?search=`,
+  // which is the same corpus the catalog reads, so a suggestion can never
+  // name a pattern the catalog does not have. One request per settled query,
+  // cancelled when a newer one supersedes it.
   function setupPredictiveSearchReset() {
     each(document.querySelectorAll('[data-predictive-search-input]'), function (input) {
       var name = input.getAttribute('data-predictive-search-input');
@@ -2781,6 +2884,22 @@
       if (!reset) {
         return;
       }
+
+      // The template already carries its own vocabulary on `data-locales`
+      // (pages/collections/products/articles), put there by the conversion.
+      // Reading it beat adding a fourth hard-coded string set to this file.
+      var locales = {};
+      var scope = document.querySelector('.xo-predictive-search[data-locales]');
+      if (scope) {
+        try {
+          locales = JSON.parse(scope.getAttribute('data-locales')) || {};
+        } catch (error) {
+          locales = {};
+        }
+      }
+      var timer = null;
+      var inflight = null;
+      var empty = false;
 
       var sync = function () {
         // The clear control only exists while there is something to clear.
@@ -2791,18 +2910,195 @@
         }
       };
 
+      var settle = function (query) {
+        if (inflight) {
+          inflight.abort();
+          inflight = null;
+        }
+        if (!query) {
+          results.innerHTML = '';
+          empty = false;
+          return;
+        }
+
+        var controller = typeof AbortController === 'function' ? new AbortController() : null;
+        inflight = controller;
+        var url = '/wp-json/wp/v2/product?per_page=5&_fields=title,link,slug&search=' + encodeURIComponent(query);
+
+        fetch(url, controller ? { signal: controller.signal } : undefined)
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error('search ' + response.status);
+            }
+            return response.json();
+          })
+          .then(function (rows) {
+            if (inflight !== controller) {
+              return;
+            }
+            inflight = null;
+            paint(rows, query);
+          })
+          .catch(function (error) {
+            // An aborted request is the normal case: a newer query replaced
+            // this one. Anything else stays silent — a search box that throws
+            // a red banner because the network hiccuped is worse than one that
+            // simply offers the submit path it already has.
+            if (error && error.name === 'AbortError') {
+              return;
+            }
+            if (inflight === controller) {
+              inflight = null;
+              results.innerHTML = '';
+              empty = false;
+            }
+          });
+      };
+
+      var paint = function (rows, query) {
+        results.innerHTML = '';
+
+        if (!rows || !rows.length) {
+          if (!empty) {
+            empty = true;
+            var none = document.createElement('p');
+            none.className = 'xo-predictive-search__empty';
+            none.textContent = (locales.empty || 'No patterns match') + ' "' + query + '".';
+            results.appendChild(none);
+          }
+          return;
+        }
+
+        empty = false;
+
+        // WordPress ranks search hits by relevance across every field, so a
+        // pattern whose body happens to mention the word can outrank one named
+        // after it — typing "leaf" put three content matches above Leaf Vines
+        // (measured 2026-10-27). A suggestion row is read as a title, so the
+        // rows whose title carries the query lead; the rest keep their order.
+        var needle = query.toLowerCase();
+        var score = function (row) {
+          var title = (row.title && row.title.rendered ? row.title.rendered : row.slug).toLowerCase();
+          var head = title.split('|')[0];
+          if (head.indexOf(needle) === 0) {
+            return 0;
+          }
+          return head.indexOf(needle) === -1 ? 2 : 1;
+        };
+        var ranked = rows.slice().sort(function (a, b) {
+          return score(a) - score(b);
+        });
+
+        var list = document.createElement('ul');
+        list.className = 'xo-predictive-search__list';
+
+        ranked.forEach(function (row) {
+          var item = document.createElement('li');
+          var link = document.createElement('a');
+          link.className = 'xo-predictive-search__hit';
+          link.href = row.link;
+          // The stored title is an SEO title: "Leaf Vines Laser Cut |
+          // Architectural Metal Screen Pattern". The suffix repeats on every
+          // row and spends the width a suggestion needs on its own words, so
+          // the row shows the part before the first pipe. The full title is
+          // still what the destination page announces.
+          var title = row.title && row.title.rendered ? row.title.rendered : row.slug;
+          link.textContent = title.split('|')[0].replace(/\s+$/, '');
+          item.appendChild(link);
+          list.appendChild(item);
+        });
+
+        results.appendChild(list);
+      };
+
       reset.addEventListener('click', function (event) {
         event.preventDefault();
         input.value = '';
+        if (inflight) {
+          inflight.abort();
+          inflight = null;
+        }
         if (results) {
           results.innerHTML = '';
         }
+        empty = false;
         sync();
         input.focus();
       });
 
-      input.addEventListener('input', sync);
+      input.addEventListener('input', function () {
+        sync();
+        if (timer) {
+          clearTimeout(timer);
+        }
+        // 250ms is the threshold where typing a word stops feeling like it
+        // waits. Below it the box queries mid-word; above it the pause is
+        // perceptible.
+        timer = setTimeout(function () {
+          timer = null;
+          settle((input.value || '').trim());
+        }, 250);
+      });
+
+      input.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && results && !results.hidden) {
+          results.hidden = true;
+        }
+      });
+
       sync();
+    });
+  }
+
+  // The header's Resources disclosure. It carries a sub-menu (FAQs, the blog)
+  // but no page of its own, and it shipped as `<a href="#">` — a control that
+  // looks like a link, is announced as a link, and does nothing when clicked
+  // (2026-10-27: every one of 21 page types, at 1440). Its markup is now a
+  // button, which is what a pure disclosure should be; this opens and closes
+  // it for pointer and keyboard alike, and Escape closes it like every other
+  // layer on the site.
+  function setupNavDisclosure() {
+    each(document.querySelectorAll('[data-nav-disclosure]'), function (button) {
+      var item = button.closest('li');
+      var menu = item ? item.querySelector('.xo-menu-horizontal-v1__sub-menu') : null;
+      if (!menu) {
+        return;
+      }
+
+      var setOpen = function (open) {
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        item.classList.toggle('is-disclosure-open', open);
+      };
+
+      var isOpen = function () {
+        return button.getAttribute('aria-expanded') === 'true';
+      };
+
+      setOpen(false);
+
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        setOpen(!isOpen());
+      });
+
+      document.addEventListener('click', function (event) {
+        if (isOpen() && !item.contains(event.target)) {
+          setOpen(false);
+        }
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && isOpen()) {
+          setOpen(false);
+          button.focus();
+        }
+      });
+
+      item.addEventListener('focusout', function (event) {
+        if (isOpen() && !item.contains(event.relatedTarget)) {
+          setOpen(false);
+        }
+      });
     });
   }
 
@@ -4020,10 +4316,12 @@
     setupQualityDeck();
     setupSpecTableSort();
     setupFaqFilter();
+    setupBlogArticleMap();
     setupPerforatedMarkers();
     setupCompareDrag();
     setupPatternRouteCards();
     setupPredictiveSearchReset();
+    setupNavDisclosure();
     setupSpecDecisionCards();
 
     // The custom-screens landing face, converted from a theme whose whole

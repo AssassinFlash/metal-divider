@@ -18,6 +18,60 @@
 .xo-modal-content__body { --width: 0; --scrollbar-thumb-padding: 0px; }
 .xo-predictive-search__left { --lg: 3; }
 .xo-predictive-search__center { --xs: 12; --lg: 9; }
+/* The suggestion list the predictive search fills. It sits inside the search
+   dialog on every width; the box is hidden by the script until there is a
+   query, so an empty search dialog looks exactly as it did before. Rows are
+   44px for the same reason every other control is, and the hit colour is the
+   ink gold because the panel behind it is light in the desktop dialog. */
+.xo-predictive-search__result {
+  display: block;
+  margin-top: 12px;
+}
+.xo-predictive-search__result[hidden] {
+  display: none;
+}
+.xo-predictive-search__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+.xo-predictive-search__hit {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  color: #1a1a1a;
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  text-decoration: none;
+}
+.xo-predictive-search__list li:last-child .xo-predictive-search__hit {
+  border-bottom: 0;
+}
+.xo-predictive-search__hit:hover,
+.xo-predictive-search__hit:focus-visible {
+  background: #faf9f7;
+  color: #85692e;
+}
+.xo-predictive-search__empty {
+  margin: 0;
+  padding: 12px 4px;
+  color: #5a6363;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+}
+/* The desktop dialog's input measured 24px tall — the phone block sets 48px,
+   the desktop one never did. Floor first, so every width gets it. */
+#predictive-search,
+.xo-field-input__input[data-predictive-search-input] {
+  min-height: 44px;
+}
 .md-ratio-100 { --xo-ratio-percent: 1.0; }
 .md-ratio-87-5 { --xo-ratio-percent: 0.875; }
 .md-ratio-177-7 { --xo-ratio-percent: 1.7772511848341233; }
@@ -76,12 +130,19 @@ height: 100%;
 -o-object-position: top;
 object-position: top; }
 .menu-header-v2__img .xo-image { height: 100%; }
-.menu-header-v2__link { display: inline-block;
+/* Desktop mega-menu rows were 29px tall (`inline-block` plus a 10px
+   padding-bottom), under the 40px floor every other control on the site
+   meets — measured on production 2026-10-27 at 1440, sixteen links in the
+   header were short. min-height with align-items keeps the type and the
+   underline where they were and only gives the row somewhere to be hit. */
+.menu-header-v2__link { display: flex;
+align-items: center;
+min-height: 44px;
 font-size: 16px;
 color: rgb(var(--color-foreground));
 padding-bottom: 10px;
-margin-bottom: 14px;
-margin-top: 15px;
+margin-bottom: 4px;
+margin-top: 5px;
 position: relative;
 transition: 0.3s ease; }
 .menu-header-v2__link::after { content: "";
@@ -297,7 +358,7 @@ position: relative;
 display: inline-flex;
 align-items: center;
 justify-content: center;
-height: 40px;
+height: 44px;
 width: 142px;
 padding: 0 10px;
 border-radius: 999px;
@@ -341,12 +402,23 @@ padding: 0;
 list-style: none;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item{ position: relative; }
+/* The tap floor for the desktop rail, in the base layer so every width gets
+   it. Measured 2026-10-27 at 1440: the seven top-level links were 15.8px and
+   the sub-menu rows 32.5px — the rail is the primary way around the site and
+   it was the smallest target of any control on it. `min-height` with
+   `align-items:center` grows the hit box to 44px without moving the type: the
+   line-height, the font size and the underline all stay where they were, so
+   the 113px band and its measured geometry are unchanged. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link{
 display: flex;
 align-items: center;
 justify-content: space-between;
 gap: 4px;
+min-height: 44px;
 padding: 0 20px 0 0;
+border: 0;
+background: none;
+cursor: pointer;
 color: #000;
 font-family: "Inter", sans-serif;
 font-size: 15px;
@@ -405,7 +477,13 @@ padding: 0 15px;
    The conversion had left these on Playfair 15px/19px, which made every row
    29px and the menu 88px — a 4px row and 7px menu drift, and the wrong
    typeface for a utility menu. The panel's own card titles keep Playfair;
-   only the plain row list is Inter. */
+   only the plain row list is Inter.
+   33px is under this site's 44px floor, so the row gets the floor too; the
+   menu is 95px for two rows either way, because 44 + 44 + the 15px padding
+   on each side still fits inside the box it grows into. */
+align-items: center;
+display: flex;
+min-height: 44px;
 font-family: "Inter", sans-serif;
 font-size: 15px;
 font-weight: 500;
@@ -426,6 +504,19 @@ transition: transform .3s ease, color .3s ease;
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub:hover .xo-menu-horizontal-v1__label{
 transform: translateX(5px);
 color: #000;
+}
+/* The Resources disclosure. Its row carries no destination, so it opens on
+   click as well as hover: hover alone is unreachable on touch, and the row
+   previously shipped as `<a href="#">` — a link that did nothing. The open
+   state is the same panel the hover state shows, so pointer and keyboard
+   users see one behaviour, not two. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item.is-disclosure-open > .xo-menu-horizontal-v1__sub-menu{
+opacity: 1;
+pointer-events: auto;
+transform: none;
+}
+#HeaderV9-sections--21844031144189__header_v1_main button.xo-menu-horizontal-v1__link{
+font: inherit;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__mega-menu:empty{ display: none; }
 /* Responsive: 73px white band, icon logo, no search, 34px CTA,
@@ -1615,6 +1706,26 @@ top: calc(var(--md-header-h, 113px) + 16px);
   }
   xo-modal[xo-name="search"] .xo-predictive-search__clear[hidden] {
     display: none;
+  }
+  /* On the phone the search dialog is #141414, so the list inverts with it.
+     Without this the light-surface rules above would put a white list on a
+     white-adjacent panel with dark text — legible but out of place; the whole
+     dialog is one dark sheet on this breakpoint. */
+  xo-modal[xo-name="search"] .xo-predictive-search__list {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  xo-modal[xo-name="search"] .xo-predictive-search__hit {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+  xo-modal[xo-name="search"] .xo-predictive-search__hit:hover,
+  xo-modal[xo-name="search"] .xo-predictive-search__hit:focus-visible {
+    background: rgba(255, 255, 255, 0.1);
+    color: #d4b878;
+  }
+  xo-modal[xo-name="search"] .xo-predictive-search__empty {
+    color: rgba(255, 255, 255, 0.6);
   }
   xo-modal[xo-name="search"] .xo-predictive-search__clear:focus-visible,
   xo-modal[xo-name="search"] .xo-modal-content__close--abs:focus-visible {

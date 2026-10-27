@@ -40,7 +40,7 @@ background: #ffffff;
 .md-t3ec96985 { width: 40% }
 .md-t16000cc0 { width: 100% }
 .md-td07599b9 { width: 90% }
-.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-tcc07631f { padding-top: 64px;padding-bottom: 64px }
 .md-t78970fa2 { text-wrap: pretty }
 .md-t4d66bb95 { background-color: #141414;padding-top: 80px;padding-bottom: 80px }
 .md-taf3fcd44 { scrollbar-width: none;-ms-overflow-style: none }
@@ -169,7 +169,7 @@ background: rgba(201,169,98,0.12);
 font-size: 16px !important;
 }
 [id*="21844035043581"][id*="contact"],
-[id*="21844035043581"][id*="cta"] {
+[id*="21844035043581"][id*="cta"]:not([id*="mid"]) {
 padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
 }
 }

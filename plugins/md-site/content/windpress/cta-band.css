@@ -573,9 +573,14 @@ background: rgba(255,255,255,0.05);
  * appends it to its volume after every write, so a rerun keeps it. */
 .md-inquiry-cta {
   align-items: center;
+  background: var(--md-bg-deep);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.9);
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
+  padding: 24px;
 }
 .md-inquiry-cta__primary {
   align-items: center;
@@ -609,6 +614,12 @@ background: rgba(255,255,255,0.05);
 }
 .md-inquiry-cta__whatsapp:hover {
   background: rgba(37, 211, 102, 0.1);
+}
+.md-inquiry-cta .md-inquiry-cta__primary {
+  color: var(--md-bg-darkest);
+}
+.md-inquiry-cta .md-inquiry-cta__whatsapp {
+  color: var(--md-whatsapp);
 }
 .md-inquiry-cta__note {
   color: rgba(255, 255, 255, 0.55);

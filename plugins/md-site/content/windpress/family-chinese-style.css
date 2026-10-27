@@ -278,7 +278,7 @@ transition: none !important;
 .md-t3f9c748b { padding-top: 80px;padding-bottom: 88px }
 .md-t722f84cd { text-wrap: balance }
 .md-t78970fa2 { text-wrap: pretty }
-.md-tcc07631f { padding-top: 24px;padding-bottom: 24px }
+.md-tcc07631f { padding-top: 64px;padding-bottom: 64px }
 .md-tecede96f { background-color: #141414 }
 .md-t312247e4 { scrollbar-width: none }
 .md-t4d66bb95 { background-color: #141414;padding-top: 80px;padding-bottom: 80px }
@@ -414,7 +414,7 @@ font-size: 16px !important;
    slider stayed 28px (audit 2026-10-26). The 44px now lives in the base
    rule above, at every width. */
 [id*="21873710498045"][id*="contact"],
-[id*="21873710498045"][id*="cta"] {
+[id*="21873710498045"][id*="cta"]:not([id*="mid"]) {
 padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
 }
 }

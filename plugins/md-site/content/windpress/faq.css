@@ -721,7 +721,11 @@ font-weight: 700;
   #faq-download-questions .cat-tab:has(span.opacity-100) {
     background: #c9a962;
     border-color: #c9a962;
-    color: #141414;
+    color: #141414 !important;
+  }
+  #faq-download-questions .cat-tab.active span,
+  #faq-download-questions .cat-tab:has(span.opacity-100) span {
+    color: #141414 !important;
   }
   #faq-download-questions .cat-tab span.h-px {
     display: none;

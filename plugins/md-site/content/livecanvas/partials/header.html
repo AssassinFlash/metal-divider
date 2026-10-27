@@ -337,10 +337,13 @@
       </li>
     
       <li class='xo-menu-horizontal-v1__item xo-menu-horizontal-v1__item--hover'>
-          <a
+          <button
+            type='button'
             class='
               xo-menu-horizontal-v1__link '
-            href='#'
+            data-nav-disclosure
+            aria-expanded='false'
+            aria-controls='header-resources-menu'
             
           >
             
@@ -376,11 +379,11 @@
                 </span>
               
             
-          </a>
+          </button>
         <xo-mega-menu class='xo-menu-horizontal-v1__mega-menu' xo-name='header-mega-menu-v1' xo-index='4'></xo-mega-menu>
         
         
-          <ul class='xo-menu-horizontal-v1__sub-menu list-unstyled md-t14a7f425'>
+          <ul id='header-resources-menu' class='xo-menu-horizontal-v1__sub-menu list-unstyled md-t14a7f425'>
             
               <li class='xo-menu-horizontal-v1__item xo-menu-horizontal-v1__item--sub xo-menu-horizontal-v1__item--hover'>
                 <a

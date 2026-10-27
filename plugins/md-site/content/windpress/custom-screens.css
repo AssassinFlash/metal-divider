@@ -1771,12 +1771,15 @@ border: 1px solid rgba(255, 255, 255, 0.08);
 .md-t5251799e { background-image: radial-gradient(circle at 20% 20%, rgba(201, 169, 98, 0.15), transparent 40%), radial-gradient(circle at 80% 0%, rgba(201, 169, 98, 0.1), transparent 45%) }
 .md-t0395f283 { background-color: rgba(201, 169, 98, 0.6) }
 .md-t667facd5 { background-color: #faf9f7;color: #1a1a1a }
+.md-t667facd5 .md-tdd67a31a { color: var(--md-gold-ink) }
+.md-t667facd5 span.md-tdd67a31a { opacity: 1 !important }
 .md-ta3ce1732 { background-color: rgba(201, 169, 98, 0.1) }
 .md-td9b79faa { background-color: rgba(26, 26, 26, 0.05) }
 .md-t47d003a5 { background-color: #1a1a1a;color: #c9a962 }
 .md-t6f360829 { color: #333333 }
 .md-t8165ee54 { background-color: #1a1a1a;color: #ffffff }
 .md-t45f2dff0 { background-color: #c9a962 }
+#section-success-modal button.md-t45f2dff0 { color: var(--md-bg) !important }
 .md-t67e2f3cc { background-image: url('data:image/svg+xml,%3Csvg width=%2740%27 height=%2740%27 viewBox=%270 0 40 40%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cg fill=%27c9a962%27 fill-opacity=%271%27 fill-rule=%27evenodd%27%3E%3Cpath d=%27M0 20L20 0v20H0zm20 0L40 0v20H20zm0 0v20l20-20H20zm0 0H0l20 20V20z%27/%3E%3C/g%3E%3C/svg%3E') }
 .md-t967b0356 { background-color: #0a0a0a;color: #ffffff }
 .md-taeff987b { background-image: url('data:image/svg+xml,%3Csvg width=%2760%27 height=%2760%27 viewBox=%270 0 60 60%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cg fill=%27none%27 fill-rule=%27evenodd%27%3E%3Cg fill=%27c9a962%27 fill-opacity=%271%27%3E%3Cpath d=%27M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%27/%3E%3C/g%3E%3C/g%3E%3C/svg%3E') }

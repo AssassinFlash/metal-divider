@@ -25,58 +25,6 @@
     </div>
     <aside class="reader-right"><div class="reader-share"><h2>Share</h2>[lc_the_sharing class="reader-share-links"]</div><section id="md-blog-single-related"><h2>Related reading</h2><div class="md-blog-single-related-grid"><loop type="post" count="3" category="current" exclude="current" orderby="date" order="desc"><article class="lc-block"><a href="{Field url}" class="md-blog-single-related-card"><div class="md-blog-single-related-img"><if field="image"><img src="{Field image_url size='medium_large'}" srcset="{Field image_srcset}" sizes="(max-width: 300px) 100vw, 300px" loading="lazy" alt="{Field image_alt}"><else><div class="md-blog-single-img-fallback" aria-hidden="true"></div></else></if></div><div class="md-blog-single-related-body"><div class="md-blog-single-related-meta"><time datetime="{Field publish_date date_format='c'}"><field name="publish_date" date_format="M j, Y"></field></time><span aria-hidden="true">&middot;</span></div><h3 class="md-blog-single-related-card-title"><field name="title"></field></h3><div class="md-blog-single-related-excerpt"><field name="excerpt"></field></div><span class="md-blog-single-related-arrow">Read article <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" /></svg></span></div></a></article></loop></div><a class="reader-all" href="/blog/">All posts <span aria-hidden="true">↗</span></a></section></aside>
   </div>
-		<script>
-		(function () {
-			function buildArticleMap() {
-				var root = document.getElementById('md-blog-single');
-				if (!root) return;
-				root.querySelectorAll('.reader-share-links a').forEach(function (link) {
-					var name = link.textContent.trim();
-					if (name) { link.setAttribute('aria-label', name); link.setAttribute('title', name); }
-				});
-				var disclosure = root.querySelector('.reader-toc');
-				var desktop = window.matchMedia('(min-width:1000px)');
-				function sizeDisclosure() { disclosure.open = desktop.matches; }
-				if (disclosure) { sizeDisclosure(); desktop.addEventListener('change', sizeDisclosure); }
-				var content = root.querySelector('.md-blog-single-content');
-				var map = root.querySelector('.md-blog-single-map-nav');
-				var first = map && map.querySelector('a[href="#md-blog-single-body"]');
-				var relatedLink = map && map.querySelector('a[href="#md-blog-single-related"]');
-				if (relatedLink && !root.querySelector('.md-blog-single-related-card')) relatedLink.remove();
-				if (!content || !first) return;
-				var headings = Array.prototype.filter.call(content.querySelectorAll('h2'), function (heading) {
-					return !heading.closest('.md-inquiry-cta');
-				});
-				var previous = first;
-				headings.forEach(function (heading, index) {
-					if (!heading.id) {
-						var base = 'md-article-section-' + (index + 1), id = base, suffix = 2;
-						while (document.getElementById(id)) id = base + '-' + suffix++;
-						heading.id = id;
-					}
-					var link = document.createElement('a');
-					link.className = 'md-blog-single-map-section';
-					link.href = '#' + heading.id;
-					var line = document.createElement('span');
-					line.className = 'md-blog-single-map-line';
-					line.setAttribute('aria-hidden', 'true');
-					var label = document.createElement('span');
-					label.textContent = heading.textContent.trim();
-					link.appendChild(line); link.appendChild(label);
-					previous.insertAdjacentElement('afterend', link);
-					previous = link;
-				});
-				function markCurrent() {
-					Array.prototype.forEach.call(map.querySelectorAll('a[href^="#"]'), function (link) {
-						if (link.hash === window.location.hash && link.hash !== '') link.setAttribute('aria-current', 'location');
-						else link.removeAttribute('aria-current');
-					});
-				}
-				markCurrent(); window.addEventListener('hashchange', markCurrent);
-			}
-			if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildArticleMap, {once: true});
-			else buildArticleMap();
-		})();
-		</script>
+
 </article>
 </tangible>

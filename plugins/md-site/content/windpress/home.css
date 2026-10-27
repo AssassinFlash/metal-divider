@@ -259,7 +259,7 @@ animation: none;
 .md-td8ee4148 { font-variant-numeric: tabular-nums;font-weight: 600;font-size: 14px;color: #c9a962;min-width: 22px;text-align: right }
 .md-t312247e4 { scrollbar-width: none }
 .md-ta2e71e3d { background-image: radial-gradient(ellipse at top, rgba(201,169,98,0.12) 0%, transparent 70%) }
-.md-td96d13b3 { background-color: #141414;padding-top: 100px;padding-bottom: 100px }
+.md-td96d13b3 { background-color: #141414;padding-top: 96px;padding-bottom: 96px }
 .md-taf3fcd44 { scrollbar-width: none;-ms-overflow-style: none }
 .md-t80e98d4a { mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);-webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent) }
 .md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }
@@ -567,5 +567,29 @@ top: -20px;
 bottom: -20px;
 left: -3px;
 right: -3px;
+}
+}
+
+/* Mobile section rhythm. 390 measured stats 100 (now 96 above), FAQ 72 from
+   faq.css, projects inner pt-20/pb-20 = 80, contact py-[50px] = 50, against
+   64/96 neighbors. Desktop utilities (md:py-24, md:pt-32, faq.css at ≥750)
+   stay. Utility overrides are !important because this volume is the
+   components layer. */
+@media (max-width: 749px) {
+#home-faq-template--21844031930621__faq_v1_wQVCUV {
+padding-top: 64px;
+padding-bottom: 64px;
+}
+}
+@media (max-width: 767px) {
+#home-projects-template--21844031930621__serving_projects_877GUd > .pt-20 {
+padding-top: 96px !important;
+}
+#home-projects-template--21844031930621__serving_projects_877GUd > .pb-20 {
+padding-bottom: 96px !important;
+}
+#contact .contact-quote {
+padding-top: 64px !important;
+padding-bottom: 64px !important;
 }
 }
