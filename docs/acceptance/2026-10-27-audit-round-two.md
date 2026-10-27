@@ -281,3 +281,55 @@ Est. quantity: 50-100 sqm
 - 未做:81 条真缺失中除 custom-screens 外的其余条目逐页核对(其中 `Est. Quantity` 类为测量假象,
   按 §7 需打开弹窗后复测);电话区号下拉的取舍待业主决定;
   `docs/acceptance/2026-10-27-production-walkthrough.md` 已加废弃横幅
+
+## 10. 图片引用完整性(2026-10-28,新增检查面)
+
+这是此前所有轮次都没有覆盖的一类问题:**模板里写的图片路径,站点上到底有没有那个文件。**
+
+结论:**804 个引用,0 个缺失**(生产与 dev 均如此)。起步时不是这样。
+
+### 10.1 收敛过程
+
+| 阶段 | 不服务 | 其中真缺陷 | 假象来源 |
+|---|---|---|---|
+| 初测(843 refs) | 49 | 24 | 25 条:正则把 `<picture>` 里用 `\|` 分隔的多个 URL 粘成一个 |
+| 修正正则 | 24 | 24 | — |
+| 修 srcset | 8 | 1 | 7 条:并发下服务器 504,单独请求全部 200 |
+| 加超时重试 | **0** | 0 | — |
+
+### 10.2 三个真缺陷
+
+1. **23 张图案图在生产是空白的。** 每个的 `-480w` 存在、`-768w` 404。卡片声明
+   `sizes="(min-width: 640px) 33vw, 100vw"`,1224px 桌面 @2x 需要约 808px,于是选中不存在的
+   768 档而非存在的 480 档。浏览器实测:`complete: true`、`naturalWidth: 0`、
+   `currentSrc` 指向 404、`decode()` 抛 `EncodingError`,滚进视口等 5 秒仍为空。
+   **修法**:从 srcset 移除死候选,让浏览器退回存在的档位。dev 实测 `naturalWidth: 403`、`decode(): ok`。
+2. **`Long_Island_Fence-480w.webp` 命名漂移。** 管线写 `long-island-fence-480w.webp`,
+   模板用旧站的 `Long_Island_Fence-480w.webp`。同一张卡的三张图里第三张打不开。
+3. **`trust-video-crated-loading` 的 `src` 兜底指向不存在的 768 档**,而它的 srcset 只给 480/600。
+
+### 10.3 为什么不做成 PHPUnit 测试(重要)
+
+我写了守卫测试,但它**报错了**——把 15 张能正常访问的照片判成缺失。原因:
+`data/media-final/site-manifest.json` 里根本没有旧站命名的那批文件(`Aztec_Geometry`、
+`Athelstan_Pergola`、`Criss_Cross_Facade` 等),而站点上它们都存在且返回 200。
+两套命名并存,清单只是其中一套。
+
+所以**权威是站点,不是仓库里的任何清单**。这条测试已删除,改由
+`tools/audit/media_refs.py`(网络检查)承担,判据与教训写在
+`docs/acceptance/media-reference-check.md`。
+
+### 10.4 扫描器校准的完整账(同一轮)
+
+| 判定类 | 初测 | 校准后 | 假象原因 |
+|---|---|---|---|
+| `img-broken` | 2308 | 2 | 零尺寸盒子 = 未渲染,不是破损;无 src 的 picture 槽位不是断链 |
+| `empty-block` | 1239 | 0(首页) | `<img>` 没有 textContent;遮罩层本就是空矩形 |
+| `long-measure` | 798 | 0-7 | 用视口百分比判行宽,应改绝对阈值 760px |
+| `hidden-content` | 84 | 3 | tab 面板默认隐藏是设计;**只有触发器说展开而面板仍隐藏才算缺陷** |
+| `edge-hug` | 29 | 26 | 轮播里等滚动的幻灯片右边缘超出视口,不是贴边 |
+| `img-ratio` | 108 | 0 | 图片未加载时 `naturalWidth=0`,用它算比例无意义 |
+
+**教训**:一个缺陷类的数字大于页面数时,先怀疑判据,不要先怀疑站点。
+`hidden-content` 84 条里 83 条是正常 tab;`empty-block` 444 条里 443 条是照片和遮罩。
+
