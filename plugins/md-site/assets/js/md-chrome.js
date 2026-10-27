@@ -240,9 +240,9 @@
             return;
           }
           var self = this;
-          this.frameId = window.requestAnimationFrame(function (ts) {
-            self.step(ts);
-          });
+          this.frameId = window.setTimeout(function () {
+            self.step(Date.now());
+          }, 16);
         },
         step: function (timestamp) {
           if (this.lastTimestamp === null) {
@@ -259,9 +259,9 @@
             }
           }
           var self = this;
-          this.frameId = window.requestAnimationFrame(function (ts) {
-            self.step(ts);
-          });
+          this.frameId = window.setTimeout(function () {
+            self.step(Date.now());
+          }, 16);
         },
         resume: function () {
           this.paused = false;
@@ -1886,10 +1886,10 @@
       if (frame) {
         return;
       }
-      frame = window.requestAnimationFrame(function () {
+      frame = window.setTimeout(function () {
         frame = 0;
         announce();
-      });
+      }, 16);
     }, { passive: true });
     window.addEventListener('resize', announce);
 

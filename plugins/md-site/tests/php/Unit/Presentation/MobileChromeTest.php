@@ -432,6 +432,42 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * The mesh stage must not depend on requestAnimationFrame or on scroll
+	 * events to select a scene.
+	 *
+	 * rAF does not fire in some environments (HeadlessChrome has no
+	 * compositor, and it pauses in a background tab), and programmatic
+	 * `window.scrollTo` does not fire a scroll event everywhere. Wrapping
+	 * `sync()` in rAF meant the scene never changed on scroll, and relying on
+	 * the scroll event after a nav click meant the scene never changed on
+	 * click either — the whole stage read as dead (reported 2026-10-27).
+	 *
+	 * `setTimeout` runs in every environment, and the nav click applies its
+	 * scene directly.
+	 */
+	public function test_the_mesh_stage_does_not_depend_on_raf_or_scroll_events(): void {
+		$script = (string) file_get_contents( // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../assets/js/md-chrome.js'
+		);
+
+		$this->assertStringNotContainsString(
+			'window.requestAnimationFrame(function () {',
+			$script,
+			'wrapping scene sync in requestAnimationFrame leaves it unable to run in some environments'
+		);
+		$this->assertStringContainsString(
+			'apply(index);',
+			$script,
+			'the nav click applies its scene directly rather than relying on a scroll event'
+		);
+		$this->assertStringContainsString(
+			'function smoothScrollTo(',
+			$script,
+			'smooth scrolling is driven by setTimeout, not by the browser\'s smooth option, which performs no scroll in some environments'
+		);
+	}
+
+	/**
 	 * A class-only rule cannot carry a state against an id-scoped colour.
 	 *
 	 * `#md-footer a { color: inherit }` is (1, 0, 1). A `.md-footer__x:hover`
