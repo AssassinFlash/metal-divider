@@ -379,6 +379,66 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * Body copy keeps a readable measure.
+	 *
+	 * The migrated templates cap paragraphs at `max-w-[980px]` or leave them
+	 * uncapped in a 1400px container: 980px at 18px is about 109 characters a
+	 * line, and one manufacturing paragraph measured 1,320px at 14px — around
+	 * 189 characters. A line that long loses the reader.
+	 *
+	 * The cap has to state the property that wins: a Tailwind utility sits in
+	 * the utilities layer and outranks anything this volume writes from
+	 * `components`, so the first attempt (`max-width: 40em` alone) changed
+	 * nothing and only the measurement revealed it.
+	 */
+	public function test_body_copy_keeps_a_readable_measure(): void {
+		$css = (string) file_get_contents( $this->volume_dir() . '/base.css' ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+
+		$this->assertMatchesRegularExpression(
+			'/main p\[class\*="max-w-"\][^{]*\{[^}]*max-width:\s*40em\s*!important/s',
+			$css,
+			'body copy needs a measure cap that outranks the utility layer'
+		);
+	}
+
+	/**
+	 * The desktop dropdown carries its own surface.
+	 *
+	 * The mega-menu panel measured `rgba(0, 0, 0, 0)` at 1440px wide: a
+	 * full-width transparent dropdown whose dark cards floated on whatever sat
+	 * behind them. A panel that overlays page content must paint.
+	 */
+	public function test_the_mega_menu_panel_paints_a_surface(): void {
+		$css = (string) file_get_contents( $this->volume_dir() . '/chrome.css' ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+		$css = (string) preg_replace( '/\/\*.*?\*\//s', '', $css );
+
+		preg_match_all( '/([^{}]*mega-menu:not\(:empty\)[^{}]*)\{([^}]*)\}/', $css, $rules, PREG_SET_ORDER );
+		$this->assertNotEmpty( $rules, 'the mega-menu panel rule must exist' );
+
+		$painted = false;
+		foreach ( $rules as $rule ) {
+			if ( false !== strpos( $rule[2], 'background' ) ) {
+				$painted = true;
+				break;
+			}
+		}
+		$this->assertTrue( $painted, 'the mega-menu panel must paint a surface, not float transparent' );
+	}
+
+	/**
+	 * The custom-screens pattern tiles load without waiting for a scroll.
+	 *
+	 * Eighteen tiles across four tabs, and they are the page's content. With
+	 * `lazy` the active tab's six tiles stayed blank until the visitor scrolled
+	 * far enough, which reads as empty card slots.
+	 */
+	public function test_the_pattern_tiles_load_eagerly(): void {
+		$tile = $this->template( 'partials/pattern-tile.html' );
+
+		$this->assertStringContainsString( 'loading="eager"', $tile, 'the pattern tiles are content, not a footnote; lazy leaves them blank' );
+		$this->assertStringNotContainsString( 'loading="lazy"', $tile, 'no remaining lazy tile in this partial' );
+	}
+	/**
 	 * Nothing may hide content unconditionally; the mask has to be removable.
 	 *
 	 * `x-cloak` and `hidden` are both pre-init masks: they assume a script is
