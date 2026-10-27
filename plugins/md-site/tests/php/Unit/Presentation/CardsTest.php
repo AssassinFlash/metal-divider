@@ -234,10 +234,14 @@ final class CardsTest extends TestCase {
 
 		$html = ( new Cards() )->tile( self::PRODUCT, 'Moroccan & Arabic' );
 
+		// The stage carries no `src` on purpose: `open()` calls `show(0)`, which
+		// assigns it from the active thumb. Shipping the first URL here made
+		// the page download every pattern's full-size preview while every
+		// dialog was still closed (measured 2026-10-27: 4.4MB at 390).
 		$this->assertMatchesRegularExpression(
-			'/data-pattern-main-image src="https:\/\/site\.test\/uploads\/888-large\.webp" alt="Mandala"/',
+			'/data-pattern-main-image(?![^>]*\bsrc=)[^>]*alt="Mandala"/',
 			$html,
-			'the stage image is the product\'s featured image with its code as alt'
+			'the stage has no src until the dialog opens; its alt is still the pattern code'
 		);
 		$this->assertStringNotContainsString( 'src=""', $html, 'no empty src reaches the browser' );
 		$this->assertStringContainsString( '1 / 4', $html, 'the count is the strip\'s real length' );

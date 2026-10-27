@@ -17,7 +17,12 @@
                         <button type="button" class="pattern-lightbox-close" data-pattern-close aria-label="Close preview">&times;</button>
                         <button type="button" class="pattern-lightbox-arrow pattern-lightbox-arrow--prev" data-pattern-prev aria-label="Previous image"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
                         <div class="pattern-lightbox-stage">
-                          <img class="pattern-lightbox-image" data-pattern-main-image src="[md_pattern_context name=first_url]" alt="[md_pattern_context name=first_alt]"[md_pattern_image_srcset sizes="(min-width: 900px) 900px, 100vw"] data-sizes="(min-width: 900px) 900px, 100vw" width="[md_pattern_image_width]" height="[md_pattern_image_height]">
+                          <!-- The stage has no `src` until the dialog opens: `open()` calls `show(0)`,
+       which assigns it from the active thumb. Shipping the first URL here
+       downloaded every pattern's full-size preview on page load, while the
+       dialog was still closed (measured 2026-10-27: /custom-metal-divider-screens/
+       fetched 4.4MB of images at 390, most of it previews nobody had opened). -->
+                          <img class="pattern-lightbox-image" data-pattern-main-image alt="[md_pattern_context name=first_alt]"[md_pattern_image_srcset sizes="(min-width: 900px) 900px, 100vw"] data-sizes="(min-width: 900px) 900px, 100vw" width="[md_pattern_image_width]" height="[md_pattern_image_height]">
                         </div>
                         <button type="button" class="pattern-lightbox-arrow pattern-lightbox-arrow--next" data-pattern-next aria-label="Next image"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                         <div class="pattern-lightbox-meta">
