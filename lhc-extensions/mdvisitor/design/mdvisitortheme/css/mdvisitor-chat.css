@@ -238,6 +238,10 @@ body.widget-chat .mdv-chat-close{
 }
 body.widget-chat .mdv-chat-close:hover{background:rgba(247,243,234,.08)}
 body.widget-chat .mdv-chat-close:focus-visible{outline:2px solid #c9a962;outline-offset:2px}
+body.widget-chat .mdv-closed-actions{display:flex;justify-content:center;padding:0 14px 12px}
+body.widget-chat .mdv-new-chat{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 18px;border:1px solid #c9a962;border-radius:999px;color:#f7f3ea;font-size:13px;font-weight:600;text-decoration:none}
+body.widget-chat .mdv-new-chat:hover{background:rgba(247,243,234,.08)}
+body.widget-chat .mdv-new-chat:focus-visible{outline:2px solid #c9a962;outline-offset:2px}
 
 /* Fill the widget viewport instead of leaving the native 300px message block. */
 html,body.widget-chat{height:100%;}
@@ -251,7 +255,7 @@ body.widget-chat #ChatMessageContainer,
 body.widget-chat #id-operator-typing{flex:0 0 auto;}
 
 body.widget-chat #messagesBlock .usr-tit{display:none!important}
-body.widget-chat #messagesBlock .message-row:has(script[data-bot-action="lhinst.setDelay"]){display:none!important}
+body.widget-chat #messagesBlock .message-row.message-row-typing{display:none!important}
 
 body.widget-chat #status-chat .operator-info,
 body.widget-chat #widget-content-body > .row .operator-info{display:none!important}
