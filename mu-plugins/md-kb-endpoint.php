@@ -116,6 +116,16 @@ function md_kb_endpoint_answer( array $input ): array {
 			),
 		);
 	}
+	if ( md_kb_endpoint_asks_prompt_injection( $q ) ) {
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'msg'     => md_kb_endpoint_injection_handoff_message(),
+				'action'  => 'transfer_operator',
+				'sources' => array(),
+			),
+		);
+	}
 
 	list( $results, $context ) = md_kb_endpoint_retrieve( $q );
 	if ( '' !== $pattern['context'] ) {
@@ -188,6 +198,32 @@ function md_kb_endpoint_commercial_handoff_message(): string {
 function md_kb_endpoint_asks_commercial( string $q ): bool {
 	return 1 === preg_match(
 		'/\b(?:price|pricing|quote|quotation|cost|lead\s*time|delivery\s+(?:time|date)|moq|minimum\s+order|sample)\b|价格|报价|交期|交货|起订|样品/iu',
+		$q
+	);
+}
+
+/**
+ * The visitor-facing sentence when a question tries to override the
+ * instructions. The model is not asked, and the sentence does not quote
+ * the instructions or the attempt.
+ *
+ * @return string The handoff copy.
+ */
+function md_kb_endpoint_injection_handoff_message(): string {
+	return 'I can only help with questions about our architectural metal screens — I am connecting you with the team.';
+}
+
+/**
+ * Whether the question tries to override, reveal or role-play the
+ * instructions. A matching pattern or knowledge row does not change the
+ * answer: the model is not called, so it cannot leak the prompt.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether the team must take the conversation.
+ */
+function md_kb_endpoint_asks_prompt_injection( string $q ): bool {
+	return 1 === preg_match(
+		'/\b(?:ignore\s+(?:all\s+|your\s+|the\s+)?(?:previous|prior|above)\s+instructions|system\s+prompt|reveal\s+(?:your|the)\s+prompt|act\s+as)\b/iu',
 		$q
 	);
 }
@@ -284,10 +320,13 @@ function md_kb_endpoint_pattern_candidates( string $q ): array {
 			$candidates[] = trim( $name );
 		}
 	}
-	// Lower-case names matter: visitors type "agave", not "Agave". Every
-	// word is a search candidate; the query below only keeps a loose hit
-	// when the product title actually contains it.
+	// Lower-case names matter: visitors type "agave", not "Agave". A
+	// multi-word run is its own candidate so "Long Island" can prefix-match
+	// without letting the single word "long" do the same. A lone word is
+	// still a candidate, but the query only keeps it on an exact SKU, slug
+	// or full title.
 	if ( preg_match_all( '/\b[A-Za-z][A-Za-z0-9]{2,}\b/', $q, $names ) ) {
+		$words = array();
 		foreach ( $names[0] as $name ) {
 			if ( 1 === preg_match( '/^[A-Z]{1,6}-\d{2,6}$/i', $name ) ) {
 				continue;
@@ -295,6 +334,15 @@ function md_kb_endpoint_pattern_candidates( string $q ): array {
 			if ( in_array( mb_strtolower( $name ), md_kb_endpoint_pattern_stopwords(), true ) ) {
 				continue;
 			}
+			$words[] = $name;
+		}
+		$count = count( $words );
+		for ( $length = min( 6, $count ); $length >= 2; $length-- ) {
+			for ( $start = 0; $start <= $count - $length; $start++ ) {
+				$candidates[] = implode( ' ', array_slice( $words, $start, $length ) );
+			}
+		}
+		foreach ( $words as $name ) {
 			$candidates[] = $name;
 		}
 	}
@@ -337,18 +385,30 @@ function md_kb_endpoint_pattern_query( string $candidate ): array {
 		$title = mb_strtolower( $post->post_title );
 		$sku   = mb_strtolower( md_kb_endpoint_product_sku( (int) $post->ID ) );
 		$slug  = mb_strtolower( $post->post_name );
-		if ( $sku === $needle || $slug === $needle ) {
+		if ( $sku === $needle || $slug === $needle || $title === $needle ) {
 			$exact[] = $post;
-		} elseif ( str_starts_with( $title, $needle ) ) {
+		} elseif ( md_kb_endpoint_pattern_title_prefix_allowed( $candidate ) && str_starts_with( $title, $needle ) ) {
 			$prefix[] = $post;
 		}
 	}
-	// An exact code or slug is the pattern. A title prefix is the name
-	// match — every product title begins with its pattern name, so a word
-	// in the middle of a title is not a pattern name and must not drag a
-	// neighbour in beside the one the visitor asked about.
+	// An exact SKU, slug or full title is the pattern. A title prefix is
+	// only a name match when the candidate itself is more than one word:
+	// a single token such as "long" or "square" is ordinary English, not a
+	// pattern name, even when a title starts with it.
 	$ranked = array() !== $exact ? $exact : $prefix;
 	return array_slice( $ranked, 0, MD_KB_ENDPOINT_PATTERN_LIMIT );
+}
+
+/**
+ * Whether a candidate may match a product by title prefix. A single token
+ * may only match an exact SKU, an exact slug or the full title. Two or
+ * more words can still name the pattern the title starts with.
+ *
+ * @param string $candidate The code or name.
+ * @return bool Whether a title-prefix hit is a clear identification.
+ */
+function md_kb_endpoint_pattern_title_prefix_allowed( string $candidate ): bool {
+	return 1 === preg_match( '/\S+\s+\S/u', trim( $candidate ) );
 }
 
 /**
