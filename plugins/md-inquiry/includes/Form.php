@@ -189,6 +189,10 @@ final class Form {
 		$out .= $this->field( 'name', __( 'Name', 'md-inquiry' ), 'text', true, 'name', __( 'Jane Chan', 'md-inquiry' ) );
 		$out .= $this->field( 'email', __( 'Email', 'md-inquiry' ), 'email', true, 'email', __( 'jane@studio.com', 'md-inquiry' ) );
 		$out .= $this->field( 'company', __( 'Company (optional)', 'md-inquiry' ), 'text', false, 'organization', __( 'Chan Design Studio', 'md-inquiry' ) );
+		$out .= $this->field( 'phone', __( 'Phone / WhatsApp (optional)', 'md-inquiry' ), 'tel', false, 'tel', __( '+852 0000 0000', 'md-inquiry' ) );
+		$out .= $this->select_field( 'country', __( 'Country', 'md-inquiry' ), Validator::COUNTRIES, __( 'Select country', 'md-inquiry' ), true, 'country-name' );
+		$out .= $this->select_field( 'scope', __( 'Project scope', 'md-inquiry' ), Validator::SCOPES, __( 'Select project scope', 'md-inquiry' ), true, 'off' );
+		$out .= $this->select_field( 'route', __( 'Inquiry route', 'md-inquiry' ), Validator::ROUTES, __( 'Select inquiry route', 'md-inquiry' ), true, 'off' );
 		$out .= $this->message_field( null !== $pattern );
 
 		$out .= $this->honeypot();
@@ -237,6 +241,42 @@ final class Form {
 		$out .= '<span class="md-inquiry-pattern__note">' . \esc_html__( 'This pattern is attached to your inquiry.', 'md-inquiry' ) . '</span>';
 		$out .= '</figcaption>';
 		$out .= '</figure>';
+		return $out;
+	}
+
+	/**
+	 * One select, repopulated and error-flagged from the failed state.
+	 *
+	 * A `<select>` rather than a text input because both sides already own a
+	 * fixed list: the validator accepts only a member of it, so a free-text
+	 * box would let a visitor submit something the record rejects. The
+	 * options are printed from the same constant the validator checks.
+	 *
+	 * @param string       $key          The field's key.
+	 * @param string       $label        The field's label.
+	 * @param list<string> $options      The permitted values.
+	 * @param string       $placeholder  The empty first option.
+	 * @param bool         $required     Whether the field is required.
+	 * @param string       $autocomplete The autocomplete token.
+	 * @return string
+	 */
+	private function select_field( string $key, string $label, array $options, string $placeholder, bool $required, string $autocomplete ): string {
+		$value   = $this->state->value( $key );
+		$error   = $this->state->error( $key );
+		$invalid = '' !== $error ? ' md-inquiry-field--invalid' : '';
+
+		$out  = '<p class="md-inquiry-field' . $invalid . '">';
+		$out .= '<label class="md-inquiry-field__label" for="md-inquiry-' . \esc_attr( $key ) . '">' . \esc_html( $label ) . '</label>';
+		$out .= '<select class="md-inquiry-field__input md-inquiry-field__select" id="md-inquiry-' . \esc_attr( $key ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '"' . ( $required ? ' required' : '' ) . '>';
+		$out .= '<option value="">' . \esc_html( $placeholder ) . '</option>';
+		foreach ( $options as $option ) {
+			$out .= '<option value="' . \esc_attr( $option ) . '"' . ( $value === $option ? ' selected' : '' ) . '>' . \esc_html( $option ) . '</option>';
+		}
+		$out .= '</select>';
+		if ( '' !== $error ) {
+			$out .= '<span class="md-inquiry-field__error" id="md-inquiry-' . \esc_attr( $key ) . '-error">' . \esc_html( $error ) . '</span>';
+		}
+		$out .= '</p>';
 		return $out;
 	}
 

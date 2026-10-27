@@ -49,6 +49,30 @@ return array(
 			'type'  => 'text',
 		),
 		array(
+			'key'   => 'field_md_inquiry_customer_phone',
+			'label' => '电话 Phone / WhatsApp',
+			'name'  => 'customer_phone',
+			'type'  => 'text',
+		),
+		array(
+			'key'   => 'field_md_inquiry_customer_country',
+			'label' => '国家 Country',
+			'name'  => 'customer_country',
+			'type'  => 'text',
+		),
+		array(
+			'key'   => 'field_md_inquiry_project_scope',
+			'label' => '项目规模 Project scope',
+			'name'  => 'project_scope',
+			'type'  => 'text',
+		),
+		array(
+			'key'   => 'field_md_inquiry_inquiry_route',
+			'label' => '询盘路线 Inquiry route',
+			'name'  => 'inquiry_route',
+			'type'  => 'text',
+		),
+		array(
 			'key'   => 'field_md_inquiry_message',
 			'label' => '留言 Message',
 			'name'  => 'message',

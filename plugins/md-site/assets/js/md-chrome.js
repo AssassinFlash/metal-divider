@@ -22,14 +22,42 @@
       return;
     }
 
-    // The family pages' hover/tap tab strip. Initial tab is the argument.
+    // The family pages' hover/tap tab strip.
+    //
+    // The initial tab is taken from the panels' own `x-show` keys, not from
+    // the argument alone. The argument was a hardcoded string the caller had
+    // to keep in sync with whatever that group's panels actually use, and one
+    // page reused `mdHoverTabs('fluted')` for three different groups: the
+    // group whose keys are `execution_step_*` matched none of them, so all
+    // four of its panels rendered hidden and the section read as blank
+    // (found 2026-10-27 on /glass-hybrid-screens/ and
+    // /laser-cut-geometric-metal-screens/). Deriving the default removes the
+    // class of error rather than fixing one instance: whatever the panels
+    // use, the first of them is what opens.
     Alpine.data('mdHoverTabs', function (initial) {
       return {
         activeTab: initial,
+        initTab: function () {
+          var root = this.$root;
+          var keys = [];
+          root.querySelectorAll('[x-show]').forEach(function (panel) {
+            var expr = panel.getAttribute('x-show') || '';
+            var hit = expr.match(/'([^']+)'/);
+            if (hit && keys.indexOf(hit[1]) === -1) {
+              keys.push(hit[1]);
+            }
+          });
+          // Only override when the given initial is not one of this group's
+          // keys: a caller that names a real key keeps its choice.
+          if (keys.length && keys.indexOf(this.activeTab) === -1) {
+            this.activeTab = keys[0];
+          }
+        },
         isDesktopHover: false,
         hoverTimer: null,
         init: function () {
           var self = this;
+          this.initTab();
           var mq = window.matchMedia('(hover: hover) and (pointer: fine)');
           this.isDesktopHover = mq.matches;
           var onChange = function (event) {
@@ -147,10 +175,19 @@
     });
 
     // The FAQ page: one open answer at a time, category filter resets it.
+    // The FAQ's category filter.
+    //
+    // The default is every category, not one hand-picked name. Two reasons,
+    // both observed 2026-10-27: a hardcoded category name silently hides the
+    // other seven groups if the markup's label ever differs by a character
+    // (seven of eight groups hidden, on a page whose whole job is answering
+    // questions), and landing on one category makes the page read as
+    // mostly-empty until the visitor discovers the tabs. The filter is an
+    // optional narrowing, so it starts wide.
     Alpine.data('mdFaq', function () {
       return {
         openFaq: '',
-        activeFaqCategory: 'Project Start',
+        activeFaqCategory: 'all',
         selectCategory: function (name) {
           this.activeFaqCategory = name;
           this.openFaq = '';
@@ -2587,13 +2624,15 @@
       // a visitor without scripts can read all eight (before this, seven of
       // them were hidden in the markup itself and stayed hidden forever —
       // measured 2026-10-27: 2,919 characters with scripts, 31,656 without).
-      // With scripts, the first pass honours the tab that carries `active`.
-      var initial = tabs.filter(function (tab) {
-        return tab.classList.contains('active');
-      })[0];
-      activeCat = initial ? initial.getAttribute('data-cat') : 'all';
+      // Start wide: every category shown, no tab filtered in. The markup's
+      // first tab carries `active` for its own styling, and honouring it as a
+      // *filter* hid seven of the eight groups on load — a page whose job is
+      // answering questions opened showing one eighth of them (measured
+      // 2026-10-27: 7 groups hidden, 1 visible). Narrowing is the visitor's
+      // action, so it starts from "all".
+      activeCat = 'all';
       apply();
-      syncTabs(activeCat === 'all' ? null : activeCat);
+      syncTabs(null);
 
       if (search) {
         search.addEventListener('input', function () {

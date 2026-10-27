@@ -36,12 +36,66 @@ final class ValidatorTest extends TestCase {
 	 * come back trimmed, the errors come back empty, and the message may be
 	 * empty because the pattern carries the intent.
 	 */
+	/**
+	 * A value outside a select's list is rejected, not stored.
+	 *
+	 * The three new selects (country / scope / route) each carry a fixed list
+	 * in the validator, and the form prints its options from the same
+	 * constant. A hand-posted value the list does not contain must not reach
+	 * the record: the field is the contract, so an unknown value reads as
+	 * "nothing chosen" and the required-check reports it — the same shape the
+	 * source tokens already use.
+	 */
+	public function test_a_value_outside_a_select_list_is_rejected(): void {
+		$checked = ( new Validator() )->validate(
+			array(
+				'name'          => 'Jane Chan',
+				'email'         => 'jane@studio.com',
+				'message'       => 'A brief.',
+				'country'       => 'Atlantis',
+				'scope'         => 'Single zone',
+				'route'         => 'Facade screening',
+				'source_page'   => 'inquiry',
+				'source_module' => 'page',
+				'source_button' => 'submit',
+				'locale'        => 'en',
+			),
+			false
+		);
+
+		$this->assertSame( '', $checked['values']['country'], 'a value outside the list becomes nothing' );
+		$this->assertArrayHasKey( 'country', $checked['errors'], 'and the field then fails its required check' );
+		$this->assertSame( 'Single zone', $checked['values']['scope'], 'a value in the list passes through' );
+	}
+
+	/**
+	 * The three selects are required: a brief without a route cannot be
+	 * triaged to a technical team, which is the whole reason the route exists.
+	 */
+	public function test_the_selects_are_required(): void {
+		$checked = ( new Validator() )->validate(
+			array(
+				'name'    => 'Jane Chan',
+				'email'   => 'jane@studio.com',
+				'message' => 'A brief.',
+			),
+			false
+		);
+
+		foreach ( array( 'country', 'scope', 'route' ) as $field ) {
+			$this->assertArrayHasKey( $field, $checked['errors'], $field . ' must be required' );
+		}
+	}
+
 	public function test_a_complete_submission_with_a_pattern_passes(): void {
 		$checked = ( new Validator() )->validate(
 			array(
 				'name'          => '  Jane Chan  ',
 				'email'         => ' jane@studio.com ',
 				'company'       => 'Chan Design Studio',
+				'country'       => 'Hong Kong',
+				'scope'         => 'Single zone',
+				'route'         => 'Facade screening',
 				'message'       => '',
 				'pattern_slug'  => 'apiary',
 				'source_page'   => 'pattern-pdp',

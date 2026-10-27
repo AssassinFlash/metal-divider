@@ -26,6 +26,78 @@ final class Validator {
 	public const NAME_MAX    = 120;
 	public const EMAIL_MAX   = 200;
 	public const COMPANY_MAX = 160;
+	public const PHONE_MAX   = 40;
+
+	/**
+	 * The country list the form offers. These are the markets the site already
+	 * names in its own copy (the family pages and the trust band), and the old
+	 * contact page's own list — carried as data rather than typed into the
+	 * template so the value the validator accepts and the value the form
+	 * prints cannot drift.
+	 *
+	 * @var list<string>
+	 */
+	public const COUNTRIES = array(
+		'United States',
+		'United Kingdom',
+		'United Arab Emirates',
+		'Canada',
+		'Australia',
+		'Saudi Arabia',
+		'Qatar',
+		'Singapore',
+		'Hong Kong',
+		'Malaysia',
+		'Germany',
+		'France',
+		'Netherlands',
+		'Other',
+	);
+
+	/**
+	 * Project scope, from the old contact page's own select.
+	 *
+	 * @var list<string>
+	 */
+	public const SCOPES = array(
+		'Sample panel',
+		'Single zone',
+		'Multi-zone project',
+		'Full facade package',
+	);
+
+	/**
+	 * Inquiry route: which screen family the brief belongs to.
+	 *
+	 * @var list<string>
+	 */
+	public const ROUTES = array(
+		'Facade screening',
+		'Interior partitions',
+		'Outdoor privacy screens',
+		'Feature walls',
+		'Custom fabrication',
+	);
+
+	/**
+	 * One value from a fixed list: never free text, never an error.
+	 *
+	 * A value outside the list becomes the empty string, which the caller's
+	 * required-check then reports — the same shape the source tokens use. The
+	 * list is the contract, so a stale option cannot reach the record.
+	 *
+	 * @param array<string, mixed> $input  The raw input.
+	 * @param string               $key    The field key.
+	 * @param list<string>         $allowed The permitted values.
+	 * @return string
+	 */
+	private function choice( array $input, string $key, array $allowed ): string {
+		$raw = isset( $input[ $key ] ) && \is_string( $input[ $key ] ) ? \trim( \wp_unslash( $input[ $key ] ) ) : '';
+		return \in_array( $raw, $allowed, true ) ? $raw : '';
+	}
+	public const COUNTRY_MAX = 80;
+	public const SCOPE_MAX   = 60;
+	public const ROUTE_MAX   = 60;
 	public const MESSAGE_MAX = 5000;
 
 	/**
@@ -53,6 +125,10 @@ final class Validator {
 			'name'          => $this->text( $input, 'name', self::NAME_MAX ),
 			'email'         => $this->text( $input, 'email', self::EMAIL_MAX ),
 			'company'       => $this->text( $input, 'company', self::COMPANY_MAX ),
+			'phone'         => $this->text( $input, 'phone', self::PHONE_MAX ),
+			'country'       => $this->choice( $input, 'country', self::COUNTRIES ),
+			'scope'         => $this->choice( $input, 'scope', self::SCOPES ),
+			'route'         => $this->choice( $input, 'route', self::ROUTES ),
 			'message'       => $this->text( $input, 'message', self::MESSAGE_MAX ),
 			'pattern_slug'  => $this->slug( $input ),
 			'source_page'   => self::source_token( (string) ( $input['source_page'] ?? '' ) ),
@@ -66,6 +142,15 @@ final class Validator {
 		}
 		if ( '' === $values['email'] || false === \is_email( $values['email'] ) ) {
 			$errors['email'] = __( 'Please enter a valid email address.', 'md-inquiry' );
+		}
+		if ( '' === $values['country'] ) {
+			$errors['country'] = __( 'Please choose your country.', 'md-inquiry' );
+		}
+		if ( '' === $values['scope'] ) {
+			$errors['scope'] = __( 'Please choose the project scope.', 'md-inquiry' );
+		}
+		if ( '' === $values['route'] ) {
+			$errors['route'] = __( 'Please choose an inquiry route.', 'md-inquiry' );
 		}
 		if ( '' === $values['message'] && ! $has_pattern ) {
 			$errors['message'] = __( 'Please add a short message.', 'md-inquiry' );

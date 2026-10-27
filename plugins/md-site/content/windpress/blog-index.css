@@ -101,7 +101,13 @@
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-stream { min-width: 0; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-feed { margin-top: 32px; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-feed > h2 { margin-bottom: 24px; font-size: 18px; font-weight: 600; line-height: 1.5; }
-:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 32px 24px; }
+/* A grid that adapts to how many posts it holds. `repeat(2, …)` left half the
+   row empty whenever the journal had one post — which it does today, so
+   /blog/ opened with a 400px card beside 400px of blank (measured
+   2026-10-27). `auto-fit` with a minimum collapses to one full-width column
+   at that count and still gives two columns the moment a second post lands;
+   the layout follows the content instead of assuming a count. */
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); gap: 32px 24px; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-card { min-width: 0; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-card > a:hover { border-color: var(--md-gold-dark); }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-card > a { display: flex; flex-direction: column; height: 100%; overflow: hidden; border: var(--journal-hairline) solid #e2e5e5; border-radius: 12px; background: #fff; }

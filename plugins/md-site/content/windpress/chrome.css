@@ -72,6 +72,14 @@
 .xo-field-input__input[data-predictive-search-input] {
   min-height: 44px;
 }
+/* The input itself, not only its label: `width: 100%` lived in the phone
+   block, so at desktop the field fell back to the browser's default input
+   width (182px) inside a 1012px column. */
+.xo-field-input__input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
 .md-ratio-100 { --xo-ratio-percent: 1.0; }
 .md-ratio-87-5 { --xo-ratio-percent: 0.875; }
 .md-ratio-177-7 { --xo-ratio-percent: 1.7772511848341233; }
@@ -1148,7 +1156,14 @@ transition:opacity .3s ease,transform .3s ease,visibility 0s;
 .xo-menu-hamburger-style1__mega-menu:not(:empty) ~ .xo-menu-hamburger-style1__link{display:none}
 
 /* The search sheet */
-.xo-modal-content{display:flex;min-height:100dvh;padding:15px;box-sizing:border-box}
+/* The grid was `display: inline`, so the field took its content's width
+   (239px) instead of the column's, and the sheet was forced to full height
+   with one small input at the top — the "full-screen blank with a tiny box"
+   the owner rejected. The field fills the column, and the sheet is only as
+   tall as the search and its suggestions need. */
+xo-modal[xo-name="search"] xo-grid{display:block}
+.xo-field-input{display:block;width:100%}
+.xo-modal-content{display:flex;min-height:auto;padding:15px;box-sizing:border-box}
 .xo-modal-content__inner{position:relative;display:flex;flex-direction:column;width:100%;max-width:1100px;margin:0 auto;max-height:calc(100dvh - 30px);background:#fff;color:#111;border-radius:12px;padding:24px;box-sizing:border-box;overflow-y:auto}
 .xo-modal-content__body{width:100%}
 .xo-modal-content__close--abs{position:absolute;top:15px;right:15px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.06);cursor:pointer}
