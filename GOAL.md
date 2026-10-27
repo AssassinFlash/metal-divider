@@ -55,6 +55,18 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-28 灯箱交互实测:开/关正常,翻页行为正确
+
+覆盖矩阵的「交互状态」项此前只有静态审计(`dead/flat`),本轮补做真实点击。
+
+```
+点击 [data-pattern-preview]  → .pattern-lightbox.active 0→1,aria-hidden: false   ✓
+点击 [data-pattern-close]    → active 消失,aria-hidden: true                     ✓
+点击 [data-pattern-next]     → 图像未变
+```
+
+翻页"没推进"查了原因:该图案(`aztec`)的灯箱只有 **1 张缩略图**(`thumbs: 1`),没有第二张可翻——**行为正确**。控件本身存在且未隐藏(`hasNext: true, nextHidden: false`)。
+
 ### 2026-10-28 图片清晰度:发现「看得见但发虚」,并修 39 个产品
 
 可见性闭环后转入清晰度。判据:把 `sizes` 按视口解析出真实槽位,再问「最大 srcset 候选是否 ≥ 槽位的 80%」。
