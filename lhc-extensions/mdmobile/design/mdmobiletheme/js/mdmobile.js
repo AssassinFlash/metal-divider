@@ -1516,8 +1516,9 @@
             }
             var total = doc.querySelector('[data-unread-total]');
             if (total) {
-                total.textContent = '0';
-                total.setAttribute('data-unread-total', '0');
+                var remaining = doc.querySelectorAll('#md-inbox-list .md-thread-link.is-unread').length;
+                total.textContent = String(remaining);
+                total.setAttribute('data-unread-total', String(remaining));
             }
         }
 
