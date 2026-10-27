@@ -55,6 +55,37 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-28 询盘链路端到端走通 + 1440 真宽视口首次实测
+
+**询盘链路(dev,真实 POST + 真实队列投递,非模拟)**
+
+```
+GET  /inquiry/                     取 nonce + cookie
+POST /inquiry/  (13 字段)          → 303 → /inquiry/thank-you/?md_inquiry=2121&key=…
+GET  /inquiry/thank-you/?…&key=…   200
+记录数 6 → 7;队列表 2 → 4(通知 + 确认)
+触发 md_inquiry_mail_tick ×5      4/4 sent,0 失败
+清理                               记录 7 → 6,队列 4 → 2(测试数据已删)
+```
+
+通知收件人实测为 `["sales@sunriverinverter.com","info@metal-divider.com"]`,与 AGENTS.md 裁定一致(主/备)。
+`md_inquiry_quantity` 是必填项——第一次提交因漏传被拒(`Please choose a quantity range`),补齐后通过,证明**校验真的在拦**而不是走过场。
+
+**1440 真宽视口(此前判定"测不了",已推翻)**
+
+`bind` 绑 Chrome 的活动标签,所以必须 `windows.create`(带目标 URL、`focused:true`、宽度 +56px 补窗口边框)→ `tabs.update` 激活 → `windows.update` 强制 focused → `bind` → **断言 `innerWidth`**。
+`outerWidth 1496 → innerWidth 1440`。11 个页面连续 `open` 全程保持 1440。
+
+首个由此发现的问题:**目录在 1440 下只有 2 列 476px**——`minmax(320px,1fr)` 在「1440 − 280 侧栏 − 32 间隙 = 977px」里只放得下两条轨道。降到 300px → 3 列 328px,行数 12 → 8。**在 701px 笔记本小窗下测永远看到 2 列,发现不了。**
+
+生产读回:`innerWidth=1440, cols=328px×3, perRow=[3,3,3], 8 行`(部署前 `476px×2, 12 行`)。
+
+**320px 溢出:排除,且判据换了**
+
+Chrome 本机窗口最小约 578px,opencli 无 device emulation——**320 无法用 DOM 测**。截图判"内容触右边缘"无效(满幅背景设计)。
+可靠判据是**滚动条指纹**:能排下的页面最后一列是单一色(flat 1.00, `#515151`);溢出的页面该列颜色变化(0.09–0.77)。
+12 张 320 截图实测:6 张有滚动条(不溢出)、6 张无滚动条。原先标记"可疑"的 6 张恰是无滚动条的,**方向反了**。其中 blog / thank-you 又经逐区视觉核验:左右对称 14px 留白、圆角完整、无横向滚动条,**确认不溢出**。
+
 ### 2026-10-27 业主截图四项:空卡槽 / 下拉无背景 / 正文过宽 / 表单空白
 
 业主指出"有跟没有差别就是天差地别",逐项查证结果:
