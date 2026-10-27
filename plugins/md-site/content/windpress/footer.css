@@ -709,7 +709,9 @@
 
 	.md-footer__tab {
 		border-radius: 12px;
-		font-size: 9px;
+		/* 9px is what the ported dock carried; on a phone that is below the
+		   readable floor. The hit box is already 70px — this is only the type. */
+		font-size: 12px;
 		gap: 6px;
 		min-height: 70px;
 		padding: 9px 4px 7px;
@@ -739,7 +741,7 @@
 	}
 
 	.md-footer__email-card a > span {
-		font-size: 9px;
+		font-size: 12px;
 	}
 
 	.md-footer__copy svg {
@@ -759,7 +761,7 @@
 	}
 
 	.md-footer__bar {
-		font-size: 9px;
+		font-size: 12px;
 		gap: 8px;
 		justify-content: center;
 		padding: 15px 4px 0;
@@ -776,7 +778,7 @@
 	}
 
 	.md-footer__bar-trust {
-		font-size: 9px;
+		font-size: 12px;
 	}
 
 	.md-footer__identity-intro {

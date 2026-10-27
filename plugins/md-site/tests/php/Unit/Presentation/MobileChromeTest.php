@@ -177,6 +177,131 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * Padding on `body` never applies, so nothing may rely on it.
+	 *
+	 * WordPress prints `body{padding:0px}` from its global styles as an
+	 * unlayered rule. An unlayered declaration outranks every `@layer` —
+	 * layering is resolved before specificity — and these volumes compile into
+	 * `components`. So a `body { padding-bottom: … }` written here is dead on
+	 * arrival while looking perfectly correct in the source.
+	 *
+	 * Measured 2026-10-27: `:has()` matched, the rule was in the compiled
+	 * cache, computed `padding-bottom` was 0px, and the catalog's legal row
+	 * sat 31px under the fixed quote bar with no scroll left to reach it. The
+	 * clearance moved onto `#md-footer`, which has no unlayered competitor.
+	 *
+	 * This pins the *rule*, because the failure is invisible in review: the
+	 * CSS reads right, the selector matches, and only the computed value
+	 * reveals it.
+	 */
+	public function test_no_volume_puts_padding_on_the_body(): void {
+		$offenders = array();
+
+		foreach ( (array) glob( $this->volume_dir() . '/*.css' ) as $path ) {
+			$name = basename( (string) $path );
+			$css  = (string) file_get_contents( (string) $path ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+			$css  = (string) preg_replace( '/\/\*.*?\*\//s', '', $css );
+
+			// `body …{ padding… }` anywhere, but not `body …{ … padding on a
+			// descendant }` — the declaration has to be in the body's own block.
+			if ( preg_match_all( '/(^|[,}])\s*(body(?::has\([^)]*\))?(?:::?[a-z-]+)?)\s*\{([^}]*)\}/i', $css, $matches, PREG_SET_ORDER ) ) {
+				foreach ( $matches as $match ) {
+					if ( preg_match( '/padding(-[a-z]+)?\s*:/i', $match[3] ) ) {
+						$offenders[] = $name . ': ' . trim( $match[2] );
+					}
+				}
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			array_values( array_unique( $offenders ) ),
+			'padding on `body` is dead: WordPress prints an unlayered body{padding:0} that beats every @layer. Put the clearance on the element that needs it.'
+		);
+	}
+
+	/**
+	 * A horizontal rail has to show that it continues.
+	 *
+	 * The family showcase rails held their card at 92vw — 358.8px inside a
+	 * 358px track — so the next card began exactly where the rail ended and
+	 * the rail looked like a single static card (measured 2026-10-27 on six
+	 * pages: every card 358.8px, every track 358px, peek 0). A rail is only a
+	 * rail if the edge of the next card is visible.
+	 */
+	public function test_the_family_showcase_rails_leave_a_peek_on_a_phone(): void {
+		$families = array(
+			'family-chinese-style.css',
+			'family-glass-hybrid.css',
+			'family-laser-cut-geometric.css',
+			'family-laser-cut-panels.css',
+			'family-outdoor-privacy.css',
+			'family-perforated-panels.css',
+		);
+
+		foreach ( $families as $name ) {
+			$css = (string) file_get_contents( $this->volume_dir() . '/' . $name ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+
+			$this->assertMatchesRegularExpression(
+				'/@media \(max-width: 767px\)[\s\S]*?showcase-track[\s\S]*?width: calc\(100vw - \d+px\)/',
+				$css,
+				$name . ' must size its showcase card narrower than the rail below 768 so the next card shows'
+			);
+			$this->assertMatchesRegularExpression(
+				'/@media \(max-width: 767px\)[\s\S]*?mask-image: none/',
+				$css,
+				$name . ' must drop the edge fade below 768 — it fades the very edge the peek needs'
+			);
+		}
+	}
+
+	/**
+	 * The hero's primary action has to be reachable without scrolling.
+	 *
+	 * At 320 the quote button sat at y=813 against a 568px screen — 245px
+	 * below the fold — on the one page whose whole purpose is to start an
+	 * inquiry. Three stacked causes: a 96px top pad, an 88svh floor, and a
+	 * stats strip that stayed single-column until 640px.
+	 *
+	 * The rules that fix it must carry `!important`: `min-h-[88svh]` and
+	 * `pt-24` are Tailwind utilities, and utilities live in a later layer than
+	 * this volume's `components`, so the layer decides before specificity
+	 * does. The first attempt without it changed nothing at all and looked
+	 * correct in the source.
+	 */
+	public function test_the_home_hero_fits_its_action_without_the_utility_layer_winning(): void {
+		$css = (string) file_get_contents( $this->volume_dir() . '/home.css' ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+
+		$this->assertMatchesRegularExpression(
+			'/@media \(max-width: 767px\)[\s\S]*?#home-hero-ioh-[^{]*\{\s*min-height: auto !important;/',
+			$css,
+			'the 88svh floor is on the hero section itself; the phone override has to beat that layer'
+		);
+		$this->assertMatchesRegularExpression(
+			'/@media \(max-width: 767px\)[\s\S]*?#home-hero-ioh-[^{]*> \.relative \{\s*min-height: auto !important;[\s\S]*?padding-top: 32px !important;/',
+			$css,
+			'the inner 88svh floor and the 96px top pad are the other two utilities that pushed the CTA below the fold'
+		);
+		$this->assertMatchesRegularExpression(
+			'/@media \(max-width: 767px\)[\s\S]*?\.home-hero-stats[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\) !important/',
+			$css,
+			'three short figures fit three across at any width; the 640px breakpoint was the wrong threshold'
+		);
+		$this->assertStringContainsString(
+			'@media (max-width: 359px)',
+			$css,
+			'the narrowest specified width gets its own type step rather than scrolling its CTA out of reach'
+		);
+	}
+
+	/**
+	 * The family volumes' directory.
+	 */
+	private function volume_dir(): string {
+		return dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/windpress';
+	}
+
+	/**
 	 * How many blocks enclose a position in a stylesheet. Zero means the rule
 	 * sits at the top level; anything else means it is nested, and the only
 	 * things that nest rules here are media queries.

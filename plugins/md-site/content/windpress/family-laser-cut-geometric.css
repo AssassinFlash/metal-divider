@@ -317,3 +317,21 @@ font-size: 16px !important;
 padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
 }
 }
+
+/* Showcase rails on a phone: the card was 92vw (358.8px at 390) inside a
+   358px track, so the next card began exactly where the rail ended and the
+   rail gave no sign it could be swiped — measured 2026-10-27 on six family
+   pages: every card 358.8px wide, every track 358px, peek 0. The right-hand
+   28px mask then faded whatever edge was left. The card now leaves 56px of
+   the rail showing, the mask comes off below 768 (it fades the very edge the
+   peek needs), and the rail keeps its snap. */
+@media (max-width: 767px) {
+  [id*="21873710563581"] .showcase-track, [id*="21873710563581"] .pp-showcase-track, [id*="21873710563581"] .lcs-showcase-track {
+    -webkit-mask-image: none;
+    mask-image: none;
+    scroll-padding-inline: 16px;
+  }
+  [id*="21873710563581"] .showcase-track > article, [id*="21873710563581"] .pp-showcase-track > article, [id*="21873710563581"] .lcs-showcase-track > article {
+    width: calc(100vw - 88px) !important;
+  }
+}

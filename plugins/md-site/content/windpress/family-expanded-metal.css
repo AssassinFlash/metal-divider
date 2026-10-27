@@ -20,6 +20,57 @@ width: max-content;
 .expanded-marquee-wrap:hover .expanded-marquee-track {
 animation-play-state: paused;
 }
+
+/* This marquee is a desktop device: it drifts under the pointer and pauses on
+   hover, which a touch screen cannot do. On a phone it kept running while the
+   cards were cut in half by the 96px fades, the caption still said "HOVER TO
+   PAUSE", and nothing could be picked — measured 2026-10-27: overflow hidden,
+   track 3200px, `animation: expanded-marquee 30s linear infinite`, no card
+   ever fully readable. Below 768 it becomes an ordinary rail: it holds still,
+   it snaps, one card fits with the next one showing, and the fades come off
+   so the showing edge is not washed out. */
+@media (max-width: 767px) {
+/* `overflow-hidden` is the utility this wrapper carries, and utilities beat
+   this layer — hence !important. The track holds two identical copies of the
+   same list (the marquee's own duplication), so on a rail the second copy is
+   dropped instead of being swiped into twice. */
+.expanded-marquee-wrap {
+overflow-x: auto !important;
+-webkit-overflow-scrolling: touch;
+scroll-snap-type: x mandatory;
+scroll-padding-inline: 16px;
+}
+.expanded-marquee-wrap > div[class*="bg-gradient-to-"] {
+display: none;
+}
+.expanded-marquee-track {
+animation: none !important;
+display: block;
+}
+.expanded-marquee-track > div:not(:first-child) {
+display: none;
+}
+.expanded-marquee-track > div {
+display: flex;
+gap: 12px;
+width: auto;
+padding-inline: 16px;
+}
+/* The cards carry their own fixed width (380px, and min(300px, …) inside the
+   applications section), so the rail has to state the width rather than just
+   the flex basis. */
+.expanded-marquee-track > div > *,
+.expanded-marquee-track .md-t9bc14b94,
+.expanded-marquee-track .md-t2abb772b {
+flex: 0 0 auto;
+width: calc(100vw - 88px) !important;
+scroll-snap-align: start;
+}
+/* The caption still instructed a hover on a screen that cannot hover. */
+.md-marquee-hint {
+display: none;
+}
+}
 #expanded-vs-perforated-template--22084675240189__expanded-vs-perforated [data-evp-switch][data-active] {
 background-color: #c9a962;
 color: #141414;

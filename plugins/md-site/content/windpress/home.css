@@ -593,3 +593,54 @@ padding-top: 64px !important;
 padding-bottom: 64px !important;
 }
 }
+
+/* The hero on a phone: the quote button sat at y=813 against a 568px screen —
+   entirely below the fold at 320 and below it at 390 too, on the one page
+   whose whole job is to start an inquiry. Three things stacked: a 96px top
+   pad, an 88svh floor, and a stats strip that stayed one column until 640px,
+   where three short figures ("15+", "20+", "±0.1mm") took 320px of a 490px
+   column. The strip fits three across at any width; the pad and the floor are
+   sized for a desktop first screen and have nothing to hold at phone height. */
+@media (max-width: 767px) {
+/* !important because `min-h-[88svh]`, `pt-24` and `grid-cols-1` are Tailwind
+   utilities, and utilities sit in a later layer than this volume's
+   `components` — the layer decides before specificity does, so an
+   unprefixed rule here loses however narrow its selector. */
+#home-hero-ioh-template--21844031930621__hero_banner_custom_Yy8fzp {
+min-height: auto !important;
+}
+#home-hero-ioh-template--21844031930621__hero_banner_custom_Yy8fzp > .relative {
+min-height: auto !important;
+padding-top: 32px !important;
+padding-bottom: 24px !important;
+}
+.home-hero-stats {
+grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+gap: 10px;
+}
+.home-hero-stats > div {
+padding-top: 10px;
+}
+/* At 320 the h1 wraps to four lines (158px) and the lead paragraph to four
+   more (104px), which is most of the screen before any action appears. The
+   type steps down one notch below 360 — the narrowest width the site is
+   specified for (GOAL.md) — rather than the hero scrolling its own CTA out of
+   reach. */
+@media (max-width: 359px) {
+#home-hero-ioh-template--21844031930621__hero_banner_custom_Yy8fzp h1 {
+font-size: 28px !important;
+line-height: 1.15 !important;
+}
+#home-hero-ioh-template--21844031930621__hero_banner_custom_Yy8fzp h1 + p {
+font-size: 14px !important;
+line-height: 1.5 !important;
+margin-top: 16px !important;
+}
+}
+.home-hero-stats .text-3xl {
+font-size: 20px;
+}
+.home-hero-stats p {
+font-size: 11px;
+}
+}

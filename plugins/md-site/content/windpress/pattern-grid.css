@@ -721,7 +721,16 @@ width: 44px;
 body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main):has(.md-back-to-top:not([hidden])) #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__quote-bar {
 padding-right: 72px;
 }
-body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) {
+/* The fixed quote bar's clearance, on the footer rather than on `body`.
+   It was `body:has(…) { padding-bottom: 76px }` and it never applied:
+   WordPress prints `body{padding:0px}` from its global styles as an
+   unlayered rule, and an unlayered declaration outranks every `@layer` —
+   layering decides before specificity does — while this volume compiles into
+   `components`. Measured 2026-10-27: `:has()` matched, the rule was in the
+   cache, computed `padding-bottom` was 0px, and the legal row sat 31px under
+   the bar with no scroll left to reach it. The footer is this site's own
+   element with no unlayered competitor, so the clearance lives there. */
+body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) #md-footer {
 padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
 }

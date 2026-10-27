@@ -263,7 +263,12 @@ padding-right: 72px;
 body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic):has(.md-back-to-top:not([hidden])) #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-quote-bar-copy {
 display: none;
 }
-body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) {
+/* Clearance for the fixed quote bar, on the footer rather than on `body`:
+   WordPress prints `body{padding:0px}` unlayered from its global styles, and
+   unlayered beats every `@layer` regardless of specificity — so the `body`
+   form of this rule never applied (measured 2026-10-27: matched, in the
+   cache, computed 0px). See pattern-grid.css for the same fix. */
+body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) #md-footer {
 padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
 }

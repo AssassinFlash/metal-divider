@@ -1732,7 +1732,12 @@ top: calc(var(--md-header-h, 113px) + 16px);
     outline: 2px solid #c9a962;
     outline-offset: 2px;
   }
-  body {
+  /* Clearance for the floating controls, on the footer rather than on
+     `body`: WordPress prints `body{padding:0px}` unlayered from its global
+     styles, and unlayered outranks every `@layer` — so the `body` form of
+     this rule never applied at any width (measured 2026-10-27; same shape in
+     pattern-grid.css and pdp.css). */
+  #md-footer {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
   .md-whatsapp-float {
