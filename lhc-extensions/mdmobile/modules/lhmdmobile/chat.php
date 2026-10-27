@@ -2,6 +2,32 @@
 
 require_once erLhcoreClassSystem::instance()->SiteDir . 'extension/mdmobile/modules/lhmdmobile/gate.php';
 
+/**
+ * The page window is the latest 200 messages and format() drops a duplicate
+ * system line, so the acceptance line may be outside it. Ask lh_msg directly
+ * for the three native acceptance phrases. A bot-chat line is not evidence:
+ * LHC writes it only when the status is already bot.
+ */
+function mdmobile_acceptance_line_exists($chatId)
+{
+    $chatId = (int) $chatId;
+    if ($chatId < 1) {
+        return false;
+    }
+    $db = ezcDbInstance::get();
+    $stmt = $db->prepare(
+        'SELECT 1 FROM lh_msg WHERE chat_id = :chat_id AND user_id = -1'
+        . ' AND (msg LIKE :pending OR msg LIKE :transfer OR msg LIKE :opened) LIMIT 1'
+    );
+    $stmt->bindValue(':chat_id', $chatId, PDO::PARAM_INT);
+    $stmt->bindValue(':pending', '%has accepted the pending chat by sending a message!%');
+    $stmt->bindValue(':transfer', '%has accepted a transferred chat!%');
+    $stmt->bindValue(':opened', '%has accepted the chat!%');
+    $stmt->execute();
+
+    return $stmt->fetchColumn() !== false;
+}
+
 $chatId = erLhcoreClassMdMobile::chatId(
     isset($Params['user_parameters']['chat_id']) ? $Params['user_parameters']['chat_id'] : null
 );
@@ -80,11 +106,13 @@ if (class_exists('erLhcoreClassModelCannedMsg')) {
     }
     $canned = erLhcoreClassMdMobile::cannedGroups($cannedItems, $department);
 }
-// The transcript can already prove acceptance (an operator message or the
-// acceptance system line) while a reset or test tool left the stored status at
-// pending. Derive the display status once, so the header, the details field and
-// the rail cannot disagree with the transcript. Ownership is not changed.
-$displayStatus = erLhcoreClassMdMobile::effectiveStatus($chat->status, $payload['messages']);
+// The transcript can already prove acceptance (a native acceptance system
+// line) while a reset or test tool left the stored status at pending. An
+// operator row alone is not proof. Derive the display status once, so the
+// header, the details field and the rail cannot disagree with evidence.
+// Ownership is not changed.
+$acceptanceSeen = mdmobile_acceptance_line_exists((int) $chat->id);
+$displayStatus = erLhcoreClassMdMobile::effectiveStatus($chat->status, $payload['messages'], $acceptanceSeen);
 $bag = erLhcoreClassMdMobile::templateBag(
     (int) $chat->id,
     $payload,
@@ -118,7 +146,10 @@ $inbox = mdmobile_load_inbox($state, (int) $chat->id);
 if ($displayStatus !== (int) $chat->status && isset($inbox['chats']) && is_array($inbox['chats'])) {
     foreach ($inbox['chats'] as $inboxIndex => $inboxItem) {
         if (is_array($inboxItem) && isset($inboxItem['id']) && (int) $inboxItem['id'] === (int) $chat->id) {
-            $inbox['chats'][$inboxIndex]['status'] = 'active';
+            $displayToken = erLhcoreClassMdMobile::statusToken($displayStatus);
+            if ($displayToken !== null) {
+                $inbox['chats'][$inboxIndex]['status'] = $displayToken;
+            }
         }
     }
 }

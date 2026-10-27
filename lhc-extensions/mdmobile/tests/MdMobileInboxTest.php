@@ -247,8 +247,10 @@ final class MdMobileInboxTest extends TestCase
         );
         self::assertFalse(erLhcoreClassMdMobile::inboxItem(array('id' => 16, 'has_unread_messages' => 2), null, self::BASE . '/mdmobile/chat/16')['unread']);
         self::assertFalse(erLhcoreClassMdMobile::inboxItem(array('id' => 16, 'status' => 2, 'has_unread_messages' => 1), null, self::BASE . '/mdmobile/chat/16')['unread']);
+        // last_op_msg_time is also written by whispers, invisible sends,
+        // holds, and modal commands, so it cannot prove acceptance.
         self::assertSame(
-            'active',
+            'pending',
             erLhcoreClassMdMobile::inboxItem(array('id' => 16, 'status' => 0, 'last_op_msg_time' => 50), null, self::BASE . '/mdmobile/chat/16')['status']
         );
         self::assertSame(

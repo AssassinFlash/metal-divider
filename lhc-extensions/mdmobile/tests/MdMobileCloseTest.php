@@ -74,7 +74,7 @@ final class MdMobileCloseTest extends TestCase
         self::assertStringContainsString('data-md-close-trigger', $html);
         self::assertStringContainsString('data-md-close-panel', $html);
         self::assertStringContainsString('id="md-close-question-md-composer"', $html);
-        self::assertStringContainsString('role="dialog" aria-modal="false" aria-labelledby="md-close-question-md-composer"', $html);
+        self::assertStringContainsString('role="dialog" aria-modal="false" aria-labelledby="md-close-question-md-composer" tabindex="-1"', $html);
         self::assertStringContainsString('Close this conversation? It will show as closed in the chat list.', $html);
         self::assertStringContainsString('>Close conversation</button>', $html);
         self::assertStringContainsString('>Cancel</button>', $html);
@@ -107,7 +107,7 @@ final class MdMobileCloseTest extends TestCase
         self::assertStringNotContainsString('md-canned-sheet', $html);
         self::assertStringContainsString('<p class="md-close-note" data-md-close-note>Conversation closed.</p>', $html);
         self::assertStringContainsString('aria-controls="md-close-panel-md-composer" hidden>Close conversation</button>', $html);
-        self::assertStringContainsString('id="md-chat-status" data-md-chat-status="1" data-tone="offline"', $html);
+        self::assertStringContainsString('id="md-chat-status" data-md-chat-status="1" data-status-code="2" data-tone="offline"', $html);
         self::assertStringContainsString('>Closed</span>', $html);
         self::assertStringContainsString('id="md-remarks-md-drawer"', $html);
         self::assertStringContainsString('placeholder="Private remarks. Visitors never see these." disabled>', $html);

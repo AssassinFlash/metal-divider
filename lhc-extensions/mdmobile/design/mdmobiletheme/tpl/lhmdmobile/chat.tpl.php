@@ -183,7 +183,7 @@ if ($mdHasInbox) {
 <?php if ($mdPills !== array()) : ?>
 <p class="md-pills">
 <?php foreach ($mdPills as $mdPill) : ?>
-<span class="md-pill<?php echo $mdPill['chat'] ? ' md-pill-chat' : ''; ?>"<?php echo $mdPill['chat'] ? ' id="md-chat-status" data-md-chat-status="1"' : ''; ?> data-tone="<?php echo mdmobile_esc($mdPill['tone']); ?>"><span class="md-dot" aria-hidden="true"></span><?php echo mdmobile_esc($mdPill['text']); ?></span>
+<span class="md-pill<?php echo $mdPill['chat'] ? ' md-pill-chat' : ''; ?>"<?php echo $mdPill['chat'] ? ' id="md-chat-status" data-md-chat-status="1"' : ''; ?><?php echo $mdPill['chat'] && is_numeric($mdStatus) ? ' data-status-code="' . (int) $mdStatus . '"' : ''; ?> data-tone="<?php echo mdmobile_esc($mdPill['tone']); ?>"><span class="md-dot" aria-hidden="true"></span><?php echo mdmobile_esc($mdPill['text']); ?></span>
 <?php endforeach; ?>
 </p>
 <?php endif; ?>

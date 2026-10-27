@@ -56,17 +56,43 @@ final class MdMobileDeskTest extends TestCase
                 array('kind' => 'system', 'text' => 'Other system line'),
             ))
         );
-        self::assertSame(1, erLhcoreClassMdMobile::effectiveStatus(0, array(array('kind' => 'operator'))));
-        self::assertSame(
-            1,
-            erLhcoreClassMdMobile::effectiveStatus('0', array(
-                array('kind' => 'system', 'text' => 'Metal Divider Support has accepted the pending chat by sending a message!'),
-            ))
-        );
+        // A whisper, invisible send, hold, or modal command can write an
+        // operator row without accepting. Only the native system line counts.
+        self::assertSame(0, erLhcoreClassMdMobile::effectiveStatus(0, array(array('kind' => 'operator'))));
+        self::assertSame(0, erLhcoreClassMdMobile::effectiveStatus(0, array(
+            array('kind' => 'system', 'text' => 'Metal Divider Support has accepted the bot chat by sending a message!'),
+        )));
+        self::assertSame(1, erLhcoreClassMdMobile::effectiveStatus(0, array(), true));
+        self::assertSame(0, erLhcoreClassMdMobile::effectiveStatus(0, array(), false));
+        foreach (array(
+            'Metal Divider Support has accepted the chat!',
+            'Metal Divider Support has accepted a transferred chat!',
+            'Metal Divider Support has accepted the pending chat by sending a message!',
+        ) as $line) {
+            self::assertSame(
+                1,
+                erLhcoreClassMdMobile::effectiveStatus('0', array(array('kind' => 'system', 'text' => $line))),
+                $line
+            );
+        }
         self::assertSame(2, erLhcoreClassMdMobile::effectiveStatus(2, array(array('kind' => 'operator'))));
         self::assertSame(1, erLhcoreClassMdMobile::effectiveStatus(1, array(array('kind' => 'visitor'))));
         self::assertNull(erLhcoreClassMdMobile::effectiveStatus(null, array(array('kind' => 'operator'))));
         self::assertNull(erLhcoreClassMdMobile::effectiveStatus('not-a-status', array(array('kind' => 'operator'))));
+    }
+
+    public function testViewKeepsStatusCodeForTranslatedLabels(): void
+    {
+        require_once dirname(__DIR__) . '/design/mdmobiletheme/tpl/lhmdmobile/helpers.php';
+
+        $view = mdmobile_view(array(
+            'fields' => array(
+                array('label' => 'Status', 'value' => '等待', 'status_code' => 0),
+            ),
+        ));
+
+        self::assertSame(0, $view['fields'][0]['status_code']);
+        self::assertStringContainsString('data-status-code="0"', mdmobile_render_fields($view['fields']));
     }
 
     public function testVisitorContextAcceptsADisplayStatusOverride(): void
@@ -77,13 +103,22 @@ final class MdMobileDeskTest extends TestCase
             array(),
             1
         );
-        self::assertContains(array('label' => 'Status', 'value' => 'Active'), $accepted['fields']);
+        self::assertContains(array('label' => 'Status', 'value' => 'Active', 'status_code' => 1), $accepted['fields']);
 
         $closed = erLhcoreClassMdMobile::visitorContext(array('status' => 0), '', array(), 2);
-        self::assertContains(array('label' => 'Status', 'value' => 'Closed'), $closed['fields']);
+        self::assertContains(array('label' => 'Status', 'value' => 'Closed', 'status_code' => 2), $closed['fields']);
 
         $stored = erLhcoreClassMdMobile::visitorContext(array('status' => 0), '', array(), null);
-        self::assertContains(array('label' => 'Status', 'value' => 'Pending'), $stored['fields']);
+        self::assertContains(array('label' => 'Status', 'value' => 'Pending', 'status_code' => 0), $stored['fields']);
+        $statusField = null;
+        foreach ($stored['fields'] as $field) {
+            if ($field['label'] === 'Status') {
+                $statusField = $field;
+                break;
+            }
+        }
+        self::assertIsArray($statusField);
+        self::assertSame(0, $statusField['status_code']);
     }
 
     public function testFormatRendersOfflineBodiesAsReadableText(): void
@@ -347,7 +382,7 @@ final class MdMobileDeskTest extends TestCase
         self::assertNotContains('1m 30s', $context['summary']);
         self::assertSame(
             array(
-                array('label' => 'Status', 'value' => 'Active'),
+                array('label' => 'Status', 'value' => 'Active', 'status_code' => 1),
                 array('label' => 'Name', 'value' => 'Ada'),
                 array('label' => 'Email', 'value' => 'ada@example.com'),
                 array('label' => 'Phone', 'value' => '+852 6473 1687'),

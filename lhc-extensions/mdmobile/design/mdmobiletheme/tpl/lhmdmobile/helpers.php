@@ -549,6 +549,10 @@ if (!function_exists('mdmobile_view')) {
                 'value' => $value,
                 'link' => $link,
             );
+            $fieldStatusCode = mdmobile_field($row, 'status_code');
+            if (is_numeric($fieldStatusCode)) {
+                $field['status_code'] = (int) $fieldStatusCode;
+            }
             $fieldStamp = mdmobile_stamp(mdmobile_field($row, 'timestamp'));
             if ($fieldStamp > 0) {
                 $field['timestamp'] = $fieldStamp;
@@ -1296,7 +1300,9 @@ if (!function_exists('mdmobile_render_fields')) {
             if (!is_array($field) || !isset($field['label'], $field['value'])) {
                 continue;
             }
-            $html .= '<div class="md-field"><dt>' . mdmobile_esc($field['label']) . '</dt><dd>';
+            $statusCode = isset($field['status_code']) && is_numeric($field['status_code']) ? (string) (int) $field['status_code'] : '';
+            $html .= '<div class="md-field"><dt>' . mdmobile_esc($field['label']) . '</dt><dd'
+                . ($statusCode !== '' ? ' data-status-code="' . mdmobile_esc($statusCode) . '"' : '') . '>';
             $stamp = mdmobile_clock_stamp($field['label'], $field['value'], isset($field['timestamp']) ? $field['timestamp'] : null);
             if ($stamp > 0) {
                 $html .= mdmobile_time_html(mdmobile_utc_label($stamp, 'datetime'), $stamp, 'datetime');
@@ -1563,7 +1569,7 @@ if (!function_exists('mdmobile_render_close')) {
         $html .= '<p class="md-close-note" data-md-close-note' . ($closed ? '' : ' hidden') . '>Conversation closed.</p>';
         $html .= '<button type="button" class="md-close-trigger" data-md-close-trigger aria-expanded="false" aria-controls="'
             . mdmobile_esc($panelId) . '"' . ($closed ? ' hidden' : '') . '>Close conversation</button>';
-        $html .= '<div class="md-close-panel" id="' . mdmobile_esc($panelId) . '" data-md-close-panel role="dialog" aria-modal="false" aria-labelledby="' . mdmobile_esc($questionId) . '" hidden>';
+        $html .= '<div class="md-close-panel" id="' . mdmobile_esc($panelId) . '" data-md-close-panel role="dialog" aria-modal="false" aria-labelledby="' . mdmobile_esc($questionId) . '" tabindex="-1" hidden>';
         $html .= '<p class="md-close-question" id="' . mdmobile_esc($questionId) . '">Close this conversation? It will show as closed in the chat list.</p>';
         $html .= '<div class="md-close-actions">';
         $html .= '<button type="button" class="md-close-cancel" data-md-close-cancel>Cancel</button>';

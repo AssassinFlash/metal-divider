@@ -28,6 +28,10 @@ class erLhcoreClassMdMobile
 
     const KIND_BOT = 'bot';
 
+    // Native LHC acceptance system lines: adminchat.php:84/118,
+    // addmsgadmin.php:229/308, accepttransfer.php:81/110.
+    const ACCEPTANCE_SYSTEM_LINE = '/has accepted (?:the chat|a transferred chat|the pending chat by sending a message)!/i';
+
     /**
      * @param mixed $value Path or query value.
      */
@@ -352,33 +356,39 @@ class erLhcoreClassMdMobile
     }
 
     /**
-     * A chat left at pending while its transcript already has an operator
-     * message or the acceptance system line is inconsistent: the visitor was
-     * accepted, but the stored status was not advanced (for example by test
-     * tooling or a status reset). Show the acceptance the transcript proves.
-     * Only pending is derived; closed and active keep their stored status.
+     * A chat left at pending while its transcript already has a native LHC
+     * acceptance system line is inconsistent: the visitor was accepted, but
+     * the stored status was not advanced (for example by test tooling or a
+     * status reset). Show the acceptance the transcript proves. An operator
+     * row alone is not proof: LHC writes those for whispers, invisible sends,
+     * holds, and modal commands. Only pending is derived; closed and active
+     * keep their stored status.
      *
      * @param mixed $status
      * @param array<int, array<string, mixed>> $messages
+     * @param bool|null $acceptanceSeen Existence query outside the loaded window
      * @return int|null
      */
-    public static function effectiveStatus($status, array $messages)
+    public static function effectiveStatus($status, array $messages, $acceptanceSeen = null)
     {
         $parsed = self::canonicalInt($status);
         if ($parsed === null || $parsed !== 0) {
             return $parsed;
         }
 
+        if ($acceptanceSeen === true) {
+            return 1;
+        }
+
         foreach ($messages as $message) {
             if (!is_array($message)) {
                 continue;
             }
-            $kind = isset($message['kind']) ? (string) $message['kind'] : '';
-            if ($kind === self::KIND_OPERATOR) {
-                return 1;
+            if (!isset($message['kind']) || (string) $message['kind'] !== self::KIND_SYSTEM) {
+                continue;
             }
             $text = isset($message['text']) ? (string) $message['text'] : '';
-            if ($kind === self::KIND_SYSTEM && preg_match('/accepted the pending chat/i', $text) === 1) {
+            if (preg_match(self::ACCEPTANCE_SYSTEM_LINE, $text) === 1) {
                 return 1;
             }
         }
@@ -1086,13 +1096,6 @@ class erLhcoreClassMdMobile
                 $statusToken = $token;
             }
         }
-        // An operator reply is the acceptance event: a pending row that
-        // already has last_op_msg_time was handled even if the status column
-        // was left behind by a reset or a test tool.
-        if ($statusToken === 'pending' && self::positiveStamp(self::recordValue($chat, 'last_op_msg_time')) !== null) {
-            $item['status'] = 'active';
-            $statusToken = 'active';
-        }
         $unread = self::canonicalInt(self::recordValue($chat, 'has_unread_messages'));
         // A closed chat is no longer a new conversation, even if the unread
         // flag survived the close (LHC does not always clear it).
@@ -1443,6 +1446,7 @@ class erLhcoreClassMdMobile
             $statusToken = $parsedStatus === null ? null : self::statusToken($parsedStatus);
             if ($statusToken !== null) {
                 self::addField($fields, 'Status', ucfirst($statusToken));
+                $fields[count($fields) - 1]['status_code'] = $parsedStatus;
             }
         }
 
@@ -1910,7 +1914,7 @@ class erLhcoreClassMdMobile
      * @param int|null $status
      * @return string|null
      */
-    private static function statusToken($status)
+    public static function statusToken($status)
     {
         if ($status === 0) {
             return 'pending';
@@ -2071,6 +2075,12 @@ class erLhcoreClassMdMobile
                     'label' => $label,
                     'value' => $value,
                 );
+                if (isset($field['status_code'])) {
+                    $statusCode = self::canonicalInt($field['status_code']);
+                    if ($statusCode !== null) {
+                        $clean['status_code'] = $statusCode;
+                    }
+                }
                 if (isset($field['url'])) {
                     $url = self::sourceUrl($field['url']);
                     if ($url !== null) {

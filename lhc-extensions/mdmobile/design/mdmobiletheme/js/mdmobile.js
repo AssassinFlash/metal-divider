@@ -7,6 +7,9 @@
     var NEAR_BOTTOM_PX = 64;
     var KINDS = { visitor: true, operator: true, system: true, bot: true };
     var KIND_LABEL = { visitor: 'Visitor', operator: 'Operator', system: 'System', bot: 'Bot' };
+    // Native LHC acceptance system lines only. An operator row can be a
+    // whisper, invisible send, hold, or modal command and does not accept.
+    var ACCEPTANCE_SYSTEM_LINE = /has accepted (?:the chat|a transferred chat|the pending chat by sending a message)!/i;
 
     function parseAfter(value) {
         var parsed = parseInt(value, 10);
@@ -272,6 +275,8 @@
         var stickyError = false;
         var statusToken = 0;
         var closeBlocks = [];
+        var closeDialogSequence = 0;
+        var closeDialogListening = false;
         var closing = false;
         var closed = root.getAttribute('data-state') === 'closed';
 
@@ -455,14 +460,10 @@
             if (!message) {
                 return false;
             }
-            var kind = kindOf(message.kind);
-            if (kind === 'operator') {
-                return true;
-            }
-            if (kind !== 'system') {
+            if (kindOf(message.kind) !== 'system') {
                 return false;
             }
-            return /accepted the pending chat/i.test(String(message.text || ''));
+            return ACCEPTANCE_SYSTEM_LINE.test(String(message.text || ''));
         }
 
         function appendMessages(messages, forceScroll) {
@@ -636,7 +637,6 @@
                 }
                 if (result.ok && sendSucceeded(data)) {
                     releaseSentText(sent);
-                    markChatStatusAccepted();
                     flash('Sent');
                     return poll(true).then(function () {
                         scrollToEnd();
@@ -1292,20 +1292,111 @@
                     state.trigger.focus();
                 }
             }
+            listenCloseDialogs(openCloseDialog() !== null);
         }
 
         function openClosePanel(state) {
             if (!state || !state.panel || !state.trigger || chatClosed()) {
                 return;
             }
+            state.openedAt = ++closeDialogSequence;
             state.panel.hidden = false;
             state.trigger.setAttribute('aria-expanded', 'true');
+            listenCloseDialogs(true);
             if (state.cancel && state.cancel.focus) {
                 state.cancel.focus();
             }
         }
 
-        function paintStatusPill(pill, label, tone) {
+        function openCloseDialog() {
+            var active = doc ? doc.activeElement : null;
+            var fallback = null;
+            for (var index = 0; index < closeBlocks.length; index += 1) {
+                var state = closeBlocks[index];
+                if (!state.panel || state.panel.hidden) {
+                    continue;
+                }
+                if (state.panel.contains(active)) {
+                    return state;
+                }
+                if (!fallback || (state.openedAt || 0) > (fallback.openedAt || 0)) {
+                    fallback = state;
+                }
+            }
+            return fallback;
+        }
+
+        function closeDialogFocusable(panel) {
+            var nodes = panel.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            );
+            var out = [];
+            for (var index = 0; index < nodes.length; index += 1) {
+                var node = nodes[index];
+                if (node.hidden || !node.getClientRects || node.getClientRects().length === 0) {
+                    continue;
+                }
+                var style = doc && doc.defaultView ? doc.defaultView.getComputedStyle(node) : null;
+                if (style && (style.display === 'none' || style.visibility === 'hidden')) {
+                    continue;
+                }
+                out.push(node);
+            }
+            return out;
+        }
+
+        function onCloseDialogKey(event) {
+            var state = openCloseDialog();
+            if (!state) {
+                return;
+            }
+            if (event.key === 'Escape' || event.key === 'Esc') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                closePanel(state, true);
+                return;
+            }
+            if (event.key !== 'Tab') {
+                return;
+            }
+            // The close dialog owns Tab while open. Stop the drawer and canned
+            // traps from also moving focus.
+            event.stopImmediatePropagation();
+            var items = closeDialogFocusable(state.panel);
+            if (items.length === 0) {
+                event.preventDefault();
+                if (state.panel.focus) {
+                    state.panel.focus();
+                }
+                return;
+            }
+            var active = doc ? doc.activeElement : null;
+            var first = items[0];
+            var last = items[items.length - 1];
+            var outside = !state.panel.contains(active);
+            if (event.shiftKey && (outside || active === first)) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && (outside || active === last)) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+
+        function listenCloseDialogs(on) {
+            if (!doc || !doc.addEventListener || !doc.removeEventListener) {
+                return;
+            }
+            if (on && !closeDialogListening) {
+                doc.addEventListener('keydown', onCloseDialogKey, true);
+                closeDialogListening = true;
+            } else if (!on && closeDialogListening) {
+                doc.removeEventListener('keydown', onCloseDialogKey, true);
+                closeDialogListening = false;
+            }
+        }
+
+        function paintStatusPill(pill, label, tone, code) {
             if (!pill) {
                 return;
             }
@@ -1322,10 +1413,23 @@
                 pill.textContent = label;
             }
             pill.setAttribute('data-tone', tone);
+            if (code === null || code === undefined || code === '') {
+                pill.removeAttribute('data-status-code');
+            } else {
+                pill.setAttribute('data-status-code', String(code));
+            }
         }
 
-        function setChatStatusPill(label, tone) {
-            paintStatusPill(root.querySelector('#md-chat-status'), label, tone);
+        function statusCodeOf(node) {
+            return node && node.getAttribute ? String(node.getAttribute('data-status-code') || '') : '';
+        }
+
+        function pendingLabel(label) {
+            return label === 'pending' || label === 'waiting' || label === '等待';
+        }
+
+        function setChatStatusPill(label, tone, code) {
+            paintStatusPill(root.querySelector('#md-chat-status'), label, tone, code);
         }
 
         function chatStatusPillText() {
@@ -1336,27 +1440,21 @@
             return String(pill.textContent || '').replace(/^\s+|\s+$/g, '');
         }
 
-        // Sending from a pending chat accepts it: LHC flips the status to active
-        // and posts "has accepted the pending chat by sending a message". Without
-        // this the server-rendered pill keeps saying Pending until a reload.
+        // A native acceptance system line is the only proof LHC accepted the
+        // chat. Do not paint Active from our own send: an invisible message or
+        // a failed accept still writes an operator row. The poll appends the
+        // system line and that lands here.
         function markChatStatusAccepted() {
-            var label = chatStatusPillText().toLowerCase();
-            if (label !== 'pending' && label !== 'waiting' && label !== '等待') {
+            var pill = root.querySelector('#md-chat-status');
+            if (!pill || (statusCodeOf(pill) !== '0' && !pendingLabel(chatStatusPillText().toLowerCase()))) {
                 return;
             }
-            setChatStatusPill('Active', 'online');
+            setChatStatusPill('Active', 'online', 1);
+            // Only the conversation Status fields. A presence or filter pill
+            // that happens to say Pending must keep its own meaning.
             var scope = doc && doc.querySelectorAll ? doc : root;
-            var pills = scope.querySelectorAll('.md-pill');
-            var index;
-            for (index = 0; index < pills.length; index += 1) {
-                var text = String(pills[index].textContent || '').replace(/^\s+|\s+$/g, '').toLowerCase();
-                if (text === 'pending' || text === 'waiting' || text === '等待') {
-                    paintStatusPill(pills[index], 'Active', 'online');
-                }
-            }
-            // The drawer and the desktop context both render Status as a
-            // .md-field, so update every matching row, not only the pill.
             var fields = scope.querySelectorAll('.md-field');
+            var index;
             for (index = 0; index < fields.length; index += 1) {
                 var term = fields[index].querySelector ? fields[index].querySelector('dt') : null;
                 var value = fields[index].querySelector ? fields[index].querySelector('dd') : null;
@@ -1367,15 +1465,16 @@
                     continue;
                 }
                 var current = String(value.textContent || '').replace(/^\s+|\s+$/g, '').toLowerCase();
-                if (current === 'pending' || current === 'waiting' || current === '等待') {
+                if (statusCodeOf(value) === '0' || pendingLabel(current)) {
                     value.textContent = 'Active';
+                    value.setAttribute('data-status-code', '1');
                 }
             }
             markRailStatus('Active', 'online');
         }
 
         function markChatStatusClosed() {
-            setChatStatusPill('Closed', 'offline');
+            setChatStatusPill('Closed', 'offline', 2);
         }
 
         function markRailStatus(label, tone) {
@@ -1399,6 +1498,27 @@
 
         function markRailClosed() {
             markRailStatus('Closed', 'offline');
+        }
+
+        function clearRailUnread() {
+            var id = chatId();
+            if (!doc || !doc.querySelector || id === '') {
+                return;
+            }
+            var link = doc.querySelector('#md-inbox-list .md-thread-link[data-id="' + id + '"]');
+            if (!link) {
+                return;
+            }
+            link.classList.remove('is-unread');
+            var badge = link.querySelector('.md-unread');
+            if (badge && badge.parentNode) {
+                badge.parentNode.removeChild(badge);
+            }
+            var total = doc.querySelector('[data-unread-total]');
+            if (total) {
+                total.textContent = '0';
+                total.setAttribute('data-unread-total', '0');
+            }
         }
 
         function applyClosedState() {
@@ -1445,6 +1565,8 @@
                     setRemarkStatus(remark, 'Read-only after closing', false);
                 }
             }
+            listenCloseDialogs(false);
+            clearRailUnread();
             markChatStatusClosed();
             markRailClosed();
             setStatus('Conversation closed', false, false);
@@ -1562,39 +1684,6 @@
             }
             state.submit.addEventListener('click', function () {
                 closeChat(state);
-            });
-            block.addEventListener('keydown', function (event) {
-                if (state.panel.hidden) {
-                    return;
-                }
-                if (event.key === 'Escape' || event.key === 'Esc') {
-                    event.preventDefault();
-                    closePanel(state, true);
-                    return;
-                }
-                if (event.key !== 'Tab') {
-                    return;
-                }
-                // role=dialog is inline, not modal; keep Tab inside its two
-                // actions while it is open, then restore focus on cancel.
-                var focusable = state.panel.querySelectorAll(
-                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-                );
-                if (!focusable.length) {
-                    return;
-                }
-                var ownerDoc = state.panel.ownerDocument || doc;
-                var active = ownerDoc ? ownerDoc.activeElement : null;
-                var first = focusable[0];
-                var last = focusable[focusable.length - 1];
-                var outside = !state.panel.contains(active);
-                if (event.shiftKey && (outside || active === first)) {
-                    event.preventDefault();
-                    last.focus();
-                } else if (!event.shiftKey && (outside || active === last)) {
-                    event.preventDefault();
-                    first.focus();
-                }
             });
         }
 
