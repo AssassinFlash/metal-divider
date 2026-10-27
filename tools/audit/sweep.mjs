@@ -75,14 +75,27 @@ for (const [slug, path] of PAGES) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(base + path + cacheBust, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await page.waitForSelector('main', { timeout: 30000 });
+      // Walk the page, then WAIT for every image the walk triggered to finish.
+      // Without that wait the audit measures a half-loaded page and reports
+      // each still-fetching photograph as a broken one — verified on the live
+      // stainless page, where 8 factory cards all reported complete=true with
+      // naturalWidth 318 once given time, and had been called empty by a sweep
+      // that scrolled past them at 55ms per screen.
       await page.evaluate(async () => {
         const step = 700;
         for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
           window.scrollTo(0, y);
-          await new Promise((r) => setTimeout(r, 55));
+          await new Promise((r) => setTimeout(r, 90));
         }
         window.scrollTo(0, 0);
-        await new Promise((r) => setTimeout(r, 250));
+        const deadline = Date.now() + 8000;
+        while (Date.now() < deadline) {
+          const pending = [...document.images].filter((i) => !i.complete);
+          if (!pending.length) break;
+          await new Promise((r) => setTimeout(r, 120));
+        }
+        // Two frames for layout to settle after the last decode.
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       });
       const raw = await page.evaluate(probe);
       const parsed = JSON.parse(raw);

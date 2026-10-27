@@ -54,7 +54,12 @@
     if (decorative(el)) return;
     const r = el.getBoundingClientRect();
     if (r.width < 120 || r.height < 100) return;
-    if ([...el.querySelectorAll('img')].some((i) => i.complete && i.naturalWidth > 0)) return;
+    // Any <img> child means this block is a picture slot, whatever the image's
+    // fetch state is right now. Judging by pixels-at-this-instant is what made
+    // the sweep call eight fully-loaded factory cards empty: the decode landed
+    // a frame after the measurement. A slot with a src is not a design gap; a
+    // slot whose src 404s is caught by the img-broken rule instead.
+    if ([...el.querySelectorAll('img')].some((i) => (i.getAttribute('src') || '') !== '')) return;
     if (norm(el.textContent).length > 0) return;
     const cs = getComputedStyle(el);
     if (cs.backgroundImage !== 'none') return;
@@ -69,11 +74,19 @@
     const box = i.getBoundingClientRect();
     const laidOut = box.width > 8 && box.height > 8;
     if (!laidOut) return;
+    // `loading="lazy"` images off screen are legitimately not fetched yet: the
+    // browser has no reason to load them and no pixels exist. Only a picture
+    // that the browser already asked for (eager, or scrolled into view) and
+    // still got nothing is broken. Verified on the live stainless page: three
+    // images the sweep called broken all reported complete=true with
+    // naturalWidth set once the page was given time to settle.
     const src = i.currentSrc || i.getAttribute('src') || '';
+    const lazyWaiting = i.getAttribute('loading') === 'lazy' && !i.complete;
     // An `<img>` with no source at all is a slot a `<picture>` may or may not
     // fill; it is not a broken reference. Only a src that exists and returned
     // no pixels is a defect.
     if ('' === src) return;
+    if (lazyWaiting) return;
     if (!i.complete || i.naturalWidth === 0) { add('img-broken', 'high', i, src + ' box ' + Math.round(box.width) + 'x' + Math.round(box.height)); return; }
     if (i.naturalWidth / i.naturalHeight > box.width / Math.max(box.height, 1) * 2.2) add('img-ratio', 'low', i, 'natural ' + i.naturalWidth + 'x' + i.naturalHeight + ' in ' + Math.round(box.width) + 'x' + Math.round(box.height));
   });
@@ -95,13 +108,24 @@
   });
 
   // 5. Panels that carry real content but are forced hidden.
+  //
+  //    A tab strip hides every panel but the selected one; that is the widget
+  //    working, not a defect. What this looks for is the other thing: a block
+  //    that is hidden while the control that owns it claims to be open — the
+  //    accordion that says "expanded" over an empty slot. So the test reads the
+  //    control: if the sibling trigger says aria-expanded="true" (or is marked
+  //    active) and the panel it names is still hidden, that is the defect.
+  //    84 of the 84 the earlier rule reported were ordinary tab panels.
   [...document.querySelectorAll('[hidden]')].forEach((el) => {
     const t = norm(el.textContent);
     if (t.length < 20) return;
-    if (el.querySelector('img') || el.querySelectorAll('a,button').length) {
-      const wrap = el.parentElement;
-      if (wrap && wrap.querySelector('.is-active, [data-active], [aria-expanded="true"]')) add('hidden-content', 'high', el, 'has ' + t.length + ' chars and controls, sibling is active');
-    }
+    const owner = el.closest('[data-sps-row], [role="tabpanel"], section, li, article');
+    if (!owner) return;
+    const trigger = owner.querySelector('[aria-expanded="true"], .is-active[aria-expanded="true"], button[aria-expanded="true"]');
+    const saysOpen = !!trigger && (trigger.getAttribute('aria-controls') || '') !== ''
+      && (el.id === trigger.getAttribute('aria-controls') || owner.contains(el));
+    if (!saysOpen) return;
+    add('hidden-content', 'high', el, 'its own trigger reports expanded, the panel is still hidden');
   });
 
   // 6. Unstyled native controls — browser default chrome leaking through.
