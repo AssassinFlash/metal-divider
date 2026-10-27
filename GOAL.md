@@ -69,7 +69,24 @@
 
 Chrome 在 `visibilityState === 'hidden'` 时不触发懒加载。opencli 的窗口即使 `focused: true` 也拿不到 visible 状态,所以**这条路径在本环境走不通**。要通过需要:人工在前台看一次该页,或在真手机上开一次。
 
-**这不是"通过",是"环境限制下的已知边界"**——写在这里是为了避免下一个人重走同样的十几轮。
+**2026-10-28 后续:已排除缺陷,证据如下**
+
+同页 23 张图的实测对照
+
+```
+total 23, loaded 2
+  加载的 2 张 = loading="auto"(header logo 240w / icon 160w)
+  未加载 21 张 = loading="lazy",naturalWidth 全 0
+     含 6 张 route figure,也含该页**所有其他** lazy 图
+```
+
+如果 route figure 有缺陷,同页其他 lazy 图不应同样为 0。它们同因:**后台标签 `visibilityState: hidden`,Chrome 不启动懒加载**。
+
+`/shop/` 的图能画出,是因为它的卡片图从 y=620 起、在懒加载提前量(约 1250px)内;`/inquiry/` 六张图从 **y=3139** 起,截图时滚回顶部够不到。
+
+**逐项排除**:①六个文件 HTTP 200 且 PIL 可解码(亮度 100–139) ②六个 srcset 候选档(480/768/651/1000/1024w)全部 200 ③`src`/`srcset`/`sizes` 齐全 ④CSS 盒子正确(figure 168px、卡 362px) ⑤无 `content-visibility` 阻断 ⑥同页 eager 图正常。
+
+**结论**:数据与布局均无缺陷,空白由测量环境的懒加载行为造成。**仍未证明图片在真实手机上的呈现**——需人工前台滚一遍或真机打开。写在这里是为了避免下一个人重走同样的十几轮。
 
 ### 2026-10-28 视觉误导审计:14 页 dead=0 / flat=0
 
