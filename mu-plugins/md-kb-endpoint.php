@@ -377,7 +377,7 @@ function md_kb_endpoint_guard_unverified_cad( string $q, string $context, array 
  */
 function md_kb_endpoint_asks_cad_availability( string $q ): bool {
 	return 1 === preg_match(
-		'/\b(?:have|has|got|get|provide|send|share|request|available|availability|status)\b.{0,40}\b(?:cad|dxf|drawings?)\b|\b(?:cad|dxf|drawings?)\b.{0,40}\b(?:available|availability|status|provided?|sent?|shared?)\b|(?:有|发|给|提供|分享|要|需要|查|看).{0,12}(?:图纸|CAD|DXF)|(?:图纸|CAD|DXF).{0,12}(?:有|发|给|提供|分享|可以|能)/iu',
+		'/\b(?:have|has|got|get|provide|send|share|request|available|availability)\b.{0,40}\b(?:cad|dxf|drawings?)\b|\bcad\s+status\b|\b(?:cad|dxf|drawings?)\b.{0,40}\b(?:available|availability|status|provided?|sent?|shared?)\b|(?:有|发|给|提供|分享|要|需要|查|看).{0,12}(?:图纸|CAD|DXF)|(?:图纸|CAD|DXF).{0,12}(?:有|发|给|提供|分享|可以|能)/iu',
 		$q
 	);
 }

@@ -1450,6 +1450,7 @@ final class KbEndpointTest extends TestCase {
 			self::assertTrue( md_kb_endpoint_asks_cad_availability( $q ), $q );
 		}
 		self::assertFalse( md_kb_endpoint_asks_cad_availability( 'Can you match a pattern from my drawing?' ) );
+		self::assertFalse( md_kb_endpoint_asks_cad_availability( 'What is the status of my order, and can you match a pattern from my drawing?' ) );
 	}
 
 	/**
