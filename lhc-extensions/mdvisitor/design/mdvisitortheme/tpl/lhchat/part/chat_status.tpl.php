@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028s', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028v', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -15,7 +15,7 @@
                 <span class="mdv-chat-avatar">MD<i></i></span>
                 <div class="mdv-chat-name"><strong>Metal Divider AI</strong><small><span class="mdv-chat-state mdv-chat-state-<?php echo $mdvTone;?>"><i></i><?php echo htmlspecialchars($mdvLabel);?></span></small></div>
             </div>
-            <button class="mdv-chat-close" type="button" aria-label="Close chat" onclick="(function(){var t='*';try{if(document.referrer)t=new URL(document.referrer).origin}catch(e){}if(window.parent!==window)window.parent.postMessage({source:'mdvisitor',type:'mdvisitor-close'},t);})()">×</button>
+            <button class="mdv-chat-close" type="button" aria-label="Close chat" onclick="(function(){var t='';try{var a=window.location.ancestorOrigins;if(a&&a.length)t=a[0];else if(document.referrer)t=new URL(document.referrer).origin}catch(e){}if(t&&window.parent!==window)window.parent.postMessage('lhc_chat_closed_explicit',t);})()">×</button>
         </div>
         <div id="status-chat">
             <?php if (!($chat->status == erLhcoreClassModelChat::STATUS_BOT_CHAT && $chat->bot !== null && isset($chat->bot->configuration_array['profile_hide']) && $chat->bot->configuration_array['profile_hide'] == true)) : ?>
@@ -40,6 +40,13 @@
 <script>
 (function () {
   var chip = document.querySelector('.mdv-chat-head .mdv-chat-state');
+  function setPlaceholder() {
+    var composer = document.getElementById('CSChatMessage');
+    if (composer) { composer.placeholder = 'Type your message…'; }
+  }
+  setPlaceholder();
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', setPlaceholder); }
+  window.setTimeout(setPlaceholder, 500);
   if (!chip) { return; }
   function setChip(label, tone) {
     if (chip.textContent.trim() === label) { return; }
@@ -52,13 +59,13 @@
   function sync() {
     var status = document.getElementById('status-chat');
     if (!status) { return; }
-    if (status.querySelector('h4')) { setChip('Chat closed', 'closed'); return; }
-    var queue = status.querySelector('.status-text');
-    if (queue && /pending a support staff member|pending confirm|queue|wait/i.test(queue.textContent)) { setChip('Connecting you to the team', 'pending'); return; }
-    var rows = document.querySelectorAll('#messages .message-row.message-admin .usr-tit');
-    for (var i = 0; i < rows.length; i += 1) {
+    var statusText = status.textContent || '';
+    if ((status.querySelector('h4') || status.querySelector('h6')) && /closed/i.test(statusText)) { setChip('Chat closed', 'closed'); return; }
+    if (/pending a support staff member|pending confirm|queue|wait/i.test(statusText)) { setChip('Connecting you to the team', 'pending'); return; }
+    var rows = document.querySelectorAll('#messages .message-row.message-admin .op-nick-title');
+    for (var i = rows.length - 1; i >= 0; i -= 1) {
       var name = (rows[i].textContent || '').trim();
-      if (name && !/ai assistant|metal divider ai/i.test(name)) { setChip('Team online', 'online'); return; }
+      if (name && !/ai assistant|metal divider ai/i.test(name)) { setChip(name, 'online'); return; }
     }
     setChip('AI assistant', 'ai');
   }

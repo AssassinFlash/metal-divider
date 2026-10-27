@@ -2,10 +2,13 @@
    Selectors stay under body.widget-chat so a leaked link cannot restyle the start page.
    Heights are left to LHC's own widget script. */
 body.widget-chat{
+  margin:0!important;
   background:#faf7ef;
   color:#1b201c;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
+body.widget-chat #widget-layout{margin:0!important}
+body.widget-chat #widget-layout > .col-12{padding:0!important}
 body.widget-chat #widget-layout,
 body.widget-chat #widget-content-body{
   background:#faf7ef;
@@ -93,18 +96,28 @@ body.widget-chat .message-row .msg-date{
   font-size:10px;
 }
 body.widget-chat #ChatMessageContainer{
-  padding:8px 10px 10px;
+  padding:10px 12px 12px;
   background:#faf7ef;
   border-top:1px solid #e5dfd1;
 }
+body.widget-chat #ChatMessageContainer .d-flex{align-items:center;gap:8px}
+body.widget-chat #ChatMessageContainer .btn-group{flex:0 0 30px;width:30px;height:40px;display:flex;align-items:center;justify-content:center;padding:0!important}
+body.widget-chat #ChatMessageContainer .btn-group > .settings{display:grid;place-items:center;width:30px;height:40px;padding:0;color:#5e6963;font-size:20px;line-height:1}
+body.widget-chat #ChatMessageContainer .mx-auto{flex:1 1 auto;min-width:0;width:auto;padding-bottom:0!important}
+body.widget-chat #ChatSendButtonContainer{display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px}
 body.widget-chat #CSChatMessage{
+  display:block;
   width:100%;
+  height:42px;
   min-height:42px;
-  padding:10px 52px 10px 12px;
+  margin:0;
+  padding:10px 12px!important;
   border:1px solid #ded4c1;
   border-radius:14px;
   background:#fffdf8;
   color:#1b201c;
+  font-size:14px;
+  line-height:20px;
   resize:none;
 }
 body.widget-chat #CSChatMessage:focus{
@@ -242,4 +255,3 @@ body.widget-chat #status-chat .operator-info,
 body.widget-chat #widget-content-body > .row .operator-info{display:none!important}
 body.widget-chat #status-chat:has(.operator-info){display:none!important}
 
-body.widget-chat #status-chat:has(h4){display:none!important}

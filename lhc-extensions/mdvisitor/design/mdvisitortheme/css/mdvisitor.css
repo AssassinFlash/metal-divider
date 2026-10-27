@@ -102,6 +102,9 @@ button{cursor:pointer}
 .md-chips button{border:1px solid var(--line);border-radius:999px;background:transparent;padding:6px 10px;color:#79694a;font-size:9.8px;line-height:1}
 .md-chips button:hover{background:#f3ecdd}
 .md-panel-foot{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:18px;color:#a39a88;font-size:8.5px;letter-spacing:.03em;white-space:nowrap;overflow:hidden}
+.md-panel-foot a{color:#7a6438;font-weight:600;text-decoration:none}
+.md-panel-foot a:hover{color:#1b3b2c;text-decoration:underline}
+.md-panel-foot a:focus-visible{outline:2px solid #c9a962;outline-offset:2px}
 .md-foot-mark{display:grid;place-items:center;width:19px;height:19px;flex:0 0 19px;border:1px solid #d8cdb8;border-radius:50%;color:#9a8357;font-family:Georgia,serif;font-size:7px}
 .md-foot-dot{width:3px;height:3px;border-radius:50%;background:#c3b69e}
 
@@ -165,12 +168,10 @@ button{cursor:pointer}
 .md-search{display:flex;align-items:center;gap:9px;height:42px;margin:1px 0 13px;padding:0 12px;border:1px solid var(--line);border-radius:13px;background:#fffdf8;color:#a69b86;font-size:14px}
 .md-search input{flex:1;min-width:0;border:0;outline:none;background:transparent;color:#2c2a24;font-size:12.5px}
 .md-search input::placeholder{color:#a9a08e}
-.md-faq-list details{border-bottom:1px solid var(--line);padding:0}
-.md-faq-list summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;cursor:pointer;list-style:none;font-size:12.4px;font-weight:600;line-height:1.4;color:#2c2a24}
-.md-faq-list summary::-webkit-details-marker{display:none}
-.md-faq-list summary span{color:#a99570;font-size:17px;font-weight:300;transition:transform .15s ease}
-.md-faq-list details[open] summary span{transform:rotate(45deg)}
-.md-faq-list details p{margin:-2px 0 14px;padding-right:8px;color:#797363;font-size:11.6px;line-height:1.62}
+.md-faq-q{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px 0;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;font:inherit;font-size:12.4px;font-weight:600;line-height:1.4;color:#2c2a24;text-align:left}
+.md-faq-q i{flex:0 0 auto;color:#a99570;font-size:17px;font-style:normal;font-weight:300;line-height:1}
+.md-faq-q:hover{color:#7a6438}
+.md-faq-q:focus-visible{outline:2px solid #c9a962;outline-offset:3px}
 .md-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:44px;margin-top:16px;border:0;border-radius:13px;background:#1b3b2c;color:#f7f3ea;font-size:12.2px;font-weight:650;letter-spacing:.01em}
 .md-primary span{font-size:15px;color:var(--gold-2)}
 
@@ -245,8 +246,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-
 .md-start .md-faq .md-tabs{flex:0 0 54px}
 .md-start .md-faq .md-panel{padding-bottom:10px}
 .md-start .md-primary{height:42px;margin-top:12px}
-.md-start .md-faq-list summary{font-size:12px}
-.md-start .md-faq-list details p{font-size:11.5px;line-height:1.5}
+.md-start .md-faq-q{font-size:12px}
 
 /* When the FAQ view is active, hide the home view; JS controls .is-active */
 .md-start .md-view{display:none}
@@ -255,7 +255,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-
 /* The native start page prints its own "Have a question?" bar above the widget. */
 #widget-content-body > .operator-info{display:none!important}
 #widget-content-body{padding:0!important;background:#faf7ef!important}
-#widget-layout{padding:0!important;margin:0!important}
+#widget-layout{padding:0!important;margin:0!important;width:100%!important}
+#widget-layout>.col-12{padding:0!important}
 
 /* Keep the card inside the widget viewport even when the native wrappers are auto-height. */
 html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%!important;max-height:100%!important;overflow:hidden!important}

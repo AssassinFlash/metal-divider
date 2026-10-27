@@ -67,6 +67,8 @@
 (function () {
   var open = document.getElementById('mdv-open');
   var card = document.getElementById('mdv-card');
+  var frame = document.getElementById('mdv-iframe');
+  if (frame) { frame.src = frame.src.split('?')[0] + '?v=' + Date.now(); }
   function setOpen(on) {
     card.hidden = !on;
     open.setAttribute('aria-expanded', on ? 'true' : 'false');
@@ -79,8 +81,7 @@
   });
   window.addEventListener('message', function (event) {
     if (event.origin !== window.location.origin) { return; }
-    var data = event.data || {};
-    if (data.type === 'mdvisitor-close' || data.type === 'mdvisitor:close') { setOpen(false); }
+    if (event.data === 'lhc_chat_closed_explicit') { setOpen(false); }
   });
 }());
 </script>

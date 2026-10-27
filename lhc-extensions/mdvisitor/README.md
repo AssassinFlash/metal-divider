@@ -7,7 +7,7 @@ Staging-only Live Helper Chat 4.97 visitor widget skin for Metal Divider. It doe
 LHC resolves an enabled extension's `design/<theme>/tpl` before the active theme (`lib/core/lhcore/lhdesign.php`, `designtpl`). These two overrides are therefore global for every widget that uses the default template names:
 
 - `design/mdvisitortheme/tpl/lhchat/chatwidget.tpl.php` — Knocket-style start page. The native start form contract is unchanged: `method="post"`, action `chat/chatwidget` plus the native `department` / `priority` / `vid` / `hash_resume` / `leaveamessage` / `offline` / theme appends, hidden `onlyBotOnline`, `URLRefer`, `r`, `operator`, `StartChat=1`, and the native `onsubmit` branch (`lhinst.prestartChat` when `message_auto_start`, otherwise `lhinst.addCaptchaSubmit`).
-- `design/mdvisitortheme/tpl/lhchat/part/chat_status.tpl.php` — the native 4.97 status partial, plus a Knocket-style header (avatar, `Metal Divider AI`, live status chip, close control) and one stylesheet link. It adds no message HTML and no send/poll script. A small inline MutationObserver keeps the chip in sync with the native status row (AI assistant / Connecting you to the team / Team online / Chat closed).
+- `design/mdvisitortheme/tpl/lhchat/part/chat_status.tpl.php` — the native 4.97 status partial, plus a Knocket-style header (avatar, `Metal Divider AI`, live status chip, close control) and one stylesheet link. It adds no message HTML and no send/poll script. A small inline MutationObserver keeps the chip in sync with the native status row (AI assistant / Connecting you to the team / the operator name once a human replies / Chat closed).
 
 Styles and the start-page script are extension assets. Their URLs are built from `erLhcoreClassSystem::instance()->wwwDir()`, not `baseurl()`, because `baseurl()` injects `index.php`.
 
@@ -15,7 +15,7 @@ Styles and the start-page script are extension assets. Their URLs are built from
 
 ## Start page
 
-Charcoal/brass is the default hero. `?mdvtheme=forest` sets `data-theme="forest"` on the card. Quick Connect cards and common-question chips write into the native `Question` field and focus it. They do not submit. The round control beside the question is the native start-chat send partial, which submits `#form-start-chat`. Home / Chat / FAQ are in-page views. Escape closes an open FAQ answer, then the FAQ view. It does not close the parent window.
+Charcoal/brass is the default hero. `?mdvtheme=forest` sets `data-theme="forest"` on the card. Quick Connect cards, common-question chips, and every FAQ row write into the native `Question` field and focus it. They do not submit. The FAQ screen lists questions only; it carries no answer copy. The round control beside the question is the native start-chat send partial, which submits `#form-start-chat`. Home and FAQ are in-page views. The Chat tab is not a separate view: before a chat exists it returns to Home and focuses the same native question field, because there is no conversation to show yet. After the native form submits, LHC navigates to the chat page and the start-page tabs are gone. Escape closes the FAQ view. It does not close the parent window.
 
 The question textarea keeps the native `user_msg_height` inline style when that setting is greater than zero. That is the only inline style, and it is copied so a configured composer height still applies. Everything else is in the CSS files.
 
@@ -25,7 +25,7 @@ The question textarea keeps the native `user_msg_height` inline style when that 
 
 ## Preview
 
-`preview/mdvisitor-preview.html` is a same-origin staging page, not the production embed. Open it on the staging host that serves `/chat/`. The launcher is a black pill, "Ask Metal Divider". The card is 400×680 and contains an iframe to `/chat/index.php/chat/chatwidget/(department)/1`. Under 560px the card is full screen. The close button hides the card. The iframe close control posts `{source:'mdvisitor', type:'mdvisitor-close'}` to `window.location.origin` only.
+`preview/mdvisitor-preview.html` is a same-origin staging page, not the production embed. Open it on the staging host that serves `/chat/`. The launcher is a black pill, "Ask Metal Divider", with a gold MD mark and an online dot. The card is 400×680 and contains an iframe to `/chat/index.php/chat/chatwidget/(department)/1`; the preview appends a cache-buster so a reload does not serve an older widget document. Under 560px the card is full screen. The iframe close control posts the core string `lhc_chat_closed_explicit` to the parent origin resolved from `window.location.ancestorOrigins` (falling back to the referrer origin). It never posts to `*`. The preview page accepts that string, hides the card and restores focus to the launcher. The preview page has no second close button of its own; Escape also hides the card.
 
 ## Deploy
 
@@ -53,7 +53,6 @@ Remove `mdvisitor` from `site.extensions`, delete `chat/extension/mdvisitor`, an
 - Staging currently hides name, email, and phone. This template still includes those native branches. If a later setting shows one of them, it renders in the composer stack above the question; it is not dropped. The same is true for department (when the URL has no department), product, timezone, and terms.
 - If the question field is hidden (`message_hidden`, bot-only hide, or message not visible in the page widget), `$hasExtraField` is set and the native `StartChatAction` button is shown. Do not hide `.btn-group` in that case; it is the only submit control.
 - Offline mode still includes `lhchat/offline_form.tpl.php`. That form is not restyled as a Knocket screen.
-- The first FAQ answer is open on purpose, matching the prototype. Escape closes it.
 - An LHC upgrade that changes `chatwidget.tpl.php`, `chat_status.tpl.php`, or the chat message class names (`.message-row.response`, `.message-row.message-admin`, `#CSChatMessage`, `#lhc-send-icon`) will need this override re-diffed. Extension template priority means a stale override keeps winning after an upgrade.
 - The preview iframe assumes department id `1` exists on staging. If it does not, the start page will show LHC's department error inside the card.
-- The staging acceptance used a 390px and 400×680 iframe host, and the real session crossed AI reply, human handoff, takeover and close. The screenshots live under `.scratch/verify-162/`, outside this tracked directory.
+- The staging acceptance used real Chrome at 390, 400×680 and 1440 widths. The screenshots, DOM/DB readbacks, and the B0 run log live under `.scratch/verify-162/`, outside this tracked directory. The tracked extension is not a substitute for that evidence; re-run the acceptance after changing any template, CSS or JS.

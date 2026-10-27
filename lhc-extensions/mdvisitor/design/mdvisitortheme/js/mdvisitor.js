@@ -50,13 +50,6 @@
   }
 
   function closeOpenFaq() {
-    var open = card.querySelector('.md-faq-list details[open]');
-    if (open) {
-      open.open = false;
-      var summary = open.querySelector('summary');
-      if (summary) { summary.focus(); }
-      return true;
-    }
     var faq = card.querySelector('[data-mdv-view="faq"]');
     if (faq && faq.classList.contains('is-active')) {
       view('home');
@@ -85,9 +78,17 @@
     if (close) {
       event.preventDefault();
       if (window.parent && window.parent !== window) {
-        var target = '*';
-        try { if (document.referrer) { target = new URL(document.referrer).origin; } } catch (err) {}
-        window.parent.postMessage({ source: 'mdvisitor', type: 'mdvisitor-close' }, target);
+        var target = '';
+        try {
+          if (window.location.ancestorOrigins && window.location.ancestorOrigins.length) {
+            target = window.location.ancestorOrigins[0];
+          } else if (document.referrer) {
+            target = new URL(document.referrer).origin;
+          }
+        } catch (err) {}
+        if (target) {
+          window.parent.postMessage('lhc_chat_closed_explicit', target);
+        }
       } else {
         window.close();
       }
@@ -108,7 +109,7 @@
     });
     search.addEventListener('input', function () {
       var needle = search.value.trim().toLowerCase();
-      Array.prototype.forEach.call(card.querySelectorAll('.md-faq-list details'), function (row) {
+      Array.prototype.forEach.call(card.querySelectorAll('.md-faq-list .md-faq-q'), function (row) {
         row.hidden = !!(needle && row.textContent.toLowerCase().indexOf(needle) === -1);
       });
     });

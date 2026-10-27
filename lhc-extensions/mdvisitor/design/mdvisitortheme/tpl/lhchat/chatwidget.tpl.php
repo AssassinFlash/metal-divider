@@ -1,5 +1,5 @@
 <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_pre_multiinclude.tpl.php'));?>
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor.css?v=20261028s', ENT_QUOTES, 'UTF-8'); ?>">
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor.css?v=20261028v', ENT_QUOTES, 'UTF-8'); ?>">
 
 <?php if (isset($maintenance_mode)) : ?>
     <div class="pt-2">
@@ -97,7 +97,7 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
       </button>
       <button class="md-action" type="button" data-mdv-fill="What materials and finishes do you offer?">
         <span class="md-action-icon">◫</span>
-        <span class="md-action-copy"><b>Materials &amp; finishes</b><small>304 / 316 stainless, PVD, samples</small></span>
+        <span class="md-action-copy"><b>Materials &amp; finishes</b><small>304 / 316 stainless, PVD, finishes</small></span>
         <span class="md-chev">›</span>
       </button>
       <button class="md-action" type="button" data-mdv-fill="I'd like to speak with a person, please.">
@@ -107,11 +107,11 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
       </button>
       <button class="md-text-link" type="button" data-mdv-go="faq">Browse common questions <span>→</span></button>
       <div class="md-chips">
-        <button type="button" data-mdv-fill="What is your typical lead time for a custom pattern?">Lead time</button>
+        <button type="button" data-mdv-fill="What is your typical lead time?">Lead time</button>
         <button type="button" data-mdv-fill="Can you match a pattern from my drawing?">Custom patterns</button>
         <button type="button" data-mdv-fill="Do you ship to my country?">Shipping</button>
       </div>
-      <div class="md-panel-foot"><span class="md-foot-mark">MD</span><span>Metal Divider AI concierge</span><span class="md-foot-dot"></span><span>Replies usually within seconds</span></div>
+      <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="https://wa.me/85264731687" target="_blank" rel="noopener">WhatsApp</a><span class="md-foot-dot"></span><a href="mailto:info@metal-divider.com">Email</a></div>
     </div>
     <div class="md-composer md-start-composer">
 <form method="post" id="form-start-chat" action="<?php echo erLhcoreClassDesign::baseurl('chat/chatwidget')?><?php echo $append_mode?><?php $department !== false ? print '/(department)/'.$department : ''?><?php $input_data->priority !== false ? print '/(priority)/'.$input_data->priority : ''?><?php $input_data->vid !== false ? print '/(vid)/'.htmlspecialchars($input_data->vid) : ''?><?php $input_data->hash_resume !== false ? print '/(hash_resume)/'.htmlspecialchars($input_data->hash_resume) : ''?><?php $leaveamessage == true ? print '/(leaveamessage)/true' : ''?><?php $forceoffline == true ? print '/(offline)/true' : ''?><?php echo $append_mode_theme?>" onsubmit="return <?php if (isset($start_data_fields['message_auto_start']) && $start_data_fields['message_auto_start'] == true) : ?>lhinst.prestartChat('<?php echo time()?>',$(this))<?php else : ?>lhinst.addCaptchaSubmit('<?php echo time()?>',$(this))<?php endif?>">
@@ -254,11 +254,11 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
     <div class="md-panel md-scroll">
       <label class="md-search"><span>⌕</span><input id="mdv-faq-search" placeholder="Search questions" aria-label="Search questions"></label>
       <div class="md-faq-list">
-        <details open><summary>What is your typical lead time?<span>+</span></summary><p>Production usually starts after drawing approval and depends on the pattern and finish. Share your project and the team will confirm the current schedule.</p></details>
-        <details><summary>Can you match a custom pattern?<span>+</span></summary><p>Yes. Send a drawing, a photo or a pattern code and our team will confirm the best production route.</p></details>
-        <details><summary>Do you ship internationally?<span>+</span></summary><p>Yes, we ship worldwide. Share the destination and project size and we will confirm packing and delivery.</p></details>
-        <details><summary>What materials do you use?<span>+</span></summary><p>Stainless steel 304 and 316, with PVD, brushed, mirror, bead-blast and custom finishes.</p></details>
-        <details><summary>Can you send CAD files?<span>+</span></summary><p>CAD availability depends on the pattern. Our team confirms what can be released before fabrication.</p></details>
+        <button class="md-faq-q" type="button" data-mdv-fill="What is your typical lead time?"><span>What is your typical lead time?</span><i>→</i></button>
+        <button class="md-faq-q" type="button" data-mdv-fill="Can you match a pattern from my drawing?"><span>Can you match a custom pattern?</span><i>→</i></button>
+        <button class="md-faq-q" type="button" data-mdv-fill="Do you ship to my country?"><span>Do you ship internationally?</span><i>→</i></button>
+        <button class="md-faq-q" type="button" data-mdv-fill="What materials and finishes do you offer?"><span>What materials do you use?</span><i>→</i></button>
+        <button class="md-faq-q" type="button" data-mdv-fill="Can you send CAD files for a pattern?"><span>Can you send CAD files?</span><i>→</i></button>
       </div>
       <button class="md-primary" type="button" data-mdv-go="chat">Ask the assistant <span>→</span></button>
     </div>
@@ -269,7 +269,7 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
     </nav>
   </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028q', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028t', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 <?php if (isset($start_data_fields['pre_chat_html']) && $start_data_fields['pre_chat_html'] != '') : ?>
     <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/post_chat_html.tpl.php'));?>
