@@ -183,6 +183,8 @@ body.widget-chat .mdv-chat-avatar i{
   background:#63b47e;
   border:2px solid #161513;
 }
+body.widget-chat .mdv-chat-avatar[data-tone="pending"] i{background:#d8b25e}
+body.widget-chat .mdv-chat-avatar[data-tone="closed"] i{background:#9a9385}
 body.widget-chat .mdv-chat-name{
   display:flex;
   flex-direction:column;

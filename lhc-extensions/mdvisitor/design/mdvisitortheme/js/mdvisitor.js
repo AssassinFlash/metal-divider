@@ -3,7 +3,7 @@
 
   var doc = document;
   var form = doc.getElementById('form-start-chat');
-  var question = doc.getElementById('id_Question');
+  var question = doc.getElementById('id_Question') || doc.querySelector('textarea[name="Question"]');
   var card = doc.querySelector('.md-card.md-start');
   if (!card) { return; }
 
