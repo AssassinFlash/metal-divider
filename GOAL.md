@@ -55,6 +55,29 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-28 视觉误导审计:14 页 dead=0 / flat=0
+
+GOAL.md「已知待查清单」第一条是「看起来能点的东西必须能点;能点的东西要有点的样子」。此前只有零散处理,这次做成可复跑的检查(`tools/audit/affordance.py`,真 1440 视口读计算样式 + 实际点击探测)。
+
+**发现并修复**
+
+| 面 | 修复前 | 修复后 |
+|---|---|---|
+| `/faqs/` 按钮 cursor | 58 个里 **48 个是 default** 箭头(40 行 FAQ 手风琴 + 8 个分类 tab) | 0 |
+| `.about-gallery-panel` | `cursor:pointer` 但**只响应 hover**,无 tabindex 无 role,点击无任何变化 | `cursor:default`(诚实信号,不伪造处理器) |
+| `.feature-panel`(定制页) | 同上,由区块自己的前后箭头驱动,面板本身不可点 | `cursor:default` |
+| `a.btn-link` | **112×25px**,`padding: 0 0 4px` | **112×44px** |
+
+`btn-link` 的根因值得记:既有 44px 通行规则**限定在 `max-width: 767px`**,所以最宽的屏幕上点击区最小。改 `min-height` 而非 `padding`——volume 里 `padding: 0 0 4px` 简写特异性更高,实测 top 10px 生效而 bottom 仍是 4px,盒子只到 35。
+
+**检测器自身修了三处误报**(每处都曾被当成真缺陷)
+
+1. 链接的子元素继承 `cursor:pointer`,点击确实会跳转 → 60 条假 dead
+2. 包裹 div 持有 `cursor:pointer` 与点击、子元素继承 → 又 66 条(FAQ 与家族页手风琴都这么写)
+3. lightbox 已打开时再取签名,看不到下一张卡打开它 → 9 条(图库 23 张卡)→ 点击探测改为**先关闭再点**
+
+**最终**:14 页 `dead=0`、`flat=0`;`tiny` 195 → 53(余下为 38–41px 的导航项与 hero chip,已接近 44)。
+
 ### 2026-10-28 询盘链路端到端走通 + 1440 真宽视口首次实测
 
 **询盘链路(dev,真实 POST + 真实队列投递,非模拟)**
