@@ -87,6 +87,29 @@
 
 `--repoint-masked` 只在现有缩略图**合成后不可见**时才替换(按像素测,不按 role 猜),其余一律不动。途中还修了一层:生产 9 个 term 都带 `_md_series_seeded` 标记,把 `--repoint-masked` 完全挡住(报 `9 already seeded` 什么都没做);改为**掩膜检查优先于标记**——标记是为"别覆盖管理员清空的字段",不是"让看不见的图永久留着"。
 
+**生产执行结果(2026-10-28,快照 `db-20261027T225356Z` 后执行)**
+
+```
+识别 6 个掩膜 / 3 个本就是照片(正确跳过)
+seed-series: images 6 seeded / 0 kept / 3 already seeded
+```
+
+读回九个 term 缩略图,逐张合成到 `#141414` 测最大亮度:
+
+| term | 修复后 | max 亮度 |
+|---|---|---|
+| pattern-abstract | white-sands-…-08-720w | 171 |
+| pattern-geometric | orchid-lattice-…-07-1024w | 255 |
+| pattern-landscape | quiet-wood-…-08-1230w | 207 |
+| pattern-moroccan-arabic | mandala-…-07-1024w | 250 |
+| pattern-organic | timothys-vine-…-08-1024w | 248 |
+| pattern-vintage-retro | deco-stream-…-07-1024w | 251 |
+| pattern-asian(未改) | tiger-lily-…-01-1024w | 255 |
+| pattern-gradient(未改) | skyfall-gradient-…-01-500w | 225 |
+| pattern-perforated(未改) | forrest-…-01-500w | 121 |
+
+**9/9 全部 ≥121**(修复前那 6 个是 5–16)。`/collections/` 390 截图同位置由 `distinct=27 / p50=11` 变为 `distinct=127 / p50=73`,密度检测 clean。
+
 ### 2026-10-28 390 视口:布局已验证,懒加载图无法在本环境验证
 
 **已验证(截图,`--width 390` 会真重排)**:11 个页型全覆盖。`/shop/`、`/faqs/` 密度检测 clean;首页 4 条 244–1068px 带经逐点亮度复核(带内 p50 比底色高 5–10)为深色设计区块;溢出用滚动条指纹判据(`flat 1.00 @ #515151` = 有滚动条 = 不溢出)交叉确认。
