@@ -55,6 +55,24 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-28 图片清晰度:发现「看得见但发虚」,并修 39 个产品
+
+可见性闭环后转入清晰度。判据:把 `sizes` 按视口解析出真实槽位,再问「最大 srcset 候选是否 ≥ 槽位的 80%」。
+
+**先说一个我自己的误报**:最初取 `sizes` 里**所有数字的最大值**当槽位,得出 32–178 处"放大"——错。`sizes="(min-width: 1025px) 87px, 53px"` 里 1025px 是**断点条件**不是宽度;`calc()` 在本站还有三种形态(`100vw - N`、`54.1vw - 43`、`110vw - 568`)。写了解析器按 1440 视口取值后,生产 `/shop/` 的真实数字是 **3 张**,不是 32。
+
+**修的真缺陷(目录卡)**
+
+`alhambra` / `athelstan` / `autumn-leaves` / `forrest-perforated` 的目录卡挂 500px 图,而槽位是 338 CSS px × 2(DPR)= **676 设备像素**,放大 **1.35×**。四个产品自己都有 ≥1000px 文件(`alhambra-05-1000w`、`athelstan-03-1333w`、`autumn-leaves-10-1024w`、`forrest-04-1024w`),只是特色图没选。
+
+`retarget-thumbnails` 原本只认 `finish` 掩膜,这四张的 role 是 `pattern render` / `reference image` / `detail reference`,被跳过。新增第二条判据:**特色图短边 < 600 也算缺陷**,且**替换品必须严格大于被替换物**。
+
+dev 实测 39 个产品被重设(`alhambra` 500→830、`winderoo` 500→1024),`/shop/` 从"多张不足"变为 **0 张不足**。1 个 unresolved:`pebble-creek`。
+
+**已知限制:源素材不足(需业主提供)**
+
+`ext-gold-black-grille-screen-lineup` 与 `outdoor-black-leaf-garden-privacy-screen` 落在应用指南 `pag__visual` 的 **803px** 槽位,但**本地源文件最大只有 550w**(全库仅 2 个档位)。550 撑 803 会发虚,而这是**素材本身**的问题——换图无用,需要更高质量的原始文件。已记录,不擅自用插值放大伪造。
+
 ### 2026-10-28 全站图片可见性闭环:1194 个文件,0 张不可见
 
 **取图路径穷尽清点**(全仓 `grep get_post_thumbnail_id / get_term_meta.*thumbnail_id / get_the_post_thumbnail`):
