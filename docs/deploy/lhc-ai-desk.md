@@ -8,7 +8,7 @@ Date: 2026-10-27. Scope: staging only. Production wiring is a separate ticket.
 - AI endpoint: POST /wp-json/md/v1/kb/answer, from mu-plugins/md-kb-endpoint.php (branch impl/155-unanswered-log).
 - Knowledge: Rapls AI Chatbot 1.21.4, knowledge entry id 1 "Contact details" (WhatsApp and email). This is real public contact data, not a pattern spec.
 - WeCom connector: mu-plugins/md-wecom-notify.php (branch impl/154-desk).
-- Department Support id 1: bot_configuration = {"bot_id":3}.
+- Department Support id 1: bot_configuration = {"bot_id":3,"bot_foh":true}.
 
 ## Bot configuration
 
@@ -33,7 +33,7 @@ The Welcome trigger's conditions action solves the start-question gap. LHC saves
 - Host: https://staging.metal-divider.com
 - Method: POST, raw JSON body, max_execution_time 60.
 - Sub URL: /wp-json/md/v1/kb/answer
-- Body: {"q": {{msg}}, "chat_id": {{chat_id}}, "history": []}
+- Body: {"q": {{msg}}, "chat_id": {{chat_id}}, "page_url": {{lhc.referrer}}, "history": []}
 - Authorization: bearer. The value is copied from the staging option md_kb_endpoint['bearer_token'] by a one-off setup script. It is never written to the repository.
 - Output combinations:
   - transfer: HTTP 200, success_location msg, success_location_2 action, condition action eq transfer_operator, priority 10.
