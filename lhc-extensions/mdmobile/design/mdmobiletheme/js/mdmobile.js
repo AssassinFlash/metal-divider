@@ -1541,7 +1541,9 @@
                 return;
             }
             started = true;
-            renderLocalTimes(root);
+            // The desktop context column lives outside #md-mobile-app, so
+            // Started and Handoff need the same document walk as bindClose().
+            renderLocalTimes(doc && doc.querySelectorAll ? doc : root);
             bindDetails();
             bindQuick();
             bindRemarks();

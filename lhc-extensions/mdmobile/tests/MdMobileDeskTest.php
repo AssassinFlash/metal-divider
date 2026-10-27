@@ -68,6 +68,77 @@ final class MdMobileDeskTest extends TestCase
         self::assertSame('Bot reply', $payload['messages'][1]['text']);
     }
 
+    public function testFormatDropsBotStatusJsonButKeepsOtherKinds(): void
+    {
+        $payload = erLhcoreClassMdMobile::format(
+            array(
+                array('id' => 10, 'user_id' => 0, 'msg' => '{"ok":true}', 'time' => 10),
+                array('id' => 11, 'user_id' => 9, 'msg' => '{"status":"closed"}', 'time' => 11),
+                array('id' => 12, 'user_id' => -2, 'msg' => '{"ok":true}', 'time' => 12),
+                array('id' => 13, 'user_id' => -2, 'msg' => '{"status":"typing"}', 'time' => 13),
+                array('id' => 14, 'user_id' => -2, 'msg' => '{"ok":true,"status":"done"}', 'time' => 14),
+                array('id' => 15, 'user_id' => -2, 'msg' => '{"ok":true,"message":"still here"}', 'time' => 15),
+                array('id' => 16, 'user_id' => -2, 'msg' => 'not json', 'time' => 16),
+            ),
+            0
+        );
+
+        self::assertSame(
+            array(
+                array('id' => 10, 'kind' => 'visitor', 'text' => '{"ok":true}', 'time' => 10),
+                array('id' => 11, 'kind' => 'operator', 'text' => '{"status":"closed"}', 'time' => 11),
+                array('id' => 15, 'kind' => 'bot', 'text' => '{"ok":true,"message":"still here"}', 'time' => 15),
+                array('id' => 16, 'kind' => 'bot', 'text' => 'not json', 'time' => 16),
+            ),
+            $payload['messages']
+        );
+    }
+
+    public function testFormatCollapsesRepeatedSystemRowsOnly(): void
+    {
+        $payload = erLhcoreClassMdMobile::format(
+            array(
+                array('id' => 20, 'user_id' => -1, 'msg' => 'Visitor left the chat', 'time' => 20),
+                array('id' => 21, 'user_id' => 0, 'msg' => 'hello', 'time' => 21),
+                array('id' => 22, 'user_id' => -1, 'msg' => 'Visitor left the chat', 'time' => 22),
+                array('id' => 23, 'user_id' => -1, 'msg' => 'Operator joined', 'time' => 23),
+                array('id' => 24, 'user_id' => 0, 'msg' => 'hello', 'time' => 24),
+                array('id' => 25, 'user_id' => 9, 'msg' => 'hello', 'time' => 25),
+            ),
+            0
+        );
+
+        self::assertSame(
+            array(
+                array('id' => 20, 'kind' => 'system', 'text' => 'Visitor left the chat', 'time' => 20),
+                array('id' => 21, 'kind' => 'visitor', 'text' => 'hello', 'time' => 21),
+                array('id' => 23, 'kind' => 'system', 'text' => 'Operator joined', 'time' => 23),
+                array('id' => 24, 'kind' => 'visitor', 'text' => 'hello', 'time' => 24),
+                array('id' => 25, 'kind' => 'operator', 'text' => 'hello', 'time' => 25),
+            ),
+            $payload['messages']
+        );
+    }
+
+    public function testFormatCursorStaysOnDroppedTrailingBotJson(): void
+    {
+        $payload = erLhcoreClassMdMobile::format(
+            array(
+                array('id' => 30, 'user_id' => 0, 'msg' => 'hello', 'time' => 30),
+                array('id' => 31, 'user_id' => -2, 'msg' => '{"ok":true}', 'time' => 31),
+            ),
+            0
+        );
+
+        self::assertSame(
+            array(
+                array('id' => 30, 'kind' => 'visitor', 'text' => 'hello', 'time' => 30),
+            ),
+            $payload['messages']
+        );
+        self::assertSame(31, $payload['latest_id']);
+    }
+
     public function testEmptyPollKeepsTheCursor(): void
     {
         $payload = erLhcoreClassMdMobile::format(

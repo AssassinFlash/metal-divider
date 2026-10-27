@@ -303,15 +303,19 @@ class erLhcoreClassMdMobile
     public static function format(array $rows, $afterId)
     {
         $afterId = (int) $afterId;
-        $messages = array();
+        $candidates = array();
+        $latestId = $afterId > 0 ? $afterId : 0;
 
         foreach ($rows as $row) {
             $id = (int) $row['id'];
             if ($id <= $afterId) {
                 continue;
             }
+            if ($id > $latestId) {
+                $latestId = $id;
+            }
 
-            $messages[] = array(
+            $candidates[] = array(
                 'id' => $id,
                 'kind' => self::kindFromUserId($row['user_id']),
                 'text' => self::messageText($row['msg']),
@@ -320,15 +324,25 @@ class erLhcoreClassMdMobile
         }
 
         usort(
-            $messages,
+            $candidates,
             static function (array $left, array $right) {
                 return $left['id'] <=> $right['id'];
             }
         );
 
-        $latestId = $afterId > 0 ? $afterId : 0;
-        if ($messages !== array()) {
-            $latestId = $messages[count($messages) - 1]['id'];
+        $messages = array();
+        $seenSystem = array();
+        foreach ($candidates as $message) {
+            if (self::isStatusOnlyBot($message)) {
+                continue;
+            }
+            if ($message['kind'] === self::KIND_SYSTEM) {
+                if (isset($seenSystem[$message['text']])) {
+                    continue;
+                }
+                $seenSystem[$message['text']] = true;
+            }
+            $messages[] = $message;
         }
 
         return array(
@@ -356,6 +370,33 @@ class erLhcoreClassMdMobile
         $text = (string) preg_replace('/\[\*\]/', "\u{2022} ", $text);
 
         return trim(strip_tags($text));
+    }
+
+    /**
+     * Bot tooling sometimes writes a status object as the whole message body.
+     * Those are not transcript lines. A payload with any other key is.
+     *
+     * @param array{kind: string, text: string} $message
+     * @return bool
+     */
+    private static function isStatusOnlyBot(array $message)
+    {
+        if ($message['kind'] !== self::KIND_BOT) {
+            return false;
+        }
+
+        $decoded = json_decode($message['text'], true);
+        if (!is_array($decoded) || $decoded === array()) {
+            return false;
+        }
+
+        foreach (array_keys($decoded) as $key) {
+            if ($key !== 'ok' && $key !== 'status') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
