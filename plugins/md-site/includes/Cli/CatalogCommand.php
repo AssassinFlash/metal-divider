@@ -83,10 +83,18 @@ final class CatalogCommand {
 	 * [--dry-run]
 	 * : Report what would be written, write nothing.
 	 *
+	 * [--repoint-masked]
+	 * : Also replace an existing term thumbnail when it is a line-art mask
+	 * that composites to nothing on the card. A thumbnail that is merely
+	 * "already set" is left alone; only one that a visitor cannot see is
+	 * replaced, and the replacement is this term's first product's featured
+	 * image — the same source the empty case uses.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp md-site seed-series --dry-run
 	 *     wp md-site seed-series
+	 *     wp md-site seed-series --repoint-masked --dry-run
 	 *
 	 * @subcommand seed-series
 	 * @when after_wp_load
@@ -100,6 +108,7 @@ final class CatalogCommand {
 			WP_CLI::error( 'Run as an administrator: wp md-site seed-series --user=<admin>.' );
 		}
 		$dry_run = isset( $assoc_args['dry-run'] );
+		$repoint = isset( $assoc_args['repoint-masked'] );
 
 		$terms = \get_terms(
 			array(
@@ -138,9 +147,13 @@ final class CatalogCommand {
 			}
 
 			$thumbnail = (int) \get_term_meta( $term_id, 'thumbnail_id', true );
-			if ( $thumbnail > 0 ) {
+			$masked    = $thumbnail > 0 && $repoint && $this->is_invisible_on_card( $thumbnail );
+			if ( $thumbnail > 0 && ! $masked ) {
 				++$images_present;
 			} else {
+				if ( $masked ) {
+					WP_CLI::log( sprintf( 'masked %s: %s composites to nothing on the card', $term->slug, basename( (string) \get_attached_file( $thumbnail ) ) ) );
+				}
 				$attachment = $this->resolve_attachment( $term );
 				if ( null === $attachment ) {
 					WP_CLI::warning( sprintf( 'seed-series: %s has no image to seed', $term->slug ) );
@@ -261,6 +274,61 @@ final class CatalogCommand {
 	 *
 	 * @param \WP_Term $term The product_cat term.
 	 * @return int|null The attachment id, null when the term has no image.
+	 */
+	/**
+	 * Whether an attachment composites to nothing on the card background.
+	 *
+	 * The same question ThumbnailCommand asks of a product's featured image:
+	 * a `finish preview` is a line-art mask whose motif lives in the alpha
+	 * channel, so on `#141414` it measures a max luminance of 1-16 and reads
+	 * as an empty tile. Measured here rather than assumed from the role,
+	 * because the role is only a label and the pixels are the fact.
+	 *
+	 * @param int $attachment_id The attachment to test.
+	 * @return bool True when the image is effectively invisible on the card.
+	 */
+	private function is_invisible_on_card( int $attachment_id ): bool {
+		$file = (string) \get_attached_file( $attachment_id );
+		if ( '' === $file || ! \is_readable( $file ) || ! \function_exists( 'imagecreatefromstring' ) ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents,WordPress.PHP.NoSilencedErrors.Discouraged -- local attachment; a broken file is a "no".
+		$blob = @\file_get_contents( $file );
+		if ( false === $blob ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- as above.
+		$image = @\imagecreatefromstring( $blob );
+		if ( false === $image ) {
+			return false;
+		}
+		$width  = \imagesx( $image );
+		$height = \imagesy( $image );
+		$max    = 0.0;
+		for ( $gx = 0; $gx < 24; $gx++ ) {
+			for ( $gy = 0; $gy < 24; $gy++ ) {
+				$x     = (int) ( $gx * ( $width - 1 ) / 23 );
+				$y     = (int) ( $gy * ( $height - 1 ) / 23 );
+				$rgb   = \imagecolorat( $image, $x, $y );
+				$alpha = ( $rgb >> 24 ) & 0x7F;
+				// Composite onto #141414: GD stores 0 as opaque, 127 as clear.
+				$weight = 1.0 - ( $alpha / 127.0 );
+				$red    = ( ( $rgb >> 16 ) & 0xFF ) * $weight + 20 * ( 1.0 - $weight );
+				$green  = ( ( $rgb >> 8 ) & 0xFF ) * $weight + 20 * ( 1.0 - $weight );
+				$blue   = ( $rgb & 0xFF ) * $weight + 20 * ( 1.0 - $weight );
+				$max    = max( $max, 0.2126 * $red + 0.7152 * $green + 0.0722 * $blue );
+			}
+		}
+		\imagedestroy( $image );
+		return $max < 20.0;
+	}
+
+	/**
+	 * The attachment a term's card should show: its hero image when that
+	 * resolves, else its first product's featured image.
+	 *
+	 * @param \WP_Term $term The series term.
+	 * @return int|null The attachment id, or null when there is nothing to use.
 	 */
 	private function resolve_attachment( \WP_Term $term ): ?int {
 		$url = (string) \get_term_meta( (int) $term->term_id, 'hero_image', true );
