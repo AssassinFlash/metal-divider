@@ -95,6 +95,25 @@
     // naturalWidth=0, currentSrc empty, because its 768w candidate is a 404 and
     // the 480w candidate is smaller than `sizes` asks for.
     const lazyWaiting = i.getAttribute('loading') === 'lazy' && !i.complete;
+    // An image inside closed chrome is hidden, not broken. `visibility:hidden`
+    // keeps a layout box, so a photograph in a closed mega menu occupies
+    // 323x215 with no pixels and no request — which satisfies "has a box and
+    // naturalWidth is zero" exactly. Measured on six PDPs: every one reported
+    // 11-14 broken images and all of them were seven mega-menu clones plus
+    // seven hamburger-modal copies of the same files, identical on every page
+    // and unrelated to the pattern. The audit agent fetched all 61 URLs those
+    // slots name; every one returned 200, and opening the menu made them decode.
+    const inClosedChrome = (() => {
+      let n = i;
+      while (n && n !== document.body) {
+        const cs = getComputedStyle(n);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return true;
+        if (n.hasAttribute && n.hasAttribute('inert')) return true;
+        n = n.parentElement;
+      }
+      return false;
+    })();
+    if (inClosedChrome) return;
     // An `<img>` with no source at all is a slot a `<picture>` may or may not
     // fill; it is not a broken reference. Only a src that exists and returned
     // no pixels is a defect.
