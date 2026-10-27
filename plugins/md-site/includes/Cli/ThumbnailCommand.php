@@ -213,10 +213,13 @@ final class ThumbnailCommand {
 				++$skipped;
 				continue;
 			}
-			if ( self::REVISION === (string) \get_post_meta( $product_id, self::MARKER, true ) ) {
-				++$skipped;
-				continue;
-			}
+			// The marker is written after a repair but no longer gates it. It
+			// means "this product has been handled", not "this product is now
+			// correct": seventeen products carried the marker and still failed
+			// the size rule, and gating on it made the fix unreachable on a site
+			// an earlier revision had already touched. Reaching this point means
+			// the product fails a criterion, which is the only condition that
+			// should decide whether to repair it.
 
 			$replacement = $this->pick_photograph( $product_id, $current );
 			if ( null === $replacement ) {
@@ -332,7 +335,30 @@ final class ThumbnailCommand {
 
 		if ( array() !== $by_role ) {
 			ksort( $by_role );
-			return (int) reset( $by_role );
+			$preferred = (int) reset( $by_role );
+
+			// Role order alone is not enough once size is also a criterion.
+			// white-sands has one `installed screen scene` at 720x515 and a set
+			// of `accent render`s at 2048x1161; preferring the role picked the
+			// 515 short side for a 676-device-pixel card. When a size repair is
+			// under way, take the largest candidate that is still a scene if one
+			// exists, else fall back to the role order.
+			if ( 0 === $current_short ) {
+				return $preferred;
+			}
+			$best      = $preferred;
+			$best_side = $this->short_side( $preferred );
+			foreach ( $by_base as $candidate ) {
+				$side = $this->short_side( (int) $candidate );
+				// Strictly larger than both the running best and the image being
+				// replaced: skyfall-gradient was moved from a 1000px file to a
+				// 681px one because only the first comparison was made.
+				if ( $side > $best_side && $side > $current_short ) {
+					$best      = (int) $candidate;
+					$best_side = $side;
+				}
+			}
+			return $best;
 		}
 
 		// No role named a photograph — fall back to any usable opaque image,
@@ -358,6 +384,30 @@ final class ThumbnailCommand {
 	 * asks for 676 device pixels on a retina screen. 600 is the floor below
 	 * which the upscale is visible; a 400 or 500px source in that slot is
 	 * soft, and these products all carry larger files.
+	 *
+	 * @param int $id The current featured attachment.
+	 * @return bool True when the image cannot fill the card at 2x.
+	 */
+	/**
+	 * The short side of an attachment in pixels, or 0 when unknown.
+	 *
+	 * @param int $id The attachment id.
+	 * @return int
+	 */
+	private function short_side( int $id ): int {
+		$meta = \wp_get_attachment_metadata( $id );
+		if ( ! \is_array( $meta ) ) {
+			return 0;
+		}
+		return min( (int) ( $meta['width'] ?? 0 ), (int) ( $meta['height'] ?? 0 ) );
+	}
+
+	/**
+	 * Whether a featured image is too small for the card at 2x.
+	 *
+	 * The catalogue declares `sizes="(min-width: 1120px) 338px"`, so the card
+	 * asks for 676 device pixels on a retina screen; 600 is the floor below
+	 * which the upscale is visible.
 	 *
 	 * @param int $id The current featured attachment.
 	 * @return bool True when the image cannot fill the card at 2x.
