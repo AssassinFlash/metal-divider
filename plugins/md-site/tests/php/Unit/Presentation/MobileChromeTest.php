@@ -435,7 +435,7 @@ final class MobileChromeTest extends TestCase {
 	 * The mesh stage must not depend on requestAnimationFrame or on scroll
 	 * events to select a scene.
 	 *
-	 * rAF does not fire in some environments (HeadlessChrome has no
+	 * The rAF API does not fire in some environments (HeadlessChrome has no
 	 * compositor, and it pauses in a background tab), and programmatic
 	 * `window.scrollTo` does not fire a scroll event everywhere. Wrapping
 	 * `sync()` in rAF meant the scene never changed on scroll, and relying on
