@@ -1426,6 +1426,103 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * The commercial gate must also catch the phrasings a Chinese-speaking
+	 * visitor actually types, and hyphenated lead-time. "cost-effective" is
+	 * a product quality question, not a request for a number.
+	 */
+	public function test_the_commercial_gate_covers_chinese_and_hyphenated_lead_time(): void {
+		foreach ( array( '什么时候能发货', '多少钱', '发货时间', '运费多少', '单价', 'What is the lead-time?' ) as $q ) {
+			self::assertTrue( md_kb_endpoint_asks_commercial( $q ), $q );
+		}
+		foreach ( array( '什么时候能发货', '发货时间' ) as $q ) {
+			self::assertTrue( md_kb_endpoint_asks_ship_date( $q ), $q );
+		}
+		self::assertFalse( md_kb_endpoint_asks_commercial( 'Is this a cost-effective screen?' ) );
+	}
+
+	/**
+	 * "Do you have a drawing", "CAD status" and the Chinese forms are CAD
+	 * availability questions too. A product question that mentions a
+	 * drawing the visitor already has is not.
+	 */
+	public function test_the_cad_gate_covers_have_status_and_chinese_phrases(): void {
+		foreach ( array( 'Do you have a drawing for Agave?', 'What is the CAD status of Agave?', '有图纸吗', '能发图纸吗' ) as $q ) {
+			self::assertTrue( md_kb_endpoint_asks_cad_availability( $q ), $q );
+		}
+		self::assertFalse( md_kb_endpoint_asks_cad_availability( 'Can you match a pattern from my drawing?' ) );
+	}
+
+	/**
+	 * A natural "do you have a drawing" question on a gated pattern must
+	 * run the CAD guard, not skip it because the sentence says "have".
+	 */
+	public function test_a_have_a_drawing_question_on_a_gated_pattern_transfers(): void {
+		$this->plant_pattern(
+			array(
+				'fields' => array(
+					'open_area'  => '32',
+					'cad_status' => 'gated',
+				),
+			)
+		);
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Yes, the CAD drawing is available.', false, 'none' )
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Do you have a drawing for Agave?' ),
+			)
+		);
+
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertStringContainsString( md_kb_endpoint_drawing_check_message(), (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( 'drawing is available', (string) $out['body']['msg'] );
+	}
+
+	/**
+	 * A Chinese ship-date question is a commercial commitment and never
+	 * reaches the model.
+	 */
+	public function test_a_chinese_ship_date_question_transfers_without_the_model(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Agave 什么时候能发货？' ),
+			)
+		);
+
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * "Cost-effective" describes a quality, not a price. The model must be
+	 * allowed to answer it instead of being short-circuited to a human.
+	 */
+	public function test_cost_effective_is_not_a_commercial_question(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Stainless steel is a durable and cost-effective choice for exterior screens.', false, 'none' )
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Is this a cost-effective screen?' ),
+			)
+		);
+
+		self::assertSame( '', $out['body']['action'] );
+		self::assertCount( 1, $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
 	 * A pattern hit is not a knowledge gap: the unanswered log stays empty
 	 * even when the model says it has nothing else.
 	 */

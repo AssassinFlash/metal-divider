@@ -210,7 +210,7 @@ function md_kb_endpoint_asks_commercial( string $q ): bool {
 		return true;
 	}
 	return 1 === preg_match(
-		'/\b(?:price|pricing|quote|quotation|cost|how\s+much|lead\s*time|delivery\s+(?:time|date)|moq|minimum\s+order|samples?)\b|价格|报价|交期|交货|起订|样品/iu',
+		'/\b(?:price|pricing|quote|quotation|cost\b(?!\s*-?\s*effective)|how\s+much|lead[\s-]*time|delivery\s+(?:time|date)|moq|minimum\s+order|samples?)\b|价格|报价|交期|交货|起订|样品|多少钱|单价|费用|运费|发货/iu',
 		$q
 	);
 }
@@ -225,7 +225,7 @@ function md_kb_endpoint_asks_commercial( string $q ): bool {
  */
 function md_kb_endpoint_asks_ship_date( string $q ): bool {
 	return 1 === preg_match(
-		'/\bwhen\s+(?:could|can|will|would)\s+(?:you|we|it|this|that)\s+ship\b|\bhow\s+soon\b|\bship(?:ping)?\s+date\b|\bwhen\s+(?:could|can|will)\s+it\s+(?:arrive|be\s+delivered)\b/iu',
+		'/\bwhen\s+(?:could|can|will|would)\s+(?:you|we|it|this|that)\s+ship\b|\bhow\s+soon\b|\bship(?:ping)?\s+date\b|\bwhen\s+(?:could|can|will)\s+it\s+(?:arrive|be\s+delivered)\b|什么时候.{0,8}发货|何时发货|发货时间/iu',
 		$q
 	);
 }
@@ -377,7 +377,7 @@ function md_kb_endpoint_guard_unverified_cad( string $q, string $context, array 
  */
 function md_kb_endpoint_asks_cad_availability( string $q ): bool {
 	return 1 === preg_match(
-		'/\b(?:cad|dxf|drawings?)\b.{0,40}\b(?:available|availability)\b|\b(?:available|availability)\b.{0,40}\b(?:cad|dxf|drawings?)\b|\b(?:get|provide|send)\b.{0,30}\b(?:cad|dxf|drawings?)\b/iu',
+		'/\b(?:have|has|got|get|provide|send|share|request|available|availability|status)\b.{0,40}\b(?:cad|dxf|drawings?)\b|\b(?:cad|dxf|drawings?)\b.{0,40}\b(?:available|availability|status|provided?|sent?|shared?)\b|(?:有|发|给|提供|分享|要|需要|查|看).{0,12}(?:图纸|CAD|DXF)|(?:图纸|CAD|DXF).{0,12}(?:有|发|给|提供|分享|可以|能)/iu',
 		$q
 	);
 }
