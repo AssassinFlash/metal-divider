@@ -42,6 +42,12 @@ final class KbEndpointTest extends TestCase {
 		$GLOBALS['md_mu_test_option_writes']      = array();
 		$GLOBALS['md_mu_test_update_option_fail'] = false;
 		$GLOBALS['wpdb']->queries                 = array();
+		$GLOBALS['md_mu_test_products']           = array();
+		$GLOBALS['md_mu_test_fields']             = array();
+		$GLOBALS['md_mu_test_terms']              = array();
+		$GLOBALS['md_mu_test_permalinks']         = array();
+		$GLOBALS['md_mu_test_thumbs']             = array();
+		$GLOBALS['md_mu_test_queries']            = array();
 		$_SERVER['REMOTE_ADDR']                   = '192.0.2.10';
 		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
 	}
@@ -106,7 +112,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => '',
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -124,13 +130,13 @@ final class KbEndpointTest extends TestCase {
 		$wrong  = md_kb_endpoint_answer(
 			array(
 				'header' => 'Bearer ' . str_repeat( 'b', strlen( $token ) ),
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 		$scheme = md_kb_endpoint_answer(
 			array(
 				'header' => 'Basic ' . $token,
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -147,7 +153,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => 'Bearer anything-at-all',
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -213,7 +219,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -259,7 +265,7 @@ final class KbEndpointTest extends TestCase {
 			array(
 				'header' => $this->bearer(),
 				'body'   => array(
-					'q'       => 'delivery time',
+					'q'       => 'opening hours',
 					'chat_id' => '77',
 					'history' => array( 'do you ship to the EU?' ),
 				),
@@ -269,11 +275,11 @@ final class KbEndpointTest extends TestCase {
 		self::assertSame( 200, $out['status'] );
 		self::assertSame( 'Standard patterns ship in 3 weeks.', $out['body']['msg'] );
 		self::assertSame( '', $out['body']['action'] );
-		self::assertSame( array( 'knowledge#12 Lead time', 'product#146 Geometric Weave' ), $out['body']['sources'] );
+		self::assertSame( array( 'knowledge#12 Lead time' ), $out['body']['sources'] );
 
 		$engine_calls = \Md\Mu\Tests\Unit\FakeRaplsEngine::$calls;
 		self::assertContains( array( 'set_bot_filters', array(), true, true ), $engine_calls );
-		self::assertContains( array( 'search', 'delivery time', 5 ), $engine_calls );
+		self::assertContains( array( 'search', 'opening hours', 5 ), $engine_calls );
 
 		$http = $this->recorded( 'md_mu_test_http' );
 		self::assertCount( 1, $http );
@@ -293,7 +299,9 @@ final class KbEndpointTest extends TestCase {
 		self::assertFalse( $payload['stream'] );
 		self::assertSame( array( 'type' => 'json_object' ), $payload['response_format'] );
 		self::assertSame( 'do you ship to the EU?', $payload['messages'][1]['content'] );
-		self::assertStringContainsString( 'delivery time', end( $payload['messages'] )['content'] );
+		self::assertStringContainsString( 'opening hours', end( $payload['messages'] )['content'] );
+		self::assertStringNotContainsString( 'Geometric Weave', end( $payload['messages'] )['content'] );
+		self::assertStringNotContainsString( 'product#146', end( $payload['messages'] )['content'] );
 		self::assertStringContainsString( FakeRaplsEngine::CONTEXT, end( $payload['messages'] )['content'] );
 	}
 
@@ -435,7 +443,7 @@ final class KbEndpointTest extends TestCase {
 		md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'What is the lead time?' ),
+				'body'   => array( 'q' => 'What are your opening hours?' ),
 			)
 		);
 
@@ -453,7 +461,7 @@ final class KbEndpointTest extends TestCase {
 		md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'What is the lead time?' ),
+				'body'   => array( 'q' => 'What are your opening hours?' ),
 			)
 		);
 
@@ -672,7 +680,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -721,7 +729,7 @@ final class KbEndpointTest extends TestCase {
 			$out = md_kb_endpoint_answer(
 				array(
 					'header' => $this->bearer(),
-					'body'   => array( 'q' => 'delivery time' ),
+					'body'   => array( 'q' => 'opening hours' ),
 				)
 			);
 
@@ -745,7 +753,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -864,7 +872,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -930,7 +938,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -988,7 +996,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -1047,7 +1055,7 @@ final class KbEndpointTest extends TestCase {
 				array(
 					'header' => $this->bearer(),
 					'body'   => array(
-						'q'       => 'delivery time',
+						'q'       => 'opening hours',
 						'chat_id' => 'chat-77',
 					),
 				)
@@ -1057,7 +1065,7 @@ final class KbEndpointTest extends TestCase {
 			$written = (string) file_get_contents( $log );
 			self::assertStringContainsString( '[md-kb-endpoint] model call failed after 2 attempt(s): network_error http=0', $written );
 			self::assertStringNotContainsString( $this->deepseek_key(), $written );
-			self::assertStringNotContainsString( 'delivery time', $written );
+			self::assertStringNotContainsString( 'opening hours', $written );
 			self::assertStringNotContainsString( 'chat-77', $written );
 		} finally {
 			ini_set( 'error_log', $before );
@@ -1081,7 +1089,7 @@ final class KbEndpointTest extends TestCase {
 		$out = md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -1125,7 +1133,7 @@ final class KbEndpointTest extends TestCase {
 		$out    = md_kb_endpoint_answer(
 			array(
 				'header' => $this->bearer(),
-				'body'   => array( 'q' => 'delivery time' ),
+				'body'   => array( 'q' => 'opening hours' ),
 			)
 		);
 
@@ -1187,12 +1195,356 @@ final class KbEndpointTest extends TestCase {
 		self::assertStringContainsString( "I don't have that information — our team can help.", $prompt );
 		self::assertStringContainsString( 'Never mention knowledge, documents or context to the visitor', $prompt );
 		self::assertStringContainsString( 'Say pattern, not product.', $prompt );
+		self::assertStringContainsString( 'On request', $prompt );
+		self::assertStringContainsString( 'never as zero', $prompt );
 	}
 
 	/**
-	 * The endpoint registers itself on rest_api_init, and the route it
-	 * registers is the one the LHC bot is configured against: the md/v1
-	 * namespace, /kb/answer, POST.
+	 * A published product the pattern lookup can find, with the ACF
+	 * fields, the series term and the permalink the tests assert.
+	 *
+	 * @param array<string, mixed> $overrides Fields that differ from the Agave fixture.
+	 * @return void
+	 */
+	private function plant_pattern( array $overrides = array() ): void {
+		$product                                        = array_merge(
+			array(
+				'ID'          => 101,
+				'post_title'  => 'Agave | Architectural Metal Screen Pattern',
+				'post_status' => 'publish',
+				'post_name'   => 'agave',
+				'sku'         => 'MD-101',
+			),
+			$overrides
+		);
+		$GLOBALS['md_mu_test_products'][]               = $product;
+		$GLOBALS['md_mu_test_fields'][ $product['ID'] ] = $product['fields'] ?? array(
+			'open_area'       => '32',
+			'visual_density'  => 'medium',
+			'repeat_behavior' => 'tile',
+			'motifs'          => array( 'botanical' ),
+			'best_fit'        => 'architectural-screening',
+			'cad_status'      => 'ready',
+			'summary'         => 'A botanical screen.',
+		);
+		$GLOBALS['md_mu_test_terms'][ $product['ID'] ]  = array(
+			'product_cat' => array( (object) array( 'name' => 'Botanical' ) ),
+		);
+		$GLOBALS['md_mu_test_permalinks'][ $product['ID'] ] = 'https://metal-divider.com/pattern/agave';
+		$GLOBALS['md_mu_test_thumbs'][ $product['ID'] ]     = 'https://metal-divider.com/agave.jpg';
+	}
+
+	/**
+	 * An exact pattern code is answered from the published product, and
+	 * the audit trail names that product — not a Rapls knowledge row.
+	 */
+	public function test_an_exact_pattern_code_is_answered_from_the_product(): void {
+		$this->configure_kb(
+			array(),
+			'{"choices":[{"message":{"role":"assistant","content":"{\"answer\":\"Agave is a botanical screen with a 32% open area.\",\"handoff\":false,\"reason\":\"none\"}"}}]}'
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the open area of MD-101?' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( 'Agave is a botanical screen with a 32% open area.', $out['body']['msg'] );
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
+
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'PATTERN FACTS (WooCommerce, current publish):', $user );
+		self::assertStringContainsString( 'MD-101', $user );
+		self::assertStringContainsString( '32%', $user );
+		self::assertStringContainsString( 'Stainless Steel (304 / 316)', $user );
+		self::assertStringNotContainsString( 'price', strtolower( $user ) );
+	}
+
+	/**
+	 * An empty open area is the site's honest wording, never a zero the
+	 * model could repeat as a measurement.
+	 */
+	public function test_an_empty_open_area_is_on_request(): void {
+		$this->configure_kb(
+			array(),
+			'{"choices":[{"message":{"role":"assistant","content":"{\"answer\":\"The open area is on request.\",\"handoff\":false,\"reason\":\"none\"}"}}]}'
+		);
+		$this->plant_pattern(
+			array(
+				'fields' => array(
+					'open_area'       => '',
+					'visual_density'  => 'open',
+					'repeat_behavior' => '',
+					'motifs'          => array(),
+					'best_fit'        => '',
+					'cad_status'      => '',
+					'summary'         => '',
+				),
+			)
+		);
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'open area of MD-101' ),
+			)
+		);
+
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'On request', $user );
+		self::assertDoesNotMatchRegularExpression( '/open area:\s*0/i', $user );
+	}
+
+	/**
+	 * A product that is not published is not a current pattern: the lookup
+	 * asks only for publish, and a draft with the same code is not cited.
+	 */
+	public function test_an_unpublished_pattern_is_not_a_hit(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( md_kb_endpoint_no_answer_message(), true, 'no_knowledge' )
+		);
+		$this->plant_pattern( array( 'post_status' => 'draft' ) );
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Tell me about MD-101' ),
+			)
+		);
+
+		self::assertSame( array(), $out['body']['sources'] );
+		$queries = $this->recorded( 'md_mu_test_queries' );
+		self::assertNotSame( array(), $queries );
+		self::assertSame( 'publish', $queries[0]['post_status'] );
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		self::assertStringNotContainsString( 'PATTERN FACTS', (string) end( $payload['messages'] )['content'] );
+	}
+
+	/**
+	 * Price, lead time, MOQ and sample promises are never answered from a
+	 * product hit: the visitor is transferred, and the model is not asked.
+	 */
+	public function test_a_price_question_about_a_pattern_transfers_without_the_model(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the price and lead time for MD-101?' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertStringContainsString( 'team', strtolower( (string) $out['body']['msg'] ) );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+		self::assertArrayNotHasKey( 'raplsaich_unanswered_log', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * A question that names no pattern keeps the Rapls path: the knowledge
+	 * context is what the model sees, and the sources stay knowledge lines.
+	 */
+	public function test_a_missed_pattern_falls_back_to_rapls(): void {
+		$this->configure_kb(
+			array(
+				array(
+					'type'      => 'knowledge',
+					'source_id' => 4,
+					'title'     => 'Contact',
+					'content'   => 'WhatsApp +852 6473 1687.',
+				),
+			),
+			'{"choices":[{"message":{"role":"assistant","content":"{\"answer\":\"Reach us on WhatsApp.\",\"handoff\":false,\"reason\":\"none\"}"}}]}'
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'How do I reach your team?' ),
+			)
+		);
+
+		self::assertSame( array( 'knowledge#4 Contact' ), $out['body']['sources'] );
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		self::assertStringContainsString( FakeRaplsEngine::CONTEXT, (string) end( $payload['messages'] )['content'] );
+		self::assertStringNotContainsString( 'PATTERN FACTS', (string) end( $payload['messages'] )['content'] );
+	}
+
+	/**
+	 * A pattern name, not only a code, is a lookup: "Agave" finds the
+	 * published product whose title starts with that word.
+	 */
+	public function test_a_pattern_name_is_a_lookup(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Agave is a botanical screen.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Tell me about Agave' ),
+			)
+		);
+
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
+	}
+
+	/**
+	 * The same commercial handoff in Chinese: a price or lead-time question
+	 * never reaches the model, hit or not.
+	 */
+	public function test_a_chinese_price_question_transfers_without_the_model(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'MD-101 的价格和交期是多少？' ),
+			)
+		);
+
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * A pattern hit is not a knowledge gap: the unanswered log stays empty
+	 * even when the model says it has nothing else.
+	 */
+	public function test_a_pattern_hit_is_not_written_to_the_unanswered_log(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( md_kb_endpoint_no_answer_message(), true, 'no_knowledge' )
+		);
+		$this->plant_pattern();
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Is MD-101 good for a lobby?' ),
+			)
+		);
+
+		self::assertArrayNotHasKey( 'raplsaich_unanswered_log', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * Visitors type lower-case names; "agave" must find the same product
+	 * as "Agave".
+	 */
+	public function test_a_lowercase_pattern_name_is_a_lookup(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Agave is a botanical screen.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'tell me about agave' ),
+			)
+		);
+
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
+	}
+
+	/**
+	 * A specific name does not drag in products whose title merely contains
+	 * one of the question's generic words.
+	 */
+	public function test_a_specific_name_does_not_drag_in_generic_word_matches(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Winderoo is a screen.', false, 'none' )
+		);
+		$this->plant_pattern(
+			array(
+				'ID'         => 112,
+				'post_title' => 'Winderoo Decorative Room Divider | Architectural Metal Screen Pattern',
+				'post_name'  => 'winderoo-decorative-room-divider',
+				'sku'        => 'Winderoo Decorative Room Divider',
+			)
+		);
+		$this->plant_pattern(
+			array(
+				'ID'         => 186,
+				'post_title' => 'Chase Blossom Decorative Screens | Architectural Metal Screen Pattern',
+				'post_name'  => 'chase-blossom-decorative-screens',
+				'sku'        => 'Chase Blossom Decorative Screens',
+			)
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'open area of Winderoo Decorative Room Divider' ),
+			)
+		);
+
+		self::assertSame( array( 'pattern#112 Winderoo Decorative Room Divider' ), $out['body']['sources'] );
+	}
+
+	/**
+	 * A price or lead-time question is transferred even when no pattern is
+	 * named: the model is never asked to answer a commercial number.
+	 */
+	public function test_a_commercial_question_without_a_pattern_transfers(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is your lead time for a custom screen?' ),
+			)
+		);
+
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * A shipping destination is not a commercial commitment: "deliver to
+	 * Dubai" still reaches the model and is not force-transferred.
+	 */
+	public function test_a_shipping_destination_is_not_a_commercial_question(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Yes, we ship worldwide.', false, 'none' )
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Do you deliver to Dubai?' ),
+			)
+		);
+
+		self::assertSame( '', $out['body']['action'] );
+		self::assertNotSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * The route the file registers is the one the LHC bot is configured
+	 * against: the md/v1 namespace, /kb/answer, POST.
 	 */
 	public function test_the_file_registers_the_answer_route(): void {
 		$hooks = $this->recorded( 'md_mu_test_hooks' );

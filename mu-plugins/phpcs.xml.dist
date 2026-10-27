@@ -8,6 +8,8 @@
 	<file>md-staging-guards.php</file>
 	<file>md-kb-endpoint.php</file>
 	<file>tests</file>
+	<exclude-pattern>tests/php/bootstrap.php</exclude-pattern>
+	<exclude-pattern>tests/php/Doubles/*</exclude-pattern>
 
 	<rule ref="../tools/php/phpcs.xml"/>
 

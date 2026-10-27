@@ -236,6 +236,180 @@ function set_transient( string $name, mixed $value, int $expiry = 0 ): bool {
 	return true;
 }
 
+
+/**
+ * The product query the pattern lookup runs, served from
+ * $GLOBALS['md_mu_test_products']: a list of product arrays the test
+ * plants. A query with post_status=publish never sees a non-publish
+ * row, which is the WooCommerce rule the lookup depends on. The search
+ * string is recorded so a test can assert what was asked.
+ *
+ * @param array<string, mixed> $args The query arguments.
+ */
+class WP_Query {
+
+	/**
+	 * The posts this query matched.
+	 *
+	 * @var array<int, \WP_Post>
+	 */
+	public array $posts = array();
+
+	/**
+	 * Builds the query from the planted products.
+	 *
+	 * @param array<string, mixed> $args The query arguments.
+	 */
+	public function __construct( array $args = array() ) {
+		$GLOBALS['md_mu_test_queries'][] = $args;
+		$wanted                          = (string) ( $args['post_status'] ?? '' );
+		$search                          = strtolower( trim( (string) ( $args['s'] ?? '' ) ) );
+		$posts                           = array();
+		foreach ( (array) ( $GLOBALS['md_mu_test_products'] ?? array() ) as $product ) {
+			if ( ! is_array( $product ) ) {
+				continue;
+			}
+			$status = (string) ( $product['post_status'] ?? 'publish' );
+			if ( '' !== $wanted && 'any' !== $wanted && $status !== $wanted ) {
+				continue;
+			}
+			if ( '' !== $search ) {
+				$haystack = strtolower( (string) ( $product['post_title'] ?? '' ) . ' ' . (string) ( $product['sku'] ?? '' ) . ' ' . (string) ( $product['post_name'] ?? '' ) );
+				if ( ! str_contains( $haystack, $search ) ) {
+					continue;
+				}
+			}
+			$posts[] = new \WP_Post( $product );
+		}
+		$this->posts = $posts;
+	}
+}
+
+/**
+ * One product post, the fields the lookup reads off a WP_Post.
+ */
+class WP_Post {
+
+	/** @var int */
+	public int $ID = 0;
+
+	/** @var string */
+	public string $post_title = '';
+
+	/** @var string */
+	public string $post_status = 'publish';
+
+	/** @var string */
+	public string $post_name = '';
+
+	/** @var string */
+	public string $sku = '';
+
+	/**
+	 * @param array<string, mixed> $fields The planted product.
+	 */
+	public function __construct( array $fields ) {
+		$this->ID          = (int) ( $fields['ID'] ?? 0 );
+		$this->post_title  = (string) ( $fields['post_title'] ?? '' );
+		$this->post_status = (string) ( $fields['post_status'] ?? 'publish' );
+		$this->post_name   = (string) ( $fields['post_name'] ?? '' );
+		$this->sku         = (string) ( $fields['sku'] ?? '' );
+	}
+}
+
+/**
+ * ACF's field read, from $GLOBALS['md_mu_test_fields'][post_id][name].
+ *
+ * @param string   $selector The field name.
+ * @param int|false $post_id The post, false for the current one.
+ * @return mixed The field value, null when unset.
+ */
+/**
+ * Post meta, from the planted product when the key is _sku, otherwise empty.
+ *
+ * @param int    $post_id The post.
+ * @param string $key     The meta key.
+ * @param bool   $single  Whether one value is wanted.
+ * @return mixed The value.
+ */
+function get_post_meta( int $post_id, string $key = '', bool $single = false ): mixed {
+	unset( $single );
+	if ( '_sku' !== $key ) {
+		return '';
+	}
+	foreach ( (array) ( $GLOBALS['md_mu_test_products'] ?? array() ) as $product ) {
+		if ( is_array( $product ) && (int) ( $product['ID'] ?? 0 ) === $post_id ) {
+			return (string) ( $product['sku'] ?? '' );
+		}
+	}
+	return '';
+}
+
+function get_field( string $selector, int|false $post_id = false, bool $format_value = true ): mixed {
+	unset( $format_value );
+	$id     = false === $post_id ? 0 : $post_id;
+	$fields = $GLOBALS['md_mu_test_fields'][ $id ] ?? array();
+	return is_array( $fields ) && array_key_exists( $selector, $fields ) ? $fields[ $selector ] : null;
+}
+
+/**
+ * The product's terms, from $GLOBALS['md_mu_test_terms'][post_id][taxonomy].
+ *
+ * @param int    $post_id  The post.
+ * @param string $taxonomy The taxonomy.
+ * @return array<int, \WP_Term>|\WP_Error The terms, or an error the lookup must ignore.
+ */
+function get_the_terms( int $post_id, string $taxonomy ): array|\WP_Error {
+	$terms = $GLOBALS['md_mu_test_terms'][ $post_id ][ $taxonomy ] ?? array();
+	return is_array( $terms ) ? $terms : array();
+}
+
+/**
+ * The permalink the lookup cites, from $GLOBALS['md_mu_test_permalinks'].
+ *
+ * @param int $post_id The post.
+ * @return string The URL, '' when unset.
+ */
+function get_permalink( int $post_id = 0 ): string {
+	return (string) ( $GLOBALS['md_mu_test_permalinks'][ $post_id ] ?? '' );
+}
+
+/**
+ * The featured image URL, from $GLOBALS['md_mu_test_thumbs'].
+ *
+ * @param int         $post_id The post.
+ * @param string|int[] $size   The size asked for.
+ * @return string|false The URL, false when the product has none.
+ */
+function get_the_post_thumbnail_url( int $post_id, string|array $size = 'post-thumbnail' ): string|false {
+	unset( $size );
+	if ( ! isset( $GLOBALS['md_mu_test_thumbs'][ $post_id ] ) ) {
+		return false;
+	}
+	return (string) $GLOBALS['md_mu_test_thumbs'][ $post_id ];
+}
+
+/**
+ * One product_cat term.
+ */
+class WP_Term {
+
+	/** @var string */
+	public string $name = '';
+
+	/** @var string */
+	public string $slug = '';
+
+	/**
+	 * @param string $name The term name.
+	 * @param string $slug The term slug.
+	 */
+	public function __construct( string $name, string $slug ) {
+		$this->name = $name;
+		$this->slug = $slug;
+	}
+}
+
 // phpcs:enable
 
 // phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed, Generic.Files.OneObjectStructurePerFile.MultipleFound, PEAR.NamingConventions.ValidClassName.StartWithCapital, WordPress.WP.GlobalVariablesOverride.Prohibited, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- the stand-ins mimic WordPress's and Rapls's own shapes, unprefixed on purpose: the lowercase wpdb is WordPress's own name, the two small stand-in classes share this bootstrap, and the global handle is what the code under test reads.

@@ -105,8 +105,24 @@ function md_kb_endpoint_answer( array $input ): array {
 	$history = $body['history'] ?? array();
 	$history = is_array( $history ) ? array_values( array_filter( $history, 'is_string' ) ) : array();
 
+	$pattern = md_kb_endpoint_pattern_lookup( $q );
+	if ( md_kb_endpoint_asks_commercial( $q ) ) {
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'msg'     => md_kb_endpoint_commercial_handoff_message(),
+				'action'  => 'transfer_operator',
+				'sources' => $pattern['sources'],
+			),
+		);
+	}
+
 	list( $results, $context ) = md_kb_endpoint_retrieve( $q );
-	$answer                    = md_kb_endpoint_call_model( md_kb_endpoint_messages( $q, $context, $history ) );
+	if ( '' !== $pattern['context'] ) {
+		$context = "PATTERN FACTS (WooCommerce, current publish):\n" . $pattern['context']
+			. ( '' !== trim( $context ) ? "\n\nKNOWLEDGE (Rapls):\n" . $context : '' );
+	}
+	$answer = md_kb_endpoint_call_model( md_kb_endpoint_messages( $q, $context, $history ) );
 
 	if ( is_string( $answer ) ) {
 		return array(
@@ -118,19 +134,368 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 
-	if ( $answer['handoff'] && md_kb_endpoint_is_knowledge_gap( $answer ) ) {
+	if ( $answer['handoff'] && md_kb_endpoint_is_knowledge_gap( $answer ) && 0 === $pattern['hits'] ) {
 		$trimmed_context = trim( $context );
 		$gap_reason      = '' === $trimmed_context ? 'no_context' : 'grounding';
 		md_kb_endpoint_log_unanswered( $q, $gap_reason );
 	}
 
+	$sources = 0 < $pattern['hits'] ? $pattern['sources'] : md_kb_endpoint_sources( $results );
 	return array(
 		'status' => 200,
 		'body'   => array(
 			'msg'     => $answer['answer'],
 			'action'  => $answer['handoff'] ? 'transfer_operator' : '',
-			'sources' => md_kb_endpoint_sources( $results ),
+			'sources' => $sources,
 		),
+	);
+}
+
+/**
+ * The material every pattern is made of: the site's single constant
+ * (owner ruling 2026-10-24 revision 6), not a product field.
+ */
+const MD_KB_ENDPOINT_MATERIAL = 'Stainless Steel (304 / 316)';
+
+/**
+ * The open-area wording for a pattern whose value has no source. A missing
+ * value is never reported as zero (owner ruling 2026-10-24 revision 4).
+ */
+const MD_KB_ENDPOINT_OPEN_AREA_ON_REQUEST = 'On request';
+
+/**
+ * How many pattern candidates one question may cite.
+ */
+const MD_KB_ENDPOINT_PATTERN_LIMIT = 3;
+
+/**
+ * The visitor-facing sentence when a question asks for a price, a lead
+ * time, an MOQ or a sample promise. Those are not product facts, and the
+ * model is not asked to invent them.
+ */
+function md_kb_endpoint_commercial_handoff_message(): string {
+	return 'Pricing, lead time, minimum order and samples are confirmed by our team — I am connecting you with them.';
+}
+
+/**
+ * Whether the question asks for a commercial commitment rather than a
+ * pattern fact: price, quote, lead time, MOQ or a sample, in English or
+ * Chinese. A hit on the pattern does not change the answer.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether the team must answer it.
+ */
+function md_kb_endpoint_asks_commercial( string $q ): bool {
+	return 1 === preg_match(
+		'/\b(?:price|pricing|quote|quotation|cost|lead\s*time|delivery\s+(?:time|date)|moq|minimum\s+order|sample)\b|价格|报价|交期|交货|起订|样品/iu',
+		$q
+	);
+}
+
+/**
+ * Words that are never a pattern name, so a question's grammar does not
+ * become a product search.
+ *
+ * @return array<int, string> Lower-case stopwords.
+ */
+function md_kb_endpoint_pattern_stopwords(): array {
+	return array(
+		'what',
+		'when',
+		'where',
+		'which',
+		'who',
+		'why',
+		'how',
+		'does',
+		'do',
+		'did',
+		'is',
+		'are',
+		'was',
+		'were',
+		'the',
+		'and',
+		'for',
+		'with',
+		'about',
+		'from',
+		'this',
+		'that',
+		'these',
+		'those',
+		'your',
+		'you',
+		'can',
+		'could',
+		'would',
+		'should',
+		'have',
+		'has',
+		'had',
+		'please',
+		'tell',
+		'show',
+		'give',
+		'need',
+		'want',
+		'looking',
+		'pattern',
+		'patterns',
+		'product',
+		'products',
+		'metal',
+		'screen',
+		'screens',
+		'divider',
+		'panel',
+		'panels',
+		'open',
+		'area',
+		'size',
+		'price',
+		'cost',
+		'quote',
+		'lead',
+		'time',
+		'delivery',
+		'sample',
+		'samples',
+	);
+}
+
+/**
+ * The pattern codes and name candidates a question names. A code is a
+ * token shaped like MD-101. A name is a quoted word or a word that is not
+ * itself a code — the lookup treats each as a search.
+ *
+ * @param string $q The visitor's question.
+ * @return array<int, string> The candidates, codes first, at most a handful.
+ */
+function md_kb_endpoint_pattern_candidates( string $q ): array {
+	$candidates = array();
+	if ( preg_match_all( '/\b[A-Z]{1,6}-\d{2,6}\b/i', $q, $codes ) ) {
+		foreach ( $codes[0] as $code ) {
+			$candidates[] = $code;
+		}
+	}
+	if ( preg_match_all( "/[\"'\x{201c}\x{201d}]([^\"'\x{201c}\x{201d}]{2,40})[\"'\x{201c}\x{201d}]/u", $q, $quoted ) ) {
+		foreach ( $quoted[1] as $name ) {
+			$candidates[] = trim( $name );
+		}
+	}
+	// Lower-case names matter: visitors type "agave", not "Agave". Every
+	// word is a search candidate; the query below only keeps a loose hit
+	// when the product title actually contains it.
+	if ( preg_match_all( '/\b[A-Za-z][A-Za-z0-9]{2,}\b/', $q, $names ) ) {
+		foreach ( $names[0] as $name ) {
+			if ( 1 === preg_match( '/^[A-Z]{1,6}-\d{2,6}$/i', $name ) ) {
+				continue;
+			}
+			if ( in_array( mb_strtolower( $name ), md_kb_endpoint_pattern_stopwords(), true ) ) {
+				continue;
+			}
+			$candidates[] = $name;
+		}
+	}
+	$unique = array();
+	foreach ( $candidates as $candidate ) {
+		$key = mb_strtolower( $candidate );
+		if ( '' === $key || isset( $unique[ $key ] ) ) {
+			continue;
+		}
+		$unique[ $key ] = $candidate;
+	}
+	return array_values( $unique );
+}
+
+/**
+ * The published products a candidate names: a WooCommerce search, then the
+ * exact code or title-prefix matches ahead of the rest, three at most.
+ * A non-publish product is never in the query, so a draft cannot be cited.
+ *
+ * @param string $candidate The code or name.
+ * @return array<int, \WP_Post> The matches, exact ones first.
+ */
+function md_kb_endpoint_pattern_query( string $candidate ): array {
+	$query  = new WP_Query(
+		array(
+			'post_type'      => 'product',
+			'post_status'    => 'publish',
+			's'              => $candidate,
+			'posts_per_page' => 10,
+		)
+	);
+	$posts  = is_array( $query->posts ) ? $query->posts : array();
+	$exact  = array();
+	$prefix = array();
+	$needle = mb_strtolower( $candidate );
+	foreach ( $posts as $post ) {
+		if ( ! $post instanceof WP_Post ) {
+			continue;
+		}
+		$title = mb_strtolower( $post->post_title );
+		$sku   = mb_strtolower( md_kb_endpoint_product_sku( (int) $post->ID ) );
+		$slug  = mb_strtolower( $post->post_name );
+		if ( $sku === $needle || $slug === $needle ) {
+			$exact[] = $post;
+		} elseif ( str_starts_with( $title, $needle ) ) {
+			$prefix[] = $post;
+		}
+	}
+	// An exact code or slug is the pattern. A title prefix is the name
+	// match — every product title begins with its pattern name, so a word
+	// in the middle of a title is not a pattern name and must not drag a
+	// neighbour in beside the one the visitor asked about.
+	$ranked = array() !== $exact ? $exact : $prefix;
+	return array_slice( $ranked, 0, MD_KB_ENDPOINT_PATTERN_LIMIT );
+}
+
+/**
+ * A product's SKU. WooCommerce stores it as post meta; when the product
+ * object is loaded, its getter is preferred.
+ *
+ * @param int $post_id The product.
+ * @return string The SKU, '' when the product has none.
+ */
+function md_kb_endpoint_product_sku( int $post_id ): string {
+	if ( function_exists( 'wc_get_product' ) ) {
+		$product = wc_get_product( $post_id );
+		if ( is_object( $product ) && method_exists( $product, 'get_sku' ) ) {
+			return (string) $product->get_sku();
+		}
+	}
+	return (string) get_post_meta( $post_id, '_sku', true );
+}
+
+/**
+ * One field's display value: a list becomes a comma-separated line, an
+ * empty value stays empty so the caller can say it cannot be confirmed.
+ *
+ * @param mixed $value The field's raw value.
+ * @return string The display value, '' when empty.
+ */
+function md_kb_endpoint_pattern_field( mixed $value ): string {
+	if ( is_array( $value ) ) {
+		$parts = array();
+		foreach ( $value as $part ) {
+			if ( is_scalar( $part ) && '' !== trim( (string) $part ) ) {
+				$parts[] = trim( (string) $part );
+			}
+		}
+		return implode( ', ', $parts );
+	}
+	if ( is_scalar( $value ) ) {
+		return trim( (string) $value );
+	}
+	return '';
+}
+
+/**
+ * The open area as the site shows it: a number with a percent sign, or
+ * "On request" when the field is empty or not a number. Never "0".
+ *
+ * @param mixed $value The field's raw value.
+ * @return string The wording.
+ */
+function md_kb_endpoint_pattern_open_area( mixed $value ): string {
+	$text = md_kb_endpoint_pattern_field( $value );
+	if ( '' === $text || ! is_numeric( $text ) ) {
+		return MD_KB_ENDPOINT_OPEN_AREA_ON_REQUEST;
+	}
+	$number = (float) $text;
+	$digits = floor( $number ) === $number ? 0 : 2;
+	return number_format( $number, $digits ) . '%';
+}
+
+/**
+ * The facts of one published product, as the model may cite them. Empty
+ * fields are named as unconfirmed rather than filled in. Price, lead time,
+ * MOQ and sample promises are not read.
+ *
+ * @param \WP_Post $post The product.
+ * @return array{id: int, code: string, title: string, context: string, source: string} The facts and their source line.
+ */
+function md_kb_endpoint_pattern_facts( WP_Post $post ): array {
+	$id       = (int) $post->ID;
+	$sku      = md_kb_endpoint_product_sku( $id );
+	$code     = '' !== $sku ? $sku : $post->post_name;
+	$lines    = array(
+		'code: ' . $code,
+		'title: ' . $post->post_title,
+		'material: ' . MD_KB_ENDPOINT_MATERIAL,
+		'open_area: ' . md_kb_endpoint_pattern_open_area( get_field( 'open_area', $id ) ),
+	);
+	$optional = array(
+		'visual_density'  => 'visual_density',
+		'repeat_behavior' => 'repeat_behavior',
+		'motifs'          => 'motifs',
+		'best_fit'        => 'best_fit',
+		'cad_status'      => 'cad_status',
+		'summary'         => 'summary',
+	);
+	foreach ( $optional as $name => $label ) {
+		$value   = md_kb_endpoint_pattern_field( get_field( $name, $id ) );
+		$lines[] = '' !== $value ? $label . ': ' . $value : $label . ': (not confirmed)';
+	}
+	$terms = get_the_terms( $id, 'product_cat' );
+	$names = array();
+	if ( is_array( $terms ) ) {
+		foreach ( $terms as $term ) {
+			$name = is_object( $term ) ? ( $term->name ?? '' ) : '';
+			if ( is_string( $name ) && '' !== $name ) {
+				$names[] = $name;
+			}
+		}
+	}
+	$lines[] = array() !== $names ? 'series: ' . implode( ', ', $names ) : 'series: (not confirmed)';
+	$url     = get_permalink( $id );
+	$image   = get_the_post_thumbnail_url( $id, 'full' );
+	if ( is_string( $url ) && '' !== $url ) {
+		$lines[] = 'permalink: ' . $url;
+	}
+	if ( is_string( $image ) && '' !== $image ) {
+		$lines[] = 'image: ' . $image;
+	}
+	return array(
+		'id'      => $id,
+		'code'    => $code,
+		'title'   => $post->post_title,
+		'context' => implode( "\n", $lines ),
+		'source'  => trim( 'pattern#' . $id . ' ' . $code ),
+	);
+}
+
+/**
+ * The published patterns a question names, as context for the model and
+ * as the audit-trail source lines. No candidate, or no published match,
+ * is an empty lookup — the caller then answers from Rapls as before.
+ *
+ * @param string $q The visitor's question.
+ * @return array{context: string, sources: array<int, string>, hits: int} The pattern context.
+ */
+function md_kb_endpoint_pattern_lookup( string $q ): array {
+	$seen    = array();
+	$blocks  = array();
+	$sources = array();
+	foreach ( md_kb_endpoint_pattern_candidates( $q ) as $candidate ) {
+		foreach ( md_kb_endpoint_pattern_query( $candidate ) as $post ) {
+			if ( isset( $seen[ $post->ID ] ) ) {
+				continue;
+			}
+			$seen[ $post->ID ] = true;
+			$facts             = md_kb_endpoint_pattern_facts( $post );
+			$blocks[]          = $facts['context'];
+			$sources[]         = $facts['source'];
+			if ( count( $blocks ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
+				break 2;
+			}
+		}
+	}
+	return array(
+		'context' => implode( "\n\n", $blocks ),
+		'sources' => $sources,
+		'hits'    => count( $blocks ),
 	);
 }
 
@@ -148,6 +513,18 @@ function md_kb_endpoint_retrieve( string $q ): array {
 	$engine = new RAPLSAICH_Search_Engine();
 	$engine->set_bot_filters( array(), true, true );
 	$results = $engine->search( $q, 5 );
+	// Pattern facts are answered by the live WooCommerce lookup above. The
+	// knowledge plugin also crawls product pages into its own index; letting
+	// those rows through would recreate the second source #102 rejected, so
+	// the endpoint never feeds product results to the model.
+	$results = array_values(
+		array_filter(
+			$results,
+			static function ( array $result ): bool {
+				return 'product' !== ( $result['type'] ?? '' ) && 'product' !== ( $result['post_type'] ?? '' );
+			}
+		)
+	);
 	$context = $engine->build_context( $results, 20000, $q );
 	return array( $results, $context );
 }
@@ -229,7 +606,7 @@ function md_kb_endpoint_sources( array $results ): array {
  */
 function md_kb_endpoint_system_prompt(): string {
 	$no_answer = md_kb_endpoint_no_answer_message();
-	return "You are the support assistant of metal-divider.com, a B2B architectural metal screen pattern inquiry site. Answer the visitor's question ONLY from the knowledge provided in the user message. Do not invent specifications, prices or materials. Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. Say pattern, not product. When the knowledge does not contain the answer, set handoff true, set reason to \"no_knowledge\", and reply exactly: \"{$no_answer}\". When the visitor asks for a human or an agent, set handoff true, set reason to \"human_request\", and reply that you are connecting them with the team — do not use the no-knowledge sentence. Reply with json only: {\"answer\": \"<text for the visitor>\", \"handoff\": true|false, \"reason\": \"no_knowledge\"|\"human_request\"|\"none\"}.";
+	return "You are the support assistant of metal-divider.com, a B2B architectural metal screen pattern inquiry site. Answer the visitor's question ONLY from the knowledge provided in the user message. Pattern facts, when present, are the current published product and outrank any other note about the same pattern. A field marked not confirmed, or an open area of On request, must be said that way — never as zero, and never invented. Do not state a price, a lead time, a minimum order or a sample promise. Do not invent specifications or materials. Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. Say pattern, not product. When the knowledge does not contain the answer, set handoff true, set reason to \"no_knowledge\", and reply exactly: \"{$no_answer}\". When the visitor asks for a human or an agent, set handoff true, set reason to \"human_request\", and reply that you are connecting them with the team — do not use the no-knowledge sentence. Reply with json only: {\"answer\": \"<text for the visitor>\", \"handoff\": true|false, \"reason\": \"no_knowledge\"|\"human_request\"|\"none\"}.";
 }
 
 /**

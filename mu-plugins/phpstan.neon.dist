@@ -22,3 +22,5 @@ parameters:
 		# runtime; it is neither in the WordPress stubs nor on Packagist.
 		# Only the surface the endpoint touches is declared.
 		- tests/php/Doubles/rapls-stubs.php
+		# ACF and the product helpers the endpoint reads at answer time.
+		- tests/php/Doubles/product-stubs.php
