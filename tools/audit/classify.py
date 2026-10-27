@@ -31,9 +31,20 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 # ruling replaced it. Each entry is (regex over the OLD text, reason, citation).
 UPGRADES = [
     # 升级-4: price ranges and discount tables removed on the owner's authority.
+    # The ruling replaced the ranges with per-project quoting, so the material
+    # that described those ranges — the tier table, its header row, the
+    # "what drives the price" explainer, the volume-discount rows — all went
+    # with them. Every other way the old pages worded that same subject is
+    # listed, because each one is the same decision seen from a different page.
     (r"\$\s?\d", "升级-4 price display", "docs/acceptance/32-debt-ledger.md#升级-4"),
-    (r"price range|price tier|per sqm|/sqm|USD/m", "升级-4 price display", "docs/acceptance/32-debt-ledger.md#升级-4"),
-    (r"(?i)\bpercent off\b|% off|discount tier", "升级-4 price display", "docs/acceptance/32-debt-ledger.md#升级-4"),
+    (r"price range|price tier|price band|per sqm|/sqm|USD/m|price dri|tier-based|tiered pricing",
+     "升级-4 price display", "docs/acceptance/32-debt-ledger.md#升级-4"),
+    (r"(?i)what drives the price|what shapes the (?:price|quote)", "升级-4 price display",
+     "docs/acceptance/32-debt-ledger.md#升级-4"),
+    (r"(?i)unit cost drops|pricing drops|discount|MOQ pricing|adds? \d+[–-]\d+%|FOB China|freight and dut",
+     "升级-4 price display", "docs/acceptance/32-debt-ledger.md#升级-4"),
+    (r"(?i)^(price range|order size|typical discount|price)$", "升级-4 price display",
+     "docs/acceptance/32-debt-ledger.md#升级-4"),
     # 升级-3: the five-material vocabulary became stainless 304/316 only.
     (r"(?i)\b(corten|aluminium|aluminum|copper|mild steel|brass)\b", "升级-3 materials", "docs/acceptance/32-debt-ledger.md#升级-3"),
 ]
@@ -50,6 +61,9 @@ FURNITURE = [
     (r"(?i)^(add to cart|sold out|shop now|buy now|select options|choose options)$", "shop furniture"),
     (r"(?i)^(swipe to explore|← swipe|swipe) ", "carousel furniture"),
     (r"(?i)^\s*leave this field empty\s*$", "honeypot label"),
+    (r"(?i)^(phone\s*/\s*whatsapp|project details|message|your name|company name|email|country)"
+     r"(\s*\*)?$", "field label, reworded", ""),
+    (r"(?i)^i confirm this (?:is|inquiry)", "confirm checkbox, reworded", ""),
     (r"(?i)^(select country|select quantity|select project scope|select range)", "select placeholder"),
     (r"^[A-Za-z ]+\s*Select country", "select placeholder"),
 ]
