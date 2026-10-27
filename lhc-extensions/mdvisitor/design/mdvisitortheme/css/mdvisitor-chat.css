@@ -254,4 +254,3 @@ body.widget-chat #messagesBlock .message-row:has(script[data-bot-action="lhinst.
 body.widget-chat #status-chat .operator-info,
 body.widget-chat #widget-content-body > .row .operator-info{display:none!important}
 body.widget-chat #status-chat:has(.operator-info){display:none!important}
-
