@@ -30,6 +30,10 @@
 - [x] 禁用 JS 时的布局退化 — 2026-10-27 修复:22 条 `x-cloak` 规则改 `md-js` 门控、FAQ 7 组 `hidden` 出厂移除;无 JS 户外页 25,012 / FAQ 31,656 字符,JS 开行为不变
 - [ ] 首屏加载体积与速度基线(测,再优化,不许拍脑袋) — **已测真实冷加载基线(见下),但优化未闭环**:TTFB 3.7–4.8s 是 CDN 回源(基础设施项),定制页缩略图缺 <480 小档需全量媒体重建
 
+**性能下一步(已定位,勿重复调查)**:
+1. **CDN 回源**:curl 分解 DNS/connect 5ms、TLS 2.3s、TTFB 2.6–3.1s;`x-litespeed-cache: hit` 但 `x-hcdn-cache-status: MISS`。这是回源路径,不是 PHP 慢。业主"性能可激进"裁定下可评估开 CDN(hPanel 一键)或转 Cloudflare——先测开关前后 TTFB 对比再定。
+2. **媒体小档**:`WIDTH_TIERS` 最小 480,而定制页缩略图显示 112px(比值 4.3);附件 `metadata['sizes']` 为空(管线文件不在 WP 尺寸里),方图梯子对它们无效。需要给管线加 <480 档(如 150/240),会触发 `params_digest` 变化强制全量媒体重建——**独立一批,不与样式修复混合**。
+
 ### SEO 验证不通过项(2026-10-25 生产实测,证据 docs/deploy/seo-verification.md)
 
 - [x] **`/inquiry/thank-you/` 404** — 生产已返回 200(2026-10-25 复核);dev 亦 200
