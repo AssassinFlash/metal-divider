@@ -302,6 +302,48 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * The catalog card fits more than one card per phone screen, and the PDP
+	 * leads with its photograph.
+	 *
+	 * The card stacked every key over its value (`grid-template-columns:
+	 * minmax(0, 1fr)` inside the row), which cost each row a second line: four
+	 * rows came to 264px and one card to 695px — a card nearly a full screen
+	 * tall, with the next one never in view (measured 2026-10-27 at 390). The
+	 * column was also capped at 340px inside a 358px grid, leaving an 18px
+	 * strip empty down the right of every catalog page.
+	 *
+	 * The PDP stacked title, buttons and email links above the plate, so it
+	 * started at y=601 under a quote bar at y=775 — 174px of a 477px image
+	 * visible, and nothing at 320.
+	 */
+	public function test_the_catalog_card_is_compact_and_the_pdp_leads_with_its_image(): void {
+		$grid = (string) file_get_contents( $this->volume_dir() . '/pattern-grid.css' ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+		$pdp  = (string) file_get_contents( $this->volume_dir() . '/pdp.css' ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+
+		$this->assertMatchesRegularExpression(
+			'/\.pattern-card__row \{[^}]*grid-template-columns: 72px minmax\(0, 1fr\)/s',
+			$grid,
+			'the card row keeps its key beside its value — stacking them made one card 695px tall'
+		);
+		$this->assertStringNotContainsString(
+			'grid-template-columns: minmax(0, min(100%, 340px))',
+			$grid,
+			'a 340px cap inside a 358px column left an 18px strip empty on every catalog page'
+		);
+
+		$this->assertMatchesRegularExpression(
+			'/\.pdp-hero-plate \{[^}]*order: -1/s',
+			$pdp,
+			'the pattern leads its own page on a phone — it is the subject, and it was cut by the quote bar'
+		);
+		$this->assertMatchesRegularExpression(
+			'/\.pdp-hero-plate \{[^}]*max-height: 46vh/s',
+			$pdp,
+			'the plate is bounded so the title and one action still fit under it'
+		);
+	}
+
+	/**
 	 * How many blocks enclose a position in a stylesheet. Zero means the rule
 	 * sits at the top level; anything else means it is nested, and the only
 	 * things that nest rules here are media queries.
