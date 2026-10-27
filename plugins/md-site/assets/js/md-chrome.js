@@ -1615,20 +1615,32 @@
         apply(index);
       };
 
-      // One recomputation per frame: the handler runs on every scroll event,
-      // and apply() is a no-op unless the scene actually changed.
+      // Throttled with setTimeout, NOT requestAnimationFrame: rAF does not
+      // fire at all in some environments (HeadlessChrome has no compositor),
+      // and it also pauses in a background tab. Wrapping sync in rAF meant
+      // the scene never changed on scroll — the section read as dead. A
+      // timeout runs in every environment, including a backgrounded tab.
       var frame = 0;
       var onScroll = function () {
         if (frame) {
           return;
         }
-        frame = window.requestAnimationFrame(function () {
+        frame = window.setTimeout(function () {
           frame = 0;
           sync();
-        });
+        }, 16);
       };
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onScroll);
+
+      // Sync once at startup. The listener only fires on the next scroll, so
+      // a visitor who scrolled while the script was still downloading (169KB
+      // on a cold connection) would otherwise sit on the first scene with no
+      // way to know the section is interactive until they scroll again —
+      // which is exactly the "this whole block is dead" report. The initial
+      // pass also lands the aria-current marker on whichever scene the page
+      // actually opens on, not necessarily the first.
+      sync();
 
       groups[3].items.forEach(function (button) {
         button.addEventListener('click', function () {
@@ -1636,13 +1648,17 @@
           if (index < 0) {
             return;
           }
-          // Reduced motion asks for no animation, and a smooth scroll across
-          // half a page is exactly that; the jump still lands on the scene.
+          // Apply the scene directly, and scroll to it. The scroll alone
+          // cannot be relied on to switch the scene: programmatic
+          // `window.scrollTo` does not fire a scroll event in every
+          // environment (measured 2026-10-27 — the nav click landed on the
+          // right offset and the scene still read as the first one, until a
+          // manual scroll event was dispatched). Selecting the scene here is
+          // what the click means; the scroll is just how the visitor gets
+          // there. Reduced motion still jumps.
+          apply(index);
           var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          window.scrollTo({
-            top: scrollTopFor(index),
-            behavior: reduced ? 'auto' : 'smooth'
-          });
+          smoothScrollTo(scrollTopFor(index), reduced);
         });
       });
 
@@ -2898,6 +2914,52 @@
     });
 
     apply(0);
+  }
+
+  // Smooth scroll driven by requestAnimationFrame, not by the browser's
+  // `behavior: 'smooth'`: that option silently performs no scroll in some
+  // environments (HeadlessChrome has no compositor, so the nav click left
+  // scrollY at 0 and the section looked dead). This works everywhere, and it
+  // also cancels itself if the visitor takes over the scroll mid-flight.
+  function smoothScrollTo(target, reduced) {
+    if (reduced || typeof window.requestAnimationFrame !== 'function') {
+      window.scrollTo(0, target);
+      return;
+    }
+    var startY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    var delta = target - startY;
+    if (Math.abs(delta) < 2) {
+      window.scrollTo(0, target);
+      return;
+    }
+    var duration = Math.min(900, Math.max(300, Math.abs(delta) * 0.5));
+    var cancelled = false;
+    var cancel = function () {
+      cancelled = true;
+    };
+    // If the visitor scrolls by hand, stop animating: their input wins.
+    window.addEventListener('wheel', cancel, { passive: true, once: true });
+    window.addEventListener('touchmove', cancel, { passive: true, once: true });
+    var started = Date.now();
+    var step = function () {
+      if (cancelled) {
+        return;
+      }
+      var progress = Math.min(1, (Date.now() - started) / duration);
+      // easeInOutCubic: slow at both ends, so the scene change reads as a
+      // transition rather than a jump cut.
+      var eased = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      window.scrollTo(0, Math.round(startY + delta * eased));
+      if (progress < 1) {
+        window.setTimeout(step, 16);
+      }
+    };
+    // A timeout, not requestAnimationFrame: rAF does not fire in some
+    // environments, which is precisely why the browser's own smooth scroll
+    // could not be relied on either.
+    window.setTimeout(step, 16);
   }
 
   // The header's predictive search: a text field, a clear control and a result
