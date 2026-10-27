@@ -91,7 +91,7 @@ final class EmailsTest extends TestCase {
 		$this->assertStringContainsString( 'Company: Chan Design Studio', $body );
 		$this->assertStringContainsString( 'Quantity: 40 panels for a lobby feature wall.', $body );
 		$this->assertStringContainsString( 'post.php?post=123&action=edit', $body );
-		$this->assertStringNotContainsString( '<', 'the mail is plain text, no markup' );
+		$this->assertStringNotContainsString( '<', $body, 'the mail is plain text, no markup' );
 	}
 
 	/**
@@ -133,7 +133,7 @@ final class EmailsTest extends TestCase {
 		$this->assertStringContainsString( 'Reply directly to this email', $body );
 		$this->assertStringContainsString( 'WhatsApp: +852 6473 1687 — https://wa.me/85264731687', $body, 'the number reads grouped; the link carries the wa.me digits' );
 		$this->assertStringContainsString( 'Email: info@metal-divider.com', $body );
-		$this->assertStringNotContainsString( '<', 'the mail is plain text, no markup' );
+		$this->assertStringNotContainsString( '<', $body, 'the mail is plain text, no markup' );
 	}
 
 	/**

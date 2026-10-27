@@ -156,8 +156,17 @@ final class FormTest extends TestCase {
 	public function test_turnstile_unconfigured_renders_no_widget_and_an_open_submit(): void {
 		$html = $this->render( 'apiary-architectural-metal-screen-pattern', array() );
 
+		// Positives first: an empty render would satisfy both negatives below
+		// while shipping no form at all, which is the state this test is meant
+		// to rule out.
+		$this->assertStringContainsString( '<form class="md-inquiry-form"', $html, 'the form is there' );
+		$this->assertStringContainsString( 'class="md-inquiry-submit"', $html, 'the submit button is there' );
 		$this->assertStringNotContainsString( 'cf-turnstile', $html );
-		$this->assertStringNotContainsString( 'disabled', $html );
+		$this->assertDoesNotMatchRegularExpression(
+			'/class="md-inquiry-submit"[^>]*\sdisabled/',
+			$html,
+			'the submit is not locked when no challenge is configured'
+		);
 	}
 
 	/**

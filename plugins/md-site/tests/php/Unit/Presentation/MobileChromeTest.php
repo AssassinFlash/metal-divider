@@ -484,11 +484,22 @@ final class MobileChromeTest extends TestCase {
 	public function test_the_faq_groups_ship_open(): void {
 		$faqs = $this->template( 'faqs.html' );
 
-		$this->assertDoesNotMatchRegularExpression(
-			'/class="faq-group" data-cat="[^"]*"\s+hidden/',
-			$faqs,
-			'category groups must not carry `hidden` in the markup — without scripts that is permanent'
-		);
+		// The groups must exist before "none of them is hidden" means anything:
+		// deleting every group satisfied the old negative regex.
+		$groups = preg_match_all( '/class="faq-group"/', $faqs );
+		$this->assertGreaterThanOrEqual( 7, $groups, 'the category groups are in the markup' );
+
+		// Any `hidden` attribute inside a group tag is the defect, whatever the
+		// attribute order — the old regex only matched `hidden` written after
+		// `data-cat` with exactly one space.
+		preg_match_all( '/<section[^>]*class="faq-group"[^>]*>/', $faqs, $tags );
+		foreach ( $tags[0] as $tag ) {
+			$this->assertStringNotContainsString(
+				'hidden',
+				$tag,
+				'a category group ships visible: ' . substr( $tag, 0, 80 )
+			);
+		}
 	}
 
 	/**
