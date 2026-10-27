@@ -231,7 +231,7 @@ transition-duration: .15s }
 .w-7 { width:28px }
 #home-faq-template--21844031930621__faq_v1_wQVCUV { padding-top: 72px; padding-bottom: 72px; }
 @media (min-width: 750px) { #home-faq-template--21844031930621__faq_v1_wQVCUV { padding-top: 96px; padding-bottom: 96px; } }
-#home-faq-template--21844031930621__faq_v1_wQVCUV [x-cloak] { display: none !important; }
+html.md-js #home-faq-template--21844031930621__faq_v1_wQVCUV [x-cloak] { display: none !important; }
 #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer p { margin-bottom: 12px; }
 #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer strong { color: rgba(255,255,255,0.95); }
 #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer p:has(> strong:only-child) {
@@ -256,7 +256,7 @@ padding-top: 80px;
 padding-bottom: 80px;
 }
 }
-#laser-cut-faq-template--21873710563581__laser_cut_faq [x-cloak] { display: none !important; }
+html.md-js #laser-cut-faq-template--21873710563581__laser_cut_faq [x-cloak] { display: none !important; }
 #laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer p { margin-bottom: 12px; }
 #laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer strong { color: rgba(255,255,255,0.95); }
 #laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer p:has(> strong:only-child) {
@@ -298,7 +298,7 @@ padding-top: 80px;
 padding-bottom: 80px;
 }
 }
-#glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq [x-cloak] { display: none !important; }
+html.md-js #glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq [x-cloak] { display: none !important; }
 #glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer p { margin-bottom: 12px; }
 #glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer strong { color: rgba(255,255,255,0.95); }
 #glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer p:has(> strong:only-child) {
@@ -340,7 +340,7 @@ padding-top: 80px;
 padding-bottom: 80px;
 }
 }
-#outdoor-faq-template--21873710596349__outdoor_faq [x-cloak] { display: none !important; }
+html.md-js #outdoor-faq-template--21873710596349__outdoor_faq [x-cloak] { display: none !important; }
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer p { margin-bottom: 12px; }
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer strong { color: rgba(255,255,255,0.95); }
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer p:has(> strong:only-child) {
@@ -382,7 +382,7 @@ padding-top: 96px;
 padding-bottom: 96px;
 }
 }
-#chinese-faq-template--21873710498045__chinese_faq [x-cloak] { display: none !important; }
+html.md-js #chinese-faq-template--21873710498045__chinese_faq [x-cloak] { display: none !important; }
 #chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer p { margin-bottom: 12px; }
 #chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer strong { color: rgba(255,255,255,0.95); }
 #chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer p:has(> strong:only-child) {
@@ -424,7 +424,7 @@ padding-top: 96px;
 padding-bottom: 96px;
 }
 }
-#stainless-faq-template--21844035043581__stainless-faq [x-cloak] { display: none !important; }
+html.md-js #stainless-faq-template--21844035043581__stainless-faq [x-cloak] { display: none !important; }
 #stainless-faq-template--21844035043581__stainless-faq .sfaq-answer p { margin-bottom: 12px; }
 #stainless-faq-template--21844035043581__stainless-faq .sfaq-answer strong { color: rgba(255,255,255,0.95); }
 #stainless-faq-template--21844035043581__stainless-faq .sfaq-answer p:has(> strong:only-child) {
@@ -509,7 +509,7 @@ padding-top: 80px;
 padding-bottom: 80px;
 }
 }
-#perforated-faq-template--21844034814205__perforated_faq [x-cloak] { display: none !important; }
+html.md-js #perforated-faq-template--21844034814205__perforated_faq [x-cloak] { display: none !important; }
 #perforated-faq-template--21844034814205__perforated_faq .ofaq-answer p { margin-bottom: 12px; }
 #perforated-faq-template--21844034814205__perforated_faq .ofaq-answer strong { color: rgba(255,255,255,0.95); }
 #perforated-faq-template--21844034814205__perforated_faq .ofaq-answer p:has(> strong:only-child) {
@@ -551,7 +551,7 @@ padding-top: 80px;
 padding-bottom: 80px;
 }
 }
-#expanded-faq-template--22084675240189__expanded-faq [x-cloak] { display: none !important; }
+html.md-js #expanded-faq-template--22084675240189__expanded-faq [x-cloak] { display: none !important; }
 #expanded-faq-template--22084675240189__expanded-faq .emfaq-answer p { margin-bottom: 12px; }
 #expanded-faq-template--22084675240189__expanded-faq .emfaq-answer strong { color: rgba(255,255,255,0.95); }
 #expanded-faq-template--22084675240189__expanded-faq .emfaq-answer p:has(> strong:only-child) {
@@ -585,7 +585,7 @@ display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-w
 }
 #mfg-faq-template--21844034879741__manufacturing_faq { padding-top: 60px; padding-bottom: 60px; }
 @media (min-width: 750px) { #mfg-faq-template--21844034879741__manufacturing_faq { padding-top: 80px; padding-bottom: 80px; } }
-#mfg-faq-template--21844034879741__manufacturing_faq [x-cloak] { display: none !important; }
+html.md-js #mfg-faq-template--21844034879741__manufacturing_faq [x-cloak] { display: none !important; }
 #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer p { margin-bottom: 12px; }
 #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer strong { color: rgba(255,255,255,0.95); }
 #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer p:has(> strong:only-child) {
@@ -601,7 +601,7 @@ font-size: 0.95em;
 #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer th { text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
 #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); vertical-align: top; }
 @media (max-width: 749px) { #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; } }
-#faqs-download-template--21844278411517__faqs_download [x-cloak] { display: none !important; }
+html.md-js #faqs-download-template--21844278411517__faqs_download [x-cloak] { display: none !important; }
 #faqs-download-template--21844278411517__faqs_download .fd-answer p { margin: 0 0 1rem; }
 #faqs-download-template--21844278411517__faqs_download .fd-answer p:last-child { margin-bottom: 0; }
 #faqs-download-template--21844278411517__faqs_download .fd-answer strong { color: #fff; }

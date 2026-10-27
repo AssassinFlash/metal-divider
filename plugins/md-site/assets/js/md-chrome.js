@@ -2544,6 +2544,18 @@
         tab.setAttribute('aria-pressed', tab.classList.contains('active') ? 'true' : 'false');
       });
 
+      // Run the filter once at startup. The groups ship *without* `hidden` so
+      // a visitor without scripts can read all eight (before this, seven of
+      // them were hidden in the markup itself and stayed hidden forever —
+      // measured 2026-10-27: 2,919 characters with scripts, 31,656 without).
+      // With scripts, the first pass honours the tab that carries `active`.
+      var initial = tabs.filter(function (tab) {
+        return tab.classList.contains('active');
+      })[0];
+      activeCat = initial ? initial.getAttribute('data-cat') : 'all';
+      apply();
+      syncTabs(activeCat === 'all' ? null : activeCat);
+
       if (search) {
         search.addEventListener('input', function () {
           query = (search.value || '').trim().toLowerCase();
@@ -4286,6 +4298,14 @@
   }
 
   function start() {
+    // `md-js` is what makes `x-cloak` mean anything: the CSS only hides a
+    // cloaked block once this class is on the root, so a visitor without
+    // scripts keeps every panel the cloak was meant to pre-hide (the family
+    // faces keep 24–26 such blocks each, and cloaking them unconditionally
+    // cost those pages a third of their words). Set first, before any
+    // behaviour, so the hide lands in the same frame the markup arrives.
+    document.documentElement.classList.add('md-js');
+
     // Before any dialog can open: a page that renders the inquiry form itself
     // must not also carry the dialog's copy (duplicate ids, inert controls).
     dropDuplicateModalForm();

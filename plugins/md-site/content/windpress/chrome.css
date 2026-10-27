@@ -1022,7 +1022,14 @@ footer .footer-v21__copyright-payment{ grid-column: span 6; }
    those elements their behaviour's presentation (the old theme's
    xo-webcomponents stylesheet does not enter the site — ticket #19 T6).
    ========================= */
-[x-cloak]{display:none !important}
+/* `x-cloak` only hides while a script is coming to remove it. Applied
+   unconditionally it hides content *forever* when the script never runs: the
+   family faces carry 24–26 cloaked blocks each, and with JS off the outdoor
+   page kept 67% of its words and the Chinese-style page 66% (measured
+   2026-10-27). The footer already solved this shape — it shows every panel
+   until `is-ready` says the script took over. Same rule here: the cloak only
+   applies once `md-js` is on the root, which `md-chrome.js` sets at start. */
+html.md-js [x-cloak]{display:none !important}
 html.md-modal-open,html.md-modal-open body{overflow:hidden}
 xo-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);overflow-y:auto}
 xo-modal.is-open{display:block}

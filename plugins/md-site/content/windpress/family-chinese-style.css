@@ -15,7 +15,7 @@ padding-top: 96px;
 padding-bottom: 96px;
 }
 }
-#chinese-space-applications-template--21873710498045__chinese_space_applications [x-cloak] {
+html.md-js #chinese-space-applications-template--21873710498045__chinese_space_applications [x-cloak] {
 display: none !important;
 }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery-stack {
@@ -168,7 +168,7 @@ padding-top: 96px;
 padding-bottom: 96px;
 }
 }
-#chinese-material-pairing-template--21873710498045__chinese_material_pairing [x-cloak] {
+html.md-js #chinese-material-pairing-template--21873710498045__chinese_material_pairing [x-cloak] {
 display: none !important;
 }
 #chinese-material-pairing-template--21873710498045__chinese_material_pairing .cmp-slider-shell {

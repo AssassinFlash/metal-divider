@@ -264,7 +264,7 @@ padding-bottom: 15px;
 .hamburger-open .line-1 { transform: rotate(45deg) translate(5px, 5px); }
 .hamburger-open .line-2 { opacity: 0; }
 .hamburger-open .line-3 { transform: rotate(-45deg) translate(5px, -5px); }
-[x-cloak] { display: none !important; }
+html.md-js [x-cloak] { display: none !important; }
 /* Mic pulse — no Tailwind equivalent for keyframes */
 .mic-pulse { animation: micPulse 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
 @keyframes micPulse {

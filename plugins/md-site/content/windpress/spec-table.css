@@ -394,7 +394,7 @@ padding-top: 80px;
 padding-bottom: 80px;
 }
 }
-#laser-cut-specs-template--21873710563581__laser_cut_specs [x-cloak] {
+html.md-js #laser-cut-specs-template--21873710563581__laser_cut_specs [x-cloak] {
 display: none !important;
 }
 #glass-hybrid-specs-template--21873710530813__interior_room_partitions_specs {
@@ -407,7 +407,7 @@ padding-top: 80px;
 padding-bottom: 80px;
 }
 }
-#glass-hybrid-specs-template--21873710530813__interior_room_partitions_specs [x-cloak] {
+html.md-js #glass-hybrid-specs-template--21873710530813__interior_room_partitions_specs [x-cloak] {
 display: none !important;
 }
 #outdoor-specs-template--21873710596349__outdoor_specs {
@@ -420,7 +420,7 @@ padding-top: 80px;
 padding-bottom: 80px;
 }
 }
-#outdoor-specs-template--21873710596349__outdoor_specs [x-cloak] {
+html.md-js #outdoor-specs-template--21873710596349__outdoor_specs [x-cloak] {
 display: none !important;
 }
 #chinese-specs-template--21873710498045__chinese_specs {
@@ -433,7 +433,7 @@ padding-top: 96px;
 padding-bottom: 96px;
 }
 }
-#chinese-specs-template--21873710498045__chinese_specs [x-cloak] {
+html.md-js #chinese-specs-template--21873710498045__chinese_specs [x-cloak] {
 display: none !important;
 }
 #laser-cut-panels-specs-template--21844033995005__laser-cut-panels-specs {

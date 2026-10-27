@@ -14,7 +14,7 @@ padding-top: 96px;
 padding-bottom: 96px;
 }
 }
-#outdoor-solutions-template--21873710596349__outdoor_solutions [x-cloak] {
+html.md-js #outdoor-solutions-template--21873710596349__outdoor_solutions [x-cloak] {
 display: none !important;
 }
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-gallery-stack {
@@ -167,7 +167,7 @@ padding-top: 80px;
 padding-bottom: 80px;
 }
 }
-#outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider [x-cloak] {
+html.md-js #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider [x-cloak] {
 display: none !important;
 }
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-slider-shell {
