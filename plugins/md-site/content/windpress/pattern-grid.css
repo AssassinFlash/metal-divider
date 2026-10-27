@@ -516,9 +516,16 @@ grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
    at two or three cards and the rest of the well is page background. A
    ~2256px capture read that as a hole in row 1 (Agave, Akira, then a blank
    the size of a card) even though the loop had printed 24 cards. 1fr fills
-   the row, so a row with patterns has no empty track. */
+   the row, so a row with patterns has no empty track.
+
+   The 300px floor is measured, not chosen: at a 1384px viewport the sidebar
+   takes 280px and the 32px gap takes 32, leaving the grid 977px. With a
+   320 floor that fits two tracks of 476px — cards so large that a whole
+   catalogue row shows two patterns, which is the "viewing area too narrow"
+   the owner reported. At 300 it fits three tracks of 310px, and the same
+   floor still yields four at 1400px and more above the 1600 breakpoint. */
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__products {
-grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 gap: 24px;
 }
 }
