@@ -341,10 +341,12 @@ background: #e6e1d8;
 @media (min-width: 750px) {
 .mfg-quality__doc-image img { height: 210px; }
 }
+/* Technical labels the customer reads to judge the evidence -- 10px is not
+   readable on a phone (measured 2026-10-27 at 320). */
 .mfg-quality__doc-label {
 display: inline-block;
 margin-top: 12px;
-font-size: 10px;
+font-size: 12px;
 font-weight: 700;
 letter-spacing: 0.18em;
 text-transform: uppercase;
@@ -382,7 +384,7 @@ background: #e2ddd2;
 position: absolute;
 right: 12px;
 bottom: 12px;
-font-size: 10px;
+font-size: 12px;
 font-weight: 700;
 letter-spacing: 0.14em;
 text-transform: uppercase;

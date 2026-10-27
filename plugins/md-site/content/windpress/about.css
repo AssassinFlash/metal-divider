@@ -13,5 +13,9 @@
 /* Project-card badges. The 9px/10px sizes are generated utilities, so this
    wins by specificity and only on these cards — family swatches share the
    utility and must keep their own size. Measured 9px at 320/390. */
+/* Technical tags on a project card — "SS 304", "Mirror + PVD Gold", "80 sqm".
+   9px and 10px are not readable on a phone (measured 2026-10-27 at 320 and
+   390: twelve visible chips at 9px, three at 10px). The utilities layer
+   outranks this volume, hence !important. */
 .project-card-hover .text-\[9px\],
-.project-card-hover .text-\[10px\] { font-size: 11px }
+.project-card-hover .text-\[10px\] { font-size: 13px !important }
