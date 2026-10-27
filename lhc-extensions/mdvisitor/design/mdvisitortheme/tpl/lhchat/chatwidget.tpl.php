@@ -240,7 +240,7 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
 </form>
     </div>
     <nav class="md-tabs" aria-label="Assistant sections">
-      <button class="is-active" type="button" data-mdv-go="home" aria-label="Home"><span class="md-tab-icon" aria-hidden="true">⌂</span><span class="md-tab-label">Home</span></button>
+      <button class="is-active" type="button" data-mdv-go="home" aria-label="Home" aria-current="page"><span class="md-tab-icon" aria-hidden="true">⌂</span><span class="md-tab-label">Home</span></button>
       <button type="button" data-mdv-go="chat" aria-label="Chat"><span class="md-tab-icon" aria-hidden="true">◌</span><span class="md-tab-label">Chat</span></button>
       <button type="button" data-mdv-go="faq" aria-label="FAQ"><span class="md-tab-icon" aria-hidden="true">?</span><span class="md-tab-label">FAQ</span></button>
     </nav>

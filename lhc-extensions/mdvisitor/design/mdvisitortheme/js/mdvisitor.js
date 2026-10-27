@@ -24,7 +24,11 @@
     tabs.forEach(function (tab) {
       var on = tab.getAttribute('data-mdv-go') === name;
       tab.classList.toggle('is-active', on);
-      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      if (on) {
+        tab.setAttribute('aria-current', 'page');
+      } else {
+        tab.removeAttribute('aria-current');
+      }
     });
     if (name === 'faq') {
       var search = doc.getElementById('mdv-faq-search');
