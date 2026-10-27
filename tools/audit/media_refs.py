@@ -30,7 +30,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 TEMPLATES = os.path.join(ROOT, "plugins/md-site/content/livecanvas")
 
-REF = re.compile(r"/wp-content/uploads/[^\"'\s),]+\.(?:webp|jpe?g|png|avif|svg|gif)")
+# The path stops at a quote, whitespace, a paren, a comma AND a pipe: a
+# `<picture>` with several `<source>` elements writes them back to back inside
+# one attribute, separated by `|`, and a regex that ignored the pipe glued three
+# real URLs into one 404. That single mistake produced most of the first run's
+# "not served" list.
+REF = re.compile(r"/wp-content/uploads/[^\"'\s),|]+\.(?:webp|jpe?g|png|avif|svg|gif)")
 
 
 def references():

@@ -81,6 +81,12 @@
     // images the sweep called broken all reported complete=true with
     // naturalWidth set once the page was given time to settle.
     const src = i.currentSrc || i.getAttribute('src') || '';
+    // A lazy image the browser has not fetched yet is not broken. But once it
+    // reports `complete: true` with `naturalWidth: 0`, the fetch finished and
+    // produced nothing — that is a broken picture, lazy or not. Verified on the
+    // live home page: Alhambra_Star sits in the viewport, complete=true,
+    // naturalWidth=0, currentSrc empty, because its 768w candidate is a 404 and
+    // the 480w candidate is smaller than `sizes` asks for.
     const lazyWaiting = i.getAttribute('loading') === 'lazy' && !i.complete;
     // An `<img>` with no source at all is a slot a `<picture>` may or may not
     // fill; it is not a broken reference. Only a src that exists and returned
