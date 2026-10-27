@@ -76,6 +76,8 @@
 
 **顺带修**:`#md-footer a{color:inherit}`(1,0,1)压过 `.md-footer__bar-legal a:hover`(0,2,1),hover 永不生效(实测 hovered=true 颜色不变)——与 quote 按钮同一个坑。改为同 id 作用域后,法务链接 hover 变为金色(实测 rgba(255,255,255,0.42) → rgb(212,184,120))。
 
+**扩大后的真相(同轮补查)**:不只法务,**页脚全部 7 条 hover/focus 都因同一特异性失效**——tab、route-list、contact-link、email-card、copy、phone、identity-node。全部改为同 id 作用域后,实测变色。**注意两条假象**:contact-link 与 phone 在页脚 Contact 折叠面板里,**不可见的元素无法 hover**,第一轮报"不变色"是测量假象,展开面板后两条均正常。
+
 **Woo 原生界面判定**:零原生界面出现(本站无购物车/结账语义),询盘表单 HTML5 校验正常聚焦第一个字段、4 个必填项均触发。**无需额外样式化**,此项闭环。
 
 ### 2026-10-27 无 JS 与图片按需:枢纽 9 张破图、掩膜永不解除、菜单空下载
