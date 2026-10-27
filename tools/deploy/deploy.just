@@ -124,8 +124,8 @@ drill *args:
 # compile that exists (Tailwind v4 has no server-side build): one-time login,
 # WindPress → Settings → Performance → Generate, the stored cache must be
 # newer than the one before, and the deploy's windpress-check follows.
-# The driver is tools/deploy/windpress-compile.mjs on the shared real-Chrome
-# Playwright install (AGENTS §7: never the bundled Chromium).
+# The driver is tools/deploy/windpress_compile.py, which drives the owner's
+# own Chrome through opencli (AGENTS §7: opencli only, never Playwright).
 [positional-arguments]
 windpress-compile name="dev":
     #!/usr/bin/env bash
@@ -139,7 +139,7 @@ windpress-compile name="dev":
     fi
     login_url="$(PHP={{ php }} {{ md_local }} login "{{ name }}" --user="$user" | tail -n 1)"
     echo "windpress: compiling through the admin (user: $user, cache mtime before: $before)"
-    node "$repo/tools/deploy/windpress-compile.mjs" "$login_url" "$before"
+    python3 "$repo/tools/deploy/windpress_compile.py" "$login_url" "$before"
     after="$(PHP={{ php }} {{ md_local }} wp "{{ name }}" eval 'echo (int) @filemtime( wp_upload_dir()["basedir"] . "/windpress/cache/tailwind.css" );' | tail -n 1)"
     if [ -z "$after" ] || [ "$after" -le "$before" ]; then
         echo "windpress: the cache file did not get newer ($before -> $after)" >&2
