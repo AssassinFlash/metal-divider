@@ -41,7 +41,7 @@ use WP_CLI;
  * - writes a per-product revision marker, and skips a marked product, so a
  *   later re-run cannot undo an owner's choice. Removing the marker is the
  *   deliberate act that re-opens the product;
- * - only considers candidates that are opaque (not RGBA), at least 400px on
+ * - only considers candidates that are opaque (not RGBA), at least 240px on
  *   the short side, and neither blank-white (mean > 200) nor blank-black
  *   (mean < 12) — a plain plate is not a photograph;
  * - prefers the roles that name an installed screen, in the order below, so
@@ -278,7 +278,13 @@ final class ThumbnailCommand {
 		}
 		$width  = (int) ( $meta['width'] ?? 0 );
 		$height = (int) ( $meta['height'] ?? 0 );
-		if ( min( $width, $height ) < 400 ) {
+		// 240 comes from the card, not from taste: the catalogue declares
+		// `sizes="(min-width: 1120px) 338px"`, so a 338px box is the widest the
+		// image is ever drawn and 240 short-side leaves it sharp. The smallest
+		// genuinely-installed scene in the catalogue is 360x257 (sampoerna) —
+		// note 257 is its short side, which is why an earlier 320 floor
+		// silently rejected the one photograph that pattern has.
+		if ( min( $width, $height ) < 240 ) {
 			return false;
 		}
 
