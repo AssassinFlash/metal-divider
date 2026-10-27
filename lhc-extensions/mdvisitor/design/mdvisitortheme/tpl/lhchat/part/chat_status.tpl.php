@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028v', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028v3', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -15,7 +15,7 @@
                 <span class="mdv-chat-avatar">MD<i></i></span>
                 <div class="mdv-chat-name"><strong>Metal Divider AI</strong><small><span class="mdv-chat-state mdv-chat-state-<?php echo $mdvTone;?>"><i></i><?php echo htmlspecialchars($mdvLabel);?></span></small></div>
             </div>
-            <button class="mdv-chat-close" type="button" aria-label="Close chat" onclick="(function(){var t='';try{var a=window.location.ancestorOrigins;if(a&&a.length)t=a[0];else if(document.referrer)t=new URL(document.referrer).origin}catch(e){}if(t&&window.parent!==window)window.parent.postMessage('lhc_chat_closed_explicit',t);})()">×</button>
+            <button class="mdv-chat-close" type="button" aria-label="Close chat" onclick="if(window.lhinst&&typeof lhinst.explicitChatCloseByUser==='function'){lhinst.explicitChatCloseByUser();}else if(window.parent!==window){window.parent.postMessage('lhc_chat_closed_explicit','*');}">×</button>
         </div>
         <div id="status-chat">
             <?php if (!($chat->status == erLhcoreClassModelChat::STATUS_BOT_CHAT && $chat->bot !== null && isset($chat->bot->configuration_array['profile_hide']) && $chat->bot->configuration_array['profile_hide'] == true)) : ?>

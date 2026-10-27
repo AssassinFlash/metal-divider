@@ -249,7 +249,8 @@ body.widget-chat #ChatMessageContainer,
 body.widget-chat #id-operator-typing{flex:0 0 auto;}
 
 body.widget-chat #messagesBlock .usr-tit{display:none!important}
-body.widget-chat #messagesBlock .message-row:has(script[data-bot-action="lhinst.setDelay"]){display:none!important}
+/* Hide only the converted typing row, never the row that still carries the bot delay script. */
+body.widget-chat #messagesBlock .message-row.message-row-typing{display:none!important}
 
 body.widget-chat #status-chat .operator-info,
 body.widget-chat #widget-content-body > .row .operator-info{display:none!important}
