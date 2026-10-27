@@ -139,15 +139,20 @@ final class CatalogCommand {
 		foreach ( $terms as $term ) {
 			$term_id = (int) $term->term_id;
 
+			$thumbnail = (int) \get_term_meta( $term_id, 'thumbnail_id', true );
+			$masked    = $thumbnail > 0 && $repoint && $this->is_invisible_on_card( $thumbnail );
+
 			// A marked term belongs to WooCommerce: an administrator who
-			// cleared a field meant it, and a rerun must not put it back.
-			if ( self::SEED_REVISION === (string) \get_term_meta( $term_id, self::MARKER, true ) ) {
+			// cleared a field meant it, and a rerun must not put it back. The
+			// one exception is --repoint-masked with a thumbnail that composites
+			// to nothing — that is not a decision being overridden, it is an
+			// image no visitor can see, and the marker would otherwise make the
+			// repair impossible without clearing state by hand.
+			if ( self::SEED_REVISION === (string) \get_term_meta( $term_id, self::MARKER, true ) && ! $masked ) {
 				++$already_seeded;
 				continue;
 			}
 
-			$thumbnail = (int) \get_term_meta( $term_id, 'thumbnail_id', true );
-			$masked    = $thumbnail > 0 && $repoint && $this->is_invisible_on_card( $thumbnail );
 			if ( $thumbnail > 0 && ! $masked ) {
 				++$images_present;
 			} else {
