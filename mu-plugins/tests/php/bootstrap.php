@@ -81,6 +81,61 @@ function get_option( string $name, mixed $default_value = false ): mixed {
 }
 
 /**
+ * The options the endpoint writes, into the same store get_option reads.
+ * $GLOBALS['md_mu_test_update_option_fail'] makes the update fail, the
+ * way a database error would, so the endpoint's failure path is testable.
+ *
+ * @param string      $name     The option's name.
+ * @param mixed       $value    The value to store.
+ * @param bool|string $autoload Whether the option autoloads; recorded only.
+ * @return bool Whether the write happened.
+ */
+function update_option( string $name, mixed $value, bool|string $autoload = true ): bool {
+	$GLOBALS['md_mu_test_option_writes'][] = array( $name, $value, $autoload );
+	if ( ! empty( $GLOBALS['md_mu_test_update_option_fail'] ) ) {
+		return false;
+	}
+	$GLOBALS['md_mu_test_options'][ $name ] = $value;
+	return true;
+}
+
+/**
+ * WordPress's filter application, over the callbacks add_filter recorded:
+ * priority order, the value threaded through. The bootstrap's plugins
+ * register their hooks for assertion, so a filter with no callback returns
+ * its value untouched.
+ *
+ * @since 1.0.0
+ *
+ * @param string $hook  The filter's name.
+ * @param mixed  $value The value to filter.
+ * @param mixed  ...$args The filter's extra arguments.
+ * @return mixed The filtered value.
+ */
+function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed {
+	$callbacks = $GLOBALS['md_mu_test_hooks'][ $hook ] ?? array();
+	usort( $callbacks, static fn ( array $a, array $b ): int => $a[1] <=> $b[1] );
+	foreach ( $callbacks as $callback ) {
+		if ( is_callable( $callback[0] ) ) {
+			$value = $callback[0]( $value, ...$args );
+		}
+	}
+	return $value;
+}
+
+/**
+ * WordPress's tag stripping, for the unanswered log's shaping.
+ *
+ * @param string $text           The text.
+ * @param bool   $remove_breaks  Whether line breaks go too.
+ * @return string The stripped text.
+ */
+function wp_strip_all_tags( string $text, bool $remove_breaks = false ): string {
+	$text = strip_tags( $text );
+	return $remove_breaks ? (string) preg_replace( '/[\r\n\t ]+/', ' ', $text ) : $text;
+}
+
+/**
  * The HTTP client the endpoint calls DeepSeek through: the request is
  * recorded into $GLOBALS['md_mu_test_http'], and the response comes from
  * $GLOBALS['md_mu_test_http_responder'] — a callable taking the URL and the

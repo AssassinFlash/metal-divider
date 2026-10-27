@@ -33,14 +33,16 @@ final class KbEndpointTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$GLOBALS['md_mu_test_options']        = array();
-		$GLOBALS['md_mu_test_routes']         = array();
-		$GLOBALS['md_mu_test_http']           = array();
-		$GLOBALS['md_mu_test_http_responder'] = null;
-		$GLOBALS['md_mu_test_db_responder']   = null;
-		$GLOBALS['md_mu_test_transients']     = array();
-		$GLOBALS['wpdb']->queries             = array();
-		$_SERVER['REMOTE_ADDR']               = '192.0.2.10';
+		$GLOBALS['md_mu_test_options']            = array();
+		$GLOBALS['md_mu_test_routes']             = array();
+		$GLOBALS['md_mu_test_http']               = array();
+		$GLOBALS['md_mu_test_http_responder']     = null;
+		$GLOBALS['md_mu_test_db_responder']       = null;
+		$GLOBALS['md_mu_test_transients']         = array();
+		$GLOBALS['md_mu_test_option_writes']      = array();
+		$GLOBALS['md_mu_test_update_option_fail'] = false;
+		$GLOBALS['wpdb']->queries                 = array();
+		$_SERVER['REMOTE_ADDR']                   = '192.0.2.10';
 		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
 	}
 
@@ -356,6 +358,306 @@ final class KbEndpointTest extends TestCase {
 		self::assertSame( 'I will get a colleague for you.', $out['body']['msg'] );
 		self::assertSame( 'transfer_operator', $out['body']['action'] );
 		self::assertSame( array(), $out['body']['sources'] );
+	}
+
+	/**
+	 * A visitor question the knowledge cannot answer is handed off and
+	 * recorded in Rapls's own unanswered-question option: the loop the
+	 * operator works from. The reason says no content matched, and the
+	 * entry carries the count Rapls's dashboard shows.
+	 */
+	public function test_a_knowledge_gap_is_written_to_the_unanswered_log(): void {
+		$this->configure_kb( array(), $this->model_reply( md_kb_endpoint_no_answer_message(), true, 'no_knowledge' ) );
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Do you install the screens in Iceland?' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? null;
+		self::assertIsArray( $log );
+		self::assertCount( 1, $log );
+		self::assertSame( 'Do you install the screens in Iceland?', $log[0]['q'] );
+		self::assertSame( 1, $log[0]['n'] );
+		self::assertSame( 'no_context', $log[0]['reason'] );
+		self::assertIsInt( $log[0]['t'] );
+	}
+
+	/**
+	 * The model's own reason is what classifies the gap, not a verbatim
+	 * copy of the no-knowledge sentence: a paraphrase with the same
+	 * reason is still a gap, and must reach the operator's list.
+	 */
+	public function test_a_paraphrased_knowledge_gap_is_still_written(): void {
+		$this->configure_kb( array(), $this->model_reply( "I don't have that in my notes.", true, 'no_knowledge' ) );
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Do you install the screens in Iceland?' ),
+			)
+		);
+
+		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? array();
+		self::assertCount( 1, $log );
+		self::assertSame( 'Do you install the screens in Iceland?', $log[0]['q'] );
+	}
+
+	/**
+	 * A visitor who asks for a human is a handoff but not a knowledge gap:
+	 * the operator's list must not fill with requests to be transferred.
+	 */
+	public function test_an_explicit_request_for_a_human_is_not_written(): void {
+		$this->configure_kb( array(), $this->model_reply( 'I am connecting you with our team.', true, 'human_request' ) );
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'I want to talk to a human agent.' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertArrayNotHasKey( 'raplsaich_unanswered_log', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * An ordinary answer records nothing.
+	 */
+	public function test_an_answered_question_is_not_written(): void {
+		$this->configure_kb( array( $this->a_hit() ), $this->model_reply( 'Standard patterns ship in three weeks.', false, 'none' ) );
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the lead time?' ),
+			)
+		);
+
+		self::assertArrayNotHasKey( 'raplsaich_unanswered_log', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * Context that matched something but still could not ground an answer
+	 * is recorded as a grounding gap; the reason is the distinct one Rapls's
+	 * dashboard labels.
+	 */
+	public function test_a_gap_with_matched_context_is_written_as_grounding(): void {
+		$this->configure_kb( array( $this->a_hit() ), $this->model_reply( md_kb_endpoint_no_answer_message(), true, 'no_knowledge' ) );
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the lead time?' ),
+			)
+		);
+
+		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? array();
+		self::assertCount( 1, $log );
+		self::assertSame( 'grounding', $log[0]['reason'] );
+	}
+
+	/**
+	 * The same question, case included, only raises the count: the
+	 * dashboard does not fill with duplicates, and the refreshed entry moves
+	 * to the front the way Rapls's own writer does.
+	 */
+	public function test_the_same_question_only_increments_its_count(): void {
+		$GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] = array(
+			array(
+				'q'      => 'Do You Install In Iceland?',
+				't'      => 100,
+				'n'      => 1,
+				'reason' => 'grounding',
+			),
+			array(
+				'q'      => 'Something else',
+				't'      => 90,
+				'n'      => 3,
+				'reason' => 'no_context',
+			),
+		);
+		$this->configure_kb( array(), $this->model_reply( md_kb_endpoint_no_answer_message(), true, 'no_knowledge' ) );
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'do you install in iceland?' ),
+			)
+		);
+
+		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? array();
+		self::assertCount( 2, $log );
+		self::assertSame( 'Do You Install In Iceland?', $log[0]['q'] );
+		self::assertSame( 2, $log[0]['n'] );
+		self::assertGreaterThan( 100, $log[0]['t'] );
+		self::assertSame( 'no_context', $log[0]['reason'] );
+		self::assertSame( 'Something else', $log[1]['q'] );
+	}
+
+	/**
+	 * The stored question is plain text (Rapls shows it in the dashboard)
+	 * and at most 200 characters, matching Rapls's writer.
+	 */
+	public function test_the_logged_question_is_stripped_and_capped(): void {
+		$this->configure_kb( array(), $this->model_reply( md_kb_endpoint_no_answer_message(), true, 'no_knowledge' ) );
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => '<b>' . str_repeat( 'x', 260 ) . '</b>' ),
+			)
+		);
+
+		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? array();
+		self::assertCount( 1, $log );
+		self::assertSame( str_repeat( 'x', 200 ), $log[0]['q'] );
+	}
+
+	/**
+	 * The option holds fifty questions at most, the newest first: the
+	 * dashboard and Rapls's own CLI read the same cap.
+	 */
+	public function test_the_log_keeps_fifty_questions(): void {
+		$existing = array();
+		for ( $i = 0; $i < 50; $i++ ) {
+			$existing[] = array(
+				'q'      => 'Question ' . $i,
+				't'      => 100 + $i,
+				'n'      => 1,
+				'reason' => 'no_context',
+			);
+		}
+		$GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] = $existing;
+		$this->configure_kb( array(), $this->model_reply( md_kb_endpoint_no_answer_message(), true, 'no_knowledge' ) );
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'A brand new gap' ),
+			)
+		);
+
+		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? array();
+		self::assertCount( 50, $log );
+		self::assertSame( 'A brand new gap', $log[0]['q'] );
+		self::assertSame( 'Question 48', $log[49]['q'] );
+	}
+
+	// phpcs:disable WordPress.PHP.IniSet, WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions -- the test that follows points PHP's own error log at a local temp file, reads it back and removes it; it runs outside WordPress, where wp_delete_file does not exist.
+	/**
+	 * A failed write is reported in the error log and does not swallow the
+	 * handoff: the visitor still reaches the team, and the operator's log
+	 * names the failure without the visitor's question.
+	 */
+	public function test_a_failed_log_write_is_reported_and_the_handoff_survives(): void {
+		$log_file = tempnam( sys_get_temp_dir(), 'md-kb-endpoint-unanswered-log-' );
+		$before   = (string) ini_get( 'error_log' );
+		self::assertNotFalse( $log_file );
+		try {
+			ini_set( 'error_log', $log_file );
+			$this->configure_kb( array(), $this->model_reply( md_kb_endpoint_no_answer_message(), true, 'no_knowledge' ) );
+			$GLOBALS['md_mu_test_update_option_fail'] = true;
+
+			$out = md_kb_endpoint_answer(
+				array(
+					'header' => $this->bearer(),
+					'body'   => array( 'q' => 'Do you install the screens in Iceland?' ),
+				)
+			);
+
+			self::assertSame( 200, $out['status'] );
+			self::assertSame( 'transfer_operator', $out['body']['action'] );
+			self::assertCount( 2, $GLOBALS['md_mu_test_option_writes'] );
+			$written = (string) file_get_contents( $log_file );
+			self::assertStringContainsString( '[md-kb-endpoint] unanswered log write failed: reason=no_context', $written );
+			self::assertStringNotContainsString( 'Iceland', $written );
+		} finally {
+			ini_set( 'error_log', $before );
+			@unlink( $log_file );
+		}
+	}
+	// phpcs:enable WordPress.PHP.IniSet, WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions
+
+	/**
+	 * A reply from the older prompt carries no reason; its exact
+	 * no-knowledge sentence still classifies the gap, so a model that has
+	 * not picked up the reason field yet does not lose the log entry.
+	 */
+	public function test_a_reply_without_a_reason_falls_back_to_the_no_knowledge_sentence(): void {
+		$this->configure_kb( array(), $this->model_reply( md_kb_endpoint_no_answer_message(), true ) );
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Do you install the screens in Iceland?' ),
+			)
+		);
+
+		$log = $GLOBALS['md_mu_test_options']['raplsaich_unanswered_log'] ?? array();
+		self::assertCount( 1, $log );
+	}
+
+	/**
+	 * The prompt asks the model to name the handoff reason, which is what
+	 * keeps a paraphrase of the gap sentence from being missed.
+	 */
+	public function test_the_prompt_asks_for_the_handoff_reason(): void {
+		$prompt = md_kb_endpoint_system_prompt();
+
+		self::assertStringContainsString( 'no_knowledge', $prompt );
+		self::assertStringContainsString( 'human_request', $prompt );
+	}
+
+	/**
+	 * The model reply body for the tests, in the DeepSeek HTTP shape.
+	 *
+	 * @param string      $answer  The visitor-facing answer.
+	 * @param bool        $handoff Whether the reply hands off.
+	 * @param string|null $reason  The reply's reason, when it has one.
+	 * @return string The HTTP body.
+	 */
+	private function model_reply( string $answer, bool $handoff, ?string $reason = null ): string {
+		$reply = array(
+			'answer'  => $answer,
+			'handoff' => $handoff,
+		);
+		if ( null !== $reason ) {
+			$reply['reason'] = $reason;
+		}
+		return (string) wp_json_encode(
+			array(
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => (string) wp_json_encode( $reply ),
+						),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * One knowledge hit, enough to make the retrieved context non-empty.
+	 *
+	 * @return array<string, mixed> The hit.
+	 */
+	private function a_hit(): array {
+		return array(
+			'type'      => 'knowledge',
+			'source_id' => 12,
+			'title'     => 'Lead time',
+			'content'   => 'Standard patterns ship in 3 weeks.',
+			'url'       => null,
+			'score'     => 9.5,
+		);
 	}
 
 	/**

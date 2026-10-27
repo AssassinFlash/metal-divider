@@ -118,6 +118,12 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 
+	if ( $answer['handoff'] && md_kb_endpoint_is_knowledge_gap( $answer ) ) {
+		$trimmed_context = trim( $context );
+		$gap_reason      = '' === $trimmed_context ? 'no_context' : 'grounding';
+		md_kb_endpoint_log_unanswered( $q, $gap_reason );
+	}
+
 	return array(
 		'status' => 200,
 		'body'   => array(
@@ -222,7 +228,8 @@ function md_kb_endpoint_sources( array $results ): array {
  * @return string The system prompt.
  */
 function md_kb_endpoint_system_prompt(): string {
-	return "You are the support assistant of metal-divider.com, a B2B architectural metal screen pattern inquiry site. Answer the visitor's question ONLY from the knowledge provided in the user message. Do not invent specifications, prices or materials. Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. Say pattern, not product. When the knowledge does not contain the answer, reply exactly: \"I don't have that information — our team can help.\" with handoff true. Reply with json only: {\"answer\": \"<text for the visitor>\", \"handoff\": true|false}. Set handoff true when the visitor asks for a human or an agent, or when you cannot answer from the knowledge.";
+	$no_answer = md_kb_endpoint_no_answer_message();
+	return "You are the support assistant of metal-divider.com, a B2B architectural metal screen pattern inquiry site. Answer the visitor's question ONLY from the knowledge provided in the user message. Do not invent specifications, prices or materials. Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. Say pattern, not product. When the knowledge does not contain the answer, set handoff true, set reason to \"no_knowledge\", and reply exactly: \"{$no_answer}\". When the visitor asks for a human or an agent, set handoff true, set reason to \"human_request\", and reply that you are connecting them with the team — do not use the no-knowledge sentence. Reply with json only: {\"answer\": \"<text for the visitor>\", \"handoff\": true|false, \"reason\": \"no_knowledge\"|\"human_request\"|\"none\"}.";
 }
 
 /**
@@ -272,7 +279,7 @@ function md_kb_endpoint_messages( string $q, string $context, array $history ): 
  *
  * @param array<int, array{role: string, content: string}> $messages The conversation.
  * @param float                                            $deadline The Unix microtime the call must end by; 0.0 starts a 45-second one now.
- * @return array{answer: string, handoff: bool}|string The parsed reply, or the error code.
+ * @return array{answer: string, handoff: bool, reason: string}|string The parsed reply, or the error code.
  */
 function md_kb_endpoint_call_model( array $messages, float $deadline = 0.0 ): array|string {
 	if ( $deadline <= 0.0 ) {
@@ -398,7 +405,7 @@ function md_kb_endpoint_failure_line( string $kind, int $status, int $attempts )
  * answer and a boolean handoff.
  *
  * @param string $content The reply's content.
- * @return array{answer: string, handoff: bool}|null The reply, or null when it is not one.
+ * @return array{answer: string, handoff: bool, reason: string}|null The reply, or null when it is not one.
  */
 function md_kb_endpoint_parse_model_json( string $content ): ?array {
 	$decoded = json_decode( $content, true );
@@ -408,10 +415,142 @@ function md_kb_endpoint_parse_model_json( string $content ): ?array {
 	if ( ! is_array( $decoded ) || ! is_string( $decoded['answer'] ?? null ) || '' === trim( $decoded['answer'] ) ) {
 		return null;
 	}
+	$reason = is_string( $decoded['reason'] ?? null ) ? strtolower( trim( $decoded['reason'] ) ) : '';
+	if ( ! in_array( $reason, array( 'no_knowledge', 'human_request', 'none' ), true ) ) {
+		$reason = '';
+	}
 	return array(
 		'answer'  => $decoded['answer'],
 		'handoff' => (bool) ( $decoded['handoff'] ?? false ),
+		'reason'  => $reason,
 	);
+}
+
+/**
+ * The sentence the model answers with when the knowledge cannot cover the
+ * question. It is also the promised handoff copy, so the endpoint and the
+ * prompt read it from one place.
+ *
+ * @return string The no-knowledge sentence.
+ */
+function md_kb_endpoint_no_answer_message(): string {
+	return "I don't have that information — our team can help.";
+}
+
+/**
+ * Whether a handed-off answer is a knowledge gap rather than an explicit
+ * request for a human. The model names its reason in the reply; a reply
+ * from an older prompt (no reason) falls back to the exact no-knowledge
+ * sentence, which the prompt reserves for this case. A paraphrase of that
+ * sentence is why the reason field exists: knowledge gaps must not depend
+ * on the model reproducing the copy verbatim.
+ *
+ * @param array{answer: string, handoff: bool, reason: string} $answer The model's reply.
+ * @return bool Whether the visitor asked something the knowledge cannot answer.
+ */
+function md_kb_endpoint_is_knowledge_gap( array $answer ): bool {
+	if ( 'no_knowledge' === $answer['reason'] ) {
+		return true;
+	}
+	if ( '' !== $answer['reason'] ) {
+		return false;
+	}
+	return trim( $answer['answer'] ) === md_kb_endpoint_no_answer_message();
+}
+
+/**
+ * Record a question the knowledge could not answer in Rapls's own
+ * unanswered-question option — the same shape, merge and cap as the
+ * plugin's private writer (includes/api/class-rest-controller.php:3769):
+ * tags stripped, trimmed, 200 characters at most, a case-insensitive
+ * merge that increments the count and moves the entry to the front, and
+ * fifty entries at most. The endpoint cannot call that private method,
+ * and does not change Rapls.
+ *
+ * A write failure is logged (the question itself never is) and returns
+ * false; the caller's handoff is unaffected, so the visitor still reaches
+ * the team.
+ *
+ * @param string $question The visitor's question.
+ * @param string $reason   Why it was unanswered: no_context or grounding.
+ * @return bool True when the entry is stored (or the filter disabled the log), false on failure.
+ */
+function md_kb_endpoint_log_unanswered( string $question, string $reason ): bool {
+	$question = trim( wp_strip_all_tags( $question ) );
+	if ( '' === $question ) {
+		return false;
+	}
+	if ( mb_strlen( $question ) > 200 ) {
+		$question = mb_substr( $question, 0, 200 );
+	}
+
+	// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Rapls's own filter name, kept so its existing opt-out keeps working.
+	/**
+	 * Filters whether the question is written to Rapls's unanswered log.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param bool   $log      Whether to log the question.
+	 * @param string $question The visitor's question.
+	 * @param string $reason   The gap reason.
+	 */
+	if ( ! apply_filters( 'raplsaich_log_unanswered', true, $question, $reason ) ) {
+		return true;
+	}
+	// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+
+	$log = get_option( 'raplsaich_unanswered_log', array() );
+	if ( ! is_array( $log ) ) {
+		$log = array();
+	}
+
+	$needle = mb_strtolower( $question );
+	$index  = null;
+	foreach ( $log as $i => $entry ) {
+		if ( is_array( $entry ) && mb_strtolower( (string) ( $entry['q'] ?? '' ) ) === $needle ) {
+			$index = $i;
+			break;
+		}
+	}
+
+	if ( null !== $index ) {
+		$entry = $log[ $index ];
+		unset( $log[ $index ] );
+		$entry['n']      = (int) ( $entry['n'] ?? 1 ) + 1;
+		$entry['t']      = time();
+		$entry['reason'] = $reason;
+		array_unshift( $log, $entry );
+	} else {
+		array_unshift(
+			$log,
+			array(
+				'q'      => $question,
+				't'      => time(),
+				'n'      => 1,
+				'reason' => $reason,
+			)
+		);
+	}
+
+	$log     = array_slice( array_values( $log ), 0, 50 );
+	$written = update_option( 'raplsaich_unanswered_log', $log, false );
+	if ( false === $written ) {
+		// update_option() returns false both for a failed write and for a
+		// value that did not change; only the first is a failure. The
+		// second attempt covers a transient database error, the site's
+		// retry-and-report rule for a write the visitor's handoff depends on.
+		if ( get_option( 'raplsaich_unanswered_log', array() ) !== $log ) {
+			$written = update_option( 'raplsaich_unanswered_log', $log, false );
+		} else {
+			$written = true;
+		}
+	}
+	if ( false === $written ) {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- the site's own error log channel; the line carries the reason only, never the visitor's question.
+		error_log( sprintf( '[md-kb-endpoint] unanswered log write failed: reason=%s', $reason ) );
+		return false;
+	}
+	return true;
 }
 
 /**
