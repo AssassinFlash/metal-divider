@@ -252,12 +252,12 @@ final class Form {
 	 * box would let a visitor submit something the record rejects. The
 	 * options are printed from the same constant the validator checks.
 	 *
-	 * @param string       $key          The field's key.
-	 * @param string       $label        The field's label.
-	 * @param list<string> $options      The permitted values.
-	 * @param string       $placeholder  The empty first option.
-	 * @param bool         $required     Whether the field is required.
-	 * @param string       $autocomplete The autocomplete token.
+	 * @param string             $key          The field key.
+	 * @param string             $label        The field's label.
+	 * @param array<int, string> $options The permitted values.
+	 * @param string             $placeholder  The empty first option.
+	 * @param bool               $required     Whether the field is required.
+	 * @param string             $autocomplete The autocomplete token.
 	 * @return string
 	 */
 	private function select_field( string $key, string $label, array $options, string $placeholder, bool $required, string $autocomplete ): string {

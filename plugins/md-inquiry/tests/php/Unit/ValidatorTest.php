@@ -87,6 +87,10 @@ final class ValidatorTest extends TestCase {
 		}
 	}
 
+	/**
+	 * A complete submission whose pattern carries the intent passes, its
+	 * message empty because the pattern itself says which screen is wanted.
+	 */
 	public function test_a_complete_submission_with_a_pattern_passes(): void {
 		$checked = ( new Validator() )->validate(
 			array(

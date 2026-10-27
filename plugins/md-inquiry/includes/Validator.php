@@ -86,9 +86,9 @@ final class Validator {
 	 * required-check then reports — the same shape the source tokens use. The
 	 * list is the contract, so a stale option cannot reach the record.
 	 *
-	 * @param array<string, mixed> $input  The raw input.
-	 * @param string               $key    The field key.
-	 * @param list<string>         $allowed The permitted values.
+	 * @param array<string, mixed> $input   The raw input.
+	 * @param string               $key     The field key.
+	 * @param array<int, string>   $allowed The permitted values.
 	 * @return string
 	 */
 	private function choice( array $input, string $key, array $allowed ): string {
