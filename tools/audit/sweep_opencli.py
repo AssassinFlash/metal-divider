@@ -176,6 +176,10 @@ def main():
             "dom": {"summary": dom.get("summary", {}), "items": dom.get("items", [])},
             "captures": shots,
         })
+        # Write after every page: a run that dies at page 27 must not lose the
+        # 26 pages it already measured.
+        with open(os.path.join(args.out, "report.json"), "w") as fh:
+            json.dump(report, fh, indent=1)
         print("%-20s dom=%s captures=%s" % (
             slug, json.dumps(dom.get("summary", {})), sorted(shots)), flush=True)
 
