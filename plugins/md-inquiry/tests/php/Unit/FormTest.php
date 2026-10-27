@@ -94,6 +94,12 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'class="md-inquiry-promise"', $html, 'the form states its response window' );
 		$this->assertStringContainsString( 'We reply within 24 hours on business days.', $html );
 		$this->assertStringContainsString( 'Your details are used only to answer this inquiry', $html, 'and says what it does with them' );
+
+		// Six pages ask the visitor to send a drawing by name. The form has no
+		// file input and the plugin has no upload handler, so the only honest
+		// instruction is that a drawing reaches the engineer by reply.
+		$this->assertStringContainsString( 'Send it in reply to the confirmation email', $html, 'the form says how a drawing reaches us' );
+		$this->assertStringNotContainsString( 'type="file"', $html, 'and does not pretend to take one' );
 	}
 
 	/**

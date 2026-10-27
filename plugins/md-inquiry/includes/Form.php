@@ -377,7 +377,15 @@ final class Form {
 		$out  = '<p class="md-inquiry-field md-inquiry-field--message' . $invalid . '">';
 		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '">' . \esc_html( $label ) . '</label>';
 		$out .= '<textarea class="md-inquiry-field__input" id="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '" name="md_inquiry_message" maxlength="' . \esc_attr( (string) Validator::MESSAGE_MAX ) . '" rows="5"' . ( $has_pattern ? '' : ' required' ) . '>' . \esc_textarea( $value ) . '</textarea>';
-		$out .= '<span class="md-inquiry-field__hint">' . \esc_html__( 'Quantities, dimensions, timeline, finish preferences — anything you already have.', 'md-inquiry' ) . '</span>';
+		// The pages ask for drawings by name ("Send your DXF, DWG, or PDF"), so
+		// the form has to say how a drawing reaches us. It cannot take a file:
+		// there is no file input and no upload handler, and the old shop's
+		// panel form had both. Until that exists, the honest instruction is the
+		// reply — which is also how the internal mail already frames it
+		// ("attaching them to your reply helps us quote faster").
+		$out .= '<span class="md-inquiry-field__hint">'
+			. \esc_html__( 'Quantities, dimensions, timeline, finish preferences — anything you already have. Have a drawing, DXF, DWG or PDF? Send it in reply to the confirmation email and it reaches the same engineer.', 'md-inquiry' )
+			. '</span>';
 		if ( '' !== $error ) {
 			$out .= '<span class="md-inquiry-field__error" id="' . \esc_attr( $this->id_of( 'md-inquiry-message-error' ) ) . '">' . \esc_html( $error ) . '</span>';
 		}
