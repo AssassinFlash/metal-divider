@@ -168,8 +168,12 @@
 	width: 15px;
 }
 
-.md-footer__identity-node:hover,
-.md-footer__identity-node:focus-visible {
+/* Same scope as `#md-footer a { color: inherit }` (1,0,1): a class-only
+   `:hover` is (0,2,1) and loses, so the colour part of this state never
+   landed. The background and border did, because `inherit` only governs
+   colour — which is exactly why this looked fine in review. */
+#md-footer .md-footer__identity-node:hover,
+#md-footer .md-footer__identity-node:focus-visible {
 	background: rgba(201, 169, 98, 0.12);
 	border-color: rgba(201, 169, 98, 0.45);
 	color: #ffffff;
@@ -288,8 +292,8 @@
 	transition: background 0.18s, border-color 0.18s, color 0.18s;
 }
 
-.md-footer__route-list a:hover,
-.md-footer__route-list a:focus-visible {
+#md-footer .md-footer__route-list a:hover,
+#md-footer .md-footer__route-list a:focus-visible {
 	background: rgba(201, 169, 98, 0.1);
 	border-color: rgba(201, 169, 98, 0.42);
 	color: #ffffff;
@@ -357,7 +361,7 @@
 	width: 21px;
 }
 
-.md-footer__tab:hover {
+#md-footer .md-footer__tab:hover {
 	background: rgba(255, 255, 255, 0.08);
 	color: rgba(255, 255, 255, 0.85);
 }
@@ -389,8 +393,8 @@
 	gap: 12px;
 }
 
-.md-footer__contact-link:hover,
-.md-footer__contact-link:focus-visible {
+#md-footer .md-footer__contact-link:hover,
+#md-footer .md-footer__contact-link:focus-visible {
 	color: var(--md-gold-light, #d4b878);
 }
 
@@ -435,8 +439,8 @@
 	width: fit-content;
 }
 
-.md-footer__email-card a:hover strong,
-.md-footer__email-card a:focus-visible strong {
+#md-footer .md-footer__email-card a:hover strong,
+#md-footer .md-footer__email-card a:focus-visible strong {
 	color: var(--md-gold-light, #d4b878);
 }
 
@@ -468,7 +472,7 @@
 	width: 44px;
 }
 
-.md-footer__copy:hover {
+#md-footer .md-footer__copy:hover {
 	background: rgba(255, 255, 255, 0.08);
 	color: #ffffff;
 }
@@ -504,8 +508,8 @@
 	width: 15px;
 }
 
-.md-footer__phone:hover,
-.md-footer__phone:focus-visible {
+#md-footer .md-footer__phone:hover,
+#md-footer .md-footer__phone:focus-visible {
 	border-color: rgba(201, 169, 98, 0.45);
 	color: #ffffff;
 }

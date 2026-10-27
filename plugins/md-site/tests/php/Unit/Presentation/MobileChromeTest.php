@@ -432,6 +432,50 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * A class-only rule cannot carry a state against an id-scoped colour.
+	 *
+	 * `#md-footer a { color: inherit }` is (1, 0, 1). A `.md-footer__x:hover`
+	 * rule is (0, 2, 1), so it loses even though it is the more specific
+	 * *intent* — and the failure is invisible: the selector matches, the
+	 * declaration parses, and only the computed colour reveals that hover
+	 * never happened. The site's footer's legal links shipped exactly that
+	 * (measured 2026-10-27: hovered=true, colour unchanged), the same shape
+	 * as the quote button and the article CTA before it.
+	 *
+	 * The fix is not `!important` (that would win against every later rule,
+	 * including the ones that should change) but the same id scope the base
+	 * rule already uses.
+	 */
+	public function test_footer_state_rules_use_the_same_id_scope_as_the_base_colour(): void {
+		$css = (string) file_get_contents( $this->volume_dir() . '/footer.css' ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+		$css = (string) preg_replace( '/\/\*.*?\*\//s', '', $css );
+
+		preg_match_all( '/([^{}]+)\{([^}]*)\}/', $css, $rules, PREG_SET_ORDER );
+		$offenders = array();
+		foreach ( $rules as $rule ) {
+			$selector = trim( $rule[1] );
+			if ( false === strpos( $selector, ':hover' ) && false === strpos( $selector, ':focus-visible' ) ) {
+				continue;
+			}
+			if ( false === strpos( $selector, '.md-footer__' ) ) {
+				continue;
+			}
+			// The base `#md-footer a { color: inherit }` wins against any
+			// class-only state rule. Each state rule must therefore carry the
+			// same id so the state can actually land.
+			if ( ! preg_match( '/#md-footer\s/', $selector ) ) {
+				$offenders[] = mb_substr( $selector, 0, 60 );
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$offenders,
+			'these hover/focus rules are class-only against `#md-footer a { color: inherit }` (1,0,1), so they never apply — scope them to the same id'
+		);
+	}
+
+	/**
 	 * How many blocks enclose a position in a stylesheet. Zero means the rule
 	 * sits at the top level; anything else means it is nested, and the only
 	 * things that nest rules here are media queries.
