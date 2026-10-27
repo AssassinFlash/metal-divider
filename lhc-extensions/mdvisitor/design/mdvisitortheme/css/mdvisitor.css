@@ -310,14 +310,14 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
 .md-offline .md-hero{flex:0 0 auto}
 .md-offline .md-hero h1{font-size:30px;letter-spacing:-.03em}
 .md-pulse-off{background:#c9a962;box-shadow:0 0 0 4px rgba(201,169,98,.16)}
-.md-offline-panel{display:flex;flex-direction:column;gap:10px;padding:16px 16px 14px}
+.md-offline-panel{display:flex;flex-direction:column;gap:10px;padding:16px 16px calc(14px + env(safe-area-inset-bottom))}
 .md-offline .offline-intro{display:none}
 .md-offline form{display:flex;flex-direction:column;gap:10px;margin:0}
 .md-offline .row{display:flex;flex-direction:column;gap:10px;margin:0}
 .md-offline .row > [class*="col-"]{width:100%;max-width:100%;padding:0;flex:1 1 auto}
 .md-offline .form-group{margin:0}
 .md-offline label,
-.md-offline .col-form-label{display:block;margin:0 0 5px;color:#8a7b5d;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.md-offline .col-form-label{display:block;margin:0 0 6px;color:#7a6b4f;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
 .md-offline .form-control,
 .md-offline select.form-control,
 .md-offline input[type="text"],
@@ -336,6 +336,7 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
   box-shadow:none;
 }
 .md-offline textarea{min-height:112px;resize:vertical}
+#widget-layout .md-offline textarea.form-control{height:auto;min-height:112px}
 .md-offline .form-control:focus,
 .md-offline input:focus,
 .md-offline textarea:focus,
@@ -361,11 +362,11 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
 .md-offline .alert-success{border-color:#c9d7c4;background:#f4f8f2}
 .md-offline .alert-danger,
 .md-offline .is-invalid{border-color:#b42318}
-.md-offline .md-panel-foot{margin-top:auto}
+.md-offline .md-panel-foot{margin-top:auto;padding-bottom:calc(2px + env(safe-area-inset-bottom));color:#6e6254;font-size:11px;line-height:1.4;white-space:normal;overflow:visible}
 @media (max-width:400px){
   .md-offline .md-hero{padding:13px 16px 14px}
   .md-offline .md-hero h1{font-size:28px}
   .md-offline .md-hero-sub{font-size:14px}
-  .md-offline-panel{padding:14px 14px 12px}
+  .md-offline-panel{padding:14px 14px calc(12px + env(safe-area-inset-bottom))}
 }
 

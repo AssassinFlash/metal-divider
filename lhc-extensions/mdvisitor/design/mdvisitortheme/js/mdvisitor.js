@@ -60,6 +60,21 @@
     return false;
   }
 
+  function notifyParentClosed() {
+    if (!window.parent || window.parent === window) { return false; }
+    var target = '';
+    try {
+      if (window.location.ancestorOrigins && window.location.ancestorOrigins.length) {
+        target = window.location.ancestorOrigins[0];
+      } else if (document.referrer) {
+        target = new URL(document.referrer).origin;
+      }
+    } catch (err) {}
+    if (!target) { return false; }
+    window.parent.postMessage('lhc_chat_closed_explicit', target);
+    return true;
+  }
+
   card.addEventListener('click', function (event) {
     var go = event.target.closest('[data-mdv-go]');
     if (go) {
@@ -77,21 +92,7 @@
     var close = event.target.closest('[data-mdv-close]');
     if (close) {
       event.preventDefault();
-      if (window.parent && window.parent !== window) {
-        var target = '';
-        try {
-          if (window.location.ancestorOrigins && window.location.ancestorOrigins.length) {
-            target = window.location.ancestorOrigins[0];
-          } else if (document.referrer) {
-            target = new URL(document.referrer).origin;
-          }
-        } catch (err) {}
-        if (target) {
-          window.parent.postMessage('lhc_chat_closed_explicit', target);
-        }
-      } else {
-        window.close();
-      }
+      if (!notifyParentClosed()) { window.close(); }
       return;
     }
 
@@ -122,6 +123,7 @@
 
   doc.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') { return; }
-    if (closeOpenFaq()) { event.preventDefault(); }
+    if (closeOpenFaq()) { event.preventDefault(); return; }
+    if (notifyParentClosed()) { event.preventDefault(); }
   });
 }());
