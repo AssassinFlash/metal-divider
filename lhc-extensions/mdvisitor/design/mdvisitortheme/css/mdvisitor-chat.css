@@ -97,6 +97,7 @@ body.widget-chat .message-row .msg-date{
 }
 body.widget-chat #ChatMessageContainer{
   padding:10px 12px 12px;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
   background:#faf7ef;
   border-top:1px solid #e5dfd1;
 }

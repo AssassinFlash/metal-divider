@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028ab', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028ad', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -26,7 +26,7 @@
                 <span class="mdv-chat-avatar" data-tone="<?php echo $mdvTone;?>">MD<i></i></span>
                 <div class="mdv-chat-name"><strong id="mdv-chat-title"><?php echo htmlspecialchars($mdvTitle);?></strong><small><span class="mdv-chat-state mdv-chat-state-<?php echo $mdvTone;?>"><i></i><?php echo htmlspecialchars($mdvLabel);?></span></small></div>
             </div>
-            <button class="mdv-chat-close" type="button" aria-label="Close chat" onclick="(function(){var t='';try{var a=window.location.ancestorOrigins;if(a&&a.length)t=a[0];else if(document.referrer)t=new URL(document.referrer).origin}catch(e){}if(t&&window.parent!==window){window.parent.postMessage('lhc_chat_closed_explicit',t);}else{window.close();}})()">×</button>
+            <button class="mdv-chat-close" type="button" aria-label="Close assistant" title="Close assistant" onclick="(function(){var t='';try{var a=window.location.ancestorOrigins;if(a&&a.length)t=a[0];else if(document.referrer)t=new URL(document.referrer).origin}catch(e){}if(t&&window.parent!==window){window.parent.postMessage('lhc_chat_closed_explicit',t);}else{window.close();}})()">×</button>
         </div>
         <?php if ($chat->status == erLhcoreClassModelChat::STATUS_CLOSED_CHAT) : ?>
         <div class="mdv-closed-actions">
@@ -65,6 +65,21 @@
   setPlaceholder();
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', setPlaceholder); }
   window.setTimeout(setPlaceholder, 500);
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') { return; }
+    var target = '';
+    try {
+      var origins = window.location.ancestorOrigins;
+      if (origins && origins.length) { target = origins[0]; }
+      else if (document.referrer) { target = new URL(document.referrer).origin; }
+    } catch (err) {}
+    if (target && window.parent !== window) {
+      event.preventDefault();
+      window.parent.postMessage('lhc_chat_closed_explicit', target);
+    } else {
+      window.close();
+    }
+  });
   if (!chip) { return; }
   function setTitle(name) {
     if (title && name && title.textContent.trim() !== name) { title.textContent = name; }
@@ -80,25 +95,27 @@
   }
   function operatorName(status) {
     var node = status.querySelector('.op-name-widget');
-    return node ? (node.textContent || '').trim() : '';
+    var name = node ? (node.textContent || '').trim() : '';
+    return /^(ai assistant|metal divider ai|metal divider support|live support)$/i.test(name) ? '' : name;
   }
   function sync() {
     var status = document.getElementById('status-chat');
     if (!status) { return; }
     var statusText = status.textContent || '';
     if ((status.querySelector('h4') || status.querySelector('h6')) && /closed/i.test(statusText)) { setTitle('Metal Divider Support'); setChip('Chat closed', 'closed'); return; }
-    if (/pending a support staff member|pending confirm|queue|wait/i.test(statusText)) { setTitle('Metal Divider AI'); setChip('Connecting you to the team', 'pending'); return; }
+    if (/no logged in support staff|no support staff|no operators/i.test(statusText)) { setTitle('Metal Divider AI'); setChip('AI assistant', 'ai'); return; }
+    if (/pending a support staff member|pending confirm|in the queue/i.test(statusText)) { setTitle('Metal Divider AI'); setChip('Connecting you to the team', 'pending'); return; }
     var name = operatorName(status);
     if (!name) {
       var rows = document.querySelectorAll('#messages .message-row.message-admin .op-nick-title');
       for (var i = rows.length - 1; i >= 0; i -= 1) {
         var rowName = (rows[i].textContent || '').trim();
-        if (rowName && !/ai assistant|metal divider ai/i.test(rowName)) { name = rowName; break; }
+        if (rowName && !/^(ai assistant|metal divider ai|metal divider support|live support)$/i.test(rowName)) { name = rowName; break; }
       }
     }
     if (name) { setTitle(name); setChip('Team online', 'online'); return; }
-    setTitle('Metal Divider Support');
-    setChip('Team online', 'online');
+    setTitle('Metal Divider AI');
+    setChip('AI assistant', 'ai');
   }
   var messages = document.getElementById('messages');
   if (messages && window.MutationObserver) {

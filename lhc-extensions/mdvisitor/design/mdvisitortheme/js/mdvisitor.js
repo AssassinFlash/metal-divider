@@ -114,9 +114,12 @@
     });
     search.addEventListener('input', function () {
       var needle = search.value.trim().toLowerCase();
+      var visible = 0;
       Array.prototype.forEach.call(card.querySelectorAll('.md-faq-list .md-faq-q'), function (row) {
         row.hidden = !!(needle && row.textContent.toLowerCase().indexOf(needle) === -1);
+        if (!row.hidden) { visible += 1; }
       });
+      if (live) { live.textContent = (needle && visible === 0) ? 'No matching questions.' : ''; }
     });
   }
 
