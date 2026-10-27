@@ -946,6 +946,13 @@
 
   function setupLazyload() {
     each(document.querySelectorAll('img[xo-src]'), function (image) {
+      // A mega-menu panel's pictures are deferred to the panel's first open
+      // (see setOpen): a closed panel still occupies layout behind
+      // `opacity`/`visibility`, so `loading="lazy"` defers nothing and every
+      // page paid for the whole menu's imagery.
+      if (image.closest('.xo-menu-horizontal-v1__mega-menu')) {
+        return;
+      }
       image.src = image.getAttribute('xo-src');
       var srcset = image.getAttribute('xo-srcset');
       if (srcset) {
@@ -1051,6 +1058,22 @@
         // computed style.
         if (open) {
           panel.removeAttribute('inert');
+          // The panel's own images resolve here, on first open, rather than at
+          // load. `setupLazyload()` writes every `xo-src` to `src`, and a
+          // closed panel is hidden with `opacity`/`visibility` — it still
+          // occupies layout, so `loading="lazy"` never defers anything and
+          // every page downloaded the whole menu's imagery (measured
+          // 2026-10-27: pages with no images of their own still fetched 382KB
+          // of closed-menu pictures at 1440). Resolving on open is what the
+          // dropdown actually needs.
+          each(panel.querySelectorAll('img[xo-src]'), function (image) {
+            image.src = image.getAttribute('xo-src');
+            var srcset = image.getAttribute('xo-srcset');
+            if (srcset) {
+              image.srcset = srcset;
+            }
+            image.removeAttribute('xo-src');
+          });
         } else {
           panel.setAttribute('inert', '');
         }
