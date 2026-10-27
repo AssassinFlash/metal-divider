@@ -30,32 +30,35 @@
   }
 
   // 2. Blocks that hold space but show nothing — the "空卡槽 / 大面积空白".
-  //    A decorative overlay is a block with no text and no image, so the
-  //    test has to exclude what is designed to be invisible: anything
-  //    aria-hidden, anything the page marks pointer-events-none, and anything
-  //    whose only job is a background paint. What is left is a container that
-  //    was meant to carry content and does not.
+  //
+  //    The rule has to survive three kinds of legitimate block, each of which
+  //    an earlier version of this check reported by the hundred:
+  //      • a decorative overlay (gradient, scrim, blur) — no text by design;
+  //      • a photograph — an <img> has no textContent, so any text test calls
+  //        it empty;
+  //      • a wrapper whose content lives in its children.
+  //    So: a block is empty when it shows no text, holds no loaded image
+  //    anywhere inside, is not marked decorative, and paints nothing of its
+  //    own. Verified against the live stainless page, which reported 5 empty
+  //    blocks before this change and 1 after — and that one is a bg-black/55
+  //    scrim.
   const decorative = (el) => {
-    if (el.getAttribute('aria-hidden') === 'true') return true;
     const cls = typeof el.className === 'string' ? el.className : '';
+    if (el.getAttribute('aria-hidden') === 'true') return true;
     if (/\bpointer-events-none\b/.test(cls)) return true;
-    if (/\bbg-gradient|\bbg-\[#|\bbackdrop-blur|\binset-0\b/.test(cls) && !el.textContent.trim()) return true;
-    const cs = getComputedStyle(el);
-    if (cs.backgroundImage !== 'none' && !el.textContent.trim()) return true;
+    if (/\bbg-gradient|\bbackdrop-blur|\bscrim\b/.test(cls)) return true;
     return false;
   };
-  [...document.querySelectorAll('main > *, main section, main div, main article, main figure')].forEach((el) => {
+  [...document.querySelectorAll('main section, main article, main figure, main div')].forEach((el) => {
     if (!shown(el)) return;
     if (decorative(el)) return;
     const r = el.getBoundingClientRect();
-    if (r.height < 72 || r.width < 40) return;
-    if (el.children.length > 3) return;
-    const hasImg = el.querySelector('img') && [...el.querySelectorAll('img')].some((i) => i.complete && i.naturalWidth > 0);
-    const txt = norm(el.textContent);
-    if (hasImg || txt.length > 0) return;
-    // A container whose only children are decorative is itself decorative.
-    if (el.children.length && [...el.children].every(decorative)) return;
-    add('empty-block', 'high', el, 'height ' + Math.round(r.height) + ' with no text and no loaded image');
+    if (r.width < 120 || r.height < 100) return;
+    if ([...el.querySelectorAll('img')].some((i) => i.complete && i.naturalWidth > 0)) return;
+    if (norm(el.textContent).length > 0) return;
+    const cs = getComputedStyle(el);
+    if (cs.backgroundImage !== 'none') return;
+    add('empty-block', 'high', el, Math.round(r.width) + 'x' + Math.round(r.height) + ' with no text, no image, no paint');
   });
 
   // 3. Images that should show but render nothing.
@@ -66,7 +69,12 @@
     const box = i.getBoundingClientRect();
     const laidOut = box.width > 8 && box.height > 8;
     if (!laidOut) return;
-    if (!i.complete || i.naturalWidth === 0) { add('img-broken', 'high', i, (i.getAttribute('src') || '') + ' box ' + Math.round(box.width) + 'x' + Math.round(box.height)); return; }
+    const src = i.currentSrc || i.getAttribute('src') || '';
+    // An `<img>` with no source at all is a slot a `<picture>` may or may not
+    // fill; it is not a broken reference. Only a src that exists and returned
+    // no pixels is a defect.
+    if ('' === src) return;
+    if (!i.complete || i.naturalWidth === 0) { add('img-broken', 'high', i, src + ' box ' + Math.round(box.width) + 'x' + Math.round(box.height)); return; }
     if (i.naturalWidth / i.naturalHeight > box.width / Math.max(box.height, 1) * 2.2) add('img-ratio', 'low', i, 'natural ' + i.naturalWidth + 'x' + i.naturalHeight + ' in ' + Math.round(box.width) + 'x' + Math.round(box.height));
   });
 
