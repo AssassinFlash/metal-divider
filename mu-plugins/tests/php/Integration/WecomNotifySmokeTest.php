@@ -201,10 +201,8 @@ final class WecomNotifySmokeTest extends TestCase {
 	public function test_the_route_ignores_events_that_are_not_transfers(): void {
 		$response = self::ask( 'Bearer ' . self::$token, '{"event":"chat.addmsguser","chat":{"id":123,"nick":"Jane"},"msg":{"msg":"hello"}}' );
 
-		self::assertSame( 200, $response['status'] );
-		$body = self::json( $response );
-		self::assertFalse( $body['sent'] ?? true );
-		self::assertSame( 'ignored', $body['reason'] ?? '' );
+		self::assertSame( 204, $response['status'] );
+		self::assertSame( '', $response['body'] );
 	}
 
 	/**

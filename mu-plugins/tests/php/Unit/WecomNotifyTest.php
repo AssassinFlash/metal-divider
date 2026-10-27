@@ -95,13 +95,13 @@ final class WecomNotifyTest extends TestCase {
 	 * (dispatch.tpl.php's argument table; lhgenericbotactionrestapi's
 	 * {{args.*}} placeholders).
 	 *
-	 * @param int                       $chat_id The chat the event is about.
+	 * @param int|string                $chat_id The chat the event is about; LHC's JSON template emits either representation.
 	 * @param string                    $event   The event's name.
 	 * @param array<string, mixed>      $chat The chat object's fields.
 	 * @param array<string, mixed>|null $msg The msg object, null for none.
 	 * @return array<string, mixed> The request: header and body.
 	 */
-	private function event( int $chat_id, string $event = 'chat.genericbot_chat_command_transfer', array $chat = array( 'nick' => 'Jane Architect' ), ?array $msg = array( 'msg' => 'Need a quote for metal screens' ) ): array {
+	private function event( int|string $chat_id, string $event = 'chat.genericbot_chat_command_transfer', array $chat = array( 'nick' => 'Jane Architect' ), ?array $msg = array( 'msg' => 'Need a quote for metal screens' ) ): array {
 		$body = array(
 			'event' => $event,
 			'chat'  => array_merge( array( 'id' => $chat_id ), $chat ),
@@ -137,7 +137,7 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertSame( 'POST', $lhc_method );
 		$this->assertSame( 'Basic ' . base64_encode( 'operator:lhc-rest-key' ), $lhc_args['headers']['Authorization'] );
 		$lhc_body = json_decode( (string) $lhc_args['body'], true );
-		$this->assertSame( 'chat/adminchat/123', $lhc_body['r'] );
+		$this->assertSame( 'mdmobile/chat/123', $lhc_body['r'] );
 		$this->assertSame( 'operator', $lhc_body['l'] );
 		$this->assertIsInt( $lhc_body['t'] );
 		$this->assertGreaterThan( 0, $lhc_body['t'] );
@@ -158,6 +158,21 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertNotSame( '', (string) ( $send_body['textcard']['btntxt'] ?? '' ) );
 		$this->assertStringContainsString( 'Jane Architect', (string) $send_body['textcard']['title'] );
 		$this->assertStringContainsString( 'metal screens', (string) $send_body['textcard']['description'] );
+	}
+
+	/**
+	 * LHC's raw JSON template can encode the numeric chat ID as a string.
+	 */
+	public function testAcceptsTheLhcNumericStringChatId(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH' );
+
+		$result = md_wecom_notify_handle( $this->event( '123' ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( array( 'sent' => true ), $result['body'] );
+		$lhc_body = json_decode( (string) $this->calls()[0][1]['body'], true );
+		$this->assertSame( 'mdmobile/chat/123', $lhc_body['r'] );
 	}
 
 	/**
@@ -228,9 +243,9 @@ final class WecomNotifyTest extends TestCase {
 				'event' => 'chat.genericbot_chat_command_transfer',
 				'chat'  => array( 'nick' => 'Jane Architect' ),
 			),
-			'id a quoted string' => array(
+			'id not numeric'     => array(
 				'event' => 'chat.genericbot_chat_command_transfer',
-				'chat'  => array( 'id' => '123' ),
+				'chat'  => array( 'id' => 'not-a-chat-id' ),
 			),
 			'id zero'            => array(
 				'event' => 'chat.genericbot_chat_command_transfer',
@@ -285,8 +300,7 @@ final class WecomNotifyTest extends TestCase {
 
 	/**
 	 * The department transfer notifies too: its event carries no msg
-	 * object, and the card stands without a message snippet — the link is
-	 * the card's business.
+	 * object, so a fixed explanation fills WeCom's required description.
 	 */
 	public function testNotifiesAChatTransferedEventWithoutAMessage(): void {
 		$this->configure();
@@ -299,7 +313,7 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertSame( array( 'sent' => true ), $result['body'] );
 		$send_body = json_decode( (string) $this->calls()[2][1]['body'], true );
 		$this->assertStringContainsString( 'Contractor', (string) $send_body['textcard']['title'] );
-		$this->assertSame( '', (string) $send_body['textcard']['description'] );
+		$this->assertSame( 'Open the live chat conversation and reply to the visitor.', (string) $send_body['textcard']['description'] );
 	}
 
 	/**
@@ -382,7 +396,7 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertSame( array( 'sent' => true ), $other['body'] );
 		$calls = $this->calls();
 		$this->assertCount( 5, $calls );
-		$this->assertStringContainsString( 'adminchat/124', (string) json_decode( (string) $calls[3][1]['body'], true )['r'] );
+		$this->assertSame( 'mdmobile/chat/124', json_decode( (string) $calls[3][1]['body'], true )['r'] );
 	}
 
 	/**

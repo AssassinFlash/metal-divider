@@ -65,12 +65,13 @@ function md_wecom_notify_bearer_ok( string $header ): bool {
 /**
  * The notification request, end to end: the bearer gate, the event's
  * validation, the one-time link, the card. The input is what the route
- * adapter receives (the Authorization header and the decoded JSON body)
- * and the output is the status and body it sends — the HTTP contract one
- * WordPress object layer down.
+ * adapter receives (the Authorization header and the decoded JSON body).
+ * The return is this handler's own result — a status and a body — not the
+ * HTTP response. The route adapter turns every 200 into an empty 204, and
+ * sends a body only when the status is not 200.
  *
  * @param array<string, mixed> $input The request: 'header' the Authorization header, 'body' the decoded JSON body.
- * @return array{status: int, body: array<string, mixed>} The response's status and body.
+ * @return array{status: int, body: array<string, mixed>} The handler's result, not the HTTP response the route sends.
  */
 function md_wecom_notify_handle( array $input ): array {
 	$header = (string) ( $input['header'] ?? '' );
@@ -86,6 +87,9 @@ function md_wecom_notify_handle( array $input ): array {
 	$event_name = $body['event'] ?? null;
 	$chat       = $body['chat'] ?? null;
 	$chat_id    = is_array( $chat ) ? ( $chat['id'] ?? null ) : null;
+	if ( is_string( $chat_id ) && ctype_digit( $chat_id ) ) {
+		$chat_id = (int) $chat_id;
+	}
 	if ( ! is_string( $event_name ) || '' === $event_name || ! is_array( $chat ) || ! is_int( $chat_id ) || $chat_id <= 0 ) {
 		return array(
 			'status' => 400,
@@ -231,19 +235,19 @@ function md_wecom_notify_remember_chat( int $chat_id ): void {
 }
 
 /**
- * The route into the chat's back-office view, the operator screen
- * adminchat: it locks the chat row and takes the operator into the
- * conversation, a bot chat included (modules/lhchat/adminchat.php).
+ * The mobile operator page for this chat. LHC appends this route under the
+ * admin site access after autologin, so the card opens mdmobile/chat/<id>
+ * and not the desktop back office.
  *
  * @param int $chat_id The chat the link opens.
  * @return string The route the autologin link carries.
  */
 function md_wecom_notify_chat_route( int $chat_id ): string {
-	return 'chat/adminchat/' . $chat_id;
+	return 'mdmobile/chat/' . $chat_id;
 }
 
 /**
- * The one-time link into the chat's back-office view, from LHC's
+ * The one-time link into the chat's mobile operator page, from LHC's
  * generateautologin: the route pins the chat, the TTL is the hour the
  * research allows (the API caps it at 3600), and the nonce is the LHC's
  * own — the connector holds no long-term credential in what it sends on.
@@ -308,7 +312,7 @@ function md_wecom_notify_autologin_link( int $chat_id ): ?string {
  * answer is a visitor's message.
  *
  * @param string $side     The upstream that failed: lhc_autologin, wecom_token or wecom_send.
- * @param string $kind     The failure's kind: network_error, http_error, bad_reply or api_error.
+ * @param string $kind     The failure's kind: network_error, http_error, bad_reply, api_error or api_error_<errcode>.
  * @param int    $status   The HTTP status, 0 for a transport error.
  * @param int    $attempts How many attempts were made.
  * @return void
@@ -339,7 +343,7 @@ function md_wecom_notify_send_card( int $chat_id, string $link, array $chat, arr
 	}
 
 	$nick = is_string( $chat['nick'] ?? null ) && '' !== trim( (string) $chat['nick'] ) ? trim( (string) $chat['nick'] ) : 'Visitor';
-	$text = is_string( $msg['msg'] ?? null ) && '' !== trim( (string) $msg['msg'] ) ? trim( (string) $msg['msg'] ) : '';
+	$text = is_string( $msg['msg'] ?? null ) && '' !== trim( (string) $msg['msg'] ) ? trim( (string) $msg['msg'] ) : 'Open the live chat conversation and reply to the visitor.';
 
 	$payload = array(
 		'touser'   => $to_user,
@@ -398,7 +402,7 @@ function md_wecom_notify_send_card( int $chat_id, string $link, array $chat, arr
 			$token_stale = true;
 			continue;
 		}
-		md_wecom_notify_log_failure( 'wecom_send', 'api_error', $status, $attempts );
+		md_wecom_notify_log_failure( 'wecom_send', 'api_error_' . $errcode, $status, $attempts );
 		return false;
 	}
 
@@ -541,9 +545,8 @@ function md_wecom_notify_callback_handle( array $query ): array {
 }
 
 /**
- * The route adapter: what WordPress's REST objects become for the handler —
- * the Authorization header and the decoded JSON body in, the status and
- * body out as a REST response.
+ * The route adapter. Successful webhook deliveries and dedup acknowledgements
+ * have no response body, so LHC does not insert its own JSON into the chat.
  *
  * @param \WP_REST_Request $request The request the webhook sent.
  * @return \WP_REST_Response The handler's answer, as REST shapes it.
@@ -555,6 +558,9 @@ function md_wecom_notify_rest( $request ) {
 			'body'   => $request->get_json_params(),
 		)
 	);
+	if ( 200 === $result['status'] ) {
+		return new \WP_REST_Response( null, 204 );
+	}
 	return new \WP_REST_Response( $result['body'], $result['status'] );
 }
 
