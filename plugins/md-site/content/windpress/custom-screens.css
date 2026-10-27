@@ -406,7 +406,10 @@ flex: 1;
 min-width: 0; /* 关键：防止 flex 子项溢出 */
 border-radius: 12px;
 overflow: hidden;
-cursor: pointer;
+/* These panels are a stepper driven by the section's prev/next buttons
+   (md-chrome.js setupFeatureGallery); clicking a panel does nothing. A pointer
+   cursor promised an interaction the panel does not have. */
+cursor: default;
 transition: flex 0.6s cubic-bezier(0.25, 1, 0.5, 1);
 position: relative;
 border: 1px solid rgba(255, 255, 255, 0.08);

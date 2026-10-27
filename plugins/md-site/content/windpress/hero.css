@@ -141,7 +141,12 @@ color: #c9a962;
 .about-gallery-panel {
 flex: 1;
 transition: flex 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-cursor: pointer;
+/* These panels widen on hover (see the rule below) and do nothing on click —
+   verified: clicking one leaves the document untouched, and neither tabindex
+   nor role is set, so it is not keyboard reachable either. A pointer cursor
+   on something that only responds to hover is a false affordance; the brief
+   asks that what looks clickable IS clickable, so this one stops claiming it. */
+cursor: default;
 }
 .about-gallery-panel:hover,
 .about-gallery-panel.active {

@@ -1414,6 +1414,23 @@ padding-top: 19px;
 }
 }
 
+/* The 44px pass above is scoped to `max-width: 767px`, so at 1440 none of it
+   applies and `a.btn-link` measured 112x25 with `padding: 0 0 4px` — the same
+   too-small target the phone rule was written for, on the widest screen. A
+   pointer reaches it whether the viewport is 390 or 1440, so the hit box is a
+   pointer concern, not a phone one.
+
+   min-height rather than padding: the volume sets `padding: 0 0 4px` as a
+   shorthand at higher specificity, so a padding pair here loses the bottom
+   half (measured: top 10px applied, bottom stayed 4px, box reached 35 not 45).
+   `align-items: center` keeps the underline glued to the text while the box
+   grows symmetrically. */
+a.btn-link{
+display: inline-flex;
+align-items: center;
+min-height: 44px;
+}
+
 /* Final touch-target pass (customer-profile audit 2026-10-25): the home
    chips are 38px wide, the mobile logo link 27px, the catalog search
    button and the PDP FAQ rows under 44px in one dimension. */

@@ -159,6 +159,21 @@ a:not([href]) {
   cursor: default;
 }
 
+/* A control the visitor can press must say so. Buttons, summaries, tabs and
+   anything carrying a button/link role default to `cursor: default` in the
+   browser, so on this site 48 of 58 buttons on the FAQs page showed an arrow
+   over something that opens an accordion — the exact "looks inert but works"
+   misdirection the brief calls out. Disabled controls are excluded because a
+   flat cursor is the correct signal there. */
+button:not(:disabled),
+summary,
+[role='button']:not([aria-disabled='true']),
+[role='link']:not([aria-disabled='true']),
+[role='tab']:not([aria-disabled='true']),
+label[for] {
+  cursor: pointer;
+}
+
 /* Old image rule (main.css:461-466): images cannot overflow. */
 img {
   max-width: 100%;
