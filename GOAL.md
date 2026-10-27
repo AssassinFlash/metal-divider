@@ -469,3 +469,15 @@
 ### 2026-10-25 SEO 上线验证(GOAL 阶段二)
 
 生产 https://metal-divider.com 九项一手核查,原始输出 [docs/deploy/seo-verification.md](docs/deploy/seo-verification.md)。通过 6 项:robots.txt(七行+Sitemap 逐字)、sitemap(147 产品+1063 图、/sitemap.xml 301→/sitemaps.xml)、首页/PDP meta+canonical+OG、noindex 面(搜索/作者/附件)、llms.txt、hreflang 零输出、301 六抽全绿(含 /products/→/pattern/ regex、/pages/contact→/inquiry/)。不通过 4 项已入上方清单(thank-you 404、/privacy/ 404、FAQPage schema 缺、GSC 待建)。附:Hostinger OAuth token 过期已刷新回写 ~/.config/hostinger-mcp。
+
+**生产读回(2026-10-27)**:
+
+| 项目 | 结果 |
+|---|---|
+| `/collections/` 9 张卡图 | **0 张破图、0 处字面短代码、9/9 带 srcset**,尺寸 400–1024w(非 2048px) |
+| 无 JS `/outdoor-privacy-landscape-screens/` | **25,012** 字符(修前 7,178) |
+| 无 JS `/faqs/` | **31,656** 字符(修前 5,173) |
+| `/privacy/` 1440 加载图片数 | **3 张**(修前 10 张 / 394KB) |
+| `tailwind.css` | 200 / **75,693 字节**,h1 56px Playfair,零控制台错误 |
+
+**部署形态第三次复现**:切换与上传完成(逐文件哈希全 MATCH)、`cache/` 为空需要单独编译、`resume-deploy` 负责 verify/archive。**判"上线了没有"必须逐文件比内容 + 确认编译产物,三者缺一不可。**
