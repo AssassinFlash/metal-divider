@@ -200,9 +200,16 @@ final class ThumbnailCommand {
 				++$skipped;
 				continue;
 			}
-			// Only the defect being repaired: a featured image that is still a
-			// finish preview. Everything else is an editor's choice.
-			if ( 'finish' !== $this->media_class( $current ) ) {
+			// Two defects are repaired, and only these: a featured image that
+			// is still a finish preview, and one too small for the card. The
+			// second was found on /shop/ after the first was fixed — alhambra,
+			// athelstan, autumn-leaves and forrest-perforated were pointing at
+			// `-01-*` renders of 500px in a 338 CSS px card, i.e. 1416 device
+			// pixels at 2x, and every one of them had a 1000px or larger file in
+			// its own media list. Anything else stays an editor's choice.
+			$is_finish = 'finish' === $this->media_class( $current );
+			$is_small  = $this->is_below_card_density( $current );
+			if ( ! $is_finish && ! $is_small ) {
 				++$skipped;
 				continue;
 			}
@@ -211,7 +218,7 @@ final class ThumbnailCommand {
 				continue;
 			}
 
-			$replacement = $this->pick_photograph( $product_id );
+			$replacement = $this->pick_photograph( $product_id, $current );
 			if ( null === $replacement ) {
 				$unresolved[] = \get_post_field( 'post_name', $product_id );
 				continue;
@@ -264,12 +271,25 @@ final class ThumbnailCommand {
 	 * rather than whatever happened to be second in the list.
 	 *
 	 * @param int $product_id The product id.
+	 * @param int $current    The current featured attachment, when the caller
+	 *                        is repairing a size defect and the replacement has
+	 *                        to measure larger than it.
 	 * @return int|null The attachment id.
 	 */
-	private function pick_photograph( int $product_id ): ?int {
+	private function pick_photograph( int $product_id, int $current = 0 ): ?int {
 		$ids = $this->media_ids( $product_id );
 		if ( array() === $ids ) {
 			return null;
+		}
+
+		// With a size defect the replacement has to be genuinely larger, or the
+		// run would report a repair that leaves the card just as soft.
+		$current_short = 0;
+		if ( $current > 0 ) {
+			$meta          = \wp_get_attachment_metadata( $current );
+			$current_short = \is_array( $meta )
+				? min( (int) ( $meta['width'] ?? 0 ), (int) ( $meta['height'] ?? 0 ) )
+				: 0;
 		}
 
 		$slug        = (string) \get_post_field( 'post_name', $product_id );
@@ -293,6 +313,15 @@ final class ThumbnailCommand {
 			// a document, not the thing being sold, so it is never a thumbnail.
 			if ( 'cut sheet' === $role ) {
 				continue;
+			}
+			if ( $current_short > 0 ) {
+				$meta  = \wp_get_attachment_metadata( $id );
+				$short = \is_array( $meta )
+					? min( (int) ( $meta['width'] ?? 0 ), (int) ( $meta['height'] ?? 0 ) )
+					: 0;
+				if ( $short <= $current_short ) {
+					continue;
+				}
 			}
 			$rank = array_search( $role, self::PHOTO_ROLES, true );
 			if ( false !== $rank ) {
@@ -318,6 +347,36 @@ final class ThumbnailCommand {
 	 * Rejects the mask itself (RGBA), thumbnails too small to judge, and
 	 * plain plates — a solid white or solid black image reads as a failed
 	 * load, which is the defect being repaired.
+	 *
+	 * @param int $id The attachment id.
+	 * @return bool
+	 */
+	/**
+	 * Whether a featured image is too small for the card at 2x.
+	 *
+	 * The catalogue declares `sizes="(min-width: 1120px) 338px"`, so the card
+	 * asks for 676 device pixels on a retina screen. 600 is the floor below
+	 * which the upscale is visible; a 400 or 500px source in that slot is
+	 * soft, and these products all carry larger files.
+	 *
+	 * @param int $id The current featured attachment.
+	 * @return bool True when the image cannot fill the card at 2x.
+	 */
+	private function is_below_card_density( int $id ): bool {
+		$meta = \wp_get_attachment_metadata( $id );
+		if ( ! \is_array( $meta ) ) {
+			return false;
+		}
+		$short = min( (int) ( $meta['width'] ?? 0 ), (int) ( $meta['height'] ?? 0 ) );
+		return $short > 0 && $short < 600;
+	}
+
+	/**
+	 * Whether an attachment can stand in as a catalogue photograph.
+	 *
+	 * Rejects the mask itself, thumbnails too small to judge, and plain plates
+	 * — a solid white or solid black image reads as a failed load, which is the
+	 * defect being repaired.
 	 *
 	 * @param int $id The attachment id.
 	 * @return bool
