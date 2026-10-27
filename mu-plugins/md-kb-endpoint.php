@@ -105,13 +105,15 @@ function md_kb_endpoint_answer( array $input ): array {
 	$history = $body['history'] ?? array();
 	$history = is_array( $history ) ? array_values( array_filter( $history, 'is_string' ) ) : array();
 
-	$pattern = md_kb_endpoint_pattern_lookup( $q );
-	$page    = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null ) : array( 'context' => '' );
+	$pattern  = md_kb_endpoint_pattern_lookup( $q );
+	$page     = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null ) : array( 'context' => '' );
+	$resolved = '' !== $pattern['context'] ? $pattern['context'] : $page['context'];
+	// A confirmed fact the question asked for stays. The commercial remainder still transfers, and the model is not asked to invent it.
 	if ( md_kb_endpoint_asks_commercial( $q ) ) {
 		return array(
 			'status' => 200,
 			'body'   => array(
-				'msg'     => md_kb_endpoint_commercial_handoff_message(),
+				'msg'     => md_kb_endpoint_commercial_reply( $q, $resolved ),
 				'action'  => 'transfer_operator',
 				'sources' => $pattern['sources'],
 			),
@@ -148,7 +150,10 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 
-	if ( $answer['handoff'] && md_kb_endpoint_is_knowledge_gap( $answer ) && 0 === $pattern['hits'] ) {
+	$answer = md_kb_endpoint_preserve_known_facts( $q, $resolved, $answer );
+
+	// A question that kept a published fact is not an unanswered gap, even when the rest transfers.
+	if ( $answer['handoff'] && md_kb_endpoint_is_knowledge_gap( $answer ) && 0 === $pattern['hits'] && '' === md_kb_endpoint_partial_fact_message( $q, $resolved ) ) {
 		$trimmed_context = trim( $context );
 		$gap_reason      = '' === $trimmed_context ? 'no_context' : 'grounding';
 		md_kb_endpoint_log_unanswered( $q, $gap_reason );
@@ -192,18 +197,452 @@ function md_kb_endpoint_commercial_handoff_message(): string {
 }
 
 /**
- * Whether the question asks for a commercial commitment rather than a
- * pattern fact: price, quote, lead time, MOQ or a sample, in English or
- * Chinese. A hit on the pattern does not change the answer.
+ * Whether the question asks for a commercial commitment rather than only a
+ * pattern fact: price, quote, lead time, a ship date, MOQ or a sample, in
+ * English or Chinese. A published fact the question also asked for is kept
+ * beside the handoff; the commitment itself is never turned into a number.
  *
  * @param string $q The visitor's question.
- * @return bool Whether the team must answer it.
+ * @return bool Whether the team must answer the commitment.
  */
 function md_kb_endpoint_asks_commercial( string $q ): bool {
+	if ( md_kb_endpoint_asks_ship_date( $q ) ) {
+		return true;
+	}
 	return 1 === preg_match(
-		'/\b(?:price|pricing|quote|quotation|cost|lead\s*time|delivery\s+(?:time|date)|moq|minimum\s+order|sample)\b|价格|报价|交期|交货|起订|样品/iu',
+		'/\b(?:price|pricing|quote|quotation|cost|how\s+much|lead\s*time|delivery\s+(?:time|date)|moq|minimum\s+order|samples?)\b|价格|报价|交期|交货|起订|样品/iu',
 		$q
 	);
+}
+
+/**
+ * Whether the question asks when something would ship, rather than only
+ * where it can be sent. "Do you deliver to Dubai?" is a destination, not
+ * a date, and still reaches the model.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether a ship date was asked for.
+ */
+function md_kb_endpoint_asks_ship_date( string $q ): bool {
+	return 1 === preg_match(
+		'/\bwhen\s+(?:could|can|will|would)\s+(?:you|we|it|this|that)\s+ship\b|\bhow\s+soon\b|\bship(?:ping)?\s+date\b|\bwhen\s+(?:could|can|will)\s+it\s+(?:arrive|be\s+delivered)\b/iu',
+		$q
+	);
+}
+
+/**
+ * The commercial handoff, with any confirmed fact the question asked for
+ * kept in front of it. A price, a date and a sample promise are not added.
+ *
+ * @param string $q       The visitor's question.
+ * @param string $context The resolved pattern facts, '' when none.
+ * @return string The visitor-facing reply.
+ */
+function md_kb_endpoint_commercial_reply( string $q, string $context ): string {
+	$parts = array();
+	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
+	if ( '' !== $facts ) {
+		$parts[] = $facts;
+	}
+	if ( md_kb_endpoint_unverified_cad_must_transfer( $q, $context ) ) {
+		$parts[] = md_kb_endpoint_drawing_check_message();
+	}
+	$parts[] = md_kb_endpoint_commercial_handoff_message();
+	return implode( ' ', $parts );
+}
+
+/**
+ * The sentence used when a drawing was asked for and the published CAD
+ * status does not confirm one. It does not say the drawing is available.
+ *
+ * @return string The check sentence.
+ */
+function md_kb_endpoint_drawing_check_message(): string {
+	return 'A drawing has not been confirmed — our team is checking that.';
+}
+
+/**
+ * The sentence used when a published fact was kept and the rest of the
+ * question still has to be checked. It does not deny the fact just stated.
+ *
+ * @return string The remainder sentence.
+ */
+function md_kb_endpoint_remainder_message(): string {
+	return 'The rest of that is being checked with our team.';
+}
+
+/**
+ * Puts confirmed facts in front of a handoff. The exact no-answer sentence
+ * is replaced, because that sentence denies information the reply now has.
+ *
+ * @param string $facts The confirmed sentences, '' when none.
+ * @param string $reply The reply so far.
+ * @return string The reply to send.
+ */
+function md_kb_endpoint_with_kept_facts( string $facts, string $reply ): string {
+	$reply = trim( $reply );
+	if ( '' === $facts ) {
+		return $reply;
+	}
+	if ( md_kb_endpoint_no_answer_message() === $reply ) {
+		$reply = md_kb_endpoint_remainder_message();
+	}
+	return '' === $reply ? $facts : $facts . ' ' . $reply;
+}
+
+/**
+ * Drops sentences that promise a drawing. The other sentences stay, so a
+ * known fact or a knowledge answer is not thrown away with the promise.
+ *
+ * @param string $message The visitor-facing reply.
+ * @return string The reply without a drawing promise.
+ */
+function md_kb_endpoint_without_drawing_promise( string $message ): string {
+	$parts = preg_split( '/(?<=[.!?])\s+/u', trim( $message ) );
+	if ( ! is_array( $parts ) ) {
+		return '';
+	}
+	$kept = array();
+	foreach ( $parts as $part ) {
+		$part = trim( $part );
+		if ( '' === $part || md_kb_endpoint_promises_drawing( $part ) ) {
+			continue;
+		}
+		$kept[] = $part;
+	}
+	return implode( ' ', $kept );
+}
+
+/**
+ * Keeps a confirmed pattern fact when the model hands the whole question
+ * off, and refuses an unverified drawing promise.
+ *
+ * @param string                                               $q       The visitor's question.
+ * @param string                                               $context The resolved pattern facts, '' when none.
+ * @param array{answer: string, handoff: bool, reason: string} $answer The model's reply.
+ * @return array{answer: string, handoff: bool, reason: string} The reply to send.
+ */
+function md_kb_endpoint_preserve_known_facts( string $q, string $context, array $answer ): array {
+	if ( $answer['handoff'] ) {
+		$missing = md_kb_endpoint_missing_fact_message( $q, $context, $answer['answer'] );
+		if ( '' !== $missing ) {
+			$answer['answer'] = md_kb_endpoint_with_kept_facts( $missing, $answer['answer'] );
+			if ( '' === $answer['reason'] || 'none' === $answer['reason'] ) {
+				$answer['reason'] = 'no_knowledge';
+			}
+		}
+	}
+	return md_kb_endpoint_guard_unverified_cad( $q, $context, $answer );
+}
+
+/**
+ * Forces a transfer when a drawing was asked for and no published CAD
+ * status confirms one, and removes a promise the facts do not support.
+ *
+ * @param string                                               $q       The visitor's question.
+ * @param string                                               $context The resolved pattern facts, '' when none.
+ * @param array{answer: string, handoff: bool, reason: string} $answer The reply so far.
+ * @return array{answer: string, handoff: bool, reason: string} The reply to send.
+ */
+function md_kb_endpoint_guard_unverified_cad( string $q, string $context, array $answer ): array {
+	if ( ! md_kb_endpoint_unverified_cad_must_transfer( $q, $context ) ) {
+		return $answer;
+	}
+	$answer['handoff'] = true;
+	if ( 'human_request' !== $answer['reason'] && ( '' === $answer['reason'] || 'none' === $answer['reason'] ) ) {
+		$answer['reason'] = 'no_knowledge';
+	}
+	$reply   = md_kb_endpoint_without_drawing_promise( $answer['answer'] );
+	$missing = md_kb_endpoint_missing_fact_message( $q, $context, $reply );
+	$reply   = md_kb_endpoint_with_kept_facts( $missing, $reply );
+	$handed  = str_contains( $reply, md_kb_endpoint_drawing_check_message() )
+		|| str_contains( $reply, md_kb_endpoint_remainder_message() )
+		|| str_contains( $reply, md_kb_endpoint_no_answer_message() )
+		|| str_contains( strtolower( $reply ), 'team' );
+	if ( ! $handed ) {
+		$reply = '' !== $reply
+			? rtrim( $reply ) . ' ' . md_kb_endpoint_drawing_check_message()
+			: md_kb_endpoint_drawing_check_message();
+	}
+	$answer['answer'] = $reply;
+	return $answer;
+}
+
+/**
+ * Whether the question asks if a drawing can be sent, not only what the
+ * published CAD status is.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether availability was asked.
+ */
+function md_kb_endpoint_asks_cad_availability( string $q ): bool {
+	return 1 === preg_match(
+		'/\b(?:cad|dxf|drawings?)\b.{0,40}\b(?:available|availability)\b|\b(?:available|availability)\b.{0,40}\b(?:cad|dxf|drawings?)\b|\b(?:get|provide|send)\b.{0,30}\b(?:cad|dxf|drawings?)\b/iu',
+		$q
+	);
+}
+
+/**
+ * Whether a published CAD status is one of the values that confirm a
+ * drawing can be sent. Anything else, including gated, is not a promise.
+ *
+ * @param string $status The published status.
+ * @return bool Whether the status confirms a drawing.
+ */
+function md_kb_endpoint_cad_status_confirms_drawing( string $status ): bool {
+	return 1 === preg_match( '/^(?:available|ready|published|yes)$/iu', trim( $status ) );
+}
+
+/**
+ * Whether an asked-for drawing is not confirmed by the resolved facts.
+ * A context with no CAD status line is not treated as unverified here:
+ * page facts omit that line, and the prompt still forbids inventing one.
+ *
+ * @param string $q       The visitor's question.
+ * @param string $context The resolved pattern facts, '' when none.
+ * @return bool Whether the availability question must transfer.
+ */
+function md_kb_endpoint_unverified_cad_must_transfer( string $q, string $context ): bool {
+	if ( ! md_kb_endpoint_asks_cad_availability( $q ) ) {
+		return false;
+	}
+	$saw         = false;
+	$all_confirm = true;
+	foreach ( md_kb_endpoint_pattern_fact_blocks( $context ) as $block ) {
+		if ( ! array_key_exists( 'cad_status', $block ) ) {
+			continue;
+		}
+		$saw = true;
+		if ( ! md_kb_endpoint_cad_status_confirms_drawing( $block['cad_status'] ) ) {
+			$all_confirm = false;
+		}
+	}
+	return $saw && ! $all_confirm;
+}
+
+/**
+ * Whether a reply promises a drawing the facts may not support.
+ *
+ * @param string $message The visitor-facing reply.
+ * @return bool Whether it promises a drawing.
+ */
+function md_kb_endpoint_promises_drawing( string $message ): bool {
+	return 1 === preg_match(
+		'/\b(?:drawing|cad(?:\s+file)?|dxf)\s+is\s+(?:available|ready|attached)\b|\b(?:drawing|dxf|cad)\s+available\b|\b(?:can|will)\s+(?:send|provide|email)\b.{0,40}\b(?:drawing|cad|dxf)\b|\bhave\s+(?:a|the)\s+(?:drawing|cad|dxf)\b/iu',
+		$message
+	);
+}
+
+/**
+ * The confirmed facts the question asked for, as visitor sentences.
+ *
+ * @param string $q       The visitor's question.
+ * @param string $context The resolved pattern facts, '' when none.
+ * @return string The sentences, '' when nothing asked is confirmed.
+ */
+function md_kb_endpoint_partial_fact_message( string $q, string $context ): string {
+	$sentences = array();
+	foreach ( md_kb_endpoint_partial_fact_pieces( $q, $context ) as $piece ) {
+		$sentences[] = $piece['sentence'];
+	}
+	return implode( ' ', $sentences );
+}
+
+/**
+ * The asked facts whose published value is not already in the reply.
+ *
+ * @param string $q       The visitor's question.
+ * @param string $context The resolved pattern facts, '' when none.
+ * @param string $reply   The reply so far.
+ * @return string The missing sentences, '' when none are missing.
+ */
+function md_kb_endpoint_missing_fact_message( string $q, string $context, string $reply ): string {
+	$missing = array();
+	foreach ( md_kb_endpoint_partial_fact_pieces( $q, $context ) as $piece ) {
+		if ( ! md_kb_endpoint_reply_has_value( $reply, $piece['value'] ) ) {
+			$missing[] = $piece['sentence'];
+		}
+	}
+	return implode( ' ', $missing );
+}
+
+/**
+ * The asked facts that have a published value worth saying.
+ *
+ * @param string $q       The visitor's question.
+ * @param string $context The resolved pattern facts, '' when none.
+ * @return array<int, array{value: string, sentence: string}> The asked, confirmed facts.
+ */
+function md_kb_endpoint_partial_fact_pieces( string $q, string $context ): array {
+	$fields = md_kb_endpoint_asked_pattern_fields( $q );
+	if ( array() === $fields ) {
+		return array();
+	}
+	$pieces = array();
+	foreach ( md_kb_endpoint_pattern_fact_blocks( $context ) as $block ) {
+		$name = md_kb_endpoint_pattern_display_name( $block );
+		foreach ( $fields as $field ) {
+			$value = trim( (string) ( $block[ $field ] ?? '' ) );
+			if ( ! md_kb_endpoint_pattern_value_is_answerable( $value ) ) {
+				continue;
+			}
+			$sentence = md_kb_endpoint_pattern_fact_sentence( $name, $field, $value );
+			if ( '' === $sentence ) {
+				continue;
+			}
+			$pieces[] = array(
+				'value'    => $value,
+				'sentence' => $sentence,
+			);
+		}
+	}
+	return $pieces;
+}
+
+/**
+ * Whether the reply already states a published value, including the spaced
+ * form of a hyphenated fit.
+ *
+ * @param string $reply The reply so far.
+ * @param string $value The published value.
+ * @return bool Whether the value is already said.
+ */
+function md_kb_endpoint_reply_has_value( string $reply, string $value ): bool {
+	if ( '' === $value ) {
+		return false;
+	}
+	if ( false !== mb_stripos( $reply, $value ) ) {
+		return true;
+	}
+	$spaced = str_replace( array( '-', '_' ), ' ', $value );
+	return $spaced !== $value && false !== mb_stripos( $reply, $spaced );
+}
+
+/**
+ * The pattern fields the question asks about. A price or a ship date is
+ * not a field, so a pure commercial question does not dump the product.
+ *
+ * @param string $q The visitor's question.
+ * @return array<int, string> Field names, in sentence order.
+ */
+function md_kb_endpoint_asked_pattern_fields( string $q ): array {
+	$wanted = array(
+		'open_area'      => '/\bopen[\s-]*area\b/iu',
+		'best_fit'       => '/\b(?:good|best)\s+fit\b|\bsuitable\b|\bsuitability\b|\bfit\s+for\b|\bused\s+for\b|\bapplications?\b/iu',
+		'material'       => '/\b(?:what|which)\s+(?:material|grade)\b|\bmade\s+of\b|\bmaterial\s+is\b|\bgrade\s+is\b/iu',
+		'visual_density' => '/\bvisual\s+density\b|\bdensity\s+of\b|\bhow\s+dense\b/iu',
+		'cad_status'     => '/\bcad\b|\bdxf\b|\bdrawings?\b/iu',
+		'code'           => '/\bpattern\s+code\b|\bsku\b|\bwhat(?:\'s| is) the code\b/iu',
+		'permalink'      => '/\bpermalink\b|\bpattern\s+link\b|\bwhere\s+can\s+i\s+(?:see|find)\b/iu',
+	);
+	$fields = array();
+	foreach ( $wanted as $field => $pattern ) {
+		if ( 1 === preg_match( $pattern, $q ) ) {
+			$fields[] = $field;
+		}
+	}
+	return $fields;
+}
+
+/**
+ * Splits pattern or page fact text into one field map per pattern.
+ *
+ * @param string $context The fact text.
+ * @return array<int, array<string, string>> The blocks that name a pattern.
+ */
+function md_kb_endpoint_pattern_fact_blocks( string $context ): array {
+	$context = trim( $context );
+	if ( '' === $context ) {
+		return array();
+	}
+	$chunks = preg_split( "/\n\s*\n/", $context );
+	if ( ! is_array( $chunks ) ) {
+		return array();
+	}
+	$blocks = array();
+	foreach ( $chunks as $chunk ) {
+		$fields = array();
+		foreach ( explode( "\n", $chunk ) as $line ) {
+			if ( 1 !== preg_match( '/^([a-z_]+): (.*)$/', $line, $match ) ) {
+				continue;
+			}
+			$fields[ $match[1] ] = $match[2];
+		}
+		if ( isset( $fields['code'] ) || isset( $fields['title'] ) ) {
+			$blocks[] = $fields;
+		}
+	}
+	return $blocks;
+}
+
+/**
+ * The visitor-facing name of one pattern block: the title ahead of the
+ * catalogue suffix, otherwise the code.
+ *
+ * @param array<string, string> $block One pattern's fields.
+ * @return string The name.
+ */
+function md_kb_endpoint_pattern_display_name( array $block ): string {
+	$title = trim( (string) ( $block['title'] ?? '' ) );
+	if ( '' !== $title ) {
+		$parts = explode( '|', $title, 2 );
+		$name  = trim( $parts[0] );
+		if ( '' !== $name ) {
+			return $name;
+		}
+	}
+	$code = trim( (string) ( $block['code'] ?? '' ) );
+	return '' !== $code ? $code : 'This pattern';
+}
+
+/**
+ * Whether a published value may be said. An unconfirmed field and a zero
+ * open area are not answers.
+ *
+ * @param string $value The published value.
+ * @return bool Whether it may be said.
+ */
+function md_kb_endpoint_pattern_value_is_answerable( string $value ): bool {
+	$value = trim( $value );
+	if ( '' === $value || '(not confirmed)' === strtolower( $value ) ) {
+		return false;
+	}
+	return 1 !== preg_match( '/^0(?:\.0+)?%?$/', $value );
+}
+
+/**
+ * One visitor sentence for a confirmed field. Empty when that field has
+ * no sentence. The value is used as published; a fit's hyphens are spaces.
+ *
+ * @param string $name  The pattern's display name.
+ * @param string $field The field name.
+ * @param string $value The published value.
+ * @return string The sentence, '' when the field is not spoken.
+ */
+function md_kb_endpoint_pattern_fact_sentence( string $name, string $field, string $value ): string {
+	if ( 'open_area' === $field ) {
+		return $name . "'s open area is " . $value . '.';
+	}
+	if ( 'best_fit' === $field ) {
+		$fit = trim( str_replace( array( '-', '_' ), ' ', $value ) );
+		return $name . "'s published fit is " . $fit . '.';
+	}
+	if ( 'material' === $field ) {
+		return $name . "'s material is " . $value . '.';
+	}
+	if ( 'visual_density' === $field ) {
+		return $name . "'s visual density is " . $value . '.';
+	}
+	if ( 'cad_status' === $field ) {
+		return $name . "'s CAD status is " . $value . '.';
+	}
+	if ( 'code' === $field ) {
+		return $name . "'s pattern code is " . $value . '.';
+	}
+	if ( 'permalink' === $field ) {
+		return $name . "'s page is " . $value . '.';
+	}
+	return '';
 }
 
 /**
@@ -612,8 +1051,9 @@ function md_kb_endpoint_page_slug( mixed $page_url ): string {
 
 /**
  * The compact facts of the pattern page the visitor has open. The same
- * field reads the explicit lookup uses, minus the fields a current-page
- * hint does not need and minus anything commercial.
+ * field reads the explicit lookup uses, minus permalink, series and image,
+ * and minus anything commercial. CAD status stays, including when it is
+ * unconfirmed, so a drawing question on this page cannot be invented.
  *
  * @param \WP_Post $post The published product.
  * @return string The context block, one fact per line.
@@ -634,6 +1074,10 @@ function md_kb_endpoint_page_facts( WP_Post $post ): string {
 			$lines[] = $name . ': ' . $value;
 		}
 	}
+	// CAD status is included even when empty, so an unverified drawing
+	// question on the open page transfers instead of being invented.
+	$cad     = md_kb_endpoint_pattern_field( get_field( 'cad_status', $id ) );
+	$lines[] = '' !== $cad ? 'cad_status: ' . $cad : 'cad_status: (not confirmed)';
 	return implode( "\n", $lines );
 }
 
@@ -769,15 +1213,29 @@ function md_kb_endpoint_sources( array $results ): array {
 
 /**
  * The system prompt the model answers under: only the knowledge provided,
- * no inventions, a plain "I don't have that" when the knowledge does not
- * cover it, and the two handoff triggers of the MVP — an explicit ask for a
- * human, and the model's own judgment that it cannot answer.
+ * no inventions, the known part kept when the rest must be handed off, and
+ * the two handoff triggers of the MVP — an explicit ask for a human, and
+ * the model's own judgment that it cannot answer.
  *
  * @return string The system prompt.
  */
 function md_kb_endpoint_system_prompt(): string {
 	$no_answer = md_kb_endpoint_no_answer_message();
-	return "You are the support assistant of metal-divider.com, a B2B architectural metal screen pattern inquiry site. Answer the visitor's question ONLY from the knowledge provided in the user message. Pattern facts, when present, are the current published product and outrank any other note about the same pattern. A field marked not confirmed, or an open area of On request, must be said that way — never as zero, and never invented. Do not state a price, a lead time, a minimum order or a sample promise. Do not invent specifications or materials. Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. Say pattern, not product. When the knowledge does not contain the answer, set handoff true, set reason to \"no_knowledge\", and reply exactly: \"{$no_answer}\". When the visitor asks for a human or an agent, set handoff true, set reason to \"human_request\", and reply that you are connecting them with the team — do not use the no-knowledge sentence. Reply with json only: {\"answer\": \"<text for the visitor>\", \"handoff\": true|false, \"reason\": \"no_knowledge\"|\"human_request\"|\"none\"}.";
+	return 'You are the support assistant of metal-divider.com, a B2B architectural metal screen pattern inquiry site. '
+		. "Answer the visitor's question ONLY from the knowledge provided in the user message. "
+		. 'Pattern facts, when present, are the current published product and outrank any other note about the same pattern. '
+		. 'A field marked not confirmed, or an open area of On request, must be said that way — never as zero, and never invented. '
+		. 'Do not state a price, a lead time, a minimum order or a sample promise. '
+		. 'Do not invent specifications or materials. '
+		. 'Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. '
+		. 'Say pattern, not product. '
+		. 'When part of the question is covered by the knowledge and part is not, answer the covered part and then say the remaining part is being checked with the team. '
+		. 'Set handoff true and reason to "no_knowledge". Do not discard the known fact, and do not invent the missing part. '
+		. 'A ship date and whether an unverified CAD drawing can be sent are never facts you may invent. '
+		. 'Do not say a CAD drawing is available or ready unless the pattern facts say the CAD status is available, ready, published, or yes. '
+		. 'When none of the question is covered, set handoff true, set reason to "no_knowledge", and reply exactly: "' . $no_answer . '". '
+		. 'When the visitor asks for a human or an agent, set handoff true, set reason to "human_request", and reply that you are connecting them with the team — do not use the no-knowledge sentence. '
+		. 'Reply with json only: {"answer": "<text for the visitor>", "handoff": true|false, "reason": "no_knowledge"|"human_request"|"none"}.';
 }
 
 /**

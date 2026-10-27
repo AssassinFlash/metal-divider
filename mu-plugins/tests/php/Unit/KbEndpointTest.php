@@ -1766,7 +1766,7 @@ final class KbEndpointTest extends TestCase {
 		self::assertStringContainsString( 'motifs: botanical', $user );
 		self::assertStringContainsString( 'best_fit: architectural-screening', $user );
 		self::assertLessThan( strpos( $user, 'KNOWLEDGE (Rapls):' ), strpos( $user, 'CURRENT PATTERN' ) );
-		self::assertStringNotContainsString( 'cad_status', $user );
+		self::assertStringContainsString( 'cad_status: ready', $user );
 		self::assertStringNotContainsString( 'permalink', $user );
 		self::assertStringNotContainsString( 'series:', $user );
 		self::assertDoesNotMatchRegularExpression( '/\bprice\b|lead time|\bmoq\b/i', $user );
@@ -1984,6 +1984,415 @@ final class KbEndpointTest extends TestCase {
 		$user    = (string) end( $payload['messages'] )['content'];
 		self::assertStringNotContainsString( 'CURRENT PATTERN', $user );
 		self::assertStringContainsString( FakeRaplsEngine::CONTEXT, $user );
+	}
+
+	/**
+	 * A known fit stays in the reply when the ship date has to transfer.
+	 * The date itself is not invented, and the model is not asked.
+	 */
+	public function test_a_known_fit_is_kept_when_a_ship_date_transfers(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern(
+			array(
+				'ID'         => 167,
+				'post_title' => 'Herringbone | Architectural Metal Screen Pattern',
+				'post_name'  => 'herringbone',
+				'sku'        => 'Herringbone',
+				'fields'     => array(
+					'open_area'       => '28',
+					'visual_density'  => 'medium',
+					'repeat_behavior' => 'tile',
+					'motifs'          => array( 'geometric' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'gated',
+					'summary'         => 'A herringbone screen.',
+				),
+			)
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Is Herringbone a good fit for a facade, and when could you ship to Dubai?' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array( 'pattern#167 Herringbone' ), $out['body']['sources'] );
+		self::assertStringContainsString( "Herringbone's published fit is architectural screening.", (string) $out['body']['msg'] );
+		self::assertStringContainsString( 'team', strtolower( (string) $out['body']['msg'] ) );
+		self::assertDoesNotMatchRegularExpression( '/\b\d+\s+weeks?\b|\bship(?:ping)? date is\b|\b20\d{2}-\d{2}-\d{2}\b/i', (string) $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+		self::assertArrayNotHasKey( 'raplsaich_unanswered_log', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * "Ship to" names a destination, not a date. It still reaches the model,
+	 * as "deliver to Dubai" does.
+	 */
+	public function test_a_ship_to_destination_is_not_a_ship_date(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Yes, we ship worldwide.', false, 'none' )
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Do you ship to Dubai?' ),
+			)
+		);
+
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( 'Yes, we ship worldwide.', $out['body']['msg'] );
+		self::assertNotSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * A price question does not become a product dump. The published open
+	 * area was not asked for, so it is not spoken.
+	 */
+	public function test_a_price_question_does_not_repeat_unasked_pattern_facts(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the price of MD-101?' ),
+			)
+		);
+
+		self::assertSame( md_kb_endpoint_commercial_handoff_message(), $out['body']['msg'] );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertStringNotContainsString( '32%', (string) $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * "How much" and "samples" are commercial commitments. They transfer
+	 * without the model, and they do not invent a pattern fact.
+	 */
+	public function test_how_much_and_samples_transfer_without_the_model(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'How much are samples of MD-101?' ),
+			)
+		);
+
+		self::assertSame( md_kb_endpoint_commercial_handoff_message(), $out['body']['msg'] );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * An open area of "On request" is kept beside a ship-date handoff. It
+	 * is not turned into zero.
+	 */
+	public function test_an_on_request_open_area_is_kept_beside_a_ship_date(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern(
+			array(
+				'fields' => array(
+					'open_area'       => '',
+					'visual_density'  => 'open',
+					'repeat_behavior' => '',
+					'motifs'          => array(),
+					'best_fit'        => '',
+					'cad_status'      => 'missing',
+					'summary'         => '',
+				),
+			)
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the open area of MD-101, and when could you ship?' ),
+			)
+		);
+
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertStringContainsString( "Agave's open area is On request.", (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( '0%', (string) $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * A published zero is not an open-area answer. The price still transfers
+	 * and the zero is not spoken.
+	 */
+	public function test_a_zero_open_area_is_not_spoken_beside_a_price_handoff(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern(
+			array(
+				'fields' => array(
+					'open_area'       => '0',
+					'visual_density'  => 'open',
+					'repeat_behavior' => '',
+					'motifs'          => array(),
+					'best_fit'        => 'decorative-screening',
+					'cad_status'      => 'gated',
+					'summary'         => '',
+				),
+			)
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the open area and the price of MD-101?' ),
+			)
+		);
+
+		self::assertSame( md_kb_endpoint_commercial_handoff_message(), $out['body']['msg'] );
+		self::assertStringNotContainsString( '0%', (string) $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * The open page's published open area stays when the ship date transfers.
+	 * The model is not asked to invent the date.
+	 */
+	public function test_a_page_open_area_is_kept_when_a_ship_date_transfers(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'What is the open area of this pattern, and when could you ship?',
+					'page_url' => 'https://metal-divider.com/pattern/agave/',
+				),
+			)
+		);
+
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array(), $out['body']['sources'] );
+		self::assertStringContainsString( "Agave's open area is 32%.", (string) $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * When the model transfers the unknown part, the published open area is
+	 * put back. The no-answer sentence is not used, because it would deny
+	 * the fact just stated. A size the catalogue does not have is not added.
+	 */
+	public function test_a_known_open_area_is_kept_when_the_model_transfers_the_rest(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( md_kb_endpoint_no_answer_message(), true, 'no_knowledge' )
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the open area of Agave, and can you make a custom panel size?' ),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
+		self::assertStringContainsString( "Agave's open area is 32%.", (string) $out['body']['msg'] );
+		self::assertStringContainsString( md_kb_endpoint_remainder_message(), (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( md_kb_endpoint_no_answer_message(), (string) $out['body']['msg'] );
+		self::assertDoesNotMatchRegularExpression( '/\d+\s*mm\b/', (string) $out['body']['msg'] );
+		self::assertArrayNotHasKey( 'raplsaich_unanswered_log', $GLOBALS['md_mu_test_options'] );
+	}
+
+	/**
+	 * A handoff that already states the published value is not given the
+	 * same fact twice.
+	 */
+	public function test_a_handoff_that_already_states_the_fact_is_not_duplicated(): void {
+		$reply = "Agave's open area is 32%. I am connecting you with the team.";
+		$this->configure_kb( array(), $this->model_reply( $reply, true, 'none' ) );
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the open area of Agave, and can you make a custom panel size?' ),
+			)
+		);
+
+		self::assertSame( $reply, $out['body']['msg'] );
+		self::assertSame( 1, substr_count( (string) $out['body']['msg'], '32%' ) );
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+	}
+
+	/**
+	 * Gated and missing are the published CAD statuses. Neither confirms a
+	 * drawing, so a promise is removed and the question transfers. A fact
+	 * the question also asked for stays.
+	 */
+	public function test_an_unverified_drawing_promise_is_replaced_and_the_open_area_stays(): void {
+		$this->plant_pattern(
+			array(
+				'fields' => array(
+					'open_area'       => '32',
+					'visual_density'  => 'medium',
+					'repeat_behavior' => 'tile',
+					'motifs'          => array( 'botanical' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'gated',
+					'summary'         => 'A botanical screen.',
+				),
+			)
+		);
+		foreach ( array( 'gated', 'missing' ) as $status ) {
+			$GLOBALS['md_mu_test_fields'][101]['cad_status'] = $status;
+			$GLOBALS['md_mu_test_http']                      = array();
+			$this->configure_kb(
+				array(),
+				$this->model_reply( 'Yes, the CAD drawing is available and I can send the DXF. Agave has a botanical look.', false, 'none' )
+			);
+			$GLOBALS['md_mu_test_fields'][101]['cad_status'] = $status;
+
+			$out = md_kb_endpoint_answer(
+				array(
+					'header' => $this->bearer(),
+					'body'   => array( 'q' => 'What is the open area of Agave, and can you send a CAD drawing?' ),
+				)
+			);
+
+			self::assertSame( 'transfer_operator', $out['body']['action'], $status );
+			self::assertStringContainsString( "Agave's open area is 32%.", (string) $out['body']['msg'], $status );
+			self::assertStringContainsString( "Agave's CAD status is {$status}.", (string) $out['body']['msg'], $status );
+			self::assertStringContainsString( md_kb_endpoint_drawing_check_message(), (string) $out['body']['msg'], $status );
+			self::assertStringContainsString( 'botanical look', (string) $out['body']['msg'], $status );
+			self::assertDoesNotMatchRegularExpression( '/drawing is available|\bcan send\b/i', (string) $out['body']['msg'], $status );
+		}
+	}
+
+	/**
+	 * A status outside the published choices still does not confirm a
+	 * drawing unless it is one of the words the prompt allows. "ready" is
+	 * allowed, so the model's answer is left alone. The live catalogue only
+	 * publishes gated and missing.
+	 */
+	public function test_a_confirming_cad_status_is_not_forced_to_transfer(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Yes, the CAD drawing is available.', false, 'none' )
+		);
+		$this->plant_pattern(
+			array(
+				'fields' => array(
+					'open_area'       => '32',
+					'visual_density'  => 'medium',
+					'repeat_behavior' => 'tile',
+					'motifs'          => array( 'botanical' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'ready',
+					'summary'         => 'A botanical screen.',
+				),
+			)
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Can you send a CAD drawing of Agave?' ),
+			)
+		);
+
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( 'Yes, the CAD drawing is available.', $out['body']['msg'] );
+	}
+
+	/**
+	 * An unverified drawing question on the open pattern page transfers
+	 * even when the model promises a file. The page's CAD status is what
+	 * decides it.
+	 */
+	public function test_an_unverified_drawing_on_the_open_page_still_transfers(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Yes, the CAD drawing is available.', false, 'none' )
+		);
+		$this->plant_pattern(
+			array(
+				'fields' => array(
+					'open_area'       => '32',
+					'visual_density'  => 'medium',
+					'repeat_behavior' => 'tile',
+					'motifs'          => array( 'botanical' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'gated',
+					'summary'         => 'A botanical screen.',
+				),
+			)
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'Can you send a CAD drawing of this pattern?',
+					'page_url' => 'https://metal-divider.com/pattern/agave/',
+				),
+			)
+		);
+
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertStringContainsString( md_kb_endpoint_drawing_check_message(), (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( 'drawing is available', (string) $out['body']['msg'] );
+	}
+
+	/**
+	 * Thickness and weight are knowledge, not a pattern fact. A question
+	 * that names no pattern does not gain a product sentence.
+	 */
+	public function test_a_knowledge_answer_does_not_gain_a_pattern_fact(): void {
+		$reply = 'A typical panel is about 2 mm thick; weight depends on the sheet.';
+		$this->configure_kb(
+			array(
+				array(
+					'type'      => 'knowledge',
+					'source_id' => 9,
+					'title'     => 'Panel thickness',
+					'content'   => 'Typical thickness is 2 mm.',
+				),
+			),
+			$this->model_reply( $reply, false, 'none' )
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the thickness and weight of a typical panel?' ),
+			)
+		);
+
+		self::assertSame( $reply, $out['body']['msg'] );
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( array( 'knowledge#9 Panel thickness' ), $out['body']['sources'] );
+		self::assertStringNotContainsString( 'Agave', (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( '32%', (string) $out['body']['msg'] );
+	}
+
+	/**
+	 * The prompt tells the model to keep a covered fact and not to invent a
+	 * ship date or an unverified drawing. The exact no-answer sentence is
+	 * only for a question none of which is covered.
+	 */
+	public function test_the_prompt_keeps_a_partial_answer(): void {
+		$prompt = md_kb_endpoint_system_prompt();
+
+		self::assertStringContainsString( 'Do not discard the known fact', $prompt );
+		self::assertStringContainsString( 'A ship date', $prompt );
+		self::assertStringContainsString( 'unverified CAD drawing', $prompt );
+		self::assertStringContainsString( 'When none of the question is covered', $prompt );
 	}
 
 	/**
