@@ -106,6 +106,7 @@ function md_kb_endpoint_answer( array $input ): array {
 	$history = is_array( $history ) ? array_values( array_filter( $history, 'is_string' ) ) : array();
 
 	$pattern = md_kb_endpoint_pattern_lookup( $q );
+	$page    = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null ) : array( 'context' => '' );
 	if ( md_kb_endpoint_asks_commercial( $q ) ) {
 		return array(
 			'status' => 200,
@@ -130,6 +131,9 @@ function md_kb_endpoint_answer( array $input ): array {
 	list( $results, $context ) = md_kb_endpoint_retrieve( $q );
 	if ( '' !== $pattern['context'] ) {
 		$context = "PATTERN FACTS (WooCommerce, current publish):\n" . $pattern['context']
+			. ( '' !== trim( $context ) ? "\n\nKNOWLEDGE (Rapls):\n" . $context : '' );
+	} elseif ( '' !== $page['context'] ) {
+		$context = "CURRENT PATTERN (the page the visitor opened the chat on):\n" . $page['context']
 			. ( '' !== trim( $context ) ? "\n\nKNOWLEDGE (Rapls):\n" . $context : '' );
 	}
 	$answer = md_kb_endpoint_call_model( md_kb_endpoint_messages( $q, $context, $history ) );
@@ -524,6 +528,113 @@ function md_kb_endpoint_pattern_facts( WP_Post $post ): array {
 		'context' => implode( "\n", $lines ),
 		'source'  => trim( 'pattern#' . $id . ' ' . $code ),
 	);
+}
+
+/**
+ * Hosts whose pattern pages may be cited as the page the visitor has open.
+ * A client-supplied URL on any other host is ignored.
+ */
+const MD_KB_ENDPOINT_PAGE_HOSTS = array(
+	'metal-divider.com',
+	'www.metal-divider.com',
+	'staging.metal-divider.com',
+);
+
+/**
+ * The published pattern at the page the visitor opened the chat on, when
+ * that page is one of this site's pattern detail pages. Anything else —
+ * a missing field, a foreign host, a non-pattern path, a slug hiding in
+ * the query or the fragment, a draft — is no page context. The explicit
+ * pattern lookup wins, so the caller does not ask this when the question
+ * already named a pattern.
+ *
+ * @param mixed $page_url The request's page_url, untrusted.
+ * @return array{context: string} The compact facts, or an empty context.
+ */
+function md_kb_endpoint_page_context( mixed $page_url ): array {
+	$empty = array( 'context' => '' );
+	$slug  = md_kb_endpoint_page_slug( $page_url );
+	if ( '' === $slug ) {
+		return $empty;
+	}
+	$post = get_page_by_path( $slug, OBJECT, 'product' );
+	if ( ! $post instanceof WP_Post ) {
+		return $empty;
+	}
+	if ( 'publish' !== $post->post_status || 'product' !== $post->post_type ) {
+		return $empty;
+	}
+	return array( 'context' => md_kb_endpoint_page_facts( $post ) );
+}
+
+/**
+ * The pattern slug of a page URL this site may trust: an http or https URL
+ * (or the protocol-relative form Live Helper Chat stores) on an allowlisted
+ * host, whose path is /pattern/<slug>/ and nothing else. The query and the
+ * fragment are never a slug.
+ *
+ * @param mixed $page_url The request's page_url, untrusted.
+ * @return string The slug, or '' when the URL is not a pattern page.
+ */
+function md_kb_endpoint_page_slug( mixed $page_url ): string {
+	if ( ! is_string( $page_url ) ) {
+		return '';
+	}
+	$url = trim( $page_url );
+	if ( '' === $url || strlen( $url ) > 2000 ) {
+		return '';
+	}
+	if ( str_starts_with( $url, '//' ) ) {
+		$url = 'https:' . $url;
+	}
+	$parts = wp_parse_url( $url );
+	if ( ! is_array( $parts ) ) {
+		return '';
+	}
+	$scheme = strtolower( (string) ( $parts['scheme'] ?? '' ) );
+	$host   = strtolower( (string) ( $parts['host'] ?? '' ) );
+	if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+		return '';
+	}
+	if ( ! in_array( $host, MD_KB_ENDPOINT_PAGE_HOSTS, true ) ) {
+		return '';
+	}
+	$path = rawurldecode( (string) ( $parts['path'] ?? '' ) );
+	if ( ! preg_match( '#^/pattern/([^/]+)/?$#', $path, $match ) ) {
+		return '';
+	}
+	$slug = strtolower( $match[1] );
+	if ( ! preg_match( '/^[a-z0-9][a-z0-9-]{0,190}$/', $slug ) ) {
+		return '';
+	}
+	return $slug;
+}
+
+/**
+ * The compact facts of the pattern page the visitor has open. The same
+ * field reads the explicit lookup uses, minus the fields a current-page
+ * hint does not need and minus anything commercial.
+ *
+ * @param \WP_Post $post The published product.
+ * @return string The context block, one fact per line.
+ */
+function md_kb_endpoint_page_facts( WP_Post $post ): string {
+	$id    = (int) $post->ID;
+	$sku   = md_kb_endpoint_product_sku( $id );
+	$code  = '' !== $sku ? $sku : $post->post_name;
+	$lines = array(
+		'code: ' . $code,
+		'title: ' . $post->post_title,
+		'material: ' . MD_KB_ENDPOINT_MATERIAL,
+		'open_area: ' . md_kb_endpoint_pattern_open_area( get_field( 'open_area', $id ) ),
+	);
+	foreach ( array( 'visual_density', 'repeat_behavior', 'motifs', 'best_fit' ) as $name ) {
+		$value = md_kb_endpoint_pattern_field( get_field( $name, $id ) );
+		if ( '' !== $value ) {
+			$lines[] = $name . ': ' . $value;
+		}
+	}
+	return implode( "\n", $lines );
 }
 
 /**

@@ -305,6 +305,9 @@ class WP_Post {
 	/** @var string */
 	public string $sku = '';
 
+	/** @var string */
+	public string $post_type = 'product';
+
 	/**
 	 * @param array<string, mixed> $fields The planted product.
 	 */
@@ -314,6 +317,7 @@ class WP_Post {
 		$this->post_status = (string) ( $fields['post_status'] ?? 'publish' );
 		$this->post_name   = (string) ( $fields['post_name'] ?? '' );
 		$this->sku         = (string) ( $fields['sku'] ?? '' );
+		$this->post_type   = (string) ( $fields['post_type'] ?? 'product' );
 	}
 }
 
@@ -372,6 +376,55 @@ function get_the_terms( int $post_id, string $taxonomy ): array|\WP_Error {
  */
 function get_permalink( int $post_id = 0 ): string {
 	return (string) ( $GLOBALS['md_mu_test_permalinks'][ $post_id ] ?? '' );
+}
+
+/**
+ * The page at a path, from the planted products. WordPress matches the
+ * last path segment against post_name for the asked post type; the tests
+ * use that to stand in for /pattern/<slug>.
+ *
+ * @param string               $page_path The path, slashes included.
+ * @param string               $output    The return shape. Only OBJECT is served.
+ * @param string|array<string> $post_type The post type, or a list of them.
+ * @return \WP_Post|null The planted post, null when nothing matches.
+ */
+/**
+ * parse_url() with the keys WordPress returns, enough for the page URL
+ * the endpoint accepts. A URL it cannot parse is false, as WordPress.
+ *
+ * @param string $url The URL.
+ * @return array<string, mixed>|false The parts, or false.
+ */
+if ( ! defined( 'OBJECT' ) ) {
+	define( 'OBJECT', 'OBJECT' );
+}
+
+function wp_parse_url( string $url ): array|false {
+	$parts = parse_url( $url );
+	return is_array( $parts ) ? $parts : false;
+}
+
+function get_page_by_path( string $page_path, string $output = OBJECT, string|array $post_type = 'page' ): ?\WP_Post {
+	unset( $output );
+	$slug  = strtolower( rawurldecode( basename( trim( $page_path, '/' ) ) ) );
+	$types = is_array( $post_type ) ? $post_type : array( $post_type );
+	if ( '' === $slug ) {
+		return null;
+	}
+	foreach ( (array) ( $GLOBALS['md_mu_test_products'] ?? array() ) as $product ) {
+		if ( ! is_array( $product ) ) {
+			continue;
+		}
+		$type = (string) ( $product['post_type'] ?? 'product' );
+		if ( ! in_array( $type, $types, true ) ) {
+			continue;
+		}
+		if ( strtolower( (string) ( $product['post_name'] ?? '' ) ) !== $slug ) {
+			continue;
+		}
+		return new \WP_Post( $product );
+	}
+	return null;
 }
 
 /**

@@ -49,6 +49,30 @@ namespace {
 	}
 
 	/**
+	 * The page or product at a path.
+	 *
+	 * @param string               $page_path The path.
+	 * @param string               $output    The return shape.
+	 * @param string|array<string> $post_type The post type.
+	 * @return \WP_Post|null The post, null when none matches.
+	 */
+	/**
+	 * parse_url() in WordPress's shape.
+	 *
+	 * @param string $url The URL.
+	 * @return array<string, mixed>|false The parts, or false.
+	 */
+	function wp_parse_url( string $url ): array|false {
+		unset( $url );
+		return false;
+	}
+
+	function get_page_by_path( string $page_path, string $output = OBJECT, string|array $post_type = 'page' ): ?\WP_Post {
+		unset( $page_path, $output, $post_type );
+		return null;
+	}
+
+	/**
 	 * A post's featured image URL.
 	 *
 	 * @param int          $post The post id.

@@ -1722,6 +1722,270 @@ final class KbEndpointTest extends TestCase {
 		self::assertNotSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
+
+	/**
+	 * A pattern detail page the visitor opened the widget on is current
+	 * context: the published product at that path is cited, and the model
+	 * sees it ahead of the knowledge.
+	 */
+	public function test_a_pattern_page_url_is_current_context(): void {
+		$this->configure_kb(
+			array(
+				array(
+					'type'      => 'knowledge',
+					'source_id' => 4,
+					'title'     => 'Contact',
+					'content'   => 'WhatsApp +852 6473 1687.',
+				),
+			),
+			$this->model_reply( 'Agave is a botanical screen.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'What is the open area of this pattern?',
+					'page_url' => 'https://metal-divider.com/pattern/agave/?ref=chat#photos',
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( array( 'knowledge#4 Contact' ), $out['body']['sources'] );
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'CURRENT PATTERN (the page the visitor opened the chat on):', $user );
+		self::assertStringContainsString( 'MD-101', $user );
+		self::assertStringContainsString( '32%', $user );
+		self::assertStringContainsString( 'Stainless Steel (304 / 316)', $user );
+		self::assertStringContainsString( 'visual_density: medium', $user );
+		self::assertStringContainsString( 'repeat_behavior: tile', $user );
+		self::assertStringContainsString( 'motifs: botanical', $user );
+		self::assertStringContainsString( 'best_fit: architectural-screening', $user );
+		self::assertLessThan( strpos( $user, 'KNOWLEDGE (Rapls):' ), strpos( $user, 'CURRENT PATTERN' ) );
+		self::assertStringNotContainsString( 'cad_status', $user );
+		self::assertStringNotContainsString( 'permalink', $user );
+		self::assertStringNotContainsString( 'series:', $user );
+		self::assertDoesNotMatchRegularExpression( '/\bprice\b|lead time|\bmoq\b/i', $user );
+	}
+
+	/**
+	 * Live Helper Chat stores the page where chat started with the scheme
+	 * stripped. That protocol-relative form is still this site's pattern page.
+	 */
+	public function test_a_protocol_relative_pattern_page_url_is_current_context(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Agave is a botanical screen.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'How open is this screen?',
+					'page_url' => '//www.metal-divider.com/pattern/agave/',
+				),
+			)
+		);
+
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'CURRENT PATTERN', $user );
+		self::assertStringContainsString( 'MD-101', $user );
+	}
+
+	/**
+	 * A host that is not this site is not a page we will look up, even when
+	 * the path looks like a pattern detail page.
+	 */
+	public function test_a_foreign_host_page_url_is_ignored(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'I do not have that page.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'What is the open area of this pattern?',
+					'page_url' => 'https://evil.example/pattern/agave/',
+				),
+			)
+		);
+
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		self::assertStringNotContainsString( 'CURRENT PATTERN', (string) end( $payload['messages'] )['content'] );
+	}
+
+	/**
+	 * Only a pattern detail path is page context. A slug hiding in the query
+	 * or the fragment of some other path is not a product to look up.
+	 */
+	public function test_a_non_pattern_path_is_ignored(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'That page is not a pattern.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		foreach ( array(
+			'https://metal-divider.com/collections/botanical/',
+			'https://staging.metal-divider.com/?pattern=agave',
+			'https://metal-divider.com/about/#/pattern/agave',
+			'https://metal-divider.com/pattern/',
+			'javascript:alert(1)',
+		) as $page_url ) {
+			$GLOBALS['md_mu_test_http'] = array();
+			md_kb_endpoint_answer(
+				array(
+					'header' => $this->bearer(),
+					'body'   => array(
+						'q'        => 'What is the open area of this pattern?',
+						'page_url' => $page_url,
+					),
+				)
+			);
+			$http    = $this->recorded( 'md_mu_test_http' );
+			$payload = json_decode( (string) $http[0][1]['body'], true );
+			self::assertStringNotContainsString( 'CURRENT PATTERN', (string) end( $payload['messages'] )['content'], $page_url );
+		}
+	}
+
+	/**
+	 * A pattern page whose product is not published, or does not exist, adds
+	 * nothing. The answer stays the knowledge answer.
+	 */
+	public function test_an_unpublished_or_missing_pattern_page_is_ignored(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'I do not have that pattern.', false, 'none' )
+		);
+		$this->plant_pattern( array( 'post_status' => 'draft' ) );
+
+		foreach ( array(
+			'https://metal-divider.com/pattern/agave/',
+			'https://metal-divider.com/pattern/missing/',
+		) as $page_url ) {
+			$GLOBALS['md_mu_test_http'] = array();
+			md_kb_endpoint_answer(
+				array(
+					'header' => $this->bearer(),
+					'body'   => array(
+						'q'        => 'What is the open area of this pattern?',
+						'page_url' => $page_url,
+					),
+				)
+			);
+			$http    = $this->recorded( 'md_mu_test_http' );
+			$payload = json_decode( (string) $http[0][1]['body'], true );
+			self::assertStringNotContainsString( 'CURRENT PATTERN', (string) end( $payload['messages'] )['content'], $page_url );
+		}
+	}
+
+	/**
+	 * A question that names a pattern keeps that lookup. The page the visitor
+	 * opened does not replace the pattern they asked about.
+	 */
+	public function test_an_explicit_pattern_question_wins_over_the_page(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Agave is the one you asked about.', false, 'none' )
+		);
+		$this->plant_pattern();
+		$this->plant_pattern(
+			array(
+				'ID'         => 202,
+				'post_title' => 'Birch | Architectural Metal Screen Pattern',
+				'post_name'  => 'birch',
+				'sku'        => 'MD-202',
+			)
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'What is the open area of MD-101?',
+					'page_url' => 'https://metal-divider.com/pattern/birch/',
+				),
+			)
+		);
+
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'PATTERN FACTS (WooCommerce, current publish):', $user );
+		self::assertStringContainsString( 'MD-101', $user );
+		self::assertStringNotContainsString( 'CURRENT PATTERN', $user );
+		self::assertStringNotContainsString( 'MD-202', $user );
+	}
+
+	/**
+	 * A commercial question still transfers before the model is asked, even
+	 * when the visitor is on a pattern page.
+	 */
+	public function test_a_commercial_question_on_a_pattern_page_still_transfers(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'What is the price of this pattern?',
+					'page_url' => 'https://metal-divider.com/pattern/agave/',
+				),
+			)
+		);
+
+		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( array(), $out['body']['sources'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * A request that does not send a page URL is the request the endpoint
+	 * already answered: no current-page block, Rapls sources unchanged.
+	 */
+	public function test_a_missing_page_url_leaves_the_answer_unchanged(): void {
+		$this->configure_kb(
+			array(
+				array(
+					'type'      => 'knowledge',
+					'source_id' => 4,
+					'title'     => 'Contact',
+					'content'   => 'WhatsApp +852 6473 1687.',
+				),
+			),
+			$this->model_reply( 'Reach us on WhatsApp.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'How do I reach your team?' ),
+			)
+		);
+
+		self::assertSame( array( 'knowledge#4 Contact' ), $out['body']['sources'] );
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringNotContainsString( 'CURRENT PATTERN', $user );
+		self::assertStringContainsString( FakeRaplsEngine::CONTEXT, $user );
+	}
+
 	/**
 	 * The route the file registers is the one the LHC bot is configured
 	 * against: the md/v1 namespace, /kb/answer, POST.
