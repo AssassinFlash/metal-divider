@@ -394,6 +394,17 @@ function md_kb_endpoint_cad_status_confirms_drawing( string $status ): bool {
 }
 
 /**
+ * The customer-facing wording of a published CAD status. Gated and missing
+ * are internal statuses, not words to put in front of a visitor.
+ *
+ * @param string $status The published status.
+ * @return string The wording.
+ */
+function md_kb_endpoint_cad_status_wording( string $status ): string {
+	return md_kb_endpoint_cad_status_confirms_drawing( $status ) ? $status : '(not confirmed)';
+}
+
+/**
  * Whether an asked-for drawing is not confirmed by the resolved facts.
  * A context with no CAD status line is not treated as unverified here:
  * page facts omit that line, and the prompt still forbids inventing one.
@@ -938,7 +949,10 @@ function md_kb_endpoint_pattern_facts( WP_Post $post ): array {
 		'summary'         => 'summary',
 	);
 	foreach ( $optional as $name => $label ) {
-		$value   = md_kb_endpoint_pattern_field( get_field( $name, $id ) );
+		$value = md_kb_endpoint_pattern_field( get_field( $name, $id ) );
+		if ( 'cad_status' === $name ) {
+			$value = md_kb_endpoint_cad_status_wording( $value );
+		}
 		$lines[] = '' !== $value ? $label . ': ' . $value : $label . ': (not confirmed)';
 	}
 	$terms = get_the_terms( $id, 'product_cat' );
@@ -1076,8 +1090,8 @@ function md_kb_endpoint_page_facts( WP_Post $post ): string {
 	}
 	// CAD status is included even when empty, so an unverified drawing
 	// question on the open page transfers instead of being invented.
-	$cad     = md_kb_endpoint_pattern_field( get_field( 'cad_status', $id ) );
-	$lines[] = '' !== $cad ? 'cad_status: ' . $cad : 'cad_status: (not confirmed)';
+	$cad     = md_kb_endpoint_cad_status_wording( md_kb_endpoint_pattern_field( get_field( 'cad_status', $id ) ) );
+	$lines[] = 'cad_status: ' . $cad;
 	return implode( "\n", $lines );
 }
 
@@ -1229,6 +1243,8 @@ function md_kb_endpoint_system_prompt(): string {
 		. 'Do not invent specifications or materials. '
 		. 'Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. '
 		. 'Say pattern, not product. '
+		. 'Mention only the facts the visitor asked about; do not list the rest of the pattern record. '
+		. 'Never quote an internal CAD status such as gated or missing — say the drawing is not confirmed. '
 		. 'When part of the question is covered by the knowledge and part is not, answer the covered part and then say the remaining part is being checked with the team. '
 		. 'Set handoff true and reason to "no_knowledge". Do not discard the known fact, and do not invent the missing part. '
 		. 'A ship date and whether an unverified CAD drawing can be sent are never facts you may invent. '

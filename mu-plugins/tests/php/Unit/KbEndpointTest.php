@@ -2266,8 +2266,8 @@ final class KbEndpointTest extends TestCase {
 
 			self::assertSame( 'transfer_operator', $out['body']['action'], $status );
 			self::assertStringContainsString( "Agave's open area is 32%.", (string) $out['body']['msg'], $status );
-			self::assertStringContainsString( "Agave's CAD status is {$status}.", (string) $out['body']['msg'], $status );
 			self::assertStringContainsString( md_kb_endpoint_drawing_check_message(), (string) $out['body']['msg'], $status );
+			self::assertDoesNotMatchRegularExpression( '/\b(?:gated|missing)\b/i', (string) $out['body']['msg'], $status );
 			self::assertStringContainsString( 'botanical look', (string) $out['body']['msg'], $status );
 			self::assertDoesNotMatchRegularExpression( '/drawing is available|\bcan send\b/i', (string) $out['body']['msg'], $status );
 		}
