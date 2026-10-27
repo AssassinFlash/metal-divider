@@ -34,6 +34,8 @@
 1. **CDN 回源**:curl 分解 DNS/connect 5ms、TLS 2.3s、TTFB 2.6–3.1s;`x-litespeed-cache: hit` 但 `x-hcdn-cache-status: MISS`。这是回源路径,不是 PHP 慢。业主"性能可激进"裁定下可评估开 CDN(hPanel 一键)或转 Cloudflare——先测开关前后 TTFB 对比再定。
 2. **媒体小档**:`WIDTH_TIERS` 最小 480,而定制页缩略图显示 112px(比值 4.3);附件 `metadata['sizes']` 为空(管线文件不在 WP 尺寸里),方图梯子对它们无效。需要给管线加 <480 档(如 150/240),会触发 `params_digest` 变化强制全量媒体重建——**独立一批,不与样式修复混合**。
 
+**2026-10-27 性能结论已纠偏(见下文"性能结论纠偏"一节)**:同机房对照 183ms、CDN 已 HIT、Google PageSpeed 80–93 分——**不是服务器慢,是本机网络慢,不做 CDN 迁移**。媒体小档的收益已被方图(400x400,-61%)部分覆盖;剩余"定制页很重"是**内容量驱动**(248 张图、4 个 tab),不是代码缺陷,若要进一步减负需产品层面的分页/加载更多,不擅自做。
+
 ### SEO 验证不通过项(2026-10-25 生产实测,证据 docs/deploy/seo-verification.md)
 
 - [x] **`/inquiry/thank-you/` 404** — 生产已返回 200(2026-10-25 复核);dev 亦 200
