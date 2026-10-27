@@ -257,6 +257,42 @@ gap: 18px;
 grid-template-columns: minmax(0, 1fr);
 justify-content: stretch;
 }
+/* The toolbar on a phone was 430px of the first screen — the intro, a
+   full-width category button, then search and sort stacked — so the first
+   pattern's image began at y=697 and the fixed quote bar (y=775) left 78px of
+   it visible (measured 2026-10-27 at 390). A catalog's first screen belongs
+   to the patterns. Search and the category control share one row, sort folds
+   into the category sheet (it is already in there), and the intro's paragraph
+   is dropped: the H1 above it says the same thing in fewer words. */
+@media (max-width: 749px) {
+/* Sort stays. There is one `sort_by` control on the page and it lives in this
+   toolbar — folding it "into the sheet" would have removed sorting from every
+   phone, which is a feature loss dressed as a layout fix. */
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__intro {
+display: none;
+}
+/* Three children, not two: the category button, the search form and the sort
+   form. They stay stacked (a two-column guess squeezed search to 48px and
+   pushed the toolbar 23px past the viewport), but the gaps and the button
+   heights come down — 430px of chrome before the first pattern is what cost
+   the catalog its first screen. */
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__tools {
+gap: 10px;
+min-width: 0;
+}
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__tools > * {
+min-width: 0;
+max-width: 100%;
+}
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__filter-open {
+min-height: 48px;
+padding-top: 10px;
+padding-bottom: 10px;
+}
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__toolbar {
+gap: 10px;
+}
+}
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card {
 background: rgba(255, 255, 255, 0.035);
 border: 1px solid rgba(255, 255, 255, 0.12);
