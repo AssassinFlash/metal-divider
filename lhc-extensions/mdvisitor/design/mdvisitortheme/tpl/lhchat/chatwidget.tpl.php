@@ -1,0 +1,346 @@
+<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_pre_multiinclude.tpl.php'));?>
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor.css?v=20261028s', ENT_QUOTES, 'UTF-8'); ?>">
+
+<?php if (isset($maintenance_mode)) : ?>
+    <div class="pt-2">
+        <?php $errors[] = $maintenance_mode;?>
+        <?php include(erLhcoreClassDesign::designtpl('lhkernel/validation_error.tpl.php'));?>
+    </div>
+<?php else : ?>
+
+<?php if ($disabled_department === true) : ?>
+
+<h1><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Department is disabled');?></h1>
+
+<?php elseif (isset($department_invalid) && $department_invalid === true) : ?>
+
+    <?php $errors[] =erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Please provide a department');?>
+    <?php include(erLhcoreClassDesign::designtpl('lhkernel/validation_error.tpl.php'));?>
+
+<?php else : ?>
+
+<?php if (!isset($start_data_fields['show_operator_profile']) || $start_data_fields['show_operator_profile'] == false) : ?>
+<div class="pl10 max-width-180 float-end absolute-language-top-right">
+	<?php $rightLanguage = true;?>
+	<?php include(erLhcoreClassDesign::designtpl('pagelayouts/parts/switch_language.tpl.php'));?>
+</div>
+<?php endif;?>
+
+<?php include(erLhcoreClassDesign::designtpl('lhchat/getstatus/widget_geo_adjustment.tpl.php'));?>
+<?php if ($exitTemplate == true) return; ?>
+
+<?php $isOnlineGeneral = erLhcoreClassChat::isOnline($department, false, array('ignore_user_status'=> (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value, 'online_timeout' => (int)erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout']))?>
+
+<?php if ($leaveamessage == false || ($forceoffline === false && $isOnlineGeneral === true)) : ?>
+
+
+<?php if ($isOnlineGeneral === false) : ?>
+    <?php include(erLhcoreClassDesign::designtpl('lhchat/chat_not_available.tpl.php'));?>
+<?php else : ?>
+
+<?php if (isset($start_data_fields['pre_chat_html']) && $start_data_fields['pre_chat_html'] != '') : ?>
+    <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/pre_chat_html.tpl.php'));?>
+<?php endif?>
+
+<?php $onlyBotOnline = erLhcoreClassChat::isOnlyBotOnline($department); ?>
+
+<?php if (isset($start_data_fields['show_operator_profile']) && $start_data_fields['show_operator_profile'] == true) : ?>
+<?php include_once(erLhcoreClassDesign::designtpl('lhchat/part/operator_profile_start_chat.tpl.php'));?>
+<?php endif;?>
+
+<?php if (isset($errors['blocked_user'])) : ?>
+    <?php include(erLhcoreClassDesign::designtpl('lhkernel/blocked_user_startchat.tpl.php'));?>
+<?php elseif (isset($errors)) : ?>
+    <?php include(erLhcoreClassDesign::designtpl('lhkernel/validation_error.tpl.php'));?>
+<?php endif; ?>
+
+<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_pre_form_multiinclude.tpl.php'));?>
+
+<?php $hasExtraField = false;
+
+if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) : ?>
+<p class="start-chat-intro"><?php echo erLhcoreClassBBCode::make_clickable(htmlspecialchars($theme->explain_text))?></p>
+<?php endif;?>
+
+<?php if (isset($theme) && $theme !== false && isset($theme->bot_configuration_array['custom_html_widget']) && !empty($theme->bot_configuration_array['custom_html_widget']) && $onlyBotOnline == false) : ?>
+       <?php echo $theme->bot_configuration_array['custom_html_widget']?>
+<?php elseif (isset($theme) && $theme !== false && isset($theme->bot_configuration_array['custom_html_widget_bot']) && !empty($theme->bot_configuration_array['custom_html_widget_bot']) && $onlyBotOnline == true) : ?>
+    <?php echo $theme->bot_configuration_array['custom_html_widget_bot']?>
+<?php elseif (isset($theme) && $theme !== false && isset($theme->bot_configuration_array['trigger_id']) && !empty($theme->bot_configuration_array['trigger_id']) && $theme->bot_configuration_array['trigger_id'] > 0) :  ?>
+    <?php include(erLhcoreClassDesign::designtpl('lhchat/part/render_intro.tpl.php'));?>
+<?php endif;?>
+
+<?php if (isset($theme) && $theme !== false && isset($theme->bot_configuration_array['inject_html']) && !empty($theme->bot_configuration_array['inject_html'])) : ?>
+            <script>lhinst.sendHTML(<?php echo $theme->id?>,{'type':'theme','id':0});</script>
+<?php endif; ?>
+
+<?php $mdvTheme = (isset($_GET['mdvtheme']) && $_GET['mdvtheme'] === 'forest') ? 'forest' : 'charcoal'; ?>
+<div class="md-card md-start" data-theme="<?php echo $mdvTheme; ?>">
+  <div id="mdv-live" class="md-sr" aria-live="polite"></div>
+  <div class="md-view md-home is-active" data-mdv-view="home">
+    <header class="md-hero">
+      <div class="md-topline">
+        <div class="md-brand"><svg class="md-brand-mark" viewBox="0 0 28 28" aria-hidden="true"><rect x="0.75" y="0.75" width="26.5" height="26.5" fill="none" stroke="currentColor" stroke-width="1"/><text x="14" y="17.5" text-anchor="middle" font-size="9" font-family="Georgia, Times New Roman, serif" fill="currentColor">MD</text></svg><span class="md-brand-name">Metal Divider</span><span class="md-brand-tag">AI concierge</span></div>
+        <button class="md-icon-btn md-close" type="button" data-mdv-close aria-label="Close assistant">×</button>
+      </div>
+      <div class="md-avatar md-avatar-hero" aria-hidden="true"><svg viewBox="0 0 32 32"><text x="16" y="20" text-anchor="middle" font-size="11" font-family="Georgia, Times New Roman, serif" fill="currentColor">MD</text></svg><i></i></div>
+      <h1>Welcome</h1>
+      <p class="md-hero-sub">How can we help you today?</p>
+      <div class="md-status"><span class="md-pulse"></span><span>AI assistant</span><span class="md-status-sep">·</span><span>Replies instantly</span></div>
+    </header>
+    <div class="md-panel md-scroll">
+      <div class="md-section-head"><p class="md-eyebrow"><svg class="md-spark" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0 L6.1 3.9 L10 5 L6.1 6.1 L5 10 L3.9 6.1 L0 5 L3.9 3.9 Z" fill="currentColor"/></svg> Quick Connect</p><span class="md-section-hint">Pick a start</span></div>
+      <button class="md-action" type="button" data-mdv-fill="I have a pattern in mind. Can you help me check it?">
+        <span class="md-action-icon">▦</span>
+        <span class="md-action-copy"><b>Ask about a pattern</b><small>Send a code, photo or drawing</small></span>
+        <span class="md-chev">›</span>
+      </button>
+      <button class="md-action" type="button" data-mdv-fill="What materials and finishes do you offer?">
+        <span class="md-action-icon">◫</span>
+        <span class="md-action-copy"><b>Materials &amp; finishes</b><small>304 / 316 stainless, PVD, samples</small></span>
+        <span class="md-chev">›</span>
+      </button>
+      <button class="md-action" type="button" data-mdv-fill="I'd like to speak with a person, please.">
+        <span class="md-action-icon">◉</span>
+        <span class="md-action-copy"><b>Talk to a person</b><small>Connect with the Metal Divider team</small></span>
+        <span class="md-chev">›</span>
+      </button>
+      <button class="md-text-link" type="button" data-mdv-go="faq">Browse common questions <span>→</span></button>
+      <div class="md-chips">
+        <button type="button" data-mdv-fill="What is your typical lead time for a custom pattern?">Lead time</button>
+        <button type="button" data-mdv-fill="Can you match a pattern from my drawing?">Custom patterns</button>
+        <button type="button" data-mdv-fill="Do you ship to my country?">Shipping</button>
+      </div>
+      <div class="md-panel-foot"><span class="md-foot-mark">MD</span><span>Metal Divider AI concierge</span><span class="md-foot-dot"></span><span>Replies usually within seconds</span></div>
+    </div>
+    <div class="md-composer md-start-composer">
+<form method="post" id="form-start-chat" action="<?php echo erLhcoreClassDesign::baseurl('chat/chatwidget')?><?php echo $append_mode?><?php $department !== false ? print '/(department)/'.$department : ''?><?php $input_data->priority !== false ? print '/(priority)/'.$input_data->priority : ''?><?php $input_data->vid !== false ? print '/(vid)/'.htmlspecialchars($input_data->vid) : ''?><?php $input_data->hash_resume !== false ? print '/(hash_resume)/'.htmlspecialchars($input_data->hash_resume) : ''?><?php $leaveamessage == true ? print '/(leaveamessage)/true' : ''?><?php $forceoffline == true ? print '/(offline)/true' : ''?><?php echo $append_mode_theme?>" onsubmit="return <?php if (isset($start_data_fields['message_auto_start']) && $start_data_fields['message_auto_start'] == true) : ?>lhinst.prestartChat('<?php echo time()?>',$(this))<?php else : ?>lhinst.addCaptchaSubmit('<?php echo time()?>',$(this))<?php endif?>">
+
+<?php if (isset($start_data_fields['message_visible_in_page_widget']) && $start_data_fields['message_visible_in_page_widget'] == true && isset($start_data_fields['show_messages_box']) && $start_data_fields['show_messages_box'] == true) : ?>
+    <?php include(erLhcoreClassDesign::designtpl('lhchat/startchatformsettings/presend.tpl.php'));?>
+<?php endif;?>
+
+<?php $formResubmitId = 'form-start-chat'; ?>
+<?php include(erLhcoreClassDesign::designtpl('lhchat/part/auto_resubmit.tpl.php'));?>
+
+<input type="hidden" name="onlyBotOnline" value="<?php echo $onlyBotOnline == true ? 1 : 0?>">
+
+<div class="row">
+    <?php if (isset($start_data_fields['name_visible_in_page_widget']) && $start_data_fields['name_visible_in_page_widget'] == true) : $hasExtraField = true;?>
+    
+    <?php if (isset($start_data_fields['name_hidden']) && $start_data_fields['name_hidden'] == true) : ?>
+	<input type="hidden" name="Username" value="<?php echo htmlspecialchars($input_data->username);?>" />
+	<?php else : ?>	
+		<?php if (in_array('username', $input_data->hattr)) : ?>
+			<input type="hidden" name="Username" value="<?php echo htmlspecialchars($input_data->username);?>" />
+		<?php elseif (!($onlyBotOnline == true && isset($start_data_fields['name_hidden_bot']) && $start_data_fields['name_hidden_bot'] == true)) : ?>
+		    <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/form_parts/name_hidden.tpl.php'));?>
+	    <?php endif; ?>    
+    <?php endif; ?>
+    
+    <?php endif; ?>
+
+    <?php if (isset($start_data_fields['email_visible_in_page_widget']) && $start_data_fields['email_visible_in_page_widget'] == true) : $hasExtraField = true;?>
+    
+    <?php if (isset($start_data_fields['email_hidden']) && $start_data_fields['email_hidden'] == true) : ?>
+	<input type="hidden" name="Email" value="<?php echo htmlspecialchars($input_data->email);?>" />
+	<?php else : ?>
+		<?php if (in_array('email', $input_data->hattr)) : ?>
+			<input type="hidden" name="Email" value="<?php echo htmlspecialchars($input_data->email);?>" />
+		<?php elseif (!($onlyBotOnline == true && isset($start_data_fields['email_hidden_bot']) && $start_data_fields['email_hidden_bot'] == true)) : ?>
+	    <div class="col-6 form-group">
+	        <label class="col-form-label"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','E-mail');?><?php if (isset($start_data_fields['email_require_option']) && $start_data_fields['email_require_option'] == 'required') : ?>*<?php endif;?></label>
+	        <input <?php if (!(isset($is_embed_mode) && $is_embed_mode ==true)) :?><?php endif;?> class="form-control form-control-sm<?php if (isset($errors['email'])) : ?> is-invalid<?php endif;?>" aria-label="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Enter your email address')?>" placeholder="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Enter your email address')?>" <?php if (isset($start_data_fields['email_require_option']) && $start_data_fields['email_require_option'] == 'required') : ?>aria-required="true" required<?php endif;?> type="text" name="Email" value="<?php echo htmlspecialchars($input_data->email);?>" />
+	    </div>
+	    <?php endif; ?>
+    <?php endif; ?>
+    
+    <?php endif; ?>
+</div>
+
+<?php if (isset($start_data_fields['phone_visible_in_page_widget']) && $start_data_fields['phone_visible_in_page_widget'] == true) : $hasExtraField = true;?>
+<?php if (isset($start_data_fields['phone_hidden']) && $start_data_fields['phone_hidden'] == true) : ?>
+<input type="hidden" name="Phone" value="<?php echo htmlspecialchars($input_data->phone);?>" />
+<?php else : ?>
+		<?php if (in_array('phone', $input_data->hattr)) : ?>
+		<input type="hidden" name="Phone" value="<?php echo htmlspecialchars($input_data->phone);?>" />
+		<?php elseif (!($onlyBotOnline == true && isset($start_data_fields['phone_hidden_bot']) && $start_data_fields['phone_hidden_bot'] == true)) : ?>
+		<div class="form-group">
+		  <label class="col-form-label"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Phone');?><?php if (isset($start_data_fields['phone_require_option']) && $start_data_fields['phone_require_option'] == 'required') : ?>*<?php endif;?></label>
+		  <input <?php if (!(isset($is_embed_mode) && $is_embed_mode ==true)) :?><?php endif;?> <?php if (isset($start_data_fields['phone_require_option']) && $start_data_fields['phone_require_option'] == 'required') : ?>aria-required="true" required<?php endif;?> aria-label="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Enter your phone')?>" placeholder="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Enter your phone')?>" class="form-control form-control-sm<?php if (isset($errors['phone'])) : ?> is-invalid<?php endif;?>" aria-label="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Enter your phone')?>" type="text" name="Phone" value="<?php echo htmlspecialchars($input_data->phone);?>" />
+		</div>
+		<?php endif; ?>
+<?php endif; ?>
+<?php endif; ?>
+
+<?php $canReopen = erLhcoreClassModelChatConfig::fetch('reopen_chat_enabled')->current_value == 1 && ($reopenData = erLhcoreClassChat::canReopenDirectly(array('reopen_closed' => erLhcoreClassModelChatConfig::fetch('allow_reopen_closed')->current_value))) !== false; ?>
+
+
+
+<?php $adminCustomFieldsMode = 'on';?>
+<?php include(erLhcoreClassDesign::designtpl('lhchat/part/admin_form_variables.tpl.php'));?>
+
+<?php if (isset($start_data_fields['message_visible_in_page_widget']) && $start_data_fields['message_visible_in_page_widget'] == true) : ?>
+<?php if (isset($start_data_fields['message_hidden']) && $start_data_fields['message_hidden'] == true) : $hasExtraField = true; ?>
+
+<div id="ChatMessageContainer">
+<?php include(erLhcoreClassDesign::designtpl('lhchat/part/above_text_area_send_button.tpl.php'));?>
+<textarea class="hide" placeholder="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Enter your message');?>" name="Question"><?php echo htmlspecialchars($input_data->question);?></textarea>
+</div>
+
+<?php elseif (!($onlyBotOnline == true && isset($start_data_fields['message_hidden_bot']) && $start_data_fields['message_hidden_bot'] == true)) : ?>
+<div class="<?php if (isset($errors['question'])) : ?> is-invalid<?php endif;?>">
+<?php if (!isset($start_data_fields['hide_message_label']) || $start_data_fields['hide_message_label'] == false) : ?><label class="col-form-label"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Your question');?><?php if (isset($start_data_fields['message_require_option']) && $start_data_fields['message_require_option'] == 'required') : ?>*<?php endif;?></label><?php endif;?>
+<?php include(erLhcoreClassDesign::designtpl('lhchat/part/above_text_area_user_start_chat.tpl.php'));?>
+
+<div id="ChatMessageContainer">
+<?php include(erLhcoreClassDesign::designtpl('lhchat/part/above_text_area_send_button.tpl.php'));?>
+<textarea <?php if (!(isset($is_embed_mode) && $is_embed_mode ==true)) :?><?php endif;?> class="form-control form-control-sm form-group <?php if ($hasExtraField !== true && $canReopen !== true) : ?>btrad-reset<?php endif;?>" <?php if (isset($start_data_fields['user_msg_height']) && $start_data_fields['user_msg_height'] > 0) : ?>style="height: <?php echo $start_data_fields['user_msg_height']?>px"<?php endif;?> aria-label="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Enter your message');?>" placeholder="<?php if (isset($theme) && $theme !== false && isset($theme->bot_configuration_array['placeholder_message']) && !empty($theme->bot_configuration_array['placeholder_message'])) : ?><?php echo htmlspecialchars($theme->bot_configuration_array['placeholder_message']); else : ?>Type your message…<?php endif;?>" <?php if (isset($start_data_fields['message_require_option']) && $start_data_fields['message_require_option'] == 'required') : ?>aria-required="true" required<?php endif;?> id="id_Question" name="Question"><?php echo htmlspecialchars($input_data->question);?></textarea>
+</div>
+
+<?php include(erLhcoreClassDesign::designtpl('lhchat/part/below_text_area_user_start_chat.tpl.php'));?>
+</div>
+<?php else : $hasExtraField = true; endif; ?>
+<?php else : $hasExtraField = true; endif; ?>
+
+<?php include_once(erLhcoreClassDesign::designtpl('lhchat/part/user_variables.tpl.php'));?>
+
+<?php if ($department === false) : ?>
+	<?php include_once(erLhcoreClassDesign::designtpl('lhchat/part/department.tpl.php'));?>
+<?php endif;?>
+
+<?php include(erLhcoreClassDesign::designtpl('lhchat/part/product.tpl.php'));?>
+
+<?php include(erLhcoreClassDesign::designtpl('lhchat/part/user_timezone.tpl.php'));?>
+
+<?php $tosVariable = 'tos_visible_in_page_widget';$tosCheckedVariable = 'tos_checked_online';?>
+<?php include_once(erLhcoreClassDesign::designtpl('lhchat/part/accept_tos.tpl.php'));?>
+
+<?php if ($hasExtraField == true || $canReopen == true) : ?>
+<div class="btn-group" role="group" aria-label="...">  
+  <?php if ($hasExtraField === true) : ?>
+  <?php include(erLhcoreClassDesign::designtpl('lhchat/part/buttons/start_chat_button_widget.tpl.php'));?>
+  <?php endif;?>
+  
+  <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget_button_multiinclude.tpl.php'));?>
+  
+  <?php if ( $canReopen == true ) : ?>
+  <?php include(erLhcoreClassDesign::designtpl('lhchat/part/buttons/reopen_button_widget.tpl.php'));?>
+  <?php endif; ?>
+</div>
+<?php endif;?>
+
+<input type="hidden" value="<?php echo htmlspecialchars($referer);?>" name="URLRefer" />
+<input type="hidden" value="<?php echo htmlspecialchars($referer_site);?>" name="r" />
+<input type="hidden" value="<?php echo htmlspecialchars($input_data->operator);?>" name="operator" />
+<input type="hidden" value="1" name="StartChat"/>
+<?php if ($hasExtraField === true) : ?>
+    <input type="hidden" value="1" id="hasFormExtraField"/>
+<?php endif;?>
+</form>
+    </div>
+    <nav class="md-tabs" aria-label="Assistant sections">
+      <button class="is-active" type="button" data-mdv-go="home" aria-label="Home"><span class="md-tab-icon" aria-hidden="true">⌂</span><span class="md-tab-label">Home</span></button>
+      <button type="button" data-mdv-go="chat" aria-label="Chat"><span class="md-tab-icon" aria-hidden="true">◌</span><span class="md-tab-label">Chat</span></button>
+      <button type="button" data-mdv-go="faq" aria-label="FAQ"><span class="md-tab-icon" aria-hidden="true">?</span><span class="md-tab-label">FAQ</span></button>
+    </nav>
+  </div>
+  <div class="md-view md-faq" data-mdv-view="faq">
+    <header class="md-faq-head">
+      <button class="md-icon-btn md-back" type="button" data-mdv-go="home" aria-label="Back">‹</button>
+      <div><p class="md-eyebrow">Help centre</p><h2>Common questions</h2></div>
+      <button class="md-icon-btn md-close" type="button" data-mdv-close aria-label="Close assistant">×</button>
+    </header>
+    <div class="md-panel md-scroll">
+      <label class="md-search"><span>⌕</span><input id="mdv-faq-search" placeholder="Search questions" aria-label="Search questions"></label>
+      <div class="md-faq-list">
+        <details open><summary>What is your typical lead time?<span>+</span></summary><p>Production usually starts after drawing approval and depends on the pattern and finish. Share your project and the team will confirm the current schedule.</p></details>
+        <details><summary>Can you match a custom pattern?<span>+</span></summary><p>Yes. Send a drawing, a photo or a pattern code and our team will confirm the best production route.</p></details>
+        <details><summary>Do you ship internationally?<span>+</span></summary><p>Yes, we ship worldwide. Share the destination and project size and we will confirm packing and delivery.</p></details>
+        <details><summary>What materials do you use?<span>+</span></summary><p>Stainless steel 304 and 316, with PVD, brushed, mirror, bead-blast and custom finishes.</p></details>
+        <details><summary>Can you send CAD files?<span>+</span></summary><p>CAD availability depends on the pattern. Our team confirms what can be released before fabrication.</p></details>
+      </div>
+      <button class="md-primary" type="button" data-mdv-go="chat">Ask the assistant <span>→</span></button>
+    </div>
+    <nav class="md-tabs" aria-label="Assistant sections">
+      <button type="button" data-mdv-go="home" aria-label="Home"><span class="md-tab-icon" aria-hidden="true">⌂</span><span class="md-tab-label">Home</span></button>
+      <button type="button" data-mdv-go="chat" aria-label="Chat"><span class="md-tab-icon" aria-hidden="true">◌</span><span class="md-tab-label">Chat</span></button>
+      <button class="is-active" type="button" data-mdv-go="faq" aria-label="FAQ"><span class="md-tab-icon" aria-hidden="true">?</span><span class="md-tab-label">FAQ</span></button>
+    </nav>
+  </div>
+</div>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028q', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+
+<?php if (isset($start_data_fields['pre_chat_html']) && $start_data_fields['pre_chat_html'] != '') : ?>
+    <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/post_chat_html.tpl.php'));?>
+<?php endif?>
+
+<?php include_once(erLhcoreClassDesign::designtpl('lhchat/part/switch_to_offline.tpl.php'));?>
+
+<?php if ($hasExtraField === false) : ?>
+<script>
+<?php if ($canReopen == false) : ?>
+jQuery('#id_Question').addClass('mb-0');
+<?php endif;?>
+
+<?php if ($hasExtraField == false && isset($start_data_fields['message_auto_start']) && $start_data_fields['message_auto_start'] == true && isset($start_data_fields['message_auto_start_key_press']) && $start_data_fields['message_auto_start_key_press'] == true) : ?>
+$('#id_Question').on('keydown', function (e) {
+	if ($( "#form-start-chat").attr("key-up-started") != 1) {
+    	$( "#form-start-chat").attr("key-up-started",1);
+    	$( "#form-start-chat").submit();	
+	}
+});
+<?php endif;?>
+
+var formSubmitted = false;
+jQuery('#id_Question').bind('keydown', 'return', function (evt){
+	if (formSubmitted == false) {
+		$( "#form-start-chat" ).submit();	
+		<?php if (!isset($start_data_fields['message_auto_start']) || $start_data_fields['message_auto_start'] == false) : ?>
+		formSubmitted = true;
+		jQuery('#id_Question').attr('readonly','readonly');		
+		<?php endif;?>
+	};
+	return false;	
+});
+</script>
+<?php endif;?>
+
+<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_post_multiinclude.tpl.php'));?>
+
+<?php endif;?>
+
+<?php else : ?>
+
+    <?php if (isset($start_data_fields['pre_offline_chat_html']) && $start_data_fields['pre_offline_chat_html'] != '') : ?>
+        <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/pre_offline_chat_html.tpl.php'));?>
+    <?php endif?>
+
+	<?php if (isset($start_data_fields['show_operator_profile']) && $start_data_fields['show_operator_profile'] == true) : ?>
+	
+		<div class="pl10 position-relative float-end">
+		<?php $rightLanguage = true;?>
+		<?php include(erLhcoreClassDesign::designtpl('pagelayouts/parts/switch_language.tpl.php'));?>
+		</div>
+	
+	<?php endif;?>
+
+	<?php if (isset($errors)) : ?>
+		<?php include(erLhcoreClassDesign::designtpl('lhkernel/validation_error.tpl.php'));?>
+	<?php endif; ?>
+	
+	<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_pre_offline_form_multiinclude.tpl.php'));?>
+
+	<?php include(erLhcoreClassDesign::designtpl('lhchat/offline_form.tpl.php'));?>
+
+    <?php if (isset($start_data_fields['pre_offline_chat_html']) && $start_data_fields['pre_offline_chat_html'] != '') : ?>
+        <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/post_offline_chat_html.tpl.php'));?>
+    <?php endif?>
+
+	<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_post_offline_form_multiinclude.tpl.php'));?>
+
+<?php endif;?>
+
+<?php endif;?>
+
+<?php endif;?>

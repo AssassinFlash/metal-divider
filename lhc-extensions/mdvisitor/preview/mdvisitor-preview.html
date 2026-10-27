@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metal Divider visitor preview</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background:
+      radial-gradient(900px 500px at 78% 18%, rgba(201,169,98,.07), transparent 60%),
+      linear-gradient(180deg, #0a0e0b 0%, #0c110d 100%);
+    color: #f7f3ea;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .brand { max-width: 720px; padding: 72px 40px 0; }
+  .kicker { margin: 0 0 16px; color: #e7cf96; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; }
+  h1 { margin: 0; max-width: 12ch; font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: clamp(40px, 6vw, 68px); line-height: .98; letter-spacing: -.03em; }
+  .launcher {
+    position: fixed; right: 24px; bottom: 24px; z-index: 2;
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 54px; padding: 0 18px 0 8px;
+    border: 1px solid rgba(201,169,98,.34); border-radius: 999px;
+    background: #050806; color: #f7f3ea;
+    font: inherit; font-size: 14px; letter-spacing: .01em;
+    box-shadow: 0 16px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+    cursor: pointer;
+  }
+  .launcher-mark {
+    display: inline-grid; place-items: center; width: 38px; height: 38px;
+    border-radius: 50%; background: #c9a962; color: #0a0e0b;
+    font-family: Georgia, "Times New Roman", serif; font-size: 11px; letter-spacing: .04em;
+  }
+  .launcher-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ec98a; box-shadow: 0 0 0 3px rgba(78,201,138,.12); }
+  .launcher:focus-visible, .close:focus-visible { outline: 2px solid #c9a962; outline-offset: 3px; }
+  .card {
+    position: fixed; right: 24px; bottom: 24px; z-index: 3;
+    width: 400px; height: 680px; max-height: calc(100dvh - 32px);
+    background: #111; border-radius: 18px; overflow: hidden;
+    box-shadow: 0 28px 70px rgba(0,0,0,.5);
+  }
+  .card[hidden] { display: none; }
+  .card iframe { display: block; width: 100%; height: 100%; border: 0; background: #faf7ef; }
+  .close {
+    position: absolute; top: 10px; right: 10px; z-index: 4;
+    width: 32px; height: 32px; border: 0; border-radius: 50%;
+    background: #000; color: #f7f3ea; font-size: 18px; line-height: 1; cursor: pointer;
+  }
+  @media (max-width: 560px) {
+    .brand { padding: 28px 20px 0; }
+    .card { inset: 0; width: 100%; height: 100%; max-height: none; border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+  <main class="brand">
+    <p class="kicker">Staging preview</p>
+    <h1>Decorative metal screens.</h1>
+  </main>
+  <button class="launcher" id="mdv-open" type="button" aria-controls="mdv-card" aria-expanded="false"><span class="launcher-mark">MD</span><span>Ask Metal Divider</span><span class="launcher-dot" aria-hidden="true"></span></button>
+  <div class="card" id="mdv-card" hidden>
+    <iframe id="mdv-iframe" title="Metal Divider assistant" src="/chat/index.php/chat/chatwidget/(department)/1"></iframe>
+  </div>
+<script>
+(function () {
+  var open = document.getElementById('mdv-open');
+  var card = document.getElementById('mdv-card');
+  function setOpen(on) {
+    card.hidden = !on;
+    open.setAttribute('aria-expanded', on ? 'true' : 'false');
+    open.hidden = on;
+    if (!on) { open.focus(); }
+  }
+  open.addEventListener('click', function () { setOpen(true); });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && !card.hidden) { setOpen(false); }
+  });
+  window.addEventListener('message', function (event) {
+    if (event.origin !== window.location.origin) { return; }
+    var data = event.data || {};
+    if (data.type === 'mdvisitor-close' || data.type === 'mdvisitor:close') { setOpen(false); }
+  });
+}());
+</script>
+</body>
+</html>
