@@ -36,6 +36,13 @@ except ImportError:  # pragma: no cover - the dev Mac has Pillow
 
 TOLERANCE = 14
 
+# A uniform band shorter than this is section padding, not a hole. Measured on
+# the live pages: faqs at 1440 has a 244px band and glass-hybrid has 172px, and
+# both sit flush between content above and below (y=2903 and y=3150 for the
+# first) — that is the design's 96-128px section spacing doubled, not a gap
+# where something failed to render. The earlier threshold of 200 flagged them.
+DEAD_BAND_MIN = 320
+
 
 def background_palette(im):
     """The handful of colours that make up the page's own background."""
@@ -81,7 +88,7 @@ def analyse(path, width):
         if not cols:
             blank_run += step
             continue
-        if blank_run >= 200:
+        if blank_run >= DEAD_BAND_MIN:
             dead_bands.append({"startY": y - blank_run, "height": blank_run})
         blank_run = 0
         first, last = cols[0], cols[-1]
