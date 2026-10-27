@@ -55,6 +55,30 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-27 内容对等核对(业主:先搬运,再升级)
+
+业主指出"连复刻都没复刻完全",要求先保证内容一致再谈升级。**此前我从未做过系统性的内容对等核对**,这是方法论缺口。
+
+**方法**:旧站 sitemap(`sitemap_pages/collections/blogs/articles`)取全部 URL,逐页在新站打开,对比**词数、h2/h3 数量、图片数量、缺失标题清单**。
+
+**结果**:
+
+| 页面 | 词数 | 保留率 | 缺失内容 |
+|---|---|---|---|
+| `/pages/contact` → `/inquiry/` | 442 → 134 | **30%** | 19 个标题只剩 2;11 张图归零;4 个表单字段 |
+| `/pages/metal-divider` → `/` | 1265 → 1438 | 114% | 字数够但少 22 个区块(见下) |
+| `/pages/laser-cut-panels` | 1532 → 1267 | 83% | — |
+| 其余族页/画廊/about | — | 88–96% | 基本对等 |
+
+**已修(本轮)**:
+1. **contact 页补 4 个字段**:phone / country / scope / route。全链路改动——`Validator`(常量列表 + `choice()` 白名单)、`Form`(select 渲染器)、`Submission`(读取/存储/邮件)、记录字段定义。**端到端实走验证**:真实提交落在感谢页,记录读到 `+852 1234 5678 / Hong Kong / Multi-zone project / Interior partitions`。探针已清理。
+2. **contact 页补 4 个区块**:6 族路由卡、5 步流程、提交前 FAQ、完整联系信息。`/inquiry/` 从 **134 → 494 词**。
+3. **首页 mesh 舞台不是 `<section>`**:转换遗留的裸 `<div>`,导致它落在页面区块节奏之外,**任何走 `main > section` 的扫描都看不到它**——这正是业主发现"整块滑动失效"而我矩阵报通过的原因。现已包成 `<section>`,`main` 子元素 10/10 全为 section。
+
+**首页 22 个"缺失"标题的真相**:8/9 个区块与旧站逐一对位(4 Decisions / Know what will ship / Choose a Pattern / Every step under one roof / Shipped to 15+ countries / From Drawing to Delivery / FAQ / Ready to Start),差异是**图片数 126 → 43** 与部分文案改写。**不是缺区块**,但图片量需要单独核对。
+
+**教训**:之前的 63/63 矩阵只测溢出与触控,**不测内容是否存在**。内容对等必须用词数/标题/图片数逐页比对。
+
 ### 2026-10-27 首页 mesh 舞台失效(业主亲报):三个环境假设错误
 
 业主亲报"这一整块的滑动都是失效的"。**这是真 bug,之前我说"视觉 bug 都解决了"说过头了**——这个舞台没验到。
