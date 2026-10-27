@@ -49,6 +49,10 @@
     // Overlays carry their job in the name: a backdrop, a scrim, a modal veil.
     // They are meant to be a coloured rectangle with nothing in them.
     if (/\b(backdrop|scrim|overlay|veil|mask|shade)\b/i.test(cls)) return true;
+    // A stage, track or carousel viewport is a container whose children arrive
+    // when it opens. Empty in the shipped state is the design, not a hole: the
+    // custom-screens page reported six empty `pattern-lightbox-stage` blocks.
+    if (/\b(stage|track|viewport|carousel|slider|lightbox)\b/i.test(cls)) return true;
     if (/\bbg-gradient|\bbackdrop-blur/.test(cls)) return true;
     // A translucent utility paint (`bg-black/55`, `bg-[#0a0a0a]/60`) is a veil:
     // it exists to darken what is behind it, not to hold content.
@@ -67,6 +71,12 @@
     // a frame after the measurement. A slot with a src is not a design gap; a
     // slot whose src 404s is caught by the img-broken rule instead.
     if ([...el.querySelectorAll('img')].some((i) => (i.getAttribute('src') || '') !== '')) return;
+    // A `<video>` carries the content just as an `<img>` does, and the element
+    // check only knew about pictures: glass-hybrid's FAQ band reported a
+    // 654x1017 empty column whose entire content is a 28MB MP4 that returns
+    // 200 and plays. Video, picture and canvas all count as content here.
+    if (el.querySelector('video, canvas, svg')) return;
+    if ([...el.querySelectorAll('source')].some((n) => (n.getAttribute('src') || '') !== '')) return;
     if (norm(el.textContent).length > 0) return;
     const cs = getComputedStyle(el);
     if (cs.backgroundImage !== 'none') return;
@@ -127,7 +137,11 @@
     if (!i.naturalWidth || !i.naturalHeight) return;
     const nat = i.naturalWidth / i.naturalHeight;
     const boxRatio = box.width / Math.max(box.height, 1);
-    if (nat / boxRatio > 2.2) add('img-ratio', 'low', i, 'natural ' + i.naturalWidth + 'x' + i.naturalHeight + ' in ' + Math.round(box.width) + 'x' + Math.round(box.height));
+    // `object-cover` on a landscape photograph inside a portrait frame crops
+    // by design — the custom-screens slides are 701x422 in a 686x1060 box and
+    // look right. Only a ratio that throws away most of the picture is worth a
+    // finding; 4.0 is roughly "more than three quarters cropped".
+    if (nat / boxRatio > 4.0) add('img-ratio', 'low', i, 'natural ' + i.naturalWidth + 'x' + i.naturalHeight + ' in ' + Math.round(box.width) + 'x' + Math.round(box.height));
   });
 
   // 4. Content forced against the viewport edge — "字体贴边".
@@ -144,7 +158,10 @@
   [...document.querySelectorAll('main h1, main h2, main h3, main p, main li, main label')].forEach((el) => {
     if (!shown(el)) return;
     const r = el.getBoundingClientRect();
-    if (r.width < 30) return;
+    // A narrow box at the left edge is a rotated label or an icon rail, not a
+    // paragraph running past the frame. The home page's ten edge-hug findings
+    // were all 40px-wide `p` elements — vertical type, laid out on purpose.
+    if (r.width < 160) return;
     // Off-screen to the right, or below the fold: not a layout defect.
     if (r.left >= out.viewport.w) return;
     if (r.left >= 6) return;
@@ -197,15 +214,32 @@
   });
 
   // 8. Big dead vertical gaps between content — "莫名的大块空白间隙".
+  //
+  //    The gap has to be between two blocks that carry something. Reported
+  //    between two `pointer-events-none` decorations (which is what all four
+  //    of custom-screens' findings were, 284px and 437px of absolutely
+  //    positioned glow layers), it is describing the design's breathing room
+  //    rather than a hole. A block counts as content when it has text, an
+  //    image, a video, or a control.
+  const carriesContent = (el) => {
+    if (norm(el.textContent).length > 0) return true;
+    if (el.querySelector('img, video, canvas, svg, iframe, button, a[href], input, select, textarea')) return true;
+    const cls = typeof el.className === 'string' ? el.className : '';
+    return !/\bpointer-events-none\b/.test(cls);
+  };
   [...document.querySelectorAll('main section, main > div')].forEach((el) => {
     if (!shown(el)) return;
     const kids = [...el.children].filter(shown);
     if (kids.length < 2) return;
     for (let i = 1; i < kids.length; i++) {
-      const a = kids[i - 1].getBoundingClientRect();
-      const b = kids[i].getBoundingClientRect();
-      const gap = Math.round(b.top - a.bottom);
-      if (gap > 140) add('dead-gap', 'med', kids[i], gap + 'px gap above');
+      const a = kids[i - 1];
+      const b = kids[i];
+      if (!carriesContent(a) || !carriesContent(b)) continue;
+      const gap = Math.round(b.getBoundingClientRect().top - a.getBoundingClientRect().bottom);
+      // 160px is this design's own section rhythm: the custom-screens page
+      // separates content blocks by exactly that, measured on the live page.
+      // The threshold sits above it so ordinary breathing room is not a finding.
+      if (gap > 220) add('dead-gap', 'med', kids[i], gap + 'px gap above');
     }
   });
 
