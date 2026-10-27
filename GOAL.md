@@ -20,7 +20,7 @@
 
 ## 已知待查清单(从参考对话归纳的同款问题面)
 
-- [x] 视觉误导:看起来能点的东西必须能点;能点的东西要有点的样子 — About 5 张假可点击卡已接 `/project-gallery/`(#127);九路审计中唯一真死链 header Resources 已改 disclosure 按钮
+- [x] 视觉误导:看起来能点的东西必须能点;能点的东西要有点的样子 — About 5 张假可点击卡已接 `/project-gallery/`(#127);九路审计中唯一真死链 header Resources 已改 disclosure 按钮。**2026-10-28 全站机器化复核(`tools/audit/affordance.py`,真 1440)**:14 页 `dead=0`;`/faqs/` 48 个按钮的前 48 个曾全是箭头光标,`.about-gallery-panel` 与 `.feature-panel` 曾对 hover-only 面板承诺点击,`a.btn-link` 曾只有 112×25px——三者已修并生产读回。判据:dead = 有 pointer 光标、无 role/href/钩子、实际点击无任何变化;flat = 真控件但光标非 pointer 且非文本框
 - [x] 间距:贴太近的区块、文字与边缘 — 移动端纵向节奏已收敛(96/64),目录/PDP/画廊首屏已修
 - [x] 按钮设计缺失处、暗底暗字对比 — 金色系根因已修:`--md-gold-ink` 供浅底,白字压金改深字;FAQ tab 2.25→8.19、文章 CTA 1.46→8.80、页脚 1.91→8.19
 - [x] hover 状态缺失(文字/按钮 hover 应变色) — 导航/CTA 实测有 hover;页脚法务 hover 被 `#md-footer a` 特异性压死,已修(2026-10-27)
