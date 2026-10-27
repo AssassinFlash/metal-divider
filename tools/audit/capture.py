@@ -114,7 +114,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("which", choices=["old", "new", "both"])
     ap.add_argument("--out", default="/tmp/md-audit")
-    ap.add_argument("--sessions", type=int, default=4)
+    # One session by default. Several opencli sessions share one Chrome
+    # window, so parallel tabs steal focus from each other: a run with four
+    # sessions captured the Asian collection page into the FAQ slot and the
+    # custom-screens page into the home slot, and the diff that followed
+    # reported 732 "missing" strings that were really mislabelled captures.
+    ap.add_argument("--sessions", type=int, default=1)
     args = ap.parse_args()
 
     jobs = []
