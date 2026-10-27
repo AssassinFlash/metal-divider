@@ -83,6 +83,7 @@ class Finding:
     ink_share: float
     left_blank: int
     right_blank: int
+    colours: int
     note: str
 
 
@@ -141,7 +142,16 @@ def row_profile(im: Image.Image, pal: list[tuple[int, int, int]]) -> list[tuple[
         share = inked / len(columns) if columns else 0.0
         left = first_ink if first_ink is not None else usable
         right = (usable - last_ink) if last_ink is not None else usable
-        profile.append((top, share, left, right))
+        # How many distinct colours this band carries. A container with its
+        # content missing is one or two colours across the whole width; a
+        # photograph shot in low light is 40-90. Measured on
+        # /family-geometric/ at 320: bands flagged as "no ink" carried 47-86.
+        sample = {
+            im.getpixel((x, y))
+            for x in range(0, usable, max(1, usable // 24))
+            for y in band_rows
+        }
+        profile.append((top, share, left, right, len(sample)))
     return profile
 
 
@@ -167,11 +177,20 @@ def analyse(path: str) -> dict:
             # both sides is distinguished from one blank on one side only.
             left = sum(t[2] for t in run) / len(run)
             right = sum(t[3] for t in run) / len(run)
+            colours = max(t[4] for t in run)
+            # A band carrying many colours is a dark photograph, not a hole.
+            # Flagging it was the analyser's own artefact; the threshold is
+            # empirical, from the two populations seen in the field (<=4 vs
+            # 47-86 distinct colours).
+            if colours > 20:
+                run = []
+                return
             if peak <= EMPTY_ROW_SHARE:
                 findings.append(Finding(
                     kind="blank-band", top=top, height=height,
                     ink_share=round(mean, 4),
                     left_blank=int(left), right_blank=int(right),
+                    colours=colours,
                     note="no ink anywhere in the width",
                 ))
             elif mean <= MIN_INK_SHARE and height >= MIN_BAND_PX * 2:
@@ -180,6 +199,7 @@ def analyse(path: str) -> dict:
                     kind="dead-well", top=top, height=height,
                     ink_share=round(mean, 4),
                     left_blank=int(left), right_blank=int(right),
+                    colours=colours,
                     note=f"content pools on the {side}, the rest is flat background",
                 ))
         run = []
@@ -234,6 +254,7 @@ def main() -> int:
                       f"  h={finding['height']:5d}"
                       f"  ink={finding['ink_share']:.3f}"
                       f"  blank L{finding['left_blank']}/R{finding['right_blank']}"
+                      f"  colours={finding['colours']}"
                       f"  {finding['note']}")
 
     print(f"\n{len(paths)} capture(s), {total} finding(s)")
