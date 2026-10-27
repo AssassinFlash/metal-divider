@@ -563,4 +563,48 @@ final class ImageSizesTest extends TestCase {
 		}
 		return null;
 	}
+
+	/**
+	 * A content photograph is never silently alt-less.
+	 *
+	 * 34 images carried `alt=""` and two carried no alt at all. Most were
+	 * legitimate: marquee duplicates under `aria-hidden`, the perforated page's
+	 * alternate background layers, the manufacturing cards' secondary shots, and
+	 * one hero background behind a gradient scrim. What was missing was the
+	 * signal that the emptiness is deliberate — an empty alt and a forgotten alt
+	 * look identical in the source.
+	 *
+	 * So the rule is not "no empty alt": it is that every image with an empty or
+	 * missing alt must say why. Either it is marked decorative (`role`, or an
+	 * `aria-hidden` ancestor), or it sits in a control that carries the name
+	 * itself.
+	 */
+	public function test_every_empty_alt_says_why_it_is_empty(): void {
+		$files = glob( \MetalDivider\Site\Presentation\Templates::path( '', true ) . '*.html' );
+		$this->assertNotEmpty( $files );
+
+		$unexplained = array();
+		foreach ( $files as $file ) {
+			$html = (string) preg_replace( '/<!--.*?-->/s', '', (string) file_get_contents( $file ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			preg_match_all( '/<img\b[^>]*>/i', $html, $tags );
+			foreach ( $tags[0] as $tag ) {
+				$has_alt = (bool) preg_match( '/\salt\s*=\s*"([^"]*)"/i', $tag, $alt );
+				if ( $has_alt && '' !== trim( $alt[1] ) ) {
+					continue;
+				}
+				$declared = preg_match( '/\srole\s*=\s*"(presentation|none)"/i', $tag )
+					|| preg_match( '/\saria-hidden\s*=\s*"true"/i', $tag );
+				if ( $declared ) {
+					continue;
+				}
+				$src           = preg_match( '/\ssrc\s*=\s*"([^"]*)"/i', $tag, $src_match ) ? basename( $src_match[1] ) : '(no src)';
+				$unexplained[] = basename( $file ) . ': ' . $src;
+			}
+		}
+		$this->assertSame(
+			array(),
+			$unexplained,
+			'an empty alt is only acceptable when the image declares itself decorative'
+		);
+	}
 }
