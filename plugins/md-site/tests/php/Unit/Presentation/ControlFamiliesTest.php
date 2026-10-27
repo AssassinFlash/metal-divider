@@ -210,7 +210,7 @@ final class ControlFamiliesTest extends TestCase {
 	 * style `[data-…-panel][hidden]` — so the pairing is what has to hold.
 	 */
 	public function test_the_switch_families_pair_controls_with_panels(): void {
-		$body = $this->pass( 'bindSwitchable' );
+		$body = $this->pass( 'bindSwitchableGroup' );
 
 		$this->assertStringContainsString( 'panel.hidden', $body, 'a panel is switched with hidden' );
 		$this->assertStringContainsString( 'aria-selected', $body, 'the control states its selection' );
@@ -296,6 +296,37 @@ final class ControlFamiliesTest extends TestCase {
 		$html = $this->markup( 'family-expanded-metal' );
 		$this->assertSame( 3, substr_count( $html, 'data-emf-acc=' ), 'three materials' );
 		$this->assertSame( 3, substr_count( $html, 'data-emf-img=' ), 'three paired images' );
+	}
+
+	/**
+	 * Two switchable regions in one template never share a value namespace.
+	 *
+	 * The stainless page's tab strip counts from 1 and the story accordion below
+	 * it counted from 0, both under `data-sps-panel`. One generic pass merged
+	 * them, then hid the accordion's open panel because no tab carried its
+	 * value — the row said "expanded", the panel it controlled was `hidden`,
+	 * and the section rendered as an accordion that opens onto nothing.
+	 *
+	 * The pairing primitive now scopes each control to its own enclosing block,
+	 * and the two regions carry different attribute names so they cannot collide
+	 * again even if the scoping is bypassed.
+	 */
+	public function test_two_switchable_regions_never_share_a_value_namespace(): void {
+		$body = $this->pass( 'bindSwitchable' );
+		$this->assertStringContainsString( 'regionOf', $body, 'a control is scoped to its own block' );
+		$this->assertStringContainsString( 'group.region.contains(panel)', $body, 'a group owns only the panels in its block' );
+
+		$html = $this->markup( 'family-stainless-steel' );
+		$this->assertSame( 4, substr_count( $html, 'data-sps-panel=' ), 'the four project tabs keep their own attribute' );
+		$this->assertSame( 4, substr_count( $html, 'data-sps-story-panel=' ), 'the four story panels name themselves' );
+
+		// Every story row that starts open must own a panel that is not hidden
+		// in the shipped markup.
+		$this->assertDoesNotMatchRegularExpression(
+			'/class="sps-story-panel mt-5"\s*\n\s*data-sps-story-panel="\d+"\s*\n\s*aria-hidden="false"\s*\n\s*hidden/',
+			$html,
+			'an open story panel is not shipped hidden'
+		);
 	}
 
 	/**

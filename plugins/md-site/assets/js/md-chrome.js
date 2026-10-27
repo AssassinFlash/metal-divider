@@ -2225,7 +2225,65 @@
   // Two control groups paired by a shared value: the clicked control's own
   // attribute value must equal the panel's. `hidden` is the state — the volumes
   // already style `[data-…-panel][hidden]` — so nothing else has to be invented.
+  //
+  // Panels are paired per region, not document-wide. Two unrelated blocks may
+  // reuse the same attribute names with different value bases — the stainless
+  // page's tab strip counts from 1 and its story accordion from 0 — and one
+  // merged group then decides every panel by the clicked tab's value: the
+  // accordion's open panel matches no tab and is hidden while its row still
+  // says it is open, an accordion that opens onto nothing. A control therefore
+  // owns only the panels inside its own nearest enclosing block.
   function bindSwitchable(controls, panels, controlAttr, panelAttr) {
+    if (!controls.length || !panels.length) {
+      return;
+    }
+    var pool = [];
+    each(panels, function (panel) {
+      pool.push(panel);
+    });
+
+    var regionOf = function (control) {
+      var node = control.parentElement;
+      while (node && node !== document.body) {
+        for (var i = 0; i < pool.length; i++) {
+          if (node.contains(pool[i])) {
+            return node;
+          }
+        }
+        node = node.parentElement;
+      }
+      return document.body;
+    };
+
+    var groups = [];
+    each(controls, function (control) {
+      var region = regionOf(control);
+      var group = null;
+      for (var i = 0; i < groups.length; i++) {
+        if (groups[i].region === region) {
+          group = groups[i];
+          break;
+        }
+      }
+      if (!group) {
+        group = { region: region, controls: [] };
+        groups.push(group);
+      }
+      group.controls.push(control);
+    });
+
+    each(groups, function (group) {
+      var owned = [];
+      each(pool, function (panel) {
+        if (group.region.contains(panel)) {
+          owned.push(panel);
+        }
+      });
+      bindSwitchableGroup(group.controls, owned, controlAttr, panelAttr);
+    });
+  }
+
+  function bindSwitchableGroup(controls, panels, controlAttr, panelAttr) {
     if (!controls.length || !panels.length) {
       return;
     }
