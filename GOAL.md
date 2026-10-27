@@ -55,6 +55,39 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-28 全站图片可见性闭环:1194 个文件,0 张不可见
+
+**取图路径穷尽清点**(全仓 `grep get_post_thumbnail_id / get_term_meta.*thumbnail_id / get_the_post_thumbnail`):
+
+| 位置 | 来源字段 | 修复手段 |
+|---|---|---|
+| `PatternFacts.php` ×4、`Shortcodes.php:628`、`Cards.php:354`、`md-inquiry/Pattern.php:73`、`Seo/SchemaFilters.php:236` | 产品 `_thumbnail_id` | `retarget-thumbnails` |
+| `Cards.php:386`(系列卡) | 分类 `get_term_meta(term_id,'thumbnail_id')` | `seed-series --repoint-masked` |
+
+**只有两套**,均已修。
+
+**全量可见性扫描**(生产,访客态)
+
+解析每个 `<img>` 的 `src` + `data-src` + **全部 `srcset` 候选**(浏览器实际选的是 srcset 那一档;只测 `src` 会漏掉大半——`/shop/` 的 src 38 个、srcset 候选 99 个),逐个下载、合成到卡片底色 `#141414`、取最大亮度,`< 20` 即判不可见。
+
+```
+/                                       files= 217  dark=0  unreadable=0
+/collections/                           files=  33  dark=0  unreadable=0
+/shop/                                  files= 107  dark=0  unreadable=0
+/inquiry/                               files=  20  dark=0  unreadable=0
+/faqs/                                  files=  10  dark=0  unreadable=0
+/about-us/                              files=  60  dark=0  unreadable=0
+/manufacturing-process/                 files= 105  dark=0  unreadable=0
+/project-gallery/                       files= 120  dark=0  unreadable=0
+/laser-cut-geometric-metal-screens/     files= 136  dark=0  unreadable=0
+/custom-metal-divider-screens/          files= 374  dark=0  unreadable=0
+/pattern/agave-...-pattern/             files=  12  dark=0  unreadable=0
+
+TOTAL 1194 files  problems: 0
+```
+
+按页型覆盖:首页、枢纽、目录、询盘、FAQ、About、工艺、画廊、家族、定制、PDP。
+
 ### 2026-10-28 320 视口全站 24 页 + 找到第二套缩略图字段
 
 **320 全站扫描(超高视口法,`--width 320 --height 60000`)**
