@@ -110,6 +110,7 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 
 - **浏览器铁律(业主 2026-10-27,推翻 2026-10-25 的 Playwright 方案)**:一切浏览器自动化只经 **opencli 桥接本机真 Chrome**(`/Users/chesterjohn/.local/bin/opencli`);**不用 Playwright**,不启动 Playwright 自带 Chromium、Chrome for Testing、无头替代或其他浏览器,也不设 fallback。opencli 不可用就修 opencli,不绕开。性能评估必须真 Chrome 实测,其他浏览器的性能数据一律无效。
 - **opencli 的视口操作事实(2026-10-28 实测,省得再踩)**:`eval` 始终在**窗口自身**宽度下运行,没有设置视口的命令;要别的宽度只能用 `screenshot --width N --full-page`。该参数是**真重排不是裁剪**,三条证据:①`--md-header-h` 在 320/390 截图里是 73px、窗口 1456 下是 113px(`tokens.css` 正是这三个值);②带 `lg:hidden` 的区块在 1456 下 `display:none`、390 截图里出现;③同页两档截图逐像素只有 41% 相同。三条死路已验证不通,别重试:Chrome 窗口最小宽度 626px、iframe 被本站 `frame-src 'self'` CSP 拦、Cmd± 缩放不改变 `innerWidth`。多会话并发会互相抢同一窗口的标签页(曾把集合页抓进 FAQ 槽位),抓取默认串行。
+- **截图不能证明「内容有没有渲染」(2026-10-28 实测)**:`screenshot --width N` 每次重排都会作废已加载的图片,浏览器按新宽度重新拉图,截图先于加载完成。同一 URL 连拍两张:首次 1128 平坦行 3/68,预热后再拍 **42/68**——第二次反而更糟。所以 `--width` 截图只可用来判断**布局与样式**,不可用来判断图片/内容是否存在;后者读 DOM(`naturalWidth`、`getBoundingClientRect().height`、子节点数)。跨宽度比「信息密度」无意义,只有**同宽度**的前后对比有效。另:`browser open` 总落到上次那个窗口,没有指定 windowId 的参数;`windows.update` 能改宽,但改不到 `open` 用的窗口(被占用的窗口报 `managed_resource_conflict`),所以「把窗口改成 N 宽再用 eval 测量」这条路目前不通。
 - **性能优化开放裁定(业主 2026-10-25,推翻此前的 DNS 保守版)**:性能优化**可以激进**——转 Cloudflare、调 LiteSpeed、任何方案均开放接受;前提:①业主零操作,全部代理执行;②方法参考 de-linker(含安全与站点防护那套:guards、限流、IP 封禁、WAF 如上 CF);③**一切结论由实测与搜索驱动**(真 Chrome 性能数据 + Apify 一手来源),禁止未经证实的汇报——业主原话"绝不允许再虚假汇报"。方案选型先测基线再对比,拿数据说话。
 
 外部事实只走一手来源(官方文档、实测数据);每个数字与阈值必须有来源注释。能看、能试、能查的先做再说;只问业主只有业主知道的事。代码、注释、文档里的数字都不是事实,追到业主裁定、一手证据或平台原生能力三者之一为止。

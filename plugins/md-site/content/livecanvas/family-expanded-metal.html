@@ -1547,10 +1547,7 @@ for Your Screen?</h2>
   id="expanded-process-template--22084675240189__expanded-process"
   class="overflow-hidden font-['Inter'] text-white md-t9edacfd5"
 >
-  <div
-    class="mx-auto max-w-[1400px] px-5 md:px-10"
-    x-data="{ activeTab: 'ep-step-1' }"
-  >
+  <div class="ep-steps mx-auto max-w-[1400px] px-5 md:px-10">
 
     <div class="text-center mb-12 md:mb-16"><p class="mb-3 font-['Inter'] text-xs font-semibold uppercase tracking-[0.22em] text-[#c9a962] md:mb-4 md:text-sm">How We Work</p><h2 class="mx-auto max-w-[1120px] font-['Playfair_Display'] text-[32px] font-bold leading-[1.08] tracking-[-0.02em] text-white md:text-[42px] lg:text-[56px] md-t722f84cd">
         From Brief to Delivery — <span class="text-[#c9a962]">5 Steps</span>
@@ -1559,74 +1556,15 @@ for Your Screen?</h2>
       <div class="w-16 h-[2px] bg-gradient-to-r from-transparent via-[#c9a962] to-transparent mx-auto mt-6"></div>
     </div>
 
-    <!-- Tab bar -->
-    <div class="mb-10 md:mb-14 border-b border-white/10 overflow-x-auto">
-      <div class="flex w-max min-w-full items-end gap-1 justify-start md:justify-center"><button
-              type="button"
-              role="tab"
-              aria-controls="ep-tab-ep-step-1"
-              x-bind:aria-selected="activeTab === 'ep-step-1'"
-              @click="activeTab = 'ep-step-1'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
-              :class="activeTab === 'ep-step-1' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
-              
-            >
-              Drawing Review
-            </button><button
-              type="button"
-              role="tab"
-              aria-controls="ep-tab-ep-step-2"
-              x-bind:aria-selected="activeTab === 'ep-step-2'"
-              @click="activeTab = 'ep-step-2'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
-              :class="activeTab === 'ep-step-2' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
-              
-            >
-              Sample Confirmation
-            </button><button
-              type="button"
-              role="tab"
-              aria-controls="ep-tab-ep-step-3"
-              x-bind:aria-selected="activeTab === 'ep-step-3'"
-              @click="activeTab = 'ep-step-3'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
-              :class="activeTab === 'ep-step-3' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
-              
-            >
-              CNC Punching
-            </button><button
-              type="button"
-              role="tab"
-              aria-controls="ep-tab-ep-step-4"
-              x-bind:aria-selected="activeTab === 'ep-step-4'"
-              @click="activeTab = 'ep-step-4'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
-              :class="activeTab === 'ep-step-4' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
-              
-            >
-              Deburr &amp; Finish
-            </button><button
-              type="button"
-              role="tab"
-              aria-controls="ep-tab-ep-step-5"
-              x-bind:aria-selected="activeTab === 'ep-step-5'"
-              @click="activeTab = 'ep-step-5'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
-              :class="activeTab === 'ep-step-5' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
-              
-            >
-              QC &amp; Packing
-            </button></div>
+    <div class="ep-steps-bar" role="radiogroup" aria-label="Process steps">
+      <div class="ep-steps-row"><input class="ep-steps-input" type="radio" name="ep-step" id="ep-step-1" checked><label class="ep-steps-label" for="ep-step-1">Drawing Review</label><input class="ep-steps-input" type="radio" name="ep-step" id="ep-step-2"><label class="ep-steps-label" for="ep-step-2">Sample Confirmation</label><input class="ep-steps-input" type="radio" name="ep-step" id="ep-step-3"><label class="ep-steps-label" for="ep-step-3">CNC Punching</label><input class="ep-steps-input" type="radio" name="ep-step" id="ep-step-4"><label class="ep-steps-label" for="ep-step-4">Deburr &amp; Finish</label><input class="ep-steps-input" type="radio" name="ep-step" id="ep-step-5"><label class="ep-steps-label" for="ep-step-5">QC &amp; Packing</label></div>
     </div>
 
     <!-- Tab panels -->
     <div class="relative"><article
             id="ep-tab-ep-step-1"
-            role="tabpanel"
-            x-show="activeTab === 'ep-step-1'"
-            x-transition.opacity.duration.300ms
-            
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
+            class="ep-steps-panel grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
+            data-ep-panel="1"
           >
             <!-- Video / Image -->
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><img src="/wp-content/uploads/2026/10/caliper-measurement-drawing-2048w.webp" alt="Drawing Review + Open Area Check" srcset="/wp-content/uploads/2026/10/caliper-measurement-drawing-480w.webp 480w, /wp-content/uploads/2026/10/caliper-measurement-drawing-768w.webp 768w, /wp-content/uploads/2026/10/caliper-measurement-drawing-1024w.webp 1024w, /wp-content/uploads/2026/10/caliper-measurement-drawing-1536w.webp 1536w, /wp-content/uploads/2026/10/caliper-measurement-drawing-2048w.webp 2048w" width="1600" height="1066" loading="lazy" class="block w-full h-full object-cover" sizes="(min-width: 1400px) 658px, (min-width: 1024px) calc(50vw - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)">
@@ -1650,10 +1588,8 @@ for Your Screen?</h2>
             </div>
           </article><article
             id="ep-tab-ep-step-2"
-            role="tabpanel"
-            x-show="activeTab === 'ep-step-2'"
-            x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            class="ep-steps-panel grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
+            data-ep-panel="2"
           >
             <!-- Video / Image -->
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><img src="/wp-content/uploads/2026/10/ext-pp-panel-slot-detail-2048w.webp" alt="Sample Confirmation" srcset="/wp-content/uploads/2026/10/ext-pp-panel-slot-detail-480w.webp 480w, /wp-content/uploads/2026/10/ext-pp-panel-slot-detail-768w.webp 768w, /wp-content/uploads/2026/10/ext-pp-panel-slot-detail-1024w.webp 1024w, /wp-content/uploads/2026/10/ext-pp-panel-slot-detail-1536w.webp 1536w, /wp-content/uploads/2026/10/ext-pp-panel-slot-detail-2048w.webp 2048w" width="1600" height="1600" loading="lazy" class="block w-full h-full object-cover" sizes="(min-width: 1400px) 658px, (min-width: 1024px) calc(50vw - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)">
@@ -1677,10 +1613,8 @@ for Your Screen?</h2>
             </div>
           </article><article
             id="ep-tab-ep-step-3"
-            role="tabpanel"
-            x-show="activeTab === 'ep-step-3'"
-            x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            class="ep-steps-panel grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
+            data-ep-panel="3"
           >
             <!-- Video / Image -->
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><img src="/wp-content/uploads/2026/10/ext-pp-cnc-turret-punching-2048w.webp" alt="CNC Turret Punching" srcset="/wp-content/uploads/2026/10/ext-pp-cnc-turret-punching-480w.webp 480w, /wp-content/uploads/2026/10/ext-pp-cnc-turret-punching-768w.webp 768w, /wp-content/uploads/2026/10/ext-pp-cnc-turret-punching-1024w.webp 1024w, /wp-content/uploads/2026/10/ext-pp-cnc-turret-punching-1536w.webp 1536w, /wp-content/uploads/2026/10/ext-pp-cnc-turret-punching-2048w.webp 2048w" width="1600" height="1006" loading="lazy" class="block w-full h-full object-cover" sizes="(min-width: 1400px) 658px, (min-width: 1024px) calc(50vw - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)">
@@ -1704,10 +1638,8 @@ for Your Screen?</h2>
             </div>
           </article><article
             id="ep-tab-ep-step-4"
-            role="tabpanel"
-            x-show="activeTab === 'ep-step-4'"
-            x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            class="ep-steps-panel grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
+            data-ep-panel="4"
           >
             <!-- Video / Image -->
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><img src="/wp-content/uploads/2026/10/ext-pp-deburr-abrasive-rollers-2048w.webp" alt="Deburr + Surface Finish" srcset="/wp-content/uploads/2026/10/ext-pp-deburr-abrasive-rollers-480w.webp 480w, /wp-content/uploads/2026/10/ext-pp-deburr-abrasive-rollers-768w.webp 768w, /wp-content/uploads/2026/10/ext-pp-deburr-abrasive-rollers-1024w.webp 1024w, /wp-content/uploads/2026/10/ext-pp-deburr-abrasive-rollers-1536w.webp 1536w, /wp-content/uploads/2026/10/ext-pp-deburr-abrasive-rollers-2048w.webp 2048w" width="1600" height="1217" loading="lazy" class="block w-full h-full object-cover" sizes="(min-width: 1400px) 658px, (min-width: 1024px) calc(50vw - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)">
@@ -1731,10 +1663,8 @@ for Your Screen?</h2>
             </div>
           </article><article
             id="ep-tab-ep-step-5"
-            role="tabpanel"
-            x-show="activeTab === 'ep-step-5'"
-            x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            class="ep-steps-panel grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
+            data-ep-panel="5"
           >
             <!-- Video / Image -->
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><img src="/wp-content/uploads/2026/10/ext-pp-export-crates-warehouse-2048w.webp" alt="QC + Export Packing" srcset="/wp-content/uploads/2026/10/ext-pp-export-crates-warehouse-480w.webp 480w, /wp-content/uploads/2026/10/ext-pp-export-crates-warehouse-768w.webp 768w, /wp-content/uploads/2026/10/ext-pp-export-crates-warehouse-1024w.webp 1024w, /wp-content/uploads/2026/10/ext-pp-export-crates-warehouse-1536w.webp 1536w, /wp-content/uploads/2026/10/ext-pp-export-crates-warehouse-2048w.webp 2048w" width="1600" height="1067" loading="lazy" class="block w-full h-full object-cover" sizes="(min-width: 1400px) 658px, (min-width: 1024px) calc(50vw - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)">
@@ -1782,7 +1712,6 @@ for Your Screen?</h2>
 
 <section
   id="expanded-faq-template--22084675240189__expanded-faq"
-  x-data="{ activeQ: 0 }"
   class="text-white overflow-hidden md-tecede96f"
 >
   <div class="max-w-[1400px] mx-auto px-5 md:px-10">
@@ -1813,29 +1742,14 @@ for Your Screen?</h2>
       </div>
 
       <!-- Right: FAQ Accordion -->
-      <div class="lg:w-7/12"><div class="border-b border-white/10">
-            <button
-              @click="activeQ = activeQ === 0 ? -1 : 0"
-              class="w-full flex items-start justify-between gap-4 py-6 text-left transition-colors duration-200"
-              :class="activeQ === 0 ? 'text-white' : 'text-white/80 hover:text-white'"
-              :aria-expanded="activeQ === 0"
-            >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">How is a custom expanded metal panel quoted by material and finish for an architectural project?</span>
-              <svg
-                class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
-                :class="activeQ === 0 ? 'rotate-45' : ''"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
-              >
+      <div class="lg:w-7/12"><details class="md-faq-row border-b border-white/10" name="expanded-faq" open>
+            <summary class="md-faq-summary">
+              <span class="font-semibold text-base md:text-lg leading-snug">How is a custom expanded metal panel quoted by material and finish for an architectural project?</span>
+              <svg class="md-faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
-            </button>
-
-            <div
-              x-show="activeQ === 0"
-              x-cloak
-              x-collapse
-              class="pb-8"
-            >
+            </summary>
+            <div class="md-faq-body">
               <div class="emfaq-answer max-w-none text-sm leading-relaxed text-white/80">
                 
 <p>Expanded metal panel cost varies with material grade, thickness (typically 1.0–3.0 mm), pattern (SWD/LWD), panel size, and finish. We do not publish unit prices: the variables interact, and a per-square-metre number quoted before the drawing is reviewed misleads more than it helps. Send the specification and we return a line-item quote for your quantities.</p>
@@ -1856,29 +1770,14 @@ for Your Screen?</h2>
 
               </div>
             </div>
-          </div><div class="border-b border-white/10">
-            <button
-              @click="activeQ = activeQ === 1 ? -1 : 1"
-              class="w-full flex items-start justify-between gap-4 py-6 text-left transition-colors duration-200"
-              :class="activeQ === 1 ? 'text-white' : 'text-white/80 hover:text-white'"
-              :aria-expanded="activeQ === 1"
-            >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">How do 304 and 316 stainless steel compare in corrosion and weathering performance for architectural use?</span>
-              <svg
-                class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
-                :class="activeQ === 1 ? 'rotate-45' : ''"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
-              >
+          </details><details class="md-faq-row border-b border-white/10" name="expanded-faq">
+            <summary class="md-faq-summary">
+              <span class="font-semibold text-base md:text-lg leading-snug">How do 304 and 316 stainless steel compare in corrosion and weathering performance for architectural use?</span>
+              <svg class="md-faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
-            </button>
-
-            <div
-              x-show="activeQ === 1"
-              x-cloak
-              x-collapse
-              class="pb-8"
-            >
+            </summary>
+            <div class="md-faq-body">
               <div class="emfaq-answer max-w-none text-sm leading-relaxed text-white/80">
                 
 <p>Material choice directly impacts long-term durability in different climates. Salt spray testing (ASTM B117) and real-world exposure data provide clear benchmarks for hotel lobbies, exterior facades, and coastal projects.</p>
@@ -1899,29 +1798,14 @@ for Your Screen?</h2>
 
               </div>
             </div>
-          </div><div class="border-b border-white/10">
-            <button
-              @click="activeQ = activeQ === 2 ? -1 : 2"
-              class="w-full flex items-start justify-between gap-4 py-6 text-left transition-colors duration-200"
-              :class="activeQ === 2 ? 'text-white' : 'text-white/80 hover:text-white'"
-              :aria-expanded="activeQ === 2"
-            >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">What is the open area percentage in expanded metal panels and what are the structural and visual tradeoffs for architects and specifiers?</span>
-              <svg
-                class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
-                :class="activeQ === 2 ? 'rotate-45' : ''"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
-              >
+          </details><details class="md-faq-row border-b border-white/10" name="expanded-faq">
+            <summary class="md-faq-summary">
+              <span class="font-semibold text-base md:text-lg leading-snug">What is the open area percentage in expanded metal panels and what are the structural and visual tradeoffs for architects and specifiers?</span>
+              <svg class="md-faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
-            </button>
-
-            <div
-              x-show="activeQ === 2"
-              x-cloak
-              x-collapse
-              class="pb-8"
-            >
+            </summary>
+            <div class="md-faq-body">
               <div class="emfaq-answer max-w-none text-sm leading-relaxed text-white/80">
                 
 <p>Open area percentage (the proportion of empty space in the panel) is one of the most frequently requested specifications because it controls light transmission, ventilation, privacy, and shading while directly affecting panel stiffness.</p>
@@ -1943,29 +1827,14 @@ for Your Screen?</h2>
 
               </div>
             </div>
-          </div><div class="border-b border-white/10">
-            <button
-              @click="activeQ = activeQ === 3 ? -1 : 3"
-              class="w-full flex items-start justify-between gap-4 py-6 text-left transition-colors duration-200"
-              :class="activeQ === 3 ? 'text-white' : 'text-white/80 hover:text-white'"
-              :aria-expanded="activeQ === 3"
-            >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">What are standard versus custom panel sizes for architectural expanded metal projects?</span>
-              <svg
-                class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
-                :class="activeQ === 3 ? 'rotate-45' : ''"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
-              >
+          </details><details class="md-faq-row border-b border-white/10" name="expanded-faq">
+            <summary class="md-faq-summary">
+              <span class="font-semibold text-base md:text-lg leading-snug">What are standard versus custom panel sizes for architectural expanded metal projects?</span>
+              <svg class="md-faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
-            </button>
-
-            <div
-              x-show="activeQ === 3"
-              x-cloak
-              x-collapse
-              class="pb-8"
-            >
+            </summary>
+            <div class="md-faq-body">
               <div class="emfaq-answer max-w-none text-sm leading-relaxed text-white/80">
                 
 <p>Standard sheet sizes minimize cost and lead time, while custom panels are fabricated to exact project dimensions for seamless installation.</p>
@@ -1986,29 +1855,14 @@ for Your Screen?</h2>
 
               </div>
             </div>
-          </div><div class="border-b border-white/10">
-            <button
-              @click="activeQ = activeQ === 4 ? -1 : 4"
-              class="w-full flex items-start justify-between gap-4 py-6 text-left transition-colors duration-200"
-              :class="activeQ === 4 ? 'text-white' : 'text-white/80 hover:text-white'"
-              :aria-expanded="activeQ === 4"
-            >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">What are typical lead times for samples and bulk production of custom expanded metal panels from a Foshan manufacturer?</span>
-              <svg
-                class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
-                :class="activeQ === 4 ? 'rotate-45' : ''"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
-              >
+          </details><details class="md-faq-row border-b border-white/10" name="expanded-faq">
+            <summary class="md-faq-summary">
+              <span class="font-semibold text-base md:text-lg leading-snug">What are typical lead times for samples and bulk production of custom expanded metal panels from a Foshan manufacturer?</span>
+              <svg class="md-faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
-            </button>
-
-            <div
-              x-show="activeQ === 4"
-              x-cloak
-              x-collapse
-              class="pb-8"
-            >
+            </summary>
+            <div class="md-faq-body">
               <div class="emfaq-answer max-w-none text-sm leading-relaxed text-white/80">
                 
 <p>Lead times depend on pattern complexity, finish type, and current factory load but follow predictable industry benchmarks for architectural projects.</p>
@@ -2029,29 +1883,14 @@ for Your Screen?</h2>
 
               </div>
             </div>
-          </div><div class="border-b border-white/10">
-            <button
-              @click="activeQ = activeQ === 5 ? -1 : 5"
-              class="w-full flex items-start justify-between gap-4 py-6 text-left transition-colors duration-200"
-              :class="activeQ === 5 ? 'text-white' : 'text-white/80 hover:text-white'"
-              :aria-expanded="activeQ === 5"
-            >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">What installation methods are commonly used for expanded metal panels in building facades, ceilings, and interior partitions?</span>
-              <svg
-                class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
-                :class="activeQ === 5 ? 'rotate-45' : ''"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
-              >
+          </details><details class="md-faq-row border-b border-white/10" name="expanded-faq">
+            <summary class="md-faq-summary">
+              <span class="font-semibold text-base md:text-lg leading-snug">What installation methods are commonly used for expanded metal panels in building facades, ceilings, and interior partitions?</span>
+              <svg class="md-faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
-            </button>
-
-            <div
-              x-show="activeQ === 5"
-              x-cloak
-              x-collapse
-              class="pb-8"
-            >
+            </summary>
+            <div class="md-faq-body">
               <div class="emfaq-answer max-w-none text-sm leading-relaxed text-white/80">
                 
 <p>Proper installation ensures structural integrity, alignment, and long-term performance. Most architects specify framed systems for ease of mounting and future maintenance.</p>
@@ -2064,29 +1903,14 @@ for Your Screen?</h2>
 
               </div>
             </div>
-          </div><div class="border-b border-white/10">
-            <button
-              @click="activeQ = activeQ === 6 ? -1 : 6"
-              class="w-full flex items-start justify-between gap-4 py-6 text-left transition-colors duration-200"
-              :class="activeQ === 6 ? 'text-white' : 'text-white/80 hover:text-white'"
-              :aria-expanded="activeQ === 6"
-            >
-              <span class="font-semibold text-base md:text-lg leading-snug pr-4">How do material grades (304 vs 316 stainless steel) influence suitability for different architectural environments?</span>
-              <svg
-                class="w-5 h-5 mt-1 flex-shrink-0 transition-transform duration-300 text-[#c9a962]"
-                :class="activeQ === 6 ? 'rotate-45' : ''"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
-              >
+          </details><details class="md-faq-row border-b border-white/10" name="expanded-faq">
+            <summary class="md-faq-summary">
+              <span class="font-semibold text-base md:text-lg leading-snug">How do material grades (304 vs 316 stainless steel) influence suitability for different architectural environments?</span>
+              <svg class="md-faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
-            </button>
-
-            <div
-              x-show="activeQ === 6"
-              x-cloak
-              x-collapse
-              class="pb-8"
-            >
+            </summary>
+            <div class="md-faq-body">
               <div class="emfaq-answer max-w-none text-sm leading-relaxed text-white/80">
                 
 <p>Each grade balances weight, cost, strength, and environmental resistance. Selection is driven by exposure, budget, and maintenance expectations.</p>
@@ -2105,7 +1929,7 @@ for Your Screen?</h2>
 </ul>
               </div>
             </div>
-          </div><!-- Bottom CTA -->
+          </details><!-- Bottom CTA -->
         <div class="mt-10 pt-6">
           <p class="text-white/75 text-sm mb-4">Still have questions? Our engineering team responds within 24 hours.</p>
           <a

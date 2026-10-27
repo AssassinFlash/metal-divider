@@ -667,3 +667,80 @@ font-size: 11px;
     display: none;
   }
 }
+
+/* Decorative-panel index, desktop.
+ *
+ * Measured over the facade photograph: inactive labels were
+ * rgba(255,255,255,.5), so five of six rows failed 4.5:1 (worst
+ * 1.25:1, rgb(91) on rgb(75)) and flipped readable mid-word where
+ * the photo went from metal to soffit. The numbers also failed to
+ * share a column — each row was only as wide as its label, a 180px
+ * spread of right edges. The panel is opaque and only as large as
+ * the list, so the photograph outside it is unchanged and the pixel
+ * behind every glyph is the panel, not the photo. */
+@media (min-width: 992px) {
+  .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty {
+    align-items: stretch;
+    gap: 4px;
+    width: max-content;
+    min-width: 320px;
+    max-width: 420px;
+    padding: 20px;
+    background: #0e0e0e;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  }
+  .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty > li {
+    display: flex;
+    width: 100%;
+  }
+  .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty .emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2.5ch;
+    align-items: center;
+    column-gap: 16px;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 4px 8px 12px;
+    justify-content: stretch;
+    color: #f3f3f3;
+    background: transparent;
+    border-left: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty .emt-nav-label-template--21844031930621__decorative_panels_grid_gmaCty {
+    justify-self: end;
+    text-align: right;
+    color: inherit;
+  }
+  .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty .md-td8ee4148 {
+    justify-self: end;
+    width: 2.5ch;
+    min-width: 2.5ch;
+    text-align: right;
+  }
+  .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty .emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty.emt-active {
+    color: #fff;
+    border-left-color: #c9a962;
+    background: rgba(201, 169, 98, 0.12);
+  }
+}
+
+/* Closing quote card: don't stretch the action card up to the taller
+   sidebar, or the band sits in an empty well. The aside is inset from
+   the fixed back-to-top (chrome.css: right 30px, 40px wide) so that
+   control cannot cover the email row's corner. */
+#contact .home-contact-grid {
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  #contact .home-contact-aside {
+    padding-right: 88px;
+  }
+}
+#contact .home-contact-aside p,
+#contact .home-contact-aside a,
+#contact .home-contact-aside span {
+  text-wrap: pretty;
+}

@@ -436,3 +436,84 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
     width: calc(100vw - 88px) !important;
   }
 }
+
+/* Pair D, 2026-10-28. The step accordion painted every eyebrow gold, so no
+   row read as selected, and the last chevron ring sat in the back-to-top
+   footprint (phone float occupies 16–60px from the right; the ring sat at
+   16–64px). The expanded panel's first column was a 22% empty well beside
+   two words. Specs tabs used the same clipped rule as the outdoor page. */
+@media (max-width: 749px) {
+  [id*="21873710498045"] .max-w-\[1400px\].px-4,
+  [id*="21873710498045"] .max-w-\[1280px\].px-4,
+  [id*="21873710498045"] > .px-4,
+  [id*="21873710498045"] .max-w-\[1400px\].px-5,
+  [id*="21873710498045"] .max-w-\[1400px\].px-6,
+  [id*="21873710498045"] > .mx-auto.px-5,
+  [id*="21873710498045"] > .mx-auto.px-6 {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
+
+#chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes,
+#chinese-specs-template--21873710498045__chinese_specs {
+  padding-top: 72px;
+  padding-bottom: 88px;
+}
+
+#chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes article > button > span:first-child > span:first-child {
+  color: rgba(255, 255, 255, 0.55);
+}
+#chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes article > button[aria-expanded="true"] > span:first-child > span:first-child {
+  color: #c9a962;
+}
+#chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes article > button > span:last-child {
+  margin-inline-end: 56px;
+}
+@media (min-width: 768px) {
+  #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes article > button > span:last-child {
+    margin-inline-end: 40px;
+  }
+  #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes .ccm-panel > .grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  }
+  #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes .ccm-panel > .grid > :first-child {
+    display: none;
+  }
+  #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes .ccm-panel .max-w-\[540px\] {
+    max-width: none;
+  }
+}
+#chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes .ccm-panel video,
+#chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes .ccm-panel img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#chinese-specs-template--21873710498045__chinese_specs .md-spec-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 32px;
+  position: relative;
+  margin-bottom: 48px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#chinese-specs-template--21873710498045__chinese_specs .md-spec-tabs::-webkit-scrollbar {
+  display: none;
+}
+#chinese-specs-template--21873710498045__chinese_specs .md-spec-tabs > button {
+  flex: 0 0 auto;
+}
+#chinese-specs-template--21873710498045__chinese_specs .md-spec-tabs > button[aria-selected="true"] {
+  color: #c9a962;
+  border-bottom-color: #c9a962;
+}
+@media (max-width: 749px) {
+  #chinese-specs-template--21873710498045__chinese_specs .md-spec-tabs {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}

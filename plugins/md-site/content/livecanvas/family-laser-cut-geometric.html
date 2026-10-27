@@ -1291,22 +1291,23 @@ class="xo-container--wide"
   class="overflow-hidden md-t131d2146"
 >
   <div
-    class="mx-auto max-w-[1400px] px-5 md:px-10"
-    x-data="mdHoverTabs('linear')"
+    class="md-exec-wrap mx-auto max-w-[1400px] px-5 md:px-10"
+    x-data="mdHoverTabs('step_pattern_lock')"
   >
     <div class="text-center mb-12 md:mb-16"><p class="mb-3 font-['Inter'] text-xs font-semibold uppercase tracking-[0.22em] text-[#c9a962] md:mb-4 md:text-sm">PROJECT EXECUTION</p><h2 class="mx-auto max-w-[1120px] font-['Playfair_Display'] text-[32px] font-bold leading-[1.08] tracking-[-0.02em] text-white md:text-[42px] lg:text-[56px] md-t722f84cd">From your drawing to your site — four steps</h2>
       <p class="mx-auto mt-5 max-w-[980px] font-['Inter'] text-[15px] leading-relaxed text-white/70 md:text-[18px] md-t78970fa2">You send the pattern and dimensions. We confirm, cut, check, and ship. Here&#39;s what happens at each step — and what you control.</p>
       <div class="w-16 h-[2px] bg-gradient-to-r from-transparent via-[#c9a962] to-transparent mx-auto"></div>
     </div>
 
-    <div class="mb-10 md:mb-14 border-b border-white/10 overflow-x-auto">
-      <div class="flex w-max min-w-full items-end gap-1 md:justify-center"><button
+    <div class="md-exec-rule" role="tablist" aria-label="Project execution steps">
+      <div class="md-exec-tabs"><button
               type="button"
               role="tab"
               aria-controls="exec-tab-step_pattern_lock"
+              aria-selected="true"
               x-bind:aria-selected="activeTab === 'step_pattern_lock'"
               @click="activeTab = 'step_pattern_lock'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
+              class="md-exec-tab min-h-[48px] border-b-2 px-5 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
               :class="activeTab === 'step_pattern_lock' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
               
             >
@@ -1315,9 +1316,10 @@ class="xo-container--wide"
               type="button"
               role="tab"
               aria-controls="exec-tab-step_laser_cutting"
+              aria-selected="false"
               x-bind:aria-selected="activeTab === 'step_laser_cutting'"
               @click="activeTab = 'step_laser_cutting'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
+              class="md-exec-tab min-h-[48px] border-b-2 px-5 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
               :class="activeTab === 'step_laser_cutting' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
               
             >
@@ -1326,9 +1328,10 @@ class="xo-container--wide"
               type="button"
               role="tab"
               aria-controls="exec-tab-step_finish_check"
+              aria-selected="false"
               x-bind:aria-selected="activeTab === 'step_finish_check'"
               @click="activeTab = 'step_finish_check'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
+              class="md-exec-tab min-h-[48px] border-b-2 px-5 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
               :class="activeTab === 'step_finish_check' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
               
             >
@@ -1337,9 +1340,10 @@ class="xo-container--wide"
               type="button"
               role="tab"
               aria-controls="exec-tab-step_ready_for_site"
+              aria-selected="false"
               x-bind:aria-selected="activeTab === 'step_ready_for_site'"
               @click="activeTab = 'step_ready_for_site'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
+              class="md-exec-tab min-h-[48px] border-b-2 px-5 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
               :class="activeTab === 'step_ready_for_site' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
               
             >
@@ -1347,13 +1351,13 @@ class="xo-container--wide"
             </button></div>
     </div>
 
-    <div class="relative"><article
+    <div class="md-exec-stage relative"><article
             id="exec-tab-step_pattern_lock"
             role="tabpanel"
             x-show="activeTab === 'step_pattern_lock'"
             x-transition.opacity.duration.300ms
             
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
+            class="md-exec-panel grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
           >
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)]"><img src="/wp-content/uploads/2026/10/our-laser-pattern-family-gold-594w.webp" sizes="(min-width: 1024px) calc(min(100vw, 1400px) * 0.5 - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)" alt="Your pattern and module logic — confirmed before anything is cut" srcset="/wp-content/uploads/2026/10/our-laser-pattern-family-gold-480w.webp 480w, /wp-content/uploads/2026/10/our-laser-pattern-family-gold-594w.webp 594w" width="1600" height="1118" loading="lazy" class="block w-full aspect-[16/10] object-cover">
 </div>
@@ -1378,7 +1382,7 @@ class="xo-container--wide"
             role="tabpanel"
             x-show="activeTab === 'step_laser_cutting'"
             x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            class="md-exec-panel grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
           >
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)]"><img src="/wp-content/uploads/2026/10/stainless-steel-fiber-laser-cutting-factory-800w.webp" sizes="(min-width: 1024px) calc(min(100vw, 1400px) * 0.5 - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)" alt="Every panel cut to the same ±0.03mm repeat accuracy" srcset="/wp-content/uploads/2026/10/stainless-steel-fiber-laser-cutting-factory-480w.webp 480w, /wp-content/uploads/2026/10/stainless-steel-fiber-laser-cutting-factory-768w.webp 768w, /wp-content/uploads/2026/10/stainless-steel-fiber-laser-cutting-factory-800w.webp 800w" width="1600" height="2400" loading="lazy" class="block w-full aspect-[16/10] object-cover">
 </div>
@@ -1403,7 +1407,7 @@ class="xo-container--wide"
             role="tabpanel"
             x-show="activeTab === 'step_finish_check'"
             x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            class="md-exec-panel grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
           >
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)]"><img src="/wp-content/uploads/2026/10/our-finish-color-check-1024w.webp" sizes="(min-width: 1024px) calc(min(100vw, 1400px) * 0.5 - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)" alt="Surface tone and edge quality — reviewed against your approved sample" srcset="/wp-content/uploads/2026/10/our-finish-color-check-480w.webp 480w, /wp-content/uploads/2026/10/our-finish-color-check-768w.webp 768w, /wp-content/uploads/2026/10/our-finish-color-check-1024w.webp 1024w" width="1600" height="1000" loading="lazy" class="block w-full aspect-[16/10] object-cover">
 </div>
@@ -1428,7 +1432,7 @@ class="xo-container--wide"
             role="tabpanel"
             x-show="activeTab === 'step_ready_for_site'"
             x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            class="md-exec-panel grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
           >
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)]"><img src="/wp-content/uploads/2026/10/trust-video-crated-loading-600w.webp" sizes="(min-width: 1024px) calc(min(100vw, 1400px) * 0.5 - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)" alt="Labeled, protected, delivered ready for your installer" srcset="/wp-content/uploads/2026/10/trust-video-crated-loading-480w.webp 480w, /wp-content/uploads/2026/10/trust-video-crated-loading-600w.webp 600w" width="1600" height="2312" loading="lazy" class="block w-full aspect-[16/10] object-cover">
 </div>

@@ -269,3 +269,56 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
     width: calc(100vw - 88px) !important;
   }
 }
+
+/* FAQ rows: the Alpine object literal never ran under the CSP build, and
+   x-cloak then hid every answer. These rows are native details. Closed rows
+   share one pitch; the open row is the only one with a body. The icon sits
+   72px in from the column edge so a right-side float cannot cover it. */
+#perforated-faq-template--21844034814205__perforated_faq .md-faq-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 72px;
+  padding: 16px 72px 16px 0;
+  cursor: pointer;
+  list-style: none;
+  color: rgba(255, 255, 255, 0.8);
+}
+#perforated-faq-template--21844034814205__perforated_faq .md-faq-summary::-webkit-details-marker {
+  display: none;
+}
+#perforated-faq-template--21844034814205__perforated_faq .md-faq-summary::marker {
+  content: "";
+}
+#perforated-faq-template--21844034814205__perforated_faq .md-faq-row[open] > .md-faq-summary {
+  color: #fff;
+}
+#perforated-faq-template--21844034814205__perforated_faq .md-faq-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  color: #c9a962;
+  transition: transform 0.3s ease;
+}
+#perforated-faq-template--21844034814205__perforated_faq .md-faq-row[open] > .md-faq-summary .md-faq-icon {
+  transform: rotate(45deg);
+}
+#perforated-faq-template--21844034814205__perforated_faq .md-faq-body {
+  padding: 0 72px 28px 0;
+}
+#perforated-faq-template--21844034814205__perforated_faq .md-faq-summary:focus-visible {
+  outline: 2px solid #c9a962;
+  outline-offset: 3px;
+}
+body:has(#perforated-faq-template--21844034814205__perforated_faq) .md-back-to-top {
+  left: 24px;
+  right: auto;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+/* The open-area rail starts on the first marker. That marker declares 25%;
+   the old utility pinned the fill at 50% until a click. */
+#perforated-applications-template--21844034814205__perforated-applications [data-pa-rail-fill] {
+  width: 25%;
+}

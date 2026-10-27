@@ -185,6 +185,76 @@ flex: 0 0 78%;
 .md-t156d2b52 { --pt:0;--pb:0;--bg-color:#141414 }
 .md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
 
+/* Four-step strip. The labels used to sit in a max-content row inside an
+   overflow-x scroller, so the hairline started after the left pad and the
+   labels ran off the right edge. The row now wraps inside the content box
+   and the hairline is that box's own bottom edge — same inset both sides.
+   Selected state is aria-selected, not a utility class: the volume lives in
+   the components layer, and a later utilities layer would otherwise paint
+   every label the same gray. The panel show rule is !important for the same
+   reason, and to beat Alpine's inline display:none if the bound key and the
+   attribute ever disagree. */
+#laser-cut-execution-template--21873710563581__laser_cut_execution > .md-exec-wrap {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+@media (min-width: 750px) {
+  #laser-cut-execution-template--21873710563581__laser_cut_execution > .md-exec-wrap {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+@media (max-width: 749px) {
+  #laser-cut-execution-template--21873710563581__laser_cut_execution > .md-exec-wrap {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
+#laser-cut-execution-template--21873710563581__laser_cut_execution .md-exec-rule {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+@media (min-width: 750px) {
+  #laser-cut-execution-template--21873710563581__laser_cut_execution .md-exec-rule {
+    margin-bottom: 56px;
+  }
+}
+#laser-cut-execution-template--21873710563581__laser_cut_execution .md-exec-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  gap: 0 4px;
+}
+#laser-cut-execution-template--21873710563581__laser_cut_execution .md-exec-tab {
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
+  border-bottom-color: transparent !important;
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+#laser-cut-execution-template--21873710563581__laser_cut_execution .md-exec-tab[aria-selected="true"] {
+  color: #c9a962 !important;
+  border-bottom-color: #c9a962 !important;
+}
+#laser-cut-execution-template--21873710563581__laser_cut_execution .md-exec-stage {
+  width: 100%;
+  min-width: 0;
+}
+#laser-cut-execution-template--21873710563581__laser_cut_execution .md-exec-panel {
+  display: none;
+}
+#laser-cut-execution-template--21873710563581__laser_cut_execution:has(.md-exec-tab[aria-controls="exec-tab-step_pattern_lock"][aria-selected="true"]) #exec-tab-step_pattern_lock,
+#laser-cut-execution-template--21873710563581__laser_cut_execution:has(.md-exec-tab[aria-controls="exec-tab-step_laser_cutting"][aria-selected="true"]) #exec-tab-step_laser_cutting,
+#laser-cut-execution-template--21873710563581__laser_cut_execution:has(.md-exec-tab[aria-controls="exec-tab-step_finish_check"][aria-selected="true"]) #exec-tab-step_finish_check,
+#laser-cut-execution-template--21873710563581__laser_cut_execution:has(.md-exec-tab[aria-controls="exec-tab-step_ready_for_site"][aria-selected="true"]) #exec-tab-step_ready_for_site {
+  display: grid !important;
+}
+
 @media (max-width: 749px) {
 [id*="21873710563581"] .tracking-\[0\.22em\],
 [id*="21873710563581"] .tracking-\[0\.2em\],

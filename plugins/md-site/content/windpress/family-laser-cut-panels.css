@@ -355,3 +355,42 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
     width: calc(100vw - 88px) !important;
   }
 }
+
+/* FAQ answers. The volume in faq.css pins every answer at max-height: 0 and
+   only reveals `.question.is-open`, which the binder never adds — a click
+   removed `hidden` and the body stayed a zero-height well. Reveal follows
+   aria-expanded, which the binder does set. A group with nothing expanded
+   shows its first answer, so the list never opens onto a blank stack.
+   The toggle ring is the last flex child of a full-width row; while the
+   fixed back-to-top is on screen it covers that ring on a phone (control
+   occupies the right 56px, ring sits on the content edge). The extra pad
+   only applies while the control is visible. */
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .question[aria-expanded="true"] + .answer,
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .faq-group:not(:has([aria-expanded="true"])) .faq-item:first-child .answer {
+  max-height: none !important;
+  opacity: 1 !important;
+  overflow: visible !important;
+  display: block !important;
+  padding-top: 4px;
+  padding-bottom: 20px;
+}
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .question[aria-expanded="true"] .toggle-ic,
+#laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .faq-group:not(:has([aria-expanded="true"])) .faq-item:first-child .toggle-ic {
+  transform: rotate(45deg);
+  border-color: #c9a962;
+  color: #c9a962;
+}
+@media (max-width: 749px) {
+  #laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq > .mx-auto {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
+body:has(.md-back-to-top:not([hidden])) #laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .question {
+  padding-right: 56px;
+}
+@media (min-width: 991px) {
+  body:has(.md-back-to-top:not([hidden])) #laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .question {
+    padding-right: 0;
+  }
+}

@@ -16,13 +16,25 @@
 .xo-loader-3 { --size: 10; --color: rgb(var(--color-foreground)); --duration: 1000; }
 .xo-modal-content { --width: 500px; --height: 80vh; --header-height: 70px; --footer-height: 70px; }
 .xo-modal-content__body { --width: 0; --scrollbar-thumb-padding: 0px; }
-.xo-predictive-search__left { --lg: 3; }
-.xo-predictive-search__center { --xs: 12; --lg: 9; }
+/* The ported `--lg: 3` / `--lg: 9` spans were custom properties with no
+   grid rule to consume them (`xo-grid` never became `display: grid`), so the
+   brand line, the field and the word Search stacked and the field stayed
+   content-width. The sheet does not use that grid. The field is the full
+   width of the card; the empty state is the prompt and the series row below. */
+.xo-predictive-search,
+.xo-predictive-search__input,
+.xo-field-input {
+  display: block;
+  width: 100%;
+}
+.xo-predictive-search__input {
+  position: relative;
+}
 /* The suggestion list the predictive search fills. It sits inside the search
-   dialog on every width; the box is hidden by the script until there is a
-   query, so an empty search dialog looks exactly as it did before. Rows are
-   44px for the same reason every other control is, and the hit colour is the
-   ink gold because the panel behind it is light in the desktop dialog. */
+   dialog on every width; the script hides the region until there is a query,
+   and the prompt below stands in while it is hidden. Rows are 44px for the
+   same reason every other control is, and the hit colour is the ink gold
+   because the panel behind it is light in the desktop dialog. */
 .xo-predictive-search__result {
   display: block;
   margin-top: 12px;
@@ -61,10 +73,62 @@
 }
 .xo-predictive-search__empty {
   margin: 0;
-  padding: 12px 4px;
+  padding: 12px 20px;
   color: #5a6363;
   font-family: Inter, sans-serif;
   font-size: 14px;
+}
+/* While the result region is hidden (no query yet) the prompt and the series
+   row are the empty state. A query reveals the region and these stand down. */
+.xo-predictive-search__result:not([hidden]) ~ .xo-predictive-search__prompt,
+.xo-predictive-search__result:not([hidden]) ~ .xo-predictive-search__suggest {
+  display: none;
+}
+.xo-predictive-search__brand {
+  margin: 0 0 12px;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+}
+.xo-predictive-search__brand a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+.xo-predictive-search__prompt {
+  margin: 16px 0 0;
+  color: #5a6363;
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.xo-predictive-search__suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.xo-predictive-search__suggest a {
+  display: flex;
+  flex: 1 1 200px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  background: #faf9f7;
+  color: #1a1a1a;
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+}
+.xo-predictive-search__suggest a:hover {
+  border-color: #85692e;
+  color: #85692e;
 }
 /* The desktop dialog's input measured 24px tall — the phone block sets 48px,
    the desktop one never did. Floor first, so every width gets it. */
@@ -1164,19 +1228,128 @@ transition:opacity .3s ease,transform .3s ease,visibility 0s;
 .xo-menu-hamburger-style1__mega-menu:not(:empty){display:block}
 .xo-menu-hamburger-style1__mega-menu:not(:empty) ~ .xo-menu-hamburger-style1__link{display:none}
 
-/* The search sheet */
-/* The grid was `display: inline`, so the field took its content's width
-   (239px) instead of the column's, and the sheet was forced to full height
-   with one small input at the top — the "full-screen blank with a tiny box"
-   the owner rejected. The field fills the column, and the sheet is only as
-   tall as the search and its suggestions need. */
-xo-modal[xo-name="search"] xo-grid{display:block}
-.xo-field-input{display:block;width:100%}
-.xo-modal-content{display:flex;min-height:auto;padding:15px;box-sizing:border-box}
-.xo-modal-content__inner{position:relative;display:flex;flex-direction:column;width:100%;max-width:1100px;margin:0 auto;max-height:calc(100dvh - 30px);background:#fff;color:#111;border-radius:12px;padding:24px;box-sizing:border-box;overflow-y:auto}
-.xo-modal-content__body{width:100%}
-.xo-modal-content__close--abs{position:absolute;top:15px;right:15px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.06);cursor:pointer}
-.xo-modal-content__close--abs:hover{background:rgba(0,0,0,.14);rotate:180deg;transition:rotate .3s ease,background-color .3s ease}
+/* The search sheet.
+   The open modal is the dimmed page. The white card is only as tall as the
+   field, the prompt and the series row — not a full-viewport blank. The field
+   is the card's width. One 1px border at rest; on focus one outline, not the
+   global two-tone ring stacked on a second gold edge. Text sits 20px inside
+   the field, centered on a 24px line, not glued to a 104px box. */
+xo-modal[xo-name="search"]{
+  background:rgba(0,0,0,.55);
+}
+xo-modal[xo-name="search"].is-open{
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  box-sizing:border-box;
+  padding:24px 20px;
+  background:rgba(0,0,0,.55);
+}
+xo-modal[xo-name="search"] .xo-modal-content{
+  display:block;
+  flex:0 1 auto;
+  width:100%;
+  max-width:1100px;
+  height:auto;
+  min-height:0;
+  margin:0;
+  padding:0;
+  background:transparent;
+  box-sizing:border-box;
+}
+xo-modal[xo-name="search"] .xo-modal-content__inner{
+  position:relative;
+  display:block;
+  width:100%;
+  max-width:none;
+  height:auto;
+  min-height:0;
+  max-height:calc(100dvh - 48px);
+  margin:0;
+  padding:64px 24px 24px;
+  box-sizing:border-box;
+  background:#fff;
+  color:#111;
+  border-radius:12px;
+  overflow-y:auto;
+}
+xo-modal[xo-name="search"] .xo-modal-content__body,
+xo-modal[xo-name="search"] .xo-modal-content__content,
+xo-modal[xo-name="search"] xo-container,
+xo-modal[xo-name="search"] form.search{
+  display:block;
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+xo-modal[xo-name="search"] .xo-modal-content__close--abs{
+  position:absolute;
+  top:16px;
+  right:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:rgba(0,0,0,.06);
+  color:#111;
+  cursor:pointer;
+}
+xo-modal[xo-name="search"] .xo-modal-content__close--abs:hover{
+  background:rgba(0,0,0,.14);
+  rotate:180deg;
+  transition:rotate .3s ease,background-color .3s ease;
+}
+xo-modal[xo-name="search"] .xo-field-input__input{
+  display:block;
+  width:100%;
+  height:64px;
+  min-height:64px;
+  max-height:64px;
+  margin:0;
+  padding:20px 56px 20px 20px;
+  box-sizing:border-box;
+  border:1px solid #1a1a1a;
+  border-radius:12px;
+  background:#fff;
+  color:#111;
+  font-family:Inter,sans-serif;
+  font-size:16px;
+  line-height:24px;
+  box-shadow:none;
+}
+xo-modal[xo-name="search"] .xo-field-input__input::placeholder{
+  color:#5a6363;
+  opacity:1;
+}
+xo-modal[xo-name="search"] .xo-field-input__input:focus,
+xo-modal[xo-name="search"] .xo-field-input__input:focus-visible{
+  outline:2px solid #131313 !important;
+  outline-offset:3px;
+  box-shadow:none !important;
+}
+xo-modal[xo-name="search"] .xo-predictive-search__clear{
+  position:absolute;
+  top:10px;
+  right:10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:44px;
+  height:44px;
+  padding:0;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:#1a1a1a;
+  cursor:pointer;
+}
+xo-modal[xo-name="search"] .xo-predictive-search__clear[hidden]{
+  display:none;
+}
 
 /* Touch targets (audit 2026-10-25; owner decision 2026-10-26): the footer's
    text links, the header logo link and the catalog search field measured
@@ -1664,9 +1837,12 @@ top: calc(var(--md-header-h, 113px) + 16px);
     outline-offset: 2px;
   }
   xo-modal[xo-name="search"].is-open {
+    display: block;
+    padding: 0;
     background: #141414;
   }
   xo-modal[xo-name="search"] .xo-modal-content {
+    max-width: none;
     min-height: 100dvh;
     padding: 0;
     background: #141414;
@@ -1676,13 +1852,10 @@ top: calc(var(--md-header-h, 113px) + 16px);
     max-height: none;
     min-height: 100dvh;
     margin: 0;
-    padding: 72px 16px 24px;
+    padding: 80px 20px 24px;
     border-radius: 0;
     background: #141414;
     color: #fff;
-  }
-  xo-modal[xo-name="search"] .xo-predictive-search__left {
-    display: none;
   }
   xo-modal[xo-name="search"] .xo-modal-content__close--abs {
     top: 12px;
@@ -1693,9 +1866,6 @@ top: calc(var(--md-header-h, 113px) + 16px);
     background: rgba(255, 255, 255, 0.08);
     color: #fff;
   }
-  xo-modal[xo-name="search"] .xo-predictive-search__center {
-    position: relative;
-  }
   xo-modal[xo-name="search"] .xo-field-input,
   xo-modal[xo-name="search"] .xo-field-input__input {
     display: block;
@@ -1703,26 +1873,43 @@ top: calc(var(--md-header-h, 113px) + 16px);
     box-sizing: border-box;
   }
   xo-modal[xo-name="search"] .xo-field-input__input {
-    min-height: 48px;
-    padding: 0 52px 0 16px;
+    height: 64px;
+    min-height: 64px;
+    max-height: 64px;
+    padding: 20px 56px 20px 20px;
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.06);
     color: #fff;
     font-family: Inter, sans-serif;
     font-size: 16px;
+    line-height: 24px;
   }
   xo-modal[xo-name="search"] .xo-field-input__input::placeholder {
     color: rgba(255, 255, 255, 0.5);
     opacity: 1;
   }
-  xo-modal[xo-name="search"] .xo-field-input__placeholder {
-    display: none;
+  xo-modal[xo-name="search"] .xo-field-input__input:focus,
+  xo-modal[xo-name="search"] .xo-field-input__input:focus-visible {
+    outline: 2px solid #d4b878 !important;
+    outline-offset: 3px;
+    box-shadow: none !important;
+  }
+  xo-modal[xo-name="search"] .xo-predictive-search__brand a {
+    color: #fff;
+  }
+  xo-modal[xo-name="search"] .xo-predictive-search__prompt {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  xo-modal[xo-name="search"] .xo-predictive-search__suggest a {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
   }
   xo-modal[xo-name="search"] .xo-predictive-search__clear {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 10px;
+    right: 10px;
     display: inline-flex;
     align-items: center;
     justify-content: center;

@@ -64,7 +64,7 @@ animation-name: mfg-tech-bg-prev-rev-template--21844034879741__manufacturing_tec
 position: absolute;
 top: 0; bottom: 0; left: clamp(40px, 4.5vw, 88px);
 width: min(48vw, 768px);
-max-width: calc(100% - 544px);
+max-width: calc(100% - 300px);
 z-index: 3;
 pointer-events: none;
 }
@@ -145,7 +145,7 @@ height: calc(100dvh - var(--header-height, 80px));
 .md-t78970fa2 { text-wrap: pretty }
 .md-te1816706 { height: 600vh;position: relative;color: #fff }
 .md-tf636bf81 { position: absolute;inset: 0;overflow: hidden;z-index: 1 }
-.md-t214c5857 { position: absolute;inset: 0;background: linear-gradient(90deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.38) 45%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0.42) 100%);pointer-events: none }
+.md-t214c5857 { position: absolute;inset: 0;background: linear-gradient(90deg, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.82) 56%, rgba(0,0,0,0.40) 76%, rgba(0,0,0,0.28) 100%);pointer-events: none }
 .md-t56105794 { position: absolute;top: 56px;left: 0;font-size: 13px;font-weight: 700;letter-spacing: 0.2em;color: #c9a962;text-transform: uppercase;z-index: 1;pointer-events: none }
 .md-t40acbc9b { font-family: 'Playfair Display', Georgia, serif;font-weight: 700;color: #fff;line-height: 1.06;margin: 0 0 17.6px }
 .md-tedc0445e { line-height: 1.52;color: rgba(255,255,255,0.88);margin: 0 0 28px;max-width: 640px }
@@ -519,7 +519,7 @@ display: flex;
 flex-direction: column;
 justify-content: flex-end;
 gap: 14px;
-padding: 20px 16px calc(96px + env(safe-area-inset-bottom));
+padding: 20px 72px calc(128px + env(safe-area-inset-bottom)) 20px;
 overflow: hidden;
 border-radius: 0;
 }
@@ -756,4 +756,43 @@ scroll-snap-align: start;
 padding-top: 64px;
 padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
+}
+
+/* Photo type on the method cards. The from-black utilities fade out before
+   the caption does; this holds a floor through the text band. */
+.md-photo-scrim {
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.84) 32%, rgba(0, 0, 0, 0.55) 58%, transparent 100%) !important;
+}
+.md-closing-well .md-inquiry-cta {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+.md-closing-well .md-inquiry-cta__primary,
+.md-closing-well .md-inquiry-cta__whatsapp {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.md-closing-well .md-inquiry-cta__note {
+  grid-column: 1 / -1;
+  max-width: none;
+  text-align: center;
+}
+@media (max-width: 560px) {
+  .md-closing-well .md-inquiry-cta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.md-closing-band--wide .md-closing-wrap {
+  padding-right: max(40px, calc(100px - max(0px, (100vw - 1400px) / 2))) !important;
+}
+@media (max-width: 767px) {
+  .md-closing-band--wide .md-closing-wrap {
+    padding-left: 20px !important;
+    padding-right: 72px !important;
+  }
 }

@@ -1129,67 +1129,55 @@
            header to know which series the visitor came from, which a site-wide
            header rendered on every page cannot know without new state. -->
       <form action='/shop/' method='get' role='search' class='search'>
-        
-      
-
-
-
-<div
-  class='xo-predictive-search'
-  data-locales='
-    {
-      pages: "Pages",
-      collections: "Collections",
-      products: "Products",
-      articles: "Articles"
-    }
-  '
->
-  <xo-animate xo-cascade class='xo-predictive-search__input'>
-    <xo-grid class='xo-predictive-search__box'>
-      <div class='xo-predictive-search__left'>
-        <a href='/'><span class='xo-predictive-search__search-logo'>Metal customization experts</span></a>
-      </div>
-      <div class='xo-predictive-search__center xo-predictive-search__center--full'>
-        
-
-<label class='xo-field-input'>
-  <input
-    class='xo-field-input__input'
-    type='text'
-    name='pattern_search'
-    value=''
-    placeholder='Search...'
-    
-    
-    
-      id='predictive-search' data-predictive-search-input='header'
-  >
-  
-    <span class='xo-field-input__placeholder'>Search</span>
-  
-</label>
-
-        <button type='button' class='xo-predictive-search__clear' data-predictive-search-reset='header' aria-label='Clear search' hidden>
-          
-
-<svg
-  xmlns='http://www.w3.org/2000/svg'
-  aria-hidden='true'
-  focusable='false'
-  fill='none'
-  viewBox='0 0 18 17'
-  width='13'
-  class='icon-close'
->
-  <path d="M.865 15.978a.5.5 0 00.707.707l7.433-7.431 7.579 7.282a.501.501 0 00.846-.37.5.5 0 00-.153-.351L9.712 8.546l7.417-7.416a.5.5 0 10-.707-.708L8.991 7.853 1.413.573a.5.5 0 10-.693.72l7.563 7.268-7.418 7.417z" fill="currentColor">
-</svg>
-
-
-        </button>
-      </div></xo-grid>
-  </xo-animate><div class='xo-predictive-search__result' data-predictive-search-result='header'></div></div>
-    </form>      
+        <div
+          class='xo-predictive-search'
+          data-locales='
+            {
+              pages: "Pages",
+              collections: "Collections",
+              products: "Products",
+              articles: "Articles"
+            }
+          '
+        >
+          <p class='xo-predictive-search__brand'><a href='/'>Metal customization experts</a></p>
+          <div class='xo-predictive-search__input'>
+            <label class='xo-field-input'>
+              <input
+                class='xo-field-input__input'
+                type='text'
+                name='pattern_search'
+                value=''
+                placeholder='Search patterns'
+                aria-label='Search patterns'
+                id='predictive-search'
+                data-predictive-search-input='header'
+              >
+            </label>
+            <button type='button' class='xo-predictive-search__clear' data-predictive-search-reset='header' aria-label='Clear search' hidden>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                aria-hidden='true'
+                focusable='false'
+                fill='none'
+                viewBox='0 0 18 17'
+                width='13'
+                class='icon-close'
+              >
+                <path d="M.865 15.978a.5.5 0 00.707.707l7.433-7.431 7.579 7.282a.501.501 0 00.846-.37.5.5 0 00-.153-.351L9.712 8.546l7.417-7.416a.5.5 0 10-.707-.708L8.991 7.853 1.413.573a.5.5 0 10-.693.72l7.563 7.268-7.418 7.417z" fill="currentColor">
+              </svg>
+            </button>
+          </div>
+          <div class='xo-predictive-search__result' data-predictive-search-result='header' hidden></div>
+          <p class='xo-predictive-search__prompt'>Search patterns by name, or start from a series.</p>
+          <ul class='xo-predictive-search__suggest'>
+            <li><a href='/laser-cut-geometric-metal-screens/'>Laser-cut and geometric</a></li>
+            <li><a href='/glass-hybrid-screens/'>Glass and hybrid</a></li>
+            <li><a href='/chinese-style-artistic-screens/'>Chinese artistic</a></li>
+            <li><a href='/stainless-steel-screens/'>Stainless screens</a></li>
+          </ul>
+        </div>
+      </form>      
     </xo-container>
   
       </div>

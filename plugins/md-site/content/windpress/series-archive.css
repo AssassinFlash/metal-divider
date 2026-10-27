@@ -122,6 +122,7 @@ position: relative;
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual img {
 display: block;
 height: 100%;
+inset: 0;
 object-fit: cover;
 position: absolute;
 width: 100%;
@@ -295,14 +296,43 @@ padding-right: 40px;
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__header {
 grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.55fr);
 }
+/* The 0.9fr / 0.62fr split put the photo in 60% of the card and a flat
+   #141414 cell in the other 40% (measured ~1053px beside the photo, and a
+   second edge under the photo that did not line up). One column: the photo
+   fills the card width, the copy band starts on the same left edge. */
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__panel {
-grid-template-columns: minmax(0, 0.9fr) minmax(380px, 0.62fr);
-min-height: 520px;
+grid-template-columns: minmax(0, 1fr);
+min-height: 0;
+}
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual {
+min-height: 420px;
 }
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__body {
-border-left: 1px solid rgba(255, 255, 255, 0.1);
-align-content: center;
-padding: 44px;
+border-left: 0;
+align-content: start;
+padding: 32px 40px 40px;
+}
+}
+@media (min-width: 1024px) {
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual {
+min-height: clamp(480px, 42vw, 720px);
+}
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__routes {
+display: flex;
+flex-wrap: nowrap;
+gap: 12px;
+}
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route {
+flex: 1 1 0;
+min-width: 0;
+border: 1px solid rgba(255, 255, 255, 0.12);
+border-radius: 14px;
+}
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route + .pag__route {
+border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__cta {
+width: fit-content;
 }
 }
 @media (max-width: 759px) {

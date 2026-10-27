@@ -19,3 +19,61 @@
    outranks this volume, hence !important. */
 .project-card-hover .text-\[9px\],
 .project-card-hover .text-\[10px\] { font-size: 13px !important }
+/* Chips sit on the photograph. white/60 and gold failed 4.5:1 on the bright
+   pixels even under a 0.7 scrim (sampled 2026-10-28). A solid floor on the
+   chip itself, white ink. */
+.project-card-hover span.rounded-full {
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.72) !important;
+}
+
+/* Photo captions sat on a scrim that died before the type did. Sampled
+   2026-10-28 from the object-cover crop: flagship white 3.13:1, the four
+   smaller cards about 1.8:1, against the brightest pixels in the text band.
+   Hold black through that band. !important because the from-black utilities
+   live in the utilities layer and this volume is components. */
+.md-photo-scrim {
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.84) 32%, rgba(0, 0, 0, 0.55) 58%, transparent 100%) !important;
+}
+
+/* Closing inquiry well. The shared .md-inquiry-cta (cta-band.css) is a
+   shrink-wrapped flex row. In this wide card the two actions occupied about
+   45% of the inner width and left a black field. Do not edit the partial. */
+.md-closing-well .md-inquiry-cta {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+.md-closing-well .md-inquiry-cta__primary,
+.md-closing-well .md-inquiry-cta__whatsapp {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.md-closing-well .md-inquiry-cta__note {
+  grid-column: 1 / -1;
+  max-width: none;
+  text-align: center;
+}
+@media (max-width: 560px) {
+  .md-closing-well .md-inquiry-cta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Back-to-top (chrome.css: right 30px / 40px above 990px, right 16px / 44px
+   below) lands on this band's card corner when the 1400px container meets
+   the viewport. Extra right padding only for that overlap.
+   !important because md:px-10 is a utilities-layer rule. */
+.md-closing-band--wide .md-closing-wrap {
+  padding-right: max(40px, calc(100px - max(0px, (100vw - 1400px) / 2))) !important;
+}
+@media (max-width: 767px) {
+  .md-closing-band--wide .md-closing-wrap {
+    padding-left: 20px !important;
+    padding-right: 72px !important;
+  }
+}

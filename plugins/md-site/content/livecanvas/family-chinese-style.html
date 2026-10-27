@@ -767,7 +767,7 @@ class="xo-container--wide"
               
             >
               <span class="mt-2 block font-['Inter'] text-base font-semibold text-white">Subtle detail</span>
-              <span class="mt-1 block font-['Inter'] text-sm text-white/80">Wood and stone do the talking. Metal supports q...</span>
+              <span class="mt-1 block font-['Inter'] text-sm text-white/80">Wood and stone do the talking. Metal supports quietly.</span>
             </button><button
               type="button"
               class="cmp-choice rounded-2xl border border-white/10 bg-[#141414]/80 px-4 py-4 text-left transition-all duration-200 hover:border-[#c9a962]/40"
@@ -777,7 +777,7 @@ class="xo-container--wide"
               
             >
               <span class="mt-2 block font-['Inter'] text-base font-semibold text-white">Design feature</span>
-              <span class="mt-1 block font-['Inter'] text-sm text-white/80">Metal catches your eye first. Wood and stone ho...</span>
+              <span class="mt-1 block font-['Inter'] text-sm text-white/80">Metal catches your eye first. Wood and stone hold the rest of the room.</span>
             </button><button
               type="button"
               class="cmp-choice rounded-2xl border border-white/10 bg-[#141414]/80 px-4 py-4 text-left transition-all duration-200 hover:border-[#c9a962]/40"
@@ -787,7 +787,7 @@ class="xo-container--wide"
               
             >
               <span class="mt-2 block font-['Inter'] text-base font-semibold text-white">Main focus</span>
-              <span class="mt-1 block font-['Inter'] text-sm text-white/80">First thing your guests see is the metal. Every...</span>
+              <span class="mt-1 block font-['Inter'] text-sm text-white/80">First thing your guests see is the metal. Everything else frames it.</span>
             </button></div>
       </div>
 
@@ -973,21 +973,31 @@ class="xo-container--wide"
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-8 border-b border-white/10 mb-12 overflow-x-auto md-t312247e4"><button
+    <div class="md-spec-tabs" role="tablist" aria-label="Pattern spec sheets"><button
+          type="button"
+          role="tab"
           @click="activeTab = 'lattice'"
-          :class="activeTab === 'lattice' ? 'text-white border-[#c9a962]' : 'text-white/50 border-transparent hover:text-white/80'"
+          aria-selected="true"
+          :aria-selected="activeTab === 'lattice'"
+          :class="activeTab === 'lattice' ? 'text-[#c9a962] border-[#c9a962]' : 'text-white/50 border-transparent hover:text-white/80'"
           class="pb-4 border-b-2 font-semibold text-sm tracking-wide transition-colors whitespace-nowrap"
         >
           Lattice Screen
         </button><button
+          type="button"
+          role="tab"
           @click="activeTab = 'pattern'"
-          :class="activeTab === 'pattern' ? 'text-white border-[#c9a962]' : 'text-white/50 border-transparent hover:text-white/80'"
+          :aria-selected="activeTab === 'pattern'"
+          :class="activeTab === 'pattern' ? 'text-[#c9a962] border-[#c9a962]' : 'text-white/50 border-transparent hover:text-white/80'"
           class="pb-4 border-b-2 font-semibold text-sm tracking-wide transition-colors whitespace-nowrap"
         >
           Decorative Laser-Cut Screen
         </button><button
+          type="button"
+          role="tab"
           @click="activeTab = 'bespoke'"
-          :class="activeTab === 'bespoke' ? 'text-white border-[#c9a962]' : 'text-white/50 border-transparent hover:text-white/80'"
+          :aria-selected="activeTab === 'bespoke'"
+          :class="activeTab === 'bespoke' ? 'text-[#c9a962] border-[#c9a962]' : 'text-white/50 border-transparent hover:text-white/80'"
           class="pb-4 border-b-2 font-semibold text-sm tracking-wide transition-colors whitespace-nowrap"
         >
           Bespoke Feature Wall
@@ -995,7 +1005,6 @@ class="xo-container--wide"
 
     <!-- Tab Content --><div
         x-show="activeTab === 'lattice'"
-        x-cloak
         x-transition:enter="transition ease-out duration-400"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
@@ -1557,6 +1566,7 @@ class="xo-container--wide"
             type="button"
             class="flex w-full items-center justify-between gap-5 text-left"
             @click="toggle('1')"
+            aria-expanded="true"
             :aria-expanded="isOpen('1')"
           >
             <span class="flex min-w-0 flex-col gap-3">
@@ -2291,7 +2301,7 @@ class="xo-section xo-section--template--21873710498045__chinese_contact md-t156d
               <h3 class="m-0 text-lg font-serif text-white">Prefer WhatsApp?</h3>
             </div>
             <p class="mb-4 text-sm text-white/75">Share layout and quantity. Feasibility check in minutes.</p>
-            <a href="https://wa.me/85264731687" target="_blank" rel="noopener noreferrer" data-source-page="chinese-style-artistic-screens" data-source-module="contact" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#22c55e]">
+            <a href="https://wa.me/85264731687" target="_blank" rel="noopener noreferrer" data-source-page="chinese-style-artistic-screens" data-source-module="contact" data-source-button="whatsapp" class="flex w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-[#141414] no-underline transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110">
               Chat on WhatsApp
             </a>
           </div>

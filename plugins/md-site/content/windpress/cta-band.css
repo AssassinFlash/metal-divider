@@ -572,15 +572,19 @@ background: rgba(255,255,255,0.05);
  * static asset of the pipeline (assets/*.append.css); the converter
  * appends it to its volume after every write, so a rerun keeps it. */
 .md-inquiry-cta {
-  align-items: center;
+  align-items: stretch;
   background: var(--md-bg-deep);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
+  box-sizing: border-box;
   color: rgba(255, 255, 255, 0.9);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  padding: 24px;
+  container-name: inquiry-cta;
+  container-type: inline-size;
+  display: grid;
+  gap: 12px 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 20px;
+  width: 100%;
 }
 .md-inquiry-cta__primary {
   align-items: center;
@@ -621,12 +625,39 @@ background: rgba(255,255,255,0.05);
 .md-inquiry-cta .md-inquiry-cta__whatsapp {
   color: var(--md-whatsapp);
 }
+.md-inquiry-cta__primary,
+.md-inquiry-cta__whatsapp {
+  box-sizing: border-box;
+  width: 100%;
+}
 .md-inquiry-cta__note {
-  color: rgba(255, 255, 255, 0.55);
-  flex-basis: 100%;
+  align-self: center;
+  color: rgba(255, 255, 255, 0.72);
   font-size: 13.5px;
+  grid-column: 1 / -1;
   line-height: 1.55;
-  margin: 4px 0 0;
+  margin: 0;
+  text-align: center;
+}
+/* Wide wells (measured 1658px, with ~862px of empty black beside a
+   747px action cluster): the reply line joins the row so the buttons
+   grow into the space instead of sitting in the top-left. Below this
+   width the two buttons already share the full row. */
+@container inquiry-cta (max-width: 519px) {
+  .md-inquiry-cta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container inquiry-cta (min-width: 880px) {
+  .md-inquiry-cta {
+    grid-template-columns: minmax(200px, 1fr) minmax(220px, 1fr) max-content;
+  }
+  .md-inquiry-cta__note {
+    grid-column: auto;
+    max-width: 36em;
+    padding-left: 8px;
+    text-align: left;
+  }
 }
 /* Mobile gutter: the quote band wraps at px-4 (10px at the 62.5% root) —
  * below the 16px minimum side inset used across the family volumes

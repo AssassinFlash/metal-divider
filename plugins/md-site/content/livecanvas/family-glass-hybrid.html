@@ -1228,21 +1228,22 @@ class="xo-container--wide"
 >
   <div
     class="mx-auto max-w-[1400px] px-5 md:px-10"
-    x-data="mdHoverTabs('fluted')"
+    x-data="mdHoverTabs('execution_step_drawing_alignment')"
   >
     <div class="text-center mb-12 md:mb-16"><p class="mb-3 font-['Inter'] text-xs font-semibold uppercase tracking-[0.22em] text-[#c9a962] md:mb-4 md:text-sm">PROJECT EXECUTION</p><h2 class="mx-auto max-w-[1120px] font-['Playfair_Display'] text-[32px] font-bold leading-[1.08] tracking-[-0.02em] text-white md:text-[42px] lg:text-[56px] md-t722f84cd">From your drawing to your site — four steps</h2>
       <p class="mx-auto mt-5 max-w-[980px] font-['Inter'] text-[15px] leading-relaxed text-white/70 md:text-[18px] md-t78970fa2">You send the scope. We confirm, build, check, and ship. Here&#39;s what happens at each step — and what you control.</p>
       <div class="w-16 h-[2px] bg-gradient-to-r from-transparent via-[#c9a962] to-transparent mx-auto"></div>
     </div>
 
-    <div class="mb-10 md:mb-14 border-b border-white/10 overflow-x-auto">
-      <div class="flex w-max min-w-full items-end gap-1 md:justify-center"><button
+    <div class="sps-exec-rail">
+      <div class="sps-exec-rail-track" role="tablist" aria-label="From your drawing to your site"><button
               type="button"
               role="tab"
               aria-controls="exec-tab-execution_step_drawing_alignment"
+              aria-selected="true"
               x-bind:aria-selected="activeTab === 'execution_step_drawing_alignment'"
               @click="activeTab = 'execution_step_drawing_alignment'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
+              class="sps-exec-tab min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
               :class="activeTab === 'execution_step_drawing_alignment' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
               
             >
@@ -1253,7 +1254,7 @@ class="xo-container--wide"
               aria-controls="exec-tab-execution_step_precision_fabrication"
               x-bind:aria-selected="activeTab === 'execution_step_precision_fabrication'"
               @click="activeTab = 'execution_step_precision_fabrication'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
+              class="sps-exec-tab min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
               :class="activeTab === 'execution_step_precision_fabrication' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
               
             >
@@ -1264,7 +1265,7 @@ class="xo-container--wide"
               aria-controls="exec-tab-execution_step_finish_approval"
               x-bind:aria-selected="activeTab === 'execution_step_finish_approval'"
               @click="activeTab = 'execution_step_finish_approval'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
+              class="sps-exec-tab min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
               :class="activeTab === 'execution_step_finish_approval' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
               
             >
@@ -1275,7 +1276,7 @@ class="xo-container--wide"
               aria-controls="exec-tab-execution_step_packing_delivery"
               x-bind:aria-selected="activeTab === 'execution_step_packing_delivery'"
               @click="activeTab = 'execution_step_packing_delivery'"
-              class="min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
+              class="sps-exec-tab min-h-[48px] border-b-2 px-4 py-3 font-['Inter'] text-[13px] md:text-sm font-semibold uppercase tracking-[0.06em] transition-all duration-200"
               :class="activeTab === 'execution_step_packing_delivery' ? 'border-[#c9a962] text-[#c9a962]' : 'border-transparent text-white/50 hover:text-white/80'"
               
             >
@@ -1289,7 +1290,7 @@ class="xo-container--wide"
             x-show="activeTab === 'execution_step_drawing_alignment'"
             x-transition.opacity.duration.300ms
             
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
+            class="sps-exec-panel sps-exec-panel--current grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
           >
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)]"><img src="/wp-content/uploads/2026/10/our-glass-partition-lineup-550w.webp" alt="Your dimensions and finish direction — locked before anything starts" srcset="/wp-content/uploads/2026/10/our-glass-partition-lineup-480w.webp 480w, /wp-content/uploads/2026/10/our-glass-partition-lineup-550w.webp 550w" width="1600" height="1478" loading="lazy" class="block w-full aspect-[16/10] object-cover" sizes="(min-width: 1400px) 658px, (min-width: 1024px) calc(50vw - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)">
 </div>
@@ -1314,7 +1315,8 @@ class="xo-container--wide"
             role="tabpanel"
             x-show="activeTab === 'execution_step_precision_fabrication'"
             x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            x-cloak
+            class="sps-exec-panel grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
           >
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)]"><img src="/wp-content/uploads/2026/10/our-frame-assembly-line-1024w.webp" alt="Frame and glass fabricated as one matched system" srcset="/wp-content/uploads/2026/10/our-frame-assembly-line-480w.webp 480w, /wp-content/uploads/2026/10/our-frame-assembly-line-768w.webp 768w, /wp-content/uploads/2026/10/our-frame-assembly-line-1024w.webp 1024w" width="1600" height="1000" loading="lazy" class="block w-full aspect-[16/10] object-cover" sizes="(min-width: 1400px) 658px, (min-width: 1024px) calc(50vw - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)">
 </div>
@@ -1339,7 +1341,8 @@ class="xo-container--wide"
             role="tabpanel"
             x-show="activeTab === 'execution_step_finish_approval'"
             x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            x-cloak
+            class="sps-exec-panel grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
           >
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)]"><img src="/wp-content/uploads/2026/10/our-finish-color-check-1024w.webp" alt="Every panel reviewed before it leaves the factory" srcset="/wp-content/uploads/2026/10/our-finish-color-check-480w.webp 480w, /wp-content/uploads/2026/10/our-finish-color-check-768w.webp 768w, /wp-content/uploads/2026/10/our-finish-color-check-1024w.webp 1024w" width="1600" height="1000" loading="lazy" class="block w-full aspect-[16/10] object-cover" sizes="(min-width: 1400px) 658px, (min-width: 1024px) calc(50vw - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)">
 </div>
@@ -1364,7 +1367,8 @@ class="xo-container--wide"
             role="tabpanel"
             x-show="activeTab === 'execution_step_packing_delivery'"
             x-transition.opacity.duration.300ms
-            class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba"
+            x-cloak
+            class="sps-exec-panel grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center"
           >
             <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)]"><img src="/wp-content/uploads/2026/10/ext-bronze-glass-hybrid-screen-workshop-1280w.webp" alt="Labeled, protected, delivered ready for your installer" srcset="/wp-content/uploads/2026/10/ext-bronze-glass-hybrid-screen-workshop-480w.webp 480w, /wp-content/uploads/2026/10/ext-bronze-glass-hybrid-screen-workshop-768w.webp 768w, /wp-content/uploads/2026/10/ext-bronze-glass-hybrid-screen-workshop-1024w.webp 1024w, /wp-content/uploads/2026/10/ext-bronze-glass-hybrid-screen-workshop-1280w.webp 1280w" width="1600" height="1600" loading="lazy" class="block w-full aspect-[16/10] object-cover" sizes="(min-width: 1400px) 658px, (min-width: 1024px) calc(50vw - 42px), (min-width: 768px) calc(100vw - 52px), calc(100vw - 27px)">
 </div>

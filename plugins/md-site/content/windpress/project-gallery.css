@@ -5,3 +5,102 @@
 .md-tfb6e8023 { --pt: 50;--pb: 50 }
 .md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
 .md-t8ed1802a { background: #d1a63b;color: #ffffff }
+
+/* Gallery card type failed 4.5:1 once the overlay thinned. The category chip
+   sits about 60% up a 4/3 card, where the old scrim was ~0.13 (gold 1.1:1,
+   white title ~2.5:1 on the Park Hyatt crop, sampled 2026-10-28). Hold black
+   through the stack. Later source than gallery.css, same layer. */
+html #project-gallery-template--21844034846973__project_gallery_8jJr6t .project-overlay {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.84) 62%, rgba(0, 0, 0, 0.42) 82%, transparent 100%);
+  padding: 24px;
+}
+html #project-gallery-template--21844034846973__project_gallery_8jJr6t .project-category {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Phone gutter was 16px (gallery.css). The section inset below keeps 20px
+   on the left and clears the back-to-top on the right. The filter rail's
+   -16px bleed is retargeted to that 20px gutter. */
+@media (max-width: 990px) {
+  html #project-gallery-template--21844034846973__project_gallery_8jJr6t .gallery-filters {
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  html #project-gallery-template--21844034846973__project_gallery_8jJr6t .filter-btn {
+    scroll-padding-inline: 20px;
+  }
+  html #project-gallery-template--21844034846973__project_gallery_8jJr6t .lightbox-info {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+/* Closing quote well and the fixed back-to-top. Same defect as about /
+   manufacturing: the shared band is shrink-wrapped, and the control
+   (right 30px / 40px, or 16px / 44px) sits on the card corner when the
+   container meets the viewport. contact-quote's 16px !important gutter
+   in cta-band.css loses to this id selector. */
+#contact.md-closing-band .contact-quote {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+}
+@media (min-width: 768px) {
+  #contact.md-closing-band .contact-quote {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+#contact.md-closing-band .md-closing-wrap {
+  padding-right: max(0px, calc(64px - max(0px, (100vw - 1248px) / 2)));
+}
+@media (max-width: 767px) {
+  #contact.md-closing-band .md-closing-wrap {
+    padding-right: 52px;
+  }
+}
+.md-closing-well .md-inquiry-cta {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+.md-closing-well .md-inquiry-cta__primary,
+.md-closing-well .md-inquiry-cta__whatsapp {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.md-closing-well .md-inquiry-cta__note {
+  grid-column: 1 / -1;
+  max-width: none;
+  text-align: center;
+}
+@media (max-width: 560px) {
+  .md-closing-well .md-inquiry-cta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Card corners vs the fixed back-to-top. The inset lives inside the centered
+   1400px container: padding on the section would only recenter that container
+   and put the corner back under the control. 88px is the control's footprint
+   (right 30px + 40px + 18px gap) above 990px; 72px below (right 16px + 44px + 12px).
+   The section's own 20px padding is already outside this box. */
+html #project-gallery-template--21844034846973__project_gallery_8jJr6t .project-gallery-container {
+  padding-right: max(0px, calc(68px - max(0px, (100vw - 1440px) / 2)));
+}
+@media (max-width: 990px) {
+  html #project-gallery-template--21844034846973__project_gallery_8jJr6t {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  html #project-gallery-template--21844034846973__project_gallery_8jJr6t .project-gallery-container {
+    padding-right: 52px;
+  }
+}

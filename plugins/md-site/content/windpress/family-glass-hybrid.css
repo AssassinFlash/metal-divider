@@ -332,3 +332,48 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
     width: calc(100vw - 88px) !important;
   }
 }
+
+/* Four steps. The strip was initialized as mdHoverTabs('fluted'), which
+   matches none of the execution_step_* panels, so every label stayed gray
+   and the body under the hairline was empty. The first step is the default
+   in the markup; x-cloak hides the other three until Alpine's x-show takes
+   over, and only while html.md-js is set. The hairline is the rail's own
+   border, so it ends at the same container edge on both sides — the old
+   w-max track grew past the right padding and the section's overflow
+   clipped it at the frame. */
+#glass-hybrid-execution-template--21873710530813__interior_room_partitions_execution .sps-exec-rail {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+margin-bottom: 40px;
+border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+box-sizing: border-box;
+}
+@media (min-width: 768px) {
+#glass-hybrid-execution-template--21873710530813__interior_room_partitions_execution .sps-exec-rail {
+margin-bottom: 56px;
+}
+}
+#glass-hybrid-execution-template--21873710530813__interior_room_partitions_execution .sps-exec-rail-track {
+display: flex;
+justify-content: center;
+align-items: flex-end;
+gap: 4px;
+max-width: 100%;
+overflow-x: auto;
+margin-bottom: -1px;
+}
+#glass-hybrid-execution-template--21873710530813__interior_room_partitions_execution .sps-exec-tab {
+border-bottom-color: transparent;
+color: rgba(255, 255, 255, 0.55);
+}
+#glass-hybrid-execution-template--21873710530813__interior_room_partitions_execution .sps-exec-tab[aria-selected="true"] {
+color: #c9a962;
+border-bottom-color: #c9a962;
+}
+html:not(.md-js) #glass-hybrid-execution-template--21873710530813__interior_room_partitions_execution .sps-exec-panel:not(.sps-exec-panel--current) {
+display: none;
+}
+html.md-js #glass-hybrid-execution-template--21873710530813__interior_room_partitions_execution [x-cloak] {
+display: none !important;
+}

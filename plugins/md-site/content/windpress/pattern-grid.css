@@ -512,9 +512,23 @@ top: calc(var(--md-header-h, 113px) + 16px);
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__toolbar {
 grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
 }
+/* auto-fill + a 340px max cannot grow, so on a wide monitor the row stops
+   at two or three cards and the rest of the well is page background. A
+   ~2256px capture read that as a hole in row 1 (Agave, Akira, then a blank
+   the size of a card) even though the loop had printed 24 cards. 1fr fills
+   the row, so a row with patterns has no empty track. */
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__products {
-grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 340px));
+grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 gap: 24px;
+}
+}
+/* The 1400px cap kept the content well at three columns on a wide monitor
+   (1088px beside the sidebar). Opening it lets the same 320px minimum
+   land on five filling columns around 2256px — (1864 + 24) / 344 = 5 —
+   instead of three cards and a blank. */
+@media (min-width: 1600px) {
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__container {
+width: min(100%, 2200px);
 }
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__filter-open,
