@@ -75,6 +75,10 @@
     return true;
   }
 
+  function closeCard() {
+    if (!notifyParentClosed()) { window.close(); }
+  }
+
   card.addEventListener('click', function (event) {
     var go = event.target.closest('[data-mdv-go]');
     if (go) {
@@ -92,7 +96,7 @@
     var close = event.target.closest('[data-mdv-close]');
     if (close) {
       event.preventDefault();
-      if (!notifyParentClosed()) { window.close(); }
+      closeCard();
       return;
     }
 
@@ -124,6 +128,7 @@
   doc.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') { return; }
     if (closeOpenFaq()) { event.preventDefault(); return; }
-    if (notifyParentClosed()) { event.preventDefault(); }
+    event.preventDefault();
+    closeCard();
   });
 }());

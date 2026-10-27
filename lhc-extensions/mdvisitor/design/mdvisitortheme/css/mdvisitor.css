@@ -340,7 +340,7 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
 .md-offline .form-control:focus,
 .md-offline input:focus,
 .md-offline textarea:focus,
-.md-offline select:focus{border-color:#b9a275;box-shadow:0 0 0 3px rgba(201,169,98,.13);outline:none}
+.md-offline select:focus{border-color:#b9a275;box-shadow:0 0 0 3px rgba(201,169,98,.13);outline:2px solid #c9a962;outline-offset:2px}
 .md-offline .form-check,
 .md-offline .form-group .btn-group{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .md-offline .btn,
