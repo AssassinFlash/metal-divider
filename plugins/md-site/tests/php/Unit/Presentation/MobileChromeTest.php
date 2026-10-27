@@ -379,6 +379,59 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * Nothing may hide content unconditionally; the mask has to be removable.
+	 *
+	 * `x-cloak` and `hidden` are both pre-init masks: they assume a script is
+	 * coming to lift them. Applied unconditionally they hide content *forever*
+	 * for a visitor without scripts — the family faces kept 66–67% of their
+	 * words and the FAQ lost seven of its eight category groups entirely
+	 * (measured 2026-10-27). Twenty-two `[x-cloak]` rules across nine volumes
+	 * all said `display:none !important`; each one looked like a local
+	 * decision and none of them was.
+	 */
+	public function test_no_style_hides_content_unconditionally(): void {
+		$offenders = array();
+
+		foreach ( (array) glob( $this->volume_dir() . '/*.css' ) as $path ) {
+			$name = basename( (string) $path );
+			$css  = (string) file_get_contents( (string) $path ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+			$css  = (string) preg_replace( '/\/\*.*?\*\//s', '', $css );
+
+			// A selector mentioning `[x-cloak]` must carry the `md-js` gate.
+			preg_match_all( '/([^{}]+)\{([^}]*)\}/', $css, $rules, PREG_SET_ORDER );
+			foreach ( $rules as $rule ) {
+				$selector = trim( $rule[1] );
+				if ( false === strpos( $selector, '[x-cloak]' ) ) {
+					continue;
+				}
+				if ( false === strpos( $selector, 'md-js' ) ) {
+					$offenders[] = $name . ': ' . mb_substr( $selector, 0, 60 );
+				}
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$offenders,
+			'a mask that a script cannot lift hides content from every visitor without scripts — gate it on `html.md-js`'
+		);
+	}
+
+	/**
+	 * The FAQ's category groups ship open, and the filter closes them at run
+	 * time. Seven of the eight used to carry a literal `hidden` in the markup.
+	 */
+	public function test_the_faq_groups_ship_open(): void {
+		$faqs = $this->template( 'faqs.html' );
+
+		$this->assertDoesNotMatchRegularExpression(
+			'/class="faq-group" data-cat="[^"]*"\s+hidden/',
+			$faqs,
+			'category groups must not carry `hidden` in the markup — without scripts that is permanent'
+		);
+	}
+
+	/**
 	 * How many blocks enclose a position in a stylesheet. Zero means the rule
 	 * sits at the top level; anything else means it is nested, and the only
 	 * things that nest rules here are media queries.
