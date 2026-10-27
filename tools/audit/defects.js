@@ -46,7 +46,14 @@
     const cls = typeof el.className === 'string' ? el.className : '';
     if (el.getAttribute('aria-hidden') === 'true') return true;
     if (/\bpointer-events-none\b/.test(cls)) return true;
-    if (/\bbg-gradient|\bbackdrop-blur|\bscrim\b/.test(cls)) return true;
+    // Overlays carry their job in the name: a backdrop, a scrim, a modal veil.
+    // They are meant to be a coloured rectangle with nothing in them.
+    if (/\b(backdrop|scrim|overlay|veil|mask|shade)\b/i.test(cls)) return true;
+    if (/\bbg-gradient|\bbackdrop-blur/.test(cls)) return true;
+    // A translucent utility paint (`bg-black/55`, `bg-[#0a0a0a]/60`) is a veil:
+    // it exists to darken what is behind it, not to hold content.
+    if (/\bbg-(?:\[[^\]]+\]|[a-z]+)\/\d+/.test(cls)) return true;
+    if (/\bbg-\[[^\]]+\]\/\d+/.test(cls)) return true;
     return false;
   };
   [...document.querySelectorAll('main section, main article, main figure, main div')].forEach((el) => {
@@ -94,7 +101,14 @@
     if ('' === src) return;
     if (lazyWaiting) return;
     if (!i.complete || i.naturalWidth === 0) { add('img-broken', 'high', i, src + ' box ' + Math.round(box.width) + 'x' + Math.round(box.height)); return; }
-    if (i.naturalWidth / i.naturalHeight > box.width / Math.max(box.height, 1) * 2.2) add('img-ratio', 'low', i, 'natural ' + i.naturalWidth + 'x' + i.naturalHeight + ' in ' + Math.round(box.width) + 'x' + Math.round(box.height));
+    // Only compare against real pixels. A pending image has naturalWidth 0, and
+    // 0 / height is a nonsense ratio — that arithmetic produced 108 "ratio"
+    // findings on the home page, which measured zero once the pictures had
+    // actually loaded.
+    if (!i.naturalWidth || !i.naturalHeight) return;
+    const nat = i.naturalWidth / i.naturalHeight;
+    const boxRatio = box.width / Math.max(box.height, 1);
+    if (nat / boxRatio > 2.2) add('img-ratio', 'low', i, 'natural ' + i.naturalWidth + 'x' + i.naturalHeight + ' in ' + Math.round(box.width) + 'x' + Math.round(box.height));
   });
 
   // 4. Content forced against the viewport edge — "字体贴边".

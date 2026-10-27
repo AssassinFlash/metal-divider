@@ -23,6 +23,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -52,24 +53,45 @@ def references():
     return found
 
 
-def status(base, ref):
+GATEWAY_ERRORS = {502, 503, 504}
+
+
+def status(base, ref, attempts=3):
+    """The file's HTTP status, retrying gateway errors.
+
+    A 504 means this host took too long under the checker's parallel load; it
+    says nothing about whether the file exists. Seven of them appeared in one
+    run and every one answered 200 when asked again on its own. Retrying, with
+    the last attempt alone, separates "slow server" from "missing file" without
+    pretending a timeout is a defect.
+    """
+    code = None
+    for attempt in range(attempts):
+        code = _status_once(base, ref)
+        if code not in GATEWAY_ERRORS:
+            return ref, code
+        time.sleep(1.5 * (attempt + 1))
+    return ref, code
+
+
+def _status_once(base, ref):
     url = base.rstrip("/") + ref
     request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "Mozilla/5.0"})
     try:
-        with urllib.request.urlopen(request, timeout=25) as response:
-            return ref, response.status
+        with urllib.request.urlopen(request, timeout=40) as response:
+            return response.status
     except urllib.error.HTTPError as error:
         if error.code == 405:
             # Some servers refuse HEAD; ask for the first byte instead.
             try:
                 request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Range": "bytes=0-0"})
-                with urllib.request.urlopen(request, timeout=25) as response:
-                    return ref, response.status
+                with urllib.request.urlopen(request, timeout=40) as response:
+                    return response.status
             except urllib.error.HTTPError as inner:
-                return ref, inner.code
-        return ref, error.code
+                return inner.code
+        return error.code
     except Exception as error:  # noqa: BLE001 - reported, never swallowed
-        return ref, f"ERR {type(error).__name__}"
+        return f"ERR {type(error).__name__}"
 
 
 def main():
