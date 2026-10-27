@@ -1390,6 +1390,7 @@ body.md-mobile .md-stage-empty {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    width: 100%;
     height: 100%;
     padding: 40px 28px;
     text-align: center;
