@@ -40,7 +40,7 @@ if (is_string($mdJs) && $mdJs !== '' && is_string($mdJsFile) && is_file($mdJsFil
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#f7f8f8">
+<meta name="theme-color" content="#141210">
 <title><?php echo htmlspecialchars($mdDocTitle, ENT_QUOTES, 'UTF-8'); ?></title>
 <?php if (is_string($mdCss) && $mdCss !== '') : ?>
 <link rel="stylesheet" href="<?php echo htmlspecialchars($mdCss, ENT_QUOTES, 'UTF-8'); ?>">

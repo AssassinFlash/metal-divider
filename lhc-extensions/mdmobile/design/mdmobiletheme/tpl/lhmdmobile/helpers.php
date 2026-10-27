@@ -1518,7 +1518,7 @@ if (!function_exists('mdmobile_render_rail')) {
         if (array_key_exists('has_more', $inbox) && $inbox['has_more'] !== null) {
             $html .= ' data-has-more="' . ($inbox['has_more'] ? '1' : '0') . '"';
         }
-        $html .= '><' . $heading . ' class="md-rail-title" id="md-inbox-title">Conversations</' . $heading . '>';
+        $html .= '><' . $heading . ' class="md-rail-title" id="md-inbox-title"><span class="md-mark" aria-hidden="true">MD</span>Conversations</' . $heading . '>';
         $html .= mdmobile_render_filters($inbox, $pageBase);
         $html .= '<p id="md-inbox-status" class="md-inbox-status" role="status" aria-live="polite" aria-atomic="true"></p>';
         $html .= '<p id="md-inbox-empty" class="md-inbox-empty"';
