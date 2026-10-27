@@ -93,6 +93,11 @@ def audit_js(min_target: int) -> str:
     if (r.width < 1 || r.height < 1) return null;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.display === 'none' || cs.opacity === '0') return null;
+    // A closed dialog is present in the DOM with real boxes but is not
+    // reachable: its own `aria-hidden="true"` / `inert` says so. Measuring the
+    // buttons inside reported the lightbox arrows at 42px — they are 44px when
+    // the dialog is actually open, and when it is closed nobody can press them.
+    if (el.closest('[aria-hidden="true"], [inert]')) return null;
     return r;
   };
   const name = (el) => {
@@ -111,6 +116,12 @@ def audit_js(min_target: int) -> str:
   // On a logged-in dev instance it produced 195 of 195 "tiny targets" and
   // many "dead" ones, burying the real findings.
   const inAdminBar = (el) => !!el.closest('#wpadminbar, .ab-top-menu');
+
+  // A background tab freezes CSS transitions at currentTime 0, so anything
+  // whose size comes from an opening animation measures its start state. Force
+  // every animation to its end before reading boxes; without this, a lightbox
+  // dialog measured 864 of its eventual 900 and its buttons 42 of 44.
+  try { document.getAnimations().forEach(a => { try { a.finish(); } catch (e) {} }); } catch (e) {}
 
   const all = document.querySelectorAll('body *');
   for (const el of all) {
