@@ -462,15 +462,28 @@ final class LandingControlsTest extends TestCase {
 	 * Both must carry the same strings: one fact, one source, no drift.
 	 */
 	public function test_the_case_studies_are_visible_on_the_page(): void {
-		$html = preg_replace( '/<!--.*?-->/s', '', $this->markup( 'custom-screens' ) );
+		$stripped = preg_replace( '/<!--.*?-->/s', '', $this->markup( 'custom-screens' ) );
+		$this->assertIsString( $stripped, 'the template reads as a string' );
+		$html = $stripped;
 
 		$start = strpos( $html, 'id="custom-project-proof"' );
 		$this->assertNotFalse( $start, 'the page prints a project-proof band' );
 		$band = substr( $html, (int) $start );
 
-		foreach ( array( 'Centuria Flagship Store', 'Orchard Road, Singapore', 'SS316 Exterior Grade', '1,200m² Cladding',
-			'The Opus VIP Lounge', 'Mayfair, London', 'Rose Gold Brushed', '12 Divider Units',
-			'Silverlake Estate Garden', 'California, USA', 'SS316 Marine Grade', '45 Linear Meters' ) as $fact ) {
+		foreach ( array(
+			'Centuria Flagship Store',
+			'Orchard Road, Singapore',
+			'SS316 Exterior Grade',
+			'1,200m² Cladding',
+			'The Opus VIP Lounge',
+			'Mayfair, London',
+			'Rose Gold Brushed',
+			'12 Divider Units',
+			'Silverlake Estate Garden',
+			'California, USA',
+			'SS316 Marine Grade',
+			'45 Linear Meters',
+		) as $fact ) {
 			$this->assertStringContainsString( $fact, $band, $fact . ' is printed in the open' );
 		}
 
