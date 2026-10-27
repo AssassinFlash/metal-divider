@@ -235,9 +235,14 @@ def main() -> int:
     # `open` ends up in whichever window Chrome considers active — measured:
     # `innerWidth` came back 701 or None instead of 1440. Binding to a window
     # that was created at the target size keeps it there.
+    # The first page needs the buster too. Created without it, the window loaded
+    # a cached document — one that referenced an older tailwind.css?ver — and the
+    # audit reported 14 flat controls on the home page where a busted load finds
+    # none. Later pages already carried one, which is why only page one lied.
     first = args.pages[0] if args.pages else "/"
+    first_url = f"{args.base}{first}" + ("&" if "?" in first else "?") + f"mdaudit=af{int(time.time())}"
     created = run(["chrome", "call", "windows.create", json.dumps(
-        [{"url": f"{args.base}{first}", "width": args.width + 56, "height": 920,
+        [{"url": first_url, "width": args.width + 56, "height": 920,
           "left": 0, "top": 34, "focused": True}])])
     if not created.get("ok"):
         print(f"could not create a window: {created}", file=sys.stderr)
@@ -269,6 +274,19 @@ def main() -> int:
             if width_now != args.width:
                 print(f"{path:52} SKIP — viewport {width_now}")
                 continue
+            # Wait until the stylesheet has actually applied. Without this the
+            # audit ran against a page whose layout was computed but whose
+            # cursor values were still the user-agent defaults, and reported 14
+            # flat controls on the home page where a settled read finds one
+            # (a carousel arrow that is legitimately disabled).
+            for _ in range(40):
+                ready = run(["eval",
+                             "document.readyState === 'complete' && document.styleSheets.length > 0"
+                             " && getComputedStyle(document.body).backgroundColor !== 'rgba(0, 0, 0, 0)'"
+                             ]).get("data")
+                if ready is True:
+                    break
+                time.sleep(0.25)
             data = run(["eval", audit_js(MIN_TARGET)]).get("data") or {}
             dead = data.get("dead") or []
             flat = data.get("flat") or []
