@@ -79,6 +79,16 @@ final class Emails {
 		$lines[] = 'Name: ' . $record['name'];
 		$lines[] = 'Email: ' . $record['email'];
 		$lines[] = 'Company: ' . ( '' !== $record['company'] ? $record['company'] : '(none)' );
+		$lines[] = 'Phone: ' . ( '' !== ( $record['phone'] ?? '' ) ? $record['phone'] : '(none)' );
+		$lines[] = 'Country: ' . ( '' !== ( $record['country'] ?? '' ) ? $record['country'] : '(none)' );
+		// The three qualifiers the form requires. They were stored on the record
+		// but never printed here, so the sales inbox received a brief with the
+		// customer's name and message and nothing that says how big the job is
+		// or which product family it belongs to — every reply started with a
+		// question the customer had already answered.
+		$lines[] = 'Project scope: ' . ( '' !== ( $record['scope'] ?? '' ) ? $record['scope'] : '(none)' );
+		$lines[] = 'Inquiry route: ' . ( '' !== ( $record['route'] ?? '' ) ? $record['route'] : '(none)' );
+		$lines[] = 'Est. quantity: ' . ( '' !== ( $record['quantity'] ?? '' ) ? $record['quantity'] : '(none)' );
 		$lines[] = 'Message:';
 		$lines[] = '' !== $record['message'] ? \wordwrap( $record['message'], 76 ) : '(none)';
 		$lines[] = '';

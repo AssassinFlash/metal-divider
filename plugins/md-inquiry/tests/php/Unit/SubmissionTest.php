@@ -98,6 +98,7 @@ final class SubmissionTest extends TestCase {
 			'md_inquiry_country'       => 'Hong Kong',
 			'md_inquiry_scope'         => 'Single zone',
 			'md_inquiry_route'         => 'Facade screening',
+			'md_inquiry_quantity'      => '10-50 sqm',
 			'md_inquiry_message'       => 'Quantity: 40 panels.',
 			'md_inquiry_pattern_slug'  => 'apiary',
 			'md_inquiry_source_page'   => 'pattern-pdp',
@@ -171,6 +172,7 @@ final class SubmissionTest extends TestCase {
 			'md_inquiry_country'      => 'Hong Kong',
 			'md_inquiry_scope'        => 'Single zone',
 			'md_inquiry_route'        => 'Facade screening',
+			'md_inquiry_quantity'     => '10-50 sqm',
 			'md_inquiry_message'      => '',
 			'md_inquiry_pattern_slug' => 'apiary',
 			'md_inquiry_locale'       => 'en',
@@ -287,6 +289,7 @@ final class SubmissionTest extends TestCase {
 			'md_inquiry_country'      => 'Hong Kong',
 			'md_inquiry_scope'        => 'Single zone',
 			'md_inquiry_route'        => 'Facade screening',
+			'md_inquiry_quantity'     => '10-50 sqm',
 			'md_inquiry_pattern_slug' => 'apiary',
 			'cf-turnstile-response'   => 'a-token',
 		);
@@ -324,14 +327,15 @@ final class SubmissionTest extends TestCase {
 		);
 
 		$_POST = array(
-			'md_inquiry_action'  => 'submit',
-			'md_inquiry_nonce'   => 'the-nonce',
-			'md_inquiry_name'    => 'Jane Chan',
-			'md_inquiry_email'   => 'jane@studio.com',
-			'md_inquiry_country' => 'Hong Kong',
-			'md_inquiry_scope'   => 'Single zone',
-			'md_inquiry_route'   => 'Facade screening',
-			'md_inquiry_message' => 'Quantity: 40 panels.',
+			'md_inquiry_action'   => 'submit',
+			'md_inquiry_nonce'    => 'the-nonce',
+			'md_inquiry_name'     => 'Jane Chan',
+			'md_inquiry_email'    => 'jane@studio.com',
+			'md_inquiry_country'  => 'Hong Kong',
+			'md_inquiry_scope'    => 'Single zone',
+			'md_inquiry_route'    => 'Facade screening',
+			'md_inquiry_quantity' => '10-50 sqm',
+			'md_inquiry_message'  => 'Quantity: 40 panels.',
 		);
 		$submission->handle();
 

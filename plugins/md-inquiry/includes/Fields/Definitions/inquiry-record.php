@@ -73,6 +73,12 @@ return array(
 			'type'  => 'text',
 		),
 		array(
+			'key'   => 'field_md_inquiry_project_quantity',
+			'label' => '数量估计 Est. quantity',
+			'name'  => 'project_quantity',
+			'type'  => 'text',
+		),
+		array(
 			'key'   => 'field_md_inquiry_message',
 			'label' => '留言 Message',
 			'name'  => 'message',

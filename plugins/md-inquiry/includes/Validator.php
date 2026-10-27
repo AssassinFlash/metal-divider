@@ -80,6 +80,27 @@ final class Validator {
 	);
 
 	/**
+	 * Estimated quantity, from the old contact form's own select.
+	 *
+	 * The old shop asked this of every visitor and required it; the rebuild
+	 * dropped it while adding scope and route. Volume decides the price band and
+	 * whether the job is a sample or a production run, so a quote cannot be
+	 * prepared without it — the sales inbox was receiving briefs it had to
+	 * answer with a follow-up question. The bands are the old page's wording
+	 * (data/shopify-public/pages-content.md, the contact form block).
+	 *
+	 * @var list<string>
+	 */
+	public const QUANTITIES = array(
+		'Sample / test panel (1-10 sqm)',
+		'10-50 sqm',
+		'50-100 sqm',
+		'100-250 sqm',
+		'250+ sqm',
+		'Not decided yet',
+	);
+
+	/**
 	 * One value from a fixed list: never free text, never an error.
 	 *
 	 * A value outside the list becomes the empty string, which the caller's
@@ -95,10 +116,11 @@ final class Validator {
 		$raw = isset( $input[ $key ] ) && \is_string( $input[ $key ] ) ? \trim( \wp_unslash( $input[ $key ] ) ) : '';
 		return \in_array( $raw, $allowed, true ) ? $raw : '';
 	}
-	public const COUNTRY_MAX = 80;
-	public const SCOPE_MAX   = 60;
-	public const ROUTE_MAX   = 60;
-	public const MESSAGE_MAX = 5000;
+	public const COUNTRY_MAX  = 80;
+	public const SCOPE_MAX    = 60;
+	public const ROUTE_MAX    = 60;
+	public const QUANTITY_MAX = 60;
+	public const MESSAGE_MAX  = 5000;
 
 	/**
 	 * The source tokens' shape: the old site's lowercase vocabulary, where
@@ -129,6 +151,7 @@ final class Validator {
 			'country'       => $this->choice( $input, 'country', self::COUNTRIES ),
 			'scope'         => $this->choice( $input, 'scope', self::SCOPES ),
 			'route'         => $this->choice( $input, 'route', self::ROUTES ),
+			'quantity'      => $this->choice( $input, 'quantity', self::QUANTITIES ),
 			'message'       => $this->text( $input, 'message', self::MESSAGE_MAX ),
 			'pattern_slug'  => $this->slug( $input ),
 			'source_page'   => self::source_token( (string) ( $input['source_page'] ?? '' ) ),
@@ -151,6 +174,9 @@ final class Validator {
 		}
 		if ( '' === $values['route'] ) {
 			$errors['route'] = __( 'Please choose an inquiry route.', 'md-inquiry' );
+		}
+		if ( '' === $values['quantity'] ) {
+			$errors['quantity'] = __( 'Please choose a quantity range.', 'md-inquiry' );
 		}
 		if ( '' === $values['message'] && ! $has_pattern ) {
 			$errors['message'] = __( 'Please add a short message.', 'md-inquiry' );

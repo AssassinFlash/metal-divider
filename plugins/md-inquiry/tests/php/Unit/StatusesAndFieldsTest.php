@@ -80,6 +80,7 @@ final class StatusesAndFieldsTest extends TestCase {
 				'customer_country',
 				'project_scope',
 				'inquiry_route',
+				'project_quantity',
 				'message',
 				'pattern_product',
 				'pattern_name',

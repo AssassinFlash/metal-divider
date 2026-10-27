@@ -43,6 +43,11 @@ final class EmailsTest extends TestCase {
 			'name'           => 'Jane Chan',
 			'email'          => 'jane@studio.com',
 			'company'        => 'Chan Design Studio',
+			'phone'          => '+852 1234 5678',
+			'country'        => 'Hong Kong',
+			'scope'          => 'Single zone',
+			'route'          => 'Interior partitions',
+			'quantity'       => '10-50 sqm',
 			'message'        => 'Quantity: 40 panels for a lobby feature wall.',
 			'pattern_name'   => 'Apiary',
 			'pattern_code'   => 'APIARY',
@@ -151,5 +156,28 @@ final class EmailsTest extends TestCase {
 		$confirmation = $emails->confirmation( $record );
 		$this->assertSame( "We've received your inquiry", $confirmation['subject'] );
 		$this->assertStringContainsString( 'Thank you for your inquiry — this email confirms we have received it.', $confirmation['body'] );
+	}
+
+	/**
+	 * The internal notification carries every qualifier the form asked for.
+	 *
+	 * The record has always stored the country, the scope, the route and the
+	 * quantity, but the mail printed only name, email, company and message. The
+	 * sales inbox therefore opened each brief without the two facts that decide
+	 * the answer — how big the job is and which product family it belongs to —
+	 * and had to ask for them again.
+	 */
+	public function test_the_internal_notification_carries_every_qualified_field(): void {
+		$body = ( new Emails( new Config() ) )->internal( self::record() )['body'];
+
+		foreach ( array(
+			'Phone: +852 1234 5678',
+			'Country: Hong Kong',
+			'Project scope: Single zone',
+			'Inquiry route: Interior partitions',
+			'Est. quantity: 10-50 sqm',
+		) as $line ) {
+			$this->assertStringContainsString( $line, $body, $line . ' reaches the sales inbox' );
+		}
 	}
 }

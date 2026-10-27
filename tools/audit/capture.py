@@ -83,6 +83,12 @@ def settle(session):
 
 def capture_one(job):
     session, slug, url, out_dir = job
+    # A busting parameter: this site sends `cache-control: public, max-age=604800`
+    # on HTML, so an un-purged page cache serves a week-old document to a real
+    # browser while curl without it gets a fresh render. An audit that does not
+    # bust the cache measures the cache, not the site.
+    sep = "&" if "?" in url else "?"
+    url = url + sep + "mdaudit=1"
     got = session_call(session, ["open", url], timeout=240)
     if not got.get("ok"):
         return slug, {"error": "open failed", "detail": str(got)[:300]}

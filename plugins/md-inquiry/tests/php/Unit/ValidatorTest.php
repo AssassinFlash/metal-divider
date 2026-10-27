@@ -55,6 +55,7 @@ final class ValidatorTest extends TestCase {
 				'country'       => 'Atlantis',
 				'scope'         => 'Single zone',
 				'route'         => 'Facade screening',
+				'quantity'      => '10-50 sqm',
 				'source_page'   => 'inquiry',
 				'source_module' => 'page',
 				'source_button' => 'submit',
@@ -69,8 +70,8 @@ final class ValidatorTest extends TestCase {
 	}
 
 	/**
-	 * The three selects are required: a brief without a route cannot be
-	 * triaged to a technical team, which is the whole reason the route exists.
+	 * The selects are required: a brief without a route cannot be triaged to a
+	 * technical team, and one without a quantity cannot be priced.
 	 */
 	public function test_the_selects_are_required(): void {
 		$checked = ( new Validator() )->validate(
@@ -82,7 +83,7 @@ final class ValidatorTest extends TestCase {
 			false
 		);
 
-		foreach ( array( 'country', 'scope', 'route' ) as $field ) {
+		foreach ( array( 'country', 'scope', 'route', 'quantity' ) as $field ) {
 			$this->assertArrayHasKey( $field, $checked['errors'], $field . ' must be required' );
 		}
 	}
@@ -100,6 +101,7 @@ final class ValidatorTest extends TestCase {
 				'country'       => 'Hong Kong',
 				'scope'         => 'Single zone',
 				'route'         => 'Facade screening',
+				'quantity'      => '10-50 sqm',
 				'message'       => '',
 				'pattern_slug'  => 'apiary',
 				'source_page'   => 'pattern-pdp',

@@ -66,6 +66,42 @@ final class Form {
 	private FormState $state;
 
 	/**
+	 * How many forms this request has rendered.
+	 *
+	 * A page carries several: one in the shared CTA band, one in the footer's
+	 * quote dialog, and one per family section that asks for a quote in place.
+	 * Every one of them used to print the same element ids, so a page shipped
+	 * thirteen duplicated ids four times over — invalid HTML, and a real
+	 * breakage: each `<label for>` and every `aria-describedby` resolved to the
+	 * first form on the page, so a screen reader announced the wrong field and
+	 * clicking a label focused a different form's input.
+	 *
+	 * @var int
+	 */
+	private int $rendered = 0;
+
+	/**
+	 * The id suffix of the form being rendered, '' for the first on the page.
+	 *
+	 * @var string
+	 */
+	private string $suffix = '';
+
+	/**
+	 * One element id, suffixed for every instance after the first.
+	 *
+	 * Labels, `aria-describedby` references and the runtime's lookups all go
+	 * through this, so a page can carry several forms without an id, a `for`
+	 * or an error reference ever resolving to a different form's element.
+	 *
+	 * @param string $base The unsuffixed id.
+	 * @return string
+	 */
+	private function id_of( string $base ): string {
+		return $base . $this->suffix;
+	}
+
+	/**
 	 * Sets up the renderer.
 	 *
 	 * @param Config    $config  The configuration.
@@ -165,13 +201,20 @@ final class Form {
 		$source  = $this->source( $pattern, $source_page, $source_module, $source_button );
 		$this->enqueue_assets();
 
+		// The first form on a request keeps the bare ids the PDP hero and FAQ
+		// aim at (`#md-inquiry-source-page` and friends); every later instance
+		// suffixes them, because HTML ids are unique per document.
+		++$this->rendered;
+		$suffix       = 1 === $this->rendered ? '' : '-' . (string) $this->rendered;
+		$this->suffix = $suffix;
+
 		$out  = '<div class="md-inquiry-app" data-md-inquiry="' . \esc_attr( (string) \wp_json_encode( $this->config_json( $pattern, $source ) ) ) . '">';
 		$out .= '<div class="md-inquiry">';
 
 		$out .= '<form class="md-inquiry-form" method="post">';
 		$out .= \wp_nonce_field( Submission::ACTION, Submission::NONCE_FIELD, false, false );
 		$out .= '<input type="hidden" name="md_inquiry_action" value="submit">';
-		$out .= '<input type="hidden" name="md_inquiry_locale" id="md-inquiry-locale" value="en">';
+		$out .= '<input type="hidden" name="md_inquiry_locale" id="' . \esc_attr( $this->id_of( 'md-inquiry-locale' ) ) . '" value="en">';
 		if ( null !== $pattern ) {
 			$out .= '<input type="hidden" name="md_inquiry_pattern_slug" value="' . \esc_attr( $this->pattern_slug_of( $pattern_slug, $pattern ) ) . '">';
 		}
@@ -193,6 +236,7 @@ final class Form {
 		$out .= $this->select_field( 'country', __( 'Country', 'md-inquiry' ), Validator::COUNTRIES, __( 'Select country', 'md-inquiry' ), true, 'country-name' );
 		$out .= $this->select_field( 'scope', __( 'Project scope', 'md-inquiry' ), Validator::SCOPES, __( 'Select project scope', 'md-inquiry' ), true, 'off' );
 		$out .= $this->select_field( 'route', __( 'Inquiry route', 'md-inquiry' ), Validator::ROUTES, __( 'Select inquiry route', 'md-inquiry' ), true, 'off' );
+		$out .= $this->select_field( 'quantity', __( 'Estimated quantity', 'md-inquiry' ), Validator::QUANTITIES, __( 'Select quantity range', 'md-inquiry' ), true, 'off' );
 		$out .= $this->message_field( null !== $pattern );
 
 		$out .= $this->honeypot();
@@ -266,15 +310,15 @@ final class Form {
 		$invalid = '' !== $error ? ' md-inquiry-field--invalid' : '';
 
 		$out  = '<p class="md-inquiry-field' . $invalid . '">';
-		$out .= '<label class="md-inquiry-field__label" for="md-inquiry-' . \esc_attr( $key ) . '">' . \esc_html( $label ) . '</label>';
-		$out .= '<select class="md-inquiry-field__input md-inquiry-field__select" id="md-inquiry-' . \esc_attr( $key ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '"' . ( $required ? ' required' : '' ) . '>';
+		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '">' . \esc_html( $label ) . '</label>';
+		$out .= '<select class="md-inquiry-field__input md-inquiry-field__select" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '"' . ( $required ? ' required' : '' ) . '>';
 		$out .= '<option value="">' . \esc_html( $placeholder ) . '</option>';
 		foreach ( $options as $option ) {
 			$out .= '<option value="' . \esc_attr( $option ) . '"' . ( $value === $option ? ' selected' : '' ) . '>' . \esc_html( $option ) . '</option>';
 		}
 		$out .= '</select>';
 		if ( '' !== $error ) {
-			$out .= '<span class="md-inquiry-field__error" id="md-inquiry-' . \esc_attr( $key ) . '-error">' . \esc_html( $error ) . '</span>';
+			$out .= '<span class="md-inquiry-field__error" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key . '-error' ) ) . '">' . \esc_html( $error ) . '</span>';
 		}
 		$out .= '</p>';
 		return $out;
@@ -301,10 +345,10 @@ final class Form {
 		}
 
 		$out  = '<p class="md-inquiry-field' . $invalid . '">';
-		$out .= '<label class="md-inquiry-field__label" for="md-inquiry-' . \esc_attr( $key ) . '">' . \esc_html( $label ) . '</label>';
-		$out .= '<input class="md-inquiry-field__input" type="' . \esc_attr( $type ) . '" id="md-inquiry-' . \esc_attr( $key ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" value="' . \esc_attr( $value ) . '" maxlength="' . \esc_attr( $max ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '" placeholder="' . \esc_attr( $placeholder ) . '"' . ( $required ? ' required' : '' ) . '>';
+		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '">' . \esc_html( $label ) . '</label>';
+		$out .= '<input class="md-inquiry-field__input" type="' . \esc_attr( $type ) . '" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" value="' . \esc_attr( $value ) . '" maxlength="' . \esc_attr( $max ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '" placeholder="' . \esc_attr( $placeholder ) . '"' . ( $required ? ' required' : '' ) . '>';
 		if ( '' !== $error ) {
-			$out .= '<span class="md-inquiry-field__error" id="md-inquiry-' . \esc_attr( $key ) . '-error">' . \esc_html( $error ) . '</span>';
+			$out .= '<span class="md-inquiry-field__error" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key . '-error' ) ) . '">' . \esc_html( $error ) . '</span>';
 		}
 		$out .= '</p>';
 		return $out;
@@ -325,11 +369,11 @@ final class Form {
 			: __( 'Message', 'md-inquiry' );
 
 		$out  = '<p class="md-inquiry-field md-inquiry-field--message' . $invalid . '">';
-		$out .= '<label class="md-inquiry-field__label" for="md-inquiry-message">' . \esc_html( $label ) . '</label>';
-		$out .= '<textarea class="md-inquiry-field__input" id="md-inquiry-message" name="md_inquiry_message" maxlength="' . \esc_attr( (string) Validator::MESSAGE_MAX ) . '" rows="5"' . ( $has_pattern ? '' : ' required' ) . '>' . \esc_textarea( $value ) . '</textarea>';
+		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '">' . \esc_html( $label ) . '</label>';
+		$out .= '<textarea class="md-inquiry-field__input" id="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '" name="md_inquiry_message" maxlength="' . \esc_attr( (string) Validator::MESSAGE_MAX ) . '" rows="5"' . ( $has_pattern ? '' : ' required' ) . '>' . \esc_textarea( $value ) . '</textarea>';
 		$out .= '<span class="md-inquiry-field__hint">' . \esc_html__( 'Quantities, dimensions, timeline, finish preferences — anything you already have.', 'md-inquiry' ) . '</span>';
 		if ( '' !== $error ) {
-			$out .= '<span class="md-inquiry-field__error" id="md-inquiry-message-error">' . \esc_html( $error ) . '</span>';
+			$out .= '<span class="md-inquiry-field__error" id="' . \esc_attr( $this->id_of( 'md-inquiry-message-error' ) ) . '">' . \esc_html( $error ) . '</span>';
 		}
 		$out .= '</p>';
 		return $out;
@@ -343,7 +387,7 @@ final class Form {
 	 * @return string
 	 */
 	private function honeypot(): string {
-		return '<p class="md-inquiry-honeypot" aria-hidden="true"><label class="md-inquiry-field__label" for="md-inquiry-website">' . \esc_html__( 'Leave this field empty', 'md-inquiry' ) . '</label><input class="md-inquiry-field__input" type="text" id="md-inquiry-website" name="website" autocomplete="off" tabindex="-1"></p>';
+		return '<p class="md-inquiry-honeypot" aria-hidden="true"><label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-website' ) ) . '">' . \esc_html__( 'Leave this field empty', 'md-inquiry' ) . '</label><input class="md-inquiry-field__input" type="text" id="' . \esc_attr( $this->id_of( 'md-inquiry-website' ) ) . '" name="website" autocomplete="off" tabindex="-1"></p>';
 	}
 
 	/**
@@ -376,7 +420,7 @@ final class Form {
 	 * @return string
 	 */
 	private function source_input( string $part, string $value ): string {
-		return '<input type="hidden" class="md-inquiry-source" id="md-inquiry-source-' . \esc_attr( $part ) . '" name="md_inquiry_source_' . \esc_attr( $part ) . '" value="' . \esc_attr( $value ) . '">';
+		return '<input type="hidden" class="md-inquiry-source" id="' . \esc_attr( $this->id_of( 'md-inquiry-source-' . $part ) ) . '" name="md_inquiry_source_' . \esc_attr( $part ) . '" value="' . \esc_attr( $value ) . '">';
 	}
 
 	/**
