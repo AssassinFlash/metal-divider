@@ -30,23 +30,44 @@
   }
 
   // 2. Blocks that hold space but show nothing — the "空卡槽 / 大面积空白".
+  //    A decorative overlay is a block with no text and no image, so the
+  //    test has to exclude what is designed to be invisible: anything
+  //    aria-hidden, anything the page marks pointer-events-none, and anything
+  //    whose only job is a background paint. What is left is a container that
+  //    was meant to carry content and does not.
+  const decorative = (el) => {
+    if (el.getAttribute('aria-hidden') === 'true') return true;
+    const cls = typeof el.className === 'string' ? el.className : '';
+    if (/\bpointer-events-none\b/.test(cls)) return true;
+    if (/\bbg-gradient|\bbg-\[#|\bbackdrop-blur|\binset-0\b/.test(cls) && !el.textContent.trim()) return true;
+    const cs = getComputedStyle(el);
+    if (cs.backgroundImage !== 'none' && !el.textContent.trim()) return true;
+    return false;
+  };
   [...document.querySelectorAll('main > *, main section, main div, main article, main figure')].forEach((el) => {
     if (!shown(el)) return;
+    if (decorative(el)) return;
     const r = el.getBoundingClientRect();
     if (r.height < 72 || r.width < 40) return;
     if (el.children.length > 3) return;
     const hasImg = el.querySelector('img') && [...el.querySelectorAll('img')].some((i) => i.complete && i.naturalWidth > 0);
     const txt = norm(el.textContent);
     if (hasImg || txt.length > 0) return;
+    // A container whose only children are decorative is itself decorative.
+    if (el.children.length && [...el.children].every(decorative)) return;
     add('empty-block', 'high', el, 'height ' + Math.round(r.height) + ' with no text and no loaded image');
   });
 
-  // 3. Images that never loaded (lazy tiles that never enter the fold).
+  // 3. Images that should show but render nothing.
+  //    An image with a zero-size box is not broken — it is unrendered, which is
+  //    what a hidden slide or an off-canvas carousel item looks like. Only an
+  //    image that occupies space and still has no pixels is a defect.
   [...document.querySelectorAll('img')].forEach((i) => {
-    if (!shown(i)) return;
-    if (!i.complete || i.naturalWidth === 0) { add('img-broken', 'high', i, i.getAttribute('src') || ''); return; }
     const box = i.getBoundingClientRect();
-    if (box.width > 8 && i.naturalWidth / i.naturalHeight > box.width / Math.max(box.height, 1) * 2.2) add('img-ratio', 'low', i, 'natural ' + i.naturalWidth + 'x' + i.naturalHeight + ' in ' + Math.round(box.width) + 'x' + Math.round(box.height));
+    const laidOut = box.width > 8 && box.height > 8;
+    if (!laidOut) return;
+    if (!i.complete || i.naturalWidth === 0) { add('img-broken', 'high', i, (i.getAttribute('src') || '') + ' box ' + Math.round(box.width) + 'x' + Math.round(box.height)); return; }
+    if (i.naturalWidth / i.naturalHeight > box.width / Math.max(box.height, 1) * 2.2) add('img-ratio', 'low', i, 'natural ' + i.naturalWidth + 'x' + i.naturalHeight + ' in ' + Math.round(box.width) + 'x' + Math.round(box.height));
   });
 
   // 4. Content forced against the viewport edge — "字体贴边".
@@ -91,7 +112,10 @@
     const fs = parseFloat(getComputedStyle(el).fontSize);
     if (fs < 12) { add('tiny-type', 'med', el, fs + 'px'); return; }
     const r = el.getBoundingClientRect();
-    if (t.length > 90 && r.width > innerWidth * 0.62) add('long-measure', 'med', el, Math.round(r.width) + 'px for ' + t.length + ' chars');
+    // A measure is long when the line runs wider than the readable range, not
+    // when it is a large share of the viewport: 40em ≈ 640–720px. Report only
+    // what is genuinely hard to track back to the next line.
+    if (t.length > 90 && r.width > 760) add('long-measure', 'med', el, Math.round(r.width) + 'px for ' + t.length + ' chars');
   });
 
   // 8. Big dead vertical gaps between content — "莫名的大块空白间隙".

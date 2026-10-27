@@ -76,9 +76,14 @@ final class Form {
 	 * first form on the page, so a screen reader announced the wrong field and
 	 * clicking a label focused a different form's input.
 	 *
+	 * Static, not per instance: the uniqueness of the ids on a page cannot depend
+	 * on how many Form objects the request happened to build. One instance is
+	 * created today, but a second registration or a test that renders twice
+	 * would silently start the count over and duplicate every id again.
+	 *
 	 * @var int
 	 */
-	private int $rendered = 0;
+	private static int $rendered = 0;
 
 	/**
 	 * The id suffix of the form being rendered, '' for the first on the page.
@@ -204,8 +209,8 @@ final class Form {
 		// The first form on a request keeps the bare ids the PDP hero and FAQ
 		// aim at (`#md-inquiry-source-page` and friends); every later instance
 		// suffixes them, because HTML ids are unique per document.
-		++$this->rendered;
-		$suffix       = 1 === $this->rendered ? '' : '-' . (string) $this->rendered;
+		++self::$rendered;
+		$suffix       = 1 === self::$rendered ? '' : '-' . (string) self::$rendered;
 		$this->suffix = $suffix;
 
 		$out  = '<div class="md-inquiry-app" data-md-inquiry="' . \esc_attr( (string) \wp_json_encode( $this->config_json( $pattern, $source ) ) ) . '">';
@@ -241,6 +246,7 @@ final class Form {
 
 		$out .= $this->honeypot();
 		$out .= $this->turnstile( $source );
+		$out .= '<p class="md-inquiry-promise">' . \esc_html__( 'We reply within 24 hours on business days. Your details are used only to answer this inquiry — we do not share them.', 'md-inquiry' ) . '</p>';
 		$out .= '<p class="md-inquiry-note">' . \esc_html__( 'The WhatsApp button opens a chat pre-filled with your details and this pattern. Choosing WhatsApp does not submit this form.', 'md-inquiry' ) . '</p>';
 		$out .= '</div>';
 

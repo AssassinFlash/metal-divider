@@ -45,6 +45,13 @@ UPGRADES = [
      "升级-4 price display", "docs/acceptance/32-debt-ledger.md#升级-4"),
     (r"(?i)^(price range|order size|typical discount|price)$", "升级-4 price display",
      "docs/acceptance/32-debt-ledger.md#升级-4"),
+    # MOQ is pricing-adjacent: the same ruling replaced the stated minimum with
+    # "confirmed in your quote", the wording every family page now uses. It is
+    # listed separately because it is a judgment call rather than a pure price
+    # string — "MOQ from 1 sqm" is customer-friendly information, and dropping
+    # it loses a selling point even though no number is promised.
+    (r"(?i)^MOQ from |sample order from 1 sqm", "升级-4 MOQ wording",
+     "docs/acceptance/32-debt-ledger.md#升级-4"),
     # 升级-3: the five-material vocabulary became stainless 304/316 only.
     (r"(?i)\b(corten|aluminium|aluminum|copper|mild steel|brass)\b", "升级-3 materials", "docs/acceptance/32-debt-ledger.md#升级-3"),
 ]

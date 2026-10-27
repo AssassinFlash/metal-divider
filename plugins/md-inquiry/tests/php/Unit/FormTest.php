@@ -87,6 +87,37 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'class="md-inquiry-whatsapp" href="https://wa.me/85264731687?text=', $html );
 		$this->assertStringNotContainsString( ' style=', $html, 'zero inline styles, always' );
 		$this->assertStringNotContainsString( '<script', $html, 'no inline script: the CSP closes that door' );
+
+		// The reply promise. Every old page told the visitor when to expect an
+		// answer; the rebuilt form told them nothing, so the highest-intent
+		// moment on the site — a filled-in brief — ended without a commitment.
+		$this->assertStringContainsString( 'class="md-inquiry-promise"', $html, 'the form states its response window' );
+		$this->assertStringContainsString( 'We reply within 24 hours on business days.', $html );
+		$this->assertStringContainsString( 'Your details are used only to answer this inquiry', $html, 'and says what it does with them' );
+	}
+
+	/**
+	 * Several forms on one page never share an element id.
+	 *
+	 * A page renders the shared CTA band, the footer dialog and a section that
+	 * asks in place. Before the suffix, thirteen ids repeated per instance and
+	 * every `<label for>` on the page pointed at the first form's input.
+	 */
+	public function test_two_renders_on_one_page_never_share_an_id(): void {
+		$this->render( 'apiary-architectural-metal-screen-pattern', array() );
+		$first  = $this->render( 'apiary-architectural-metal-screen-pattern', array() );
+		$second = $this->render( 'apiary-architectural-metal-screen-pattern', array() );
+
+		preg_match_all( '/\sid="([^"]+)"/', $first, $a );
+		preg_match_all( '/\sid="([^"]+)"/', $second, $b );
+
+		$this->assertNotEmpty( $a[1], 'the form prints ids' );
+		$this->assertNotEmpty( $b[1], 'and so does the next one' );
+		$this->assertSame(
+			array(),
+			array_values( array_intersect( $a[1], $b[1] ) ),
+			'two renders on one page never repeat an id'
+		);
 	}
 
 	/**

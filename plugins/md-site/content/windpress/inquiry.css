@@ -181,6 +181,18 @@
   line-height: 1.55;
   margin: 16px 0 0;
 }
+/* The reply promise, above the WhatsApp note: the old site stated the response
+ * window on every page and the rebuilt form stated nothing, so a visitor had no
+ * idea when to expect an answer. It is a promise, not fine print, so it reads
+ * at body size and in the page's own gold rather than the muted note grey. */
+.md-inquiry .md-inquiry-promise {
+  border-left: 2px solid var(--md-gold, #c9a962);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 20px 0 0;
+  padding-left: 12px;
+}
 .md-inquiry .md-inquiry-notice {
   border-radius: 10px;
   font-size: 14px;
