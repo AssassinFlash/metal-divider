@@ -7,9 +7,21 @@ if ($mdDirValue === 'rtl' || $mdDirValue === 'ltr') {
     $mdDir = $mdDirValue;
 }
 
+$mdInboxJs = erLhcoreClassDesign::design('js/mdmobile-inbox.js', false);
+$mdInboxJsFile = erLhcoreClassDesign::design('js/mdmobile-inbox.js', true);
+if (is_string($mdInboxJs) && $mdInboxJs !== '' && is_string($mdInboxJsFile) && is_file($mdInboxJsFile)) {
+    $mdInboxJs .= '?' . filemtime($mdInboxJsFile);
+}
+
 $mdDocTitle = 'Visitor';
 if (isset($Result['title']) && is_string($Result['title']) && $Result['title'] !== '') {
     $mdDocTitle = $Result['title'];
+} elseif (
+    isset($Result['mdmobile_inbox'])
+    && is_array($Result['mdmobile_inbox'])
+    && !(isset($Result['mdmobile']) && is_array($Result['mdmobile']))
+) {
+    $mdDocTitle = 'Conversations';
 }
 
 $mdCss = erLhcoreClassDesign::design('css/mdmobile.css', false);
@@ -39,14 +51,23 @@ if (is_string($mdJs) && $mdJs !== '' && is_string($mdJsFile) && is_file($mdJsFil
 <?php echo $Result['content']; ?>
 <?php else : ?>
 <?php
-    if (isset($Result['mdmobile']) && is_array($Result['mdmobile'])) {
+    $mdHasChatBag = isset($Result['mdmobile']) && is_array($Result['mdmobile']);
+    $mdHasInboxBag = isset($Result['mdmobile_inbox']) && is_array($Result['mdmobile_inbox']);
+    if ($mdHasChatBag) {
         $md = $Result['mdmobile'];
     }
-    include erLhcoreClassDesign::designtpl('lhmdmobile/chat.tpl.php');
+    if ($mdHasChatBag || !$mdHasInboxBag) {
+        include erLhcoreClassDesign::designtpl('lhmdmobile/chat.tpl.php');
+    } else {
+        include erLhcoreClassDesign::designtpl('lhmdmobile/chats.tpl.php');
+    }
 ?>
 <?php endif; ?>
 <?php if (is_string($mdJs) && $mdJs !== '') : ?>
 <script src="<?php echo htmlspecialchars($mdJs, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<?php endif; ?>
+<?php if (is_string($mdInboxJs) && $mdInboxJs !== '') : ?>
+<script src="<?php echo htmlspecialchars($mdInboxJs, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php endif; ?>
 </body>
 </html>

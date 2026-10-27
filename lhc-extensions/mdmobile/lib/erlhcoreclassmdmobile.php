@@ -14,6 +14,10 @@ class erLhcoreClassMdMobile
 {
     const PAGE_LIMIT = 200;
 
+    const INBOX_LIMIT = 20;
+
+    const INBOX_QUERY_LIMIT = 80;
+
     const KIND_VISITOR = 'visitor';
 
     const KIND_OPERATOR = 'operator';
@@ -69,11 +73,42 @@ class erLhcoreClassMdMobile
         }
 
         $base = rtrim((string) $siteBase, '/');
-
-        return array(
+        $urls = array(
             'messages_url' => $base . '/mdmobile/messages/' . $chatId,
             'send_url' => $base . '/chat/addmsgadmin/' . $chatId,
         );
+        $list = self::deskUrl($base, 'mdmobile/chats');
+        $endpoint = self::deskUrl($base, 'mdmobile/list');
+        $read = self::deskUrl($base, 'mdmobile/read/' . $chatId);
+        if ($list !== null) {
+            $urls['list_url'] = $list;
+        }
+        if ($endpoint !== null) {
+            $urls['list_endpoint'] = $endpoint;
+        }
+        if ($read !== null) {
+            $urls['read_url'] = $read;
+        }
+
+        return $urls;
+    }
+
+    /**
+     * Operator desk paths only. A javascript or protocol-relative base is rejected.
+     *
+     * @param mixed $siteBase
+     * @param mixed $path
+     * @return string|null
+     */
+    public static function deskUrl($siteBase, $path)
+    {
+        $base = self::safeBase($siteBase);
+        $safePath = self::deskPath($path);
+        if ($base === null || $safePath === null) {
+            return null;
+        }
+
+        return $base . '/' . $safePath;
     }
 
     /**
@@ -118,7 +153,67 @@ class erLhcoreClassMdMobile
             return 404;
         }
 
+        if ($denial === 'method') {
+            return 405;
+        }
+
         return 403;
+    }
+
+    /**
+     * The list has no chat id. A logged-in operator without lhchat/use is
+     * forbidden. Missing department access is an empty list, not a new permission.
+     *
+     * @return string|null
+     */
+    public static function listDenial($loggedIn, $chatUse)
+    {
+        return self::denial($loggedIn, $chatUse, true, true);
+    }
+
+    /**
+     * GET never reaches the seen write. CSRF is required only after the same
+     * session, lhchat/use, and hasAccessToRead checks as the chat page.
+     *
+     * @return string|null method, session, missing, forbidden, csrf, or null.
+     */
+    public static function readDenial($method, $loggedIn, $chatUse, $chatFound, $canRead, $csrfOk)
+    {
+        if (strtoupper((string) $method) !== 'POST') {
+            return 'method';
+        }
+
+        $denial = self::denial($loggedIn, $chatUse, $chatFound, $canRead);
+        if ($denial !== null) {
+            return $denial;
+        }
+
+        if ($csrfOk !== true) {
+            return 'csrf';
+        }
+
+        return null;
+    }
+
+    /**
+     * Header first, matching addmsgadmin. POST csfr_token is the LHC form field.
+     * GET is not a token source.
+     *
+     * @param mixed $header
+     * @param mixed $post
+     * @return string|null
+     */
+    public static function csrfCandidate($header, $post)
+    {
+        if (is_string($header) && $header !== '') {
+            return $header;
+        }
+
+        if (is_string($post) && $post !== '') {
+            return $post;
+        }
+
+        return null;
     }
 
     /**
@@ -262,6 +357,13 @@ class erLhcoreClassMdMobile
         }
 
         $bag['context'] = self::normalizeContext($context);
+        $desk = self::bagDeskUrls($urls, (int) $chatId);
+        if (isset($desk['list_url'])) {
+            $bag['list_url'] = $desk['list_url'];
+        }
+        if (isset($desk['read_url'])) {
+            $bag['read_url'] = $desk['read_url'];
+        }
 
         return $bag;
     }
@@ -530,6 +632,496 @@ class erLhcoreClassMdMobile
         }
 
         return $items;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $history
+     * @param mixed $siteBase
+     * @return array<int, array<string, mixed>>
+     */
+    public static function withHistoryUrls(array $history, $siteBase)
+    {
+        $items = array();
+        foreach ($history as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $clean = $item;
+            unset($clean['url']);
+            $id = self::positiveInt(isset($item['id']) ? $item['id'] : 0);
+            if ($id > 0) {
+                $url = self::deskUrl($siteBase, 'mdmobile/chat/' . $id);
+                if ($url !== null) {
+                    $clean['url'] = $url;
+                }
+            }
+            $items[] = $clean;
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public static function inboxStatuses()
+    {
+        return array(
+            'pending' => 0,
+            'active' => 1,
+            'closed' => 2,
+            'chatbox' => 3,
+            'operators' => 4,
+            'bot' => 5,
+        );
+    }
+
+    /**
+     * @param mixed $q
+     * @param mixed $status
+     * @param mixed $offset
+     * @return array{q: string, status: string, offset: int}
+     */
+    public static function inboxRequest($q, $status, $offset)
+    {
+        return array(
+            'q' => self::inboxQueryText($q),
+            'status' => self::inboxStatusToken($status),
+            'offset' => self::afterId($offset),
+        );
+    }
+
+    /**
+     * Department limitation is applied by the caller before this query is used.
+     * false, empty, or a non-string means no list, not an unfiltered list.
+     * Search stays out of customfilter so the nick is quoted at the call site.
+     *
+     * @param mixed $q
+     * @param mixed $status
+     * @param mixed $offset
+     * @param mixed $limitation
+     * @return array<string, mixed>|null
+     */
+    public static function inboxQuery($q, $status, $offset, $limitation)
+    {
+        if ($limitation !== true && (!is_string($limitation) || $limitation === '')) {
+            return null;
+        }
+
+        $request = self::inboxRequest($q, $status, $offset);
+        $query = array(
+            'limit' => self::INBOX_LIMIT,
+            'offset' => $request['offset'],
+            'sort' => 'GREATEST(`time`, `last_user_msg_time`, `last_op_msg_time`) DESC, `id` DESC',
+        );
+        if ($request['status'] !== '') {
+            $query['filter'] = array('status' => self::inboxStatuses()[$request['status']]);
+        }
+        $search = self::inboxSearch($request['q']);
+        if ($search !== null) {
+            $query['search'] = $search;
+        }
+        if ($limitation !== true) {
+            $query['customfilter'] = array($limitation);
+        }
+
+        return $query;
+    }
+
+    /**
+     * @param mixed $search
+     * @param callable $quote
+     * @return string|null
+     */
+    public static function searchFilter($search, $quote)
+    {
+        if (!is_array($search) || !is_callable($quote)) {
+            return null;
+        }
+
+        $parts = array();
+        if (isset($search['nick']) && is_string($search['nick']) && $search['nick'] !== '') {
+            $quoted = $quote('%' . self::likeEscape($search['nick']) . '%');
+            if (!is_string($quoted) || $quoted === '') {
+                return null;
+            }
+            $parts[] = '`nick` LIKE ' . $quoted;
+        }
+        if (isset($search['id'])) {
+            $id = self::canonicalInt($search['id']);
+            if ($id !== null && $id > 0) {
+                $parts[] = '`id` = ' . $id;
+            }
+        }
+        if ($parts === array()) {
+            return null;
+        }
+
+        return '(' . implode(' OR ', $parts) . ')';
+    }
+
+    /**
+     * @param mixed $q
+     * @param mixed $status
+     * @param mixed $offset
+     * @return string|null
+     */
+    public static function inboxListUrl($siteBase, $q, $status, $offset)
+    {
+        $base = self::deskUrl($siteBase, 'mdmobile/chats');
+        if ($base === null) {
+            return null;
+        }
+        $query = self::inboxQueryString(self::inboxRequest($q, $status, $offset));
+        if ($query === '') {
+            return $base;
+        }
+
+        return $base . '?' . $query;
+    }
+
+    /**
+     * @param mixed $q
+     * @param mixed $status
+     * @param mixed $offset
+     * @return string
+     */
+    public static function inboxReturnPath($q, $status, $offset)
+    {
+        $path = 'mdmobile/chats';
+        $query = self::inboxQueryString(self::inboxRequest($q, $status, $offset));
+        if ($query === '') {
+            return $path;
+        }
+
+        return $path . '?' . $query;
+    }
+
+    /**
+     * @param mixed $chatId
+     * @return array<string, mixed>|null
+     */
+    public static function latestMessageQuery($chatId)
+    {
+        $chatId = self::positiveInt($chatId);
+        if ($chatId < 1) {
+            return null;
+        }
+
+        return array(
+            'filter' => array('chat_id' => $chatId),
+            'filtergte' => array('user_id' => 0),
+            'limit' => self::FIRST_MESSAGE_LIMIT,
+            'sort' => 'id DESC',
+        );
+    }
+
+    /**
+     * Newest non-empty visitor or operator row. System and bot rows stay out.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return string|null
+     */
+    public static function latestPreviewFromMessages(array $rows)
+    {
+        $candidates = array();
+        $index = 0;
+        foreach ($rows as $row) {
+            $index += 1;
+            if (!is_array($row) || !array_key_exists('user_id', $row)) {
+                continue;
+            }
+            $userId = self::canonicalInt($row['user_id']);
+            if ($userId === null || $userId < 0) {
+                continue;
+            }
+            $text = self::previewText(isset($row['msg']) ? $row['msg'] : '');
+            if ($text === null) {
+                continue;
+            }
+            $id = 0;
+            if (isset($row['id'])) {
+                $parsed = self::canonicalInt($row['id']);
+                if ($parsed !== null && $parsed > 0) {
+                    $id = $parsed;
+                }
+            }
+            $candidates[] = array(
+                'id' => $id,
+                'index' => $index,
+                'text' => $text,
+            );
+        }
+        if ($candidates === array()) {
+            return null;
+        }
+
+        usort(
+            $candidates,
+            static function (array $left, array $right) {
+                if ($left['id'] !== $right['id']) {
+                    if ($left['id'] === 0) {
+                        return 1;
+                    }
+                    if ($right['id'] === 0) {
+                        return -1;
+                    }
+
+                    return $right['id'] <=> $left['id'];
+                }
+
+                return $right['index'] <=> $left['index'];
+            }
+        );
+
+        return $candidates[0]['text'];
+    }
+
+    /**
+     * @param object|array<string, mixed> $chat
+     * @param mixed $preview
+     * @param mixed $url
+     * @return array<string, mixed>|null
+     */
+    public static function inboxItem($chat, $preview, $url)
+    {
+        if (!is_array($chat) && !is_object($chat)) {
+            return null;
+        }
+        $id = self::positiveInt(self::recordValue($chat, 'id'));
+        if ($id < 1) {
+            return null;
+        }
+        $safeUrl = self::safeChatUrl($url, $id);
+        if ($safeUrl === null) {
+            return null;
+        }
+
+        $item = array(
+            'id' => $id,
+            'url' => $safeUrl,
+        );
+        $nick = self::plainText(self::recordValue($chat, 'nick'));
+        if ($nick !== null) {
+            $item['nick'] = $nick;
+        }
+        $text = self::previewText($preview);
+        if ($text !== null) {
+            $item['preview'] = $text;
+        }
+        $stamp = self::activityStamp($chat);
+        if ($stamp !== null) {
+            $item['time'] = $stamp;
+        }
+        $statusValue = self::recordValue($chat, 'status');
+        if ($statusValue !== null) {
+            $parsed = self::canonicalInt($statusValue);
+            $token = $parsed === null ? null : self::statusToken($parsed);
+            if ($token !== null) {
+                $item['status'] = $token;
+            }
+        }
+        $unread = self::canonicalInt(self::recordValue($chat, 'has_unread_messages'));
+        $item['unread'] = $unread === 1;
+
+        return $item;
+    }
+
+    /**
+     * The caller has already applied the department list limitation and offset.
+     * This only drops rows hasAccessToRead rejects. It does not backfill the page.
+     *
+     * @param array<int, object|array<string, mixed>> $chats
+     * @param callable $canRead
+     * @param callable $previewFor
+     * @param mixed $siteBase
+     * @return array<int, array<string, mixed>>
+     */
+    public static function visibleInbox($chats, $canRead, $previewFor, $siteBase)
+    {
+        if (!is_array($chats) || !is_callable($canRead) || !is_callable($previewFor)) {
+            return array();
+        }
+
+        $accepted = array();
+        $seen = array();
+        foreach ($chats as $chat) {
+            if (!is_array($chat) && !is_object($chat)) {
+                continue;
+            }
+            $id = self::positiveInt(self::recordValue($chat, 'id'));
+            if ($id < 1 || isset($seen[$id])) {
+                continue;
+            }
+            $seen[$id] = true;
+            if ($canRead($chat) !== true) {
+                continue;
+            }
+            if (self::deskUrl($siteBase, 'mdmobile/chat/' . $id) === null) {
+                continue;
+            }
+            $accepted[] = $chat;
+        }
+
+        usort(
+            $accepted,
+            static function ($left, $right) {
+                $leftTime = self::activityStamp($left);
+                $rightTime = self::activityStamp($right);
+                $leftTime = $leftTime === null ? 0 : $leftTime;
+                $rightTime = $rightTime === null ? 0 : $rightTime;
+                if ($leftTime !== $rightTime) {
+                    return $rightTime <=> $leftTime;
+                }
+
+                return self::positiveInt(self::recordValue($right, 'id')) <=> self::positiveInt(self::recordValue($left, 'id'));
+            }
+        );
+
+        $items = array();
+        foreach (array_slice($accepted, 0, self::INBOX_LIMIT) as $chat) {
+            $id = self::positiveInt(self::recordValue($chat, 'id'));
+            $item = self::inboxItem($chat, $previewFor($chat), self::deskUrl($siteBase, 'mdmobile/chat/' . $id));
+            if ($item !== null) {
+                $items[] = $item;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * @param mixed $chats
+     * @param mixed $q
+     * @param mixed $status
+     * @param mixed $offset
+     * @param mixed $currentId
+     * @param mixed $siteBase
+     * @return array<string, mixed>
+     */
+    public static function inboxResult($chats, $q, $status, $offset, $currentId, $siteBase)
+    {
+        $request = self::inboxRequest($q, $status, $offset);
+        $listUrl = self::inboxListUrl($siteBase, $request['q'], $request['status'], $request['offset']);
+        $endpoint = self::deskUrl($siteBase, 'mdmobile/list');
+
+        return array(
+            'chats' => self::cleanInboxChats($chats),
+            'q' => $request['q'],
+            'status' => $request['status'],
+            'list_url' => $listUrl === null ? '' : $listUrl,
+            'list_endpoint' => $endpoint === null ? '' : $endpoint,
+            'current_id' => self::positiveInt($currentId),
+            'offset' => $request['offset'],
+            'limit' => self::INBOX_LIMIT,
+        );
+    }
+
+    /**
+     * @param mixed $chats
+     * @param mixed $offset
+     * @param mixed $q
+     * @param mixed $status
+     * @return array<string, mixed>
+     */
+    public static function inboxJson($chats, $offset, $q, $status)
+    {
+        $request = self::inboxRequest($q, $status, $offset);
+
+        return array(
+            'chats' => self::cleanInboxChats($chats),
+            'offset' => $request['offset'],
+            'limit' => self::INBOX_LIMIT,
+            'q' => $request['q'],
+            'status' => $request['status'],
+        );
+    }
+
+    /**
+     * Foreground seen-write from LHC 4.97 modules/lhchat/adminchat.php.
+     * The owner, unassigned, or closed condition clears visitor unread and
+     * sets support_informed / unread_messages_informed. It does not accept,
+     * assign, or change status. unanswered_chat follows the same open path
+     * when the visitor front status is 0 or 2. Invisible operators who do
+     * not own the chat do not write, matching the adminchat outer gate.
+     *
+     * @param object|array<string, mixed> $chat
+     * @param mixed $operatorId
+     * @param mixed $canWrite
+     * @param mixed $invisible
+     * @param mixed $userStatusFront
+     * @return array{fields: array<string, int>, messages: array<string, mixed>|null, deliver: bool}
+     */
+    public static function readMutation($chat, $operatorId, $canWrite, $invisible, $userStatusFront)
+    {
+        $empty = array(
+            'fields' => array(),
+            'messages' => null,
+            'deliver' => false,
+        );
+        if ((!is_array($chat) && !is_object($chat)) || $canWrite !== true) {
+            return $empty;
+        }
+        $chatId = self::positiveInt(self::recordValue($chat, 'id'));
+        if ($chatId < 1) {
+            return $empty;
+        }
+
+        $operator = self::positiveInt($operatorId);
+        $ownerId = self::canonicalInt(self::recordValue($chat, 'user_id'));
+        if ($ownerId === null) {
+            $ownerId = -1;
+        }
+        $owns = $operator > 0 && $ownerId === $operator;
+        if ($invisible === true && $owns !== true) {
+            return $empty;
+        }
+
+        $status = self::canonicalInt(self::recordValue($chat, 'status'));
+        $fields = array();
+        $messages = null;
+        $deliver = false;
+        if ($owns || $ownerId === 0 || $status === 2) {
+            $unread = self::canonicalInt(self::recordValue($chat, 'has_unread_messages'));
+            if ($unread === 1) {
+                $fields['has_unread_messages'] = 0;
+                $messages = array(
+                    'chat_id' => $chatId,
+                    'del_st' => 3,
+                    'del_st_in' => array(0, 1, 2),
+                    'user_id' => 0,
+                );
+                $deliver = true;
+            }
+            $fields['support_informed'] = 1;
+            $fields['unread_messages_informed'] = 0;
+        }
+        $unanswered = self::canonicalInt(self::recordValue($chat, 'unanswered_chat'));
+        $front = self::canonicalInt($userStatusFront);
+        if ($unanswered === 1 && ($front === 0 || $front === 2)) {
+            $fields['unanswered_chat'] = 0;
+        }
+
+        return array(
+            'fields' => $fields,
+            'messages' => $messages,
+            'deliver' => $deliver,
+        );
+    }
+
+    /**
+     * @param mixed $chatId
+     * @param mixed $unread
+     * @param mixed $applied
+     * @return array{id: int, unread: bool, applied: bool}
+     */
+    public static function readResult($chatId, $unread, $applied)
+    {
+        return array(
+            'id' => self::positiveInt($chatId),
+            'unread' => $unread === true,
+            'applied' => $applied === true,
+        );
     }
 
     /**
@@ -1204,5 +1796,360 @@ class erLhcoreClassMdMobile
         }
 
         return null;
+    }
+
+    /**
+     * @param array<string, mixed> $urls
+     * @return array<string, string>
+     */
+    private static function bagDeskUrls(array $urls, $chatId)
+    {
+        $desk = array();
+        $list = self::acceptedDeskUrl(isset($urls['list_url']) ? $urls['list_url'] : null, 'mdmobile/chats');
+        $read = self::acceptedDeskUrl(isset($urls['read_url']) ? $urls['read_url'] : null, 'mdmobile/read/' . (int) $chatId);
+        if ($list === null || $read === null) {
+            $derived = self::deskUrlsFromMessages(isset($urls['messages_url']) ? $urls['messages_url'] : '', $chatId);
+            if ($list === null && $derived !== null) {
+                $list = $derived['list_url'];
+            }
+            if ($read === null && $derived !== null) {
+                $read = $derived['read_url'];
+            }
+        }
+        if ($list !== null) {
+            $desk['list_url'] = $list;
+        }
+        if ($read !== null) {
+            $desk['read_url'] = $read;
+        }
+
+        return $desk;
+    }
+
+    /**
+     * @param mixed $url
+     * @param mixed $path
+     * @return string|null
+     */
+    private static function acceptedDeskUrl($url, $path)
+    {
+        if (!is_string($url)) {
+            return null;
+        }
+        $safePath = self::deskPath($path);
+        if ($safePath === null) {
+            return null;
+        }
+        $trimmed = rtrim($url, '/');
+        $suffix = '/' . $safePath;
+        if (strlen($trimmed) <= strlen($suffix) || substr($trimmed, -strlen($suffix)) !== $suffix) {
+            return null;
+        }
+        $base = substr($trimmed, 0, -strlen($suffix));
+        $built = self::deskUrl($base, $safePath);
+        if ($built === null || $built !== $trimmed) {
+            return null;
+        }
+
+        return $built;
+    }
+
+    /**
+     * @param mixed $messagesUrl
+     * @param mixed $chatId
+     * @return array{list_url: string, read_url: string}|null
+     */
+    private static function deskUrlsFromMessages($messagesUrl, $chatId)
+    {
+        $chatId = self::positiveInt($chatId);
+        if ($chatId < 1 || !is_string($messagesUrl)) {
+            return null;
+        }
+        $suffix = '/mdmobile/messages/' . $chatId;
+        if (strlen($messagesUrl) <= strlen($suffix) || substr($messagesUrl, -strlen($suffix)) !== $suffix) {
+            return null;
+        }
+        $base = substr($messagesUrl, 0, -strlen($suffix));
+        $list = self::deskUrl($base, 'mdmobile/chats');
+        $read = self::deskUrl($base, 'mdmobile/read/' . $chatId);
+        if ($list === null || $read === null) {
+            return null;
+        }
+
+        return array(
+            'list_url' => $list,
+            'read_url' => $read,
+        );
+    }
+
+    /**
+     * @param mixed $siteBase
+     * @return string|null
+     */
+    private static function safeBase($siteBase)
+    {
+        if (!is_string($siteBase)) {
+            return null;
+        }
+        $base = rtrim($siteBase, '/');
+        if ($base === '' || strlen($base) > self::URL_LIMIT) {
+            return null;
+        }
+        if (preg_match('/[\x00-\x20\x7F<>"\'\\\\]/', $base) === 1) {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $base) === 1) {
+            $parsed = parse_url($base);
+            if (!is_array($parsed) || !isset($parsed['host']) || $parsed['host'] === '') {
+                return null;
+            }
+            if (isset($parsed['user']) || isset($parsed['pass'])) {
+                return null;
+            }
+            $scheme = strtolower((string) $parsed['scheme']);
+            if ($scheme !== 'http' && $scheme !== 'https') {
+                return null;
+            }
+
+            return $base;
+        }
+        if (strpos($base, '/') !== 0 || strpos($base, '//') === 0 || strpos($base, '..') !== false) {
+            return null;
+        }
+
+        return $base;
+    }
+
+    /**
+     * @param mixed $path
+     * @return string|null
+     */
+    private static function deskPath($path)
+    {
+        if ($path === 'mdmobile/chats' || $path === 'mdmobile/list') {
+            return $path;
+        }
+        if (!is_string($path) || preg_match('/^mdmobile\/(chat|read)\/([1-9]\d*)$/', $path, $match) !== 1) {
+            return null;
+        }
+        $id = self::canonicalInt($match[2]);
+        if ($id === null || (string) $id !== $match[2]) {
+            return null;
+        }
+
+        return 'mdmobile/' . $match[1] . '/' . $id;
+    }
+
+    /**
+     * @param mixed $value
+     * @return string
+     */
+    private static function inboxQueryText($value)
+    {
+        if (is_int($value)) {
+            $value = (string) $value;
+        }
+        if (!is_string($value)) {
+            return '';
+        }
+        $stripped = preg_replace('/[\x00-\x1F\x7F]/', '', $value);
+        if (!is_string($stripped)) {
+            return '';
+        }
+        $stripped = trim($stripped);
+        if ($stripped === '') {
+            return '';
+        }
+
+        return self::limitText($stripped, self::INBOX_QUERY_LIMIT);
+    }
+
+    /**
+     * @param mixed $status
+     * @return string
+     */
+    private static function inboxStatusToken($status)
+    {
+        if (!is_string($status) || !array_key_exists($status, self::inboxStatuses())) {
+            return '';
+        }
+
+        return $status;
+    }
+
+    /**
+     * @param string $q
+     * @return array<string, int|string>|null
+     */
+    private static function inboxSearch($q)
+    {
+        if ($q === '') {
+            return null;
+        }
+        $search = array('nick' => $q);
+        $id = self::canonicalInt($q);
+        if ($id !== null && $id > 0) {
+            $search['id'] = $id;
+        }
+
+        return $search;
+    }
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    private static function likeEscape($value)
+    {
+        return str_replace(array('\\', '%', '_'), array('\\\\', '\\%', '\\_'), $value);
+    }
+
+    /**
+     * @param array{q: string, status: string, offset: int} $request
+     * @return string
+     */
+    private static function inboxQueryString(array $request)
+    {
+        $parts = array();
+        if ($request['q'] !== '') {
+            $parts[] = 'q=' . rawurlencode($request['q']);
+        }
+        if ($request['status'] !== '') {
+            $parts[] = 'status=' . rawurlencode($request['status']);
+        }
+        if ($request['offset'] > 0) {
+            $parts[] = 'offset=' . $request['offset'];
+        }
+
+        return implode('&', $parts);
+    }
+
+    /**
+     * @param object|array<string, mixed> $chat
+     * @return int|null
+     */
+    private static function activityStamp($chat)
+    {
+        $best = 0;
+        foreach (array('time', 'last_user_msg_time', 'last_op_msg_time') as $key) {
+            $stamp = self::positiveStamp(self::recordValue($chat, $key));
+            if ($stamp !== null && $stamp > $best) {
+                $best = $stamp;
+            }
+        }
+
+        return $best > 0 ? $best : null;
+    }
+
+    /**
+     * @param mixed $url
+     * @param int $chatId
+     * @return string|null
+     */
+    private static function safeChatUrl($url, $chatId)
+    {
+        if (!is_string($url) || $chatId < 1) {
+            return null;
+        }
+        $url = trim($url);
+        if ($url === '' || strlen($url) > self::URL_LIMIT || strpos($url, '?') !== false || strpos($url, '#') !== false) {
+            return null;
+        }
+
+        return self::acceptedDeskUrl($url, 'mdmobile/chat/' . $chatId);
+    }
+
+    /**
+     * @param mixed $chats
+     * @return array<int, array<string, mixed>>
+     */
+    private static function cleanInboxChats($chats)
+    {
+        if (!is_array($chats)) {
+            return array();
+        }
+        $items = array();
+        foreach ($chats as $chat) {
+            $item = self::cleanInboxItem($chat);
+            if ($item === null) {
+                continue;
+            }
+            $items[] = $item;
+            if (count($items) >= self::INBOX_LIMIT) {
+                break;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * @param mixed $item
+     * @return array<string, mixed>|null
+     */
+    private static function cleanInboxItem($item)
+    {
+        if (!is_array($item) || !isset($item['id'], $item['url'])) {
+            return null;
+        }
+        $id = self::positiveInt($item['id']);
+        $url = self::safeChatUrl(isset($item['url']) ? $item['url'] : null, $id);
+        if ($id < 1 || $url === null) {
+            return null;
+        }
+        $clean = array(
+            'id' => $id,
+            'url' => $url,
+        );
+        if (isset($item['nick'])) {
+            $nick = self::plainText($item['nick']);
+            if ($nick !== null) {
+                $clean['nick'] = $nick;
+            }
+        }
+        if (isset($item['preview'])) {
+            $preview = self::previewText($item['preview']);
+            if ($preview !== null) {
+                $clean['preview'] = $preview;
+            }
+        }
+        if (isset($item['time'])) {
+            $time = self::positiveStamp($item['time']);
+            if ($time !== null) {
+                $clean['time'] = $time;
+            }
+        }
+        if (isset($item['status']) && self::knownStatus($item['status'])) {
+            $clean['status'] = $item['status'];
+        }
+        $unread = isset($item['unread']) ? $item['unread'] : false;
+        $clean['unread'] = $unread === true || $unread === 1 || $unread === '1';
+
+        return $clean;
+    }
+
+    /**
+     * @param string $text
+     * @param int $limit
+     * @return string
+     */
+    private static function limitText($text, $limit)
+    {
+        $limit = (int) $limit;
+        if ($limit < 1) {
+            return '';
+        }
+        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+            if (mb_strlen($text, 'UTF-8') <= $limit) {
+                return $text;
+            }
+
+            return mb_substr($text, 0, $limit, 'UTF-8');
+        }
+        if (preg_match('/^.{0,' . $limit . '}/us', $text, $match) === 1 && isset($match[0])) {
+            return $match[0];
+        }
+
+        return $text;
     }
 }

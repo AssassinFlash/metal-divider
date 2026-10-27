@@ -608,10 +608,465 @@ body.md-mobile {
     border: 0;
 }
 
+.md-desk {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    background: #f3f5f4;
+    color: #1b2420;
+}
+
+.md-rail,
+.md-stage,
+.md-context {
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+}
+
+.md-rail {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+}
+
+.md-stage,
+.md-context {
+    display: none;
+}
+
+.md-desk[data-page="chat"] .md-stage {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+}
+
+.md-desk[data-page="chat"] .md-rail,
+.md-desk[data-page="chat"] .md-context,
+.md-desk[data-page="chats"] .md-stage,
+.md-desk[data-page="chats"] .md-context {
+    display: none;
+}
+
+.md-desk .md-app {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    min-width: 0;
+}
+
+.md-rail-title,
+.md-context-title,
+.md-stage-title {
+    margin: 0;
+    color: #1b2420;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+}
+
+.md-rail-title {
+    padding: 14px 16px 0;
+    padding-top: calc(14px + env(safe-area-inset-top));
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.md-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+    min-width: 0;
+}
+
+.md-q,
+.md-filter-status,
+.md-filter-submit {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    margin: 0;
+    border-radius: 10px;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.md-q,
+.md-filter-status {
+    border: 1px solid #d5dbd8;
+    background: #f7f8f8;
+    color: #1b2420;
+}
+
+.md-q {
+    flex: 1 1 140px;
+    padding: 0 12px;
+}
+
+.md-q::placeholder {
+    color: #6d7873;
+}
+
+.md-filter-status {
+    flex: 1 1 112px;
+    padding: 0 8px;
+}
+
+.md-filter-submit,
+.md-back,
+.md-thread-link {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.md-filter-submit {
+    flex: 0 0 auto;
+    padding: 0 14px;
+    border: 0;
+    background: #1b3a30;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.md-filter-submit:active {
+    background: #142920;
+}
+
+.md-inbox-status {
+    margin: 0;
+    padding: 0 12px;
+    color: #8d2f24;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.md-inbox-status:not(:empty) {
+    padding-bottom: 8px;
+}
+
+.md-inbox-empty,
+.md-context-empty,
+.md-stage-copy {
+    color: #5e6963;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.md-inbox-empty,
+.md-context-empty {
+    margin: 24px 16px;
+    text-align: center;
+}
+
+.md-inbox-empty[hidden] {
+    display: none !important;
+}
+
+.md-inbox-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    list-style: none;
+    overscroll-behavior: contain;
+}
+
+.md-pager {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid #e2e6e4;
+    background: #ffffff;
+}
+
+.md-pager:not(:has(a:not([hidden]))) {
+    display: none;
+}
+
+.md-page {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid #d5dbd8;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1b2420;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.md-page[hidden] {
+    display: none !important;
+}
+
+.md-page:active {
+    background: #f3f5f4;
+}
+
+.md-thread {
+    border-top: 1px solid #eef1f0;
+}
+
+.md-thread-link {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "name time"
+        "preview meta";
+    column-gap: 8px;
+    row-gap: 2px;
+    align-items: center;
+    min-height: 64px;
+    padding: 10px 12px;
+    color: inherit;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.md-thread-link:hover {
+    background: #f7f8f8;
+}
+
+.md-thread-link[aria-current="page"],
+.md-thread-link[aria-current="page"]:hover {
+    background: #eef6f2;
+    box-shadow: inset 3px 0 0 #146c4a;
+}
+
+.md-thread-name,
+.md-thread-preview,
+.md-thread-time,
+.md-thread-status {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.md-thread-name {
+    grid-area: name;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.md-thread-link.is-unread .md-thread-name {
+    font-weight: 700;
+}
+
+.md-thread-time {
+    grid-area: time;
+    justify-self: end;
+    color: #5e6963;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.md-thread-preview {
+    grid-area: preview;
+    color: #5e6963;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.md-thread-meta {
+    grid-area: meta;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    min-width: 0;
+}
+
+.md-thread-status {
+    max-width: 88px;
+    color: #5e6963;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.md-thread-status[data-tone="online"] {
+    color: #146c4a;
+}
+
+.md-thread-status[data-tone="waiting"] {
+    color: #8a5b12;
+}
+
+.md-unread {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #146c4a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.md-unread.is-flag {
+    min-width: 0;
+    height: auto;
+    padding: 0;
+    background: transparent;
+}
+
+.md-back {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid #d5dbd8;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1b2420;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.md-top:has(.md-back) {
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.md-top:has(.md-back) .md-identity {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.md-top:has(.md-back) .md-title-row {
+    flex-wrap: nowrap;
+}
+
+.md-stage-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 32px 24px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.md-stage-title {
+    font-size: 18px;
+}
+
+.md-stage-copy {
+    max-width: 28em;
+    margin: 8px 0 0;
+}
+
+.md-context {
+    flex-direction: column;
+    background: #ffffff;
+}
+
+.md-context-title {
+    padding: 16px 16px 8px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.md-context-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 16px 16px;
+    overscroll-behavior: contain;
+}
+
+.md-history-link {
+    color: #146c4a;
+    text-underline-offset: 2px;
+}
+
+.md-q:focus-visible,
+.md-filter-status:focus-visible,
+.md-filter-submit:focus-visible,
+.md-back:focus-visible,
+.md-thread-link:focus-visible,
+.md-history-link:focus-visible,
+.md-page:focus-visible {
+    outline: 2px solid #146c4a;
+    outline-offset: 2px;
+}
+
+.md-thread-link:focus-visible {
+    outline-offset: -2px;
+}
+
+@media (min-width: 960px) {
+    .md-desk {
+        display: grid;
+        grid-template-columns: minmax(240px, 320px) minmax(0, 1fr) minmax(240px, 300px);
+        grid-template-rows: minmax(0, 1fr);
+        height: 100vh;
+        height: 100dvh;
+    }
+
+    .md-desk[data-page="chat"] .md-rail,
+    .md-desk[data-page="chats"] .md-stage,
+    .md-desk[data-page="chat"] .md-context,
+    .md-desk[data-page="chats"] .md-context,
+    .md-desk[data-page="chats"] .md-rail {
+        display: flex;
+    }
+
+    .md-desk .md-rail {
+        border-right: 1px solid #e2e6e4;
+    }
+
+    .md-desk .md-context {
+        border-left: 1px solid #e2e6e4;
+    }
+
+    .md-desk #md-details,
+    .md-desk #md-sheet,
+    .md-desk #md-back {
+        display: none !important;
+    }
+}
+
+@media (forced-colors: active) {
+    .md-thread-link[aria-current="page"] {
+        outline: 2px solid CanvasText;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .md-messages,
     .md-drawer-body,
-    .md-chips {
+    .md-chips,
+    .md-inbox-list,
+    .md-context-body {
         scroll-behavior: auto;
     }
 }

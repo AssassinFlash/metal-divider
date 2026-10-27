@@ -73,12 +73,28 @@ $bag = erLhcoreClassMdMobile::templateBag(
     isset($chat->nick) ? $chat->nick : '',
     erLhcoreClassMdMobile::visitorContext($chat, $department, $history)
 );
+$state = mdmobile_inbox_state(isset($Params) ? $Params : array());
+$inbox = mdmobile_load_inbox($state, (int) $chat->id);
+if (isset($inbox['list_url']) && $inbox['list_url'] !== '') {
+    $bag['list_url'] = $inbox['list_url'];
+}
+$readUrl = erLhcoreClassMdMobile::deskUrl(mdmobile_admin_base(), 'mdmobile/read/' . (int) $chat->id);
+if ($readUrl !== null) {
+    $bag['read_url'] = $readUrl;
+}
+if (isset($bag['context']['history']) && is_array($bag['context']['history'])) {
+    $bag['context']['history'] = erLhcoreClassMdMobile::withHistoryUrls(
+        $bag['context']['history'],
+        mdmobile_admin_base()
+    );
+}
 
 header('Cache-Control: no-store');
 header('X-Robots-Tag: noindex');
 
 $Result['pagelayout'] = 'mdmobile';
 $Result['mdmobile'] = $bag;
+$Result['mdmobile_inbox'] = $inbox;
 $Result['content'] = '';
 if (isset($bag['title'])) {
     $Result['title'] = $bag['title'];
@@ -95,5 +111,6 @@ if (
     foreach ($bag as $name => $value) {
         $tpl->set($name, $value);
     }
+    $tpl->set('inbox', $inbox);
     $Result['content'] = $tpl->fetch();
 }
