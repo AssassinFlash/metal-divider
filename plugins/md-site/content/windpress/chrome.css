@@ -1099,12 +1099,21 @@ transition: none !important;
    `position: relative` on the item. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item:has(> .xo-menu-horizontal-v1__mega-menu:not(:empty)){position:static}
 .xo-menu-horizontal-v1__mega-menu:not(:empty) ~ .xo-menu-horizontal-v1__sub-menu{display:none}
+/* The panel had no background at all: it measured `rgba(0, 0, 0, 0)` and
+   1440px wide, so the full-width dropdown sat transparent over the page and
+   its dark cards floated on whatever happened to be behind them — the
+   "abnormal dropdown styling" the owner reported. The surface, the border
+   that separates it from the header, and the shadow that lifts it belong to
+   the panel, not to the cards inside it. */
 .xo-menu-horizontal-v1__mega-menu:not(:empty){
 position:absolute;
 top:100%;
 left:0;
 width:100%;
 z-index:60;
+background:#0f0f0f;
+border-top:1px solid rgba(255,255,255,.1);
+box-shadow:0 24px 48px rgba(0,0,0,.45);
 opacity:0;
 pointer-events:none;
 visibility:hidden;
