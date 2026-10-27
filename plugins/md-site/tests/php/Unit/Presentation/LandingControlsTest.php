@@ -448,4 +448,38 @@ final class LandingControlsTest extends TestCase {
 		$this->assertStringContainsString( 'pointermove', $body, 'the drag tracks outside the handle' );
 		$this->assertStringContainsString( 'ArrowLeft', $body, 'and the keyboard moves it' );
 	}
+
+	/**
+	 * The three case studies are printed on the page, not only in a dialog.
+	 *
+	 * The old landing page showed each project's name, city, constraint and
+	 * five specification lines as visible text. The rebuild moved all of it
+	 * into a `VIEW CASE` dialog, so the page carried no named project and no
+	 * proof at all until a visitor clicked — the section read as three empty
+	 * cards. The band below keeps the dialog (which holds the photographs at
+	 * full size) and states the same facts in the open.
+	 *
+	 * Both must carry the same strings: one fact, one source, no drift.
+	 */
+	public function test_the_case_studies_are_visible_on_the_page(): void {
+		$html = preg_replace( '/<!--.*?-->/s', '', $this->markup( 'custom-screens' ) );
+
+		$start = strpos( $html, 'id="custom-project-proof"' );
+		$this->assertNotFalse( $start, 'the page prints a project-proof band' );
+		$band = substr( $html, (int) $start );
+
+		foreach ( array( 'Centuria Flagship Store', 'Orchard Road, Singapore', 'SS316 Exterior Grade', '1,200m² Cladding',
+			'The Opus VIP Lounge', 'Mayfair, London', 'Rose Gold Brushed', '12 Divider Units',
+			'Silverlake Estate Garden', 'California, USA', 'SS316 Marine Grade', '45 Linear Meters' ) as $fact ) {
+			$this->assertStringContainsString( $fact, $band, $fact . ' is printed in the open' );
+		}
+
+		// Each case study's own constraint sentence, not a paraphrase.
+		$this->assertStringContainsString( 'custom hook-on system to ensure 10mm uniform shadow gaps', $band );
+		$this->assertStringContainsString( 'without visible intermediate supports', $band );
+		$this->assertStringContainsString( 'Required a specific Antique Bronze PVD finish', $band );
+
+		// The dialog still holds the photographs.
+		$this->assertSame( 3, substr_count( $html, 'class="app-lightbox"' ), 'the three case dialogs remain' );
+	}
 }

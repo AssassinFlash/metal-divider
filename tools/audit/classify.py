@@ -61,6 +61,33 @@ PAGINATION_PAGES = {"col-pattern-abstract", "col-pattern-asian", "col-pattern-ge
                     "col-pattern-gradient", "col-pattern-landscape", "col-pattern-moroccan-arabic",
                     "col-pattern-organic", "col-pattern-perforated", "col-pattern-vintage-retro"}
 
+# Words too common to prove two strings are the same sentence.
+FILLER = set("""a an the and or of for to in on at by with from is are was were be been
+this that these those it its their your our we you they as so if then than
+screen screens pattern patterns project projects metal divider""".split())
+
+
+def tokens(text):
+    """Content words only: lowercase, no punctuation, no filler."""
+    words = re.findall(r"[a-z0-9]+", (text or "").lower())
+    return [w for w in words if w not in FILLER and len(w) > 2]
+
+
+def overlap(old_text, new_token_set, threshold=0.62):
+    """The share of the old string's content words that survive in the new page.
+
+    A rebuild rewords: `How much do glass-hybrid screens cost?` became `How is a
+    glass-hybrid screen quoted?`, and `Your Name *` became `Name`. Treating
+    those as losses inflates the gap list with text that is present under a
+    different wording. A high token survival rate means the idea is still on the
+    page; a low one means the sentence is gone.
+    """
+    mine = tokens(old_text)
+    if not mine:
+        return 1.0
+    hits = sum(1 for w in mine if w in new_token_set)
+    return hits / len(mine)
+
 
 def normalize(text):
     return re.sub(r"\s+", " ", (text or "")).strip()
@@ -73,7 +100,7 @@ def match_any(text, rules):
     return None, None
 
 
-def classify(slug, item, new_graph):
+def classify(slug, item, new_graph, new_tokens):
     """Return (bucket, reason, citation) for one missing string."""
     text = normalize(item["text"])
 
@@ -88,6 +115,9 @@ def classify(slug, item, new_graph):
     reason, cite = match_any(text, FURNITURE)
     if reason:
         return "noise", reason, cite
+
+    if overlap(text, new_tokens) >= 0.62:
+        return "rewritten", "same idea, different wording", ""
 
     if slug in PAGINATION_PAGES:
         # A pattern name on another page of the same series is not missing.
@@ -107,29 +137,42 @@ def main():
     with open(diff_path) as fh:
         diff = json.load(fh)
 
-    buckets = {"real": [], "upgraded": [], "vocabulary": [], "noise": [], "pagination": []}
+    buckets = {"real": [], "upgraded": [], "vocabulary": [], "noise": [], "pagination": [],
+               "rewritten": []}
     per_page = {}
 
     for slug, page in diff.items():
         if page.get("error"):
             continue
+        # The page's own words, for the rewording test.
+        new_path = os.path.join(args.dir, "new", slug + ".json")
+        new_tokens = set()
+        if os.path.exists(new_path):
+            with open(new_path) as fh:
+                new_graph = json.load(fh)
+            for field in ("headings", "paras", "lis", "looseText", "buttons"):
+                for entry in new_graph.get(field, []):
+                    text = entry.get("x") if isinstance(entry, dict) else entry
+                    new_tokens.update(tokens(text or ""))
+            for entry in new_graph.get("fields", []):
+                new_tokens.update(tokens(entry.get("label") or ""))
+
         counts = {k: 0 for k in buckets}
         for item in page["missing"]:
-            bucket, reason, cite = classify(slug, item, page)
+            bucket, reason, cite = classify(slug, item, page, new_tokens)
             buckets[bucket].append({"page": slug, "kind": item["kind"], "text": item["text"],
                                     "reason": reason, "cite": cite})
             counts[bucket] += 1
         per_page[slug] = counts
 
-    print("%-28s %5s %5s %5s %5s %5s" % ("page", "real", "upgrd", "vocab", "noise", "pagin"))
-    print("-" * 62)
-    for slug, c in sorted(per_page.items()):
-        print("%-28s %5d %5d %5d %5d %5d" % (slug, c["real"], c["upgraded"], c["vocabulary"],
-                                             c["noise"], c["pagination"]))
-    print("-" * 62)
+    cols = ["real", "rewritten", "upgraded", "vocabulary", "noise", "pagination"]
+    print("%-28s %5s %5s %5s %5s %5s %5s" % ("page", "real", "rewrit", "upgrd", "vocab", "noise", "pagin"))
+    print("-" * 70)
+    for slug, c in sorted(per_page.items(), key=lambda kv: -kv[1]["real"]):
+        print("%-28s %5d %5d %5d %5d %5d %5d" % (slug, *[c[k] for k in cols]))
+    print("-" * 70)
     totals = {k: len(v) for k, v in buckets.items()}
-    print("%-28s %5d %5d %5d %5d %5d" % ("TOTAL", totals["real"], totals["upgraded"],
-                                         totals["vocabulary"], totals["noise"], totals["pagination"]))
+    print("%-28s %5d %5d %5d %5d %5d %5d" % ("TOTAL", *[totals[k] for k in cols]))
     print()
     print("Real gaps by kind:")
     by_kind = {}
