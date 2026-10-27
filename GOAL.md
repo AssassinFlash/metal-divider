@@ -55,6 +55,24 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-27 首页 mesh 舞台失效(业主亲报):三个环境假设错误
+
+业主亲报"这一整块的滑动都是失效的"。**这是真 bug,之前我说"视觉 bug 都解决了"说过头了**——这个舞台没验到。
+
+**实测(真 Chrome,WebBridge)**:滚 3000px 场景仍是 Facade(activeBg=0),点导航 scrollY 停在 0。**三个独立原因,共同导致舞台像死的**:
+
+1. **`requestAnimationFrame` 在某些环境不触发**(HeadlessChrome 无合成器;普通 Chrome 后台标签页也暂停)。滚动处理把 `sync()` 包在 rAF 里 → **滚动永不切换**。改 `setTimeout`。
+2. **原生 `scrollTo({behavior:'smooth'})` 在这些环境完全不滚动** → 点导航 `scrollY` 停在 0。改为**自己用 setTimeout 插值**驱动平滑滚动(访客手动滚动可接管、reduced-motion 仍瞬时)。
+3. **`window.scrollTo` 不触发 scroll 事件** → 即使滚到正确位置场景也不切。改为**点导航直接 `apply(index)`** + 平滑滚动,不依赖 scroll 事件。
+
+**同类问题一并修**:另一个 track 的滚动 announcer、工厂图片 marquee 也都用了 rAF,全部改 setTimeout。
+
+**守卫(实证可失败)**:scene sync 不得再用 rAF 包裹;导航点击必须直接 apply;smoothScrollTo 必须由 setTimeout 驱动。
+
+**验证**:dev 点导航 → `activeBg: 3`、`scrollY: 7126.5`、aria-current 正确;生产点导航 → `activeBg: 2`、`scrollY: 5680`、aria-current 正确。手动滚动也正常切换。
+
+**教训(必须记住)**:不能假设 `requestAnimationFrame`、浏览器原生 smooth scroll、scroll 事件在任何环境都可靠。**行为依赖要落到最朴素的机制上**(setTimeout + 直接状态切换),环境增强(平滑动画)作为可选层而非必需层。
+
 ### 2026-10-27 外部账号配置的确证阻塞(GSC / Turnstile / SPF-DMARC)
 
 **站点本身的重建与验收已全部达标**(28/28、63/63、询盘链路、性能基线)。剩余三项是**外部账号配置**,均因凭据/权限无法自行推进:
