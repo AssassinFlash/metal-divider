@@ -69,9 +69,35 @@
 
 dev 实测 39 个产品被重设(`alhambra` 500→830、`winderoo` 500→1024),`/shop/` 从"多张不足"变为 **0 张不足**。1 个 unresolved:`pebble-creek`。
 
+**最终收敛(dev,幂等验证)**
+
+```
+重跑:146 examined, wrote 0, 142 skipped, 4 unresolved
+```
+
+52 个产品被重设(39 + 13)。收敛后仅 4 个产品短边仍 < 600,且**源素材最大就是这么多**:
+
+| 图案 | 最大短边 |
+|---|---|
+| ripples | 563 |
+| pebble-creek | 581 |
+| naughts-x-plus | 559 |
+| coconut-dreaming | 563 |
+
+再加 `pebble-creek` 无可用照片(1 个 unresolved 与之重合)。
+
+**过程中修的三处自身错误**
+
+1. **`sizes` 解析错**:取所有数字最大值当槽位,得 178 处假"放大";真实只有 3–32 处。
+2. **文件名宽度 ≠ 短边**:`skyfall-…-05-1000w` 是 1000×565(短边 565),换到 `-04-681w`(681×1000,短边 681)是**变大**。我一度误报"改小了"。
+3. **标记被当成"已正确"**:17 个产品带 `_md_thumb_retarget_rev` 却仍不达标,导致**在生产上永远修不到**。已改为标记只记录、不拦截。
+
 **已知限制:源素材不足(需业主提供)**
 
-`ext-gold-black-grille-screen-lineup` 与 `outdoor-black-leaf-garden-privacy-screen` 落在应用指南 `pag__visual` 的 **803px** 槽位,但**本地源文件最大只有 550w**(全库仅 2 个档位)。550 撑 803 会发虚,而这是**素材本身**的问题——换图无用,需要更高质量的原始文件。已记录,不擅自用插值放大伪造。
+- 上述 4 个图案(559–581 短边)。
+- `ext-gold-black-grille-screen-lineup` 与 `outdoor-black-leaf-garden-privacy-screen` 落在应用指南 `pag__visual` 的 **803px** 槽位,但本地源文件最大只有 **550w**。
+
+这些需要更高质量的原始文件,不擅自用插值放大伪造。
 
 ### 2026-10-28 全站图片可见性闭环:1194 个文件,0 张不可见
 
