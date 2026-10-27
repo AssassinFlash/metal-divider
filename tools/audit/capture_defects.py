@@ -9,7 +9,8 @@ cannot:
   * the capture is a different width than asked for (a crop, not a reflow);
   * a dead vertical band — a run of rows with no content at all, which is the
     "莫名的大块空白间隙" the owner reported;
-  * content that bleeds past the frame, or text pinned into the first columns.
+  * whether the capture's own width matches the one requested (a crop would
+    mean the width flag did not reflow).
 
 ## Why the background has to be measured first
 
@@ -76,9 +77,6 @@ def analyse(path, width):
     w, h = im.size
     palette = background_palette(im)
 
-    guttered = 0        # rows where content starts well inside the frame
-    bleeding = []       # rows whose content reaches both frame edges
-    left_pinned = 0     # rows whose content starts in the first two columns
     dead_bands = []
     blank_run = 0
 
@@ -91,14 +89,6 @@ def analyse(path, width):
         if blank_run >= DEAD_BAND_MIN:
             dead_bands.append({"startY": y - blank_run, "height": blank_run})
         blank_run = 0
-        first, last = cols[0], cols[-1]
-        if first <= 1 and last >= w - 2:
-            bleeding.append(y)
-        if first <= 1:
-            left_pinned += 1
-        if first >= 6 and last <= w - 7:
-            guttered += 1
-
     total_rows = max(1, h // step)
     return {
         "file": path,
@@ -108,10 +98,6 @@ def analyse(path, width):
         "height": h,
         "backgroundPalette": [list(c) for c in palette],
         "rowsSampled": total_rows,
-        "rowsWithSideGutter": guttered,
-        "rowsBleedingToBothEdges": len(bleeding),
-        "firstBleedingRow": bleeding[0] if bleeding else None,
-        "rowsPinnedToLeftEdge": left_pinned,
         "deadBands": dead_bands[:8],
     }
 
