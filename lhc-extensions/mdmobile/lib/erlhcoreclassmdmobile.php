@@ -314,7 +314,7 @@ class erLhcoreClassMdMobile
             $messages[] = array(
                 'id' => $id,
                 'kind' => self::kindFromUserId($row['user_id']),
-                'text' => (string) $row['msg'],
+                'text' => self::messageText($row['msg']),
                 'time' => (int) $row['time'],
             );
         }
@@ -335,6 +335,27 @@ class erLhcoreClassMdMobile
             'messages' => $messages,
             'latest_id' => $latestId,
         );
+    }
+
+    /**
+     * The mobile desk renders message bodies as text, not HTML. LHC stores
+     * offline leave-message bodies and some bot replies as BBCode/HTML, which
+     * would otherwise surface as literal tags in the transcript.
+     *
+     * @param mixed $value
+     * @return string
+     */
+    private static function messageText($value)
+    {
+        $text = (string) $value;
+        $text = (string) preg_replace(
+            '/\[(?:\/)?(?:b|i|u|s|code|quote|url|img|email|color|size|font|list|li|table|tr|td|th|h[1-6])(?:=[^\]]*)?\]/i',
+            '',
+            $text
+        );
+        $text = (string) preg_replace('/\[\*\]/', "\u{2022} ", $text);
+
+        return trim(strip_tags($text));
     }
 
     /**

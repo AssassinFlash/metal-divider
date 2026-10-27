@@ -29,7 +29,7 @@ final class MdMobileDeskTest extends TestCase
 
         self::assertSame(
             array(
-                array('id' => 3, 'kind' => 'operator', 'text' => '[b]reply[/b]', 'time' => 20),
+                array('id' => 3, 'kind' => 'operator', 'text' => 'reply', 'time' => 20),
                 array('id' => 4, 'kind' => 'system', 'text' => 'joined', 'time' => 30),
                 array('id' => 5, 'kind' => 'bot', 'text' => 'bot line', 'time' => 40),
             ),
@@ -44,6 +44,28 @@ final class MdMobileDeskTest extends TestCase
             array('id', 'kind', 'text', 'time'),
             array_keys($payload['messages'][0])
         );
+    }
+
+    public function testFormatRendersOfflineBodiesAsReadableText(): void
+    {
+        $payload = erLhcoreClassMdMobile::format(
+            array(
+                array(
+                    'id' => 7,
+                    'user_id' => -1,
+                    'msg' => "[b]Visitor query[/b]:\nDo you ship to Iceland?\n\n[b]E-mail[/b]: visitor@example.com\n[b]Nick[/b]: Visitor",
+                    'time' => 50,
+                ),
+                array('id' => 8, 'user_id' => -2, 'msg' => '<b>Bot</b> reply', 'time' => 60),
+            ),
+            0
+        );
+
+        self::assertSame(
+            "Visitor query:\nDo you ship to Iceland?\n\nE-mail: visitor@example.com\nNick: Visitor",
+            $payload['messages'][0]['text']
+        );
+        self::assertSame('Bot reply', $payload['messages'][1]['text']);
     }
 
     public function testEmptyPollKeepsTheCursor(): void
