@@ -247,11 +247,15 @@ color: rgba(255, 255, 255, 0.68);
 font-size: 13px;
 font-weight: 700;
 }
+/* One column, full width. The 340px cap plus `justify-content: start` left an
+   18px strip empty on the right of every catalog page at 390 (measured
+   2026-10-27: card 340, grid 358) — a cap that made sense in the multi-column
+   desktop grid and nothing at all once the column is the screen. */
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__products {
 display: grid;
 gap: 18px;
-grid-template-columns: minmax(0, min(100%, 340px));
-justify-content: start;
+grid-template-columns: minmax(0, 1fr);
+justify-content: stretch;
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card {
 background: rgba(255, 255, 255, 0.035);
@@ -647,10 +651,17 @@ width: 44px;
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__body {
 padding: 16px;
 }
+/* Key and value side by side, as on desktop. This block used to stack them
+   (`grid-template-columns: minmax(0,1fr)`), which cost every row its second
+   line — four rows came to 264px and a single card to 695px, so one card
+   filled most of a phone screen and the next was never visible (measured
+   2026-10-27 at 390). The label column is narrow because the labels are
+   ("Pattern", "Style", "Material", "Opening"), and the value keeps the rest. */
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__row {
-gap: 2px;
-grid-template-columns: minmax(0, 1fr);
-padding: 10px 12px 12px;
+align-items: baseline;
+gap: 10px;
+grid-template-columns: 72px minmax(0, 1fr);
+padding: 8px 12px;
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__key,
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__value {
@@ -664,9 +675,13 @@ font-size: 13px;
 font-weight: 700;
 letter-spacing: 0.04em;
 }
+/* The pattern's own name is the card's headline, not a fourth spec row: at
+   17px against the 15px values it read as one more field (measured
+   2026-10-27). */
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__value--title {
-font-size: 17px;
-line-height: 1.35;
+font-size: 22px;
+font-weight: 600;
+line-height: 1.3;
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__action {
 font-size: 15px;
