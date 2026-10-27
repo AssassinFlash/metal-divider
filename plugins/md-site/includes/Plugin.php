@@ -97,14 +97,15 @@ final class Plugin {
 		if ( ! class_exists( 'WP_CLI' ) ) {
 			return;
 		}
-		// One namespace, five command objects: WP-CLI merges each object's
+		// One namespace, six command objects: WP-CLI merges each object's
 		// annotated methods into the shared md-site tree, so the surface
 		// stays wp md-site present / seo / seed-series / seed-tiles /
-		// windpress-anchors.
+		// retarget-thumbnails / windpress-anchors.
 		\WP_CLI::add_command( 'md-site', new Cli\PresentCommand() );
 		\WP_CLI::add_command( 'md-site', new Cli\SeoCommand() );
 		\WP_CLI::add_command( 'md-site', new Cli\CatalogCommand() );
 		\WP_CLI::add_command( 'md-site', new Cli\TileOrderCommand() );
+		\WP_CLI::add_command( 'md-site', new Cli\ThumbnailCommand() );
 		\WP_CLI::add_command( 'md-site', new Cli\WindPressAnchorsCommand() );
 	}
 }

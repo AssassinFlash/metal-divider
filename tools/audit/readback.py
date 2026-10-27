@@ -48,13 +48,6 @@ class Report:
         print(f"{'PASS' if ok else 'FAIL'}  {name}\n      {detail}")
 
 
-def count_images(path_html: str, start_marker: str, span: int = 40000) -> int:
-    index = path_html.find(start_marker)
-    if index < 0:
-        return -1
-    return len(re.findall(r"(?is)<img\b", path_html[index:index + span]))
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="https://metal-divider.com")
@@ -67,11 +60,17 @@ def main() -> int:
     #    section and 2 on the whole page, both of them footer/nav assets.
     inquiry = get(base, "/inquiry/", bust)
     inquiry_body = re.sub(r"(?is)<(script|style|noscript|template)\b[^>]*>.*?</\1>", "", inquiry)
-    route_imgs = count_images(inquiry_body, "inquiry-route-grid")
+    # Count strictly inside the route list. A fixed character span reached past
+    # the list into the footer logo and reported 7 pictures for 6 cards.
+    route_list = re.search(
+        r'(?is)<ul[^>]*class="[^"]*inquiry-route-grid[^"]*"[^>]*>.*?</ul>', inquiry_body
+    )
+    route_imgs = len(re.findall(r"(?is)<img\b", route_list.group(0))) if route_list else -1
     report.check(
         "inquiry route cards carry their six pictures (was 0)",
         route_imgs == 6,
-        f"route-card <img> count = {route_imgs}",
+        f"route-list <img> count = {route_imgs}"
+        + ("" if route_list else " (route list not found)"),
     )
     body_img_count = len(re.findall(r"(?is)<img\b", inquiry_body))
     report.check(
@@ -109,13 +108,25 @@ def main() -> int:
         "auto-fit" in css,
         f"auto-fit occurrences in compiled CSS = {css.count('auto-fit')}",
     )
+    old_cap = re.search(
+        r"pattern-catalog__products\s*\{[^}]*minmax\(\s*min\(100%,\s*300px\)\s*,\s*340px\s*\)",
+        css, re.S,
+    )
     report.check(
         "catalog grid no longer caps columns at 340px in the products rule",
-        not re.search(r"pattern-catalog__products[^}]*minmax\(min\(100%,\s*300px\),\s*340px\)",
-                      css, re.S),
-        "old capped rule absent" if not re.search(
-            r"pattern-catalog__products[^}]*minmax\(min\(100%,\s*300px\),\s*340px\)", css, re.S
-        ) else "old capped rule STILL present",
+        old_cap is None,
+        "old capped rule absent" if old_cap is None
+        else f"old capped rule STILL present: {old_cap.group(0)[:90]}",
+    )
+    # WindPress compiles the CSS in a browser, so shipping the template files
+    # does not refresh it. A deploy that stops before the compile leaves the old
+    # rules serving — which is exactly what the auto-fit check above catches.
+    report.check(
+        "compiled CSS was regenerated after this deploy",
+        "auto-fit" in css,
+        "auto-fit present in the served tailwind.css"
+        if "auto-fit" in css
+        else "served tailwind.css is stale — run: just deploy windpress-compile prod",
     )
 
     # 3. Family pages: the persona accordion panels and the scene wiring.
@@ -141,10 +152,13 @@ def main() -> int:
 
     # 4. The gallery keeps list semantics and all its cards.
     gallery = get(base, "/project-gallery/", bust)
+    # The assertion and the message must count the same string, or the check can
+    # print "0" next to PASS and read as a contradiction.
+    listitems = gallery.count('role="listitem"')
     report.check(
         "gallery cards are list items again (was 0)",
-        gallery.count('role="listitem"') == 23,
-        f"role=listitem count = {gallery.count('role=listitem')}",
+        listitems == 23,
+        f'role="listitem" count = {listitems}',
     )
 
     # 5. Search sheet: the sheet must not depend on the ported xo-grid spans.
