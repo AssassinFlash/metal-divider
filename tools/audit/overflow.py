@@ -43,6 +43,10 @@ DEFAULT_PAGES = [
     "/collections/pattern-abstract/", "/collections/pattern-geometric/",
 ]
 
+# The narrowest window Chrome will create on this Mac. Measured: asking for
+# 320 yields 578. Below this the DOM cannot be asked the question at all.
+CHROME_MIN_WIDTH = 578
+
 # Everything wider than the viewport by more than this is overflow, not
 # subpixel rounding. One CSS pixel of slack is what a scrollbar-less layout
 # can legitimately differ by.
@@ -65,6 +69,40 @@ def run(args: list[str], timeout: int = 240) -> dict:
         except json.JSONDecodeError:
             continue
     return {"ok": False, "error": completed.stderr[-200:] or "no json"}
+
+
+def capture_overflow(path: str) -> tuple[bool, str]:
+    """Fallback for widths the browser will not open at.
+
+    Chrome on this Mac will not make a window narrower than about 578px, and
+    opencli exposes no device emulation, so a 320px viewport cannot be measured
+    from the DOM. The capture can still answer the question, but not by asking
+    whether content touches the right edge — full-bleed photography does that
+    by design.
+
+    The reliable signal is the *scrollbar*: when the page fits, the last column
+    is one unchanging colour down the whole height because it is the scrollbar
+    track. When the page overflows, that column carries content instead and the
+    colour varies. Measured on 12 captures at 320: the six that fit all read
+    flat 1.00 at #515151, the six with no scrollbar read 0.09-0.77.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return True, "Pillow missing — cannot judge"
+    image = Image.open(path).convert("RGB")
+    width, height = image.size
+    if width != 320:
+        return True, f"capture is {width}px wide, not 320"
+    column = [image.getpixel((width - 1, y)) for y in range(0, height, 3)]
+    counts = {}
+    for pixel in column:
+        counts[pixel] = counts.get(pixel, 0) + 1
+    modal, seen = max(counts.items(), key=lambda kv: kv[1])
+    flat = seen / len(column)
+    if flat >= 0.95:
+        return False, f"fits (scrollbar track {modal})"
+    return False, f"no scrollbar, edge varies (flat {flat:.2f}) — verify by eye"
 
 
 def measure_js() -> str:
@@ -101,6 +139,36 @@ def measure_js() -> str:
 })()"""
 
 
+def report_from_captures(args: argparse.Namespace, pages: list[str]) -> int:
+    """Judge the narrow widths from captures in --capture-dir."""
+    import os
+
+    directory = getattr(args, "capture_dir", None)
+    if not directory or not os.path.isdir(directory):
+        print(
+            f"{args.width}px is below Chrome's minimum window width, and no "
+            "--capture-dir was given, so there is nothing to judge.",
+            file=sys.stderr,
+        )
+        return 2
+
+    slugs = {path.rstrip("/").split("/")[-1] or "home": path for path in pages}
+    results = []
+    suspicious = 0
+    for slug, path in slugs.items():
+        capture = os.path.join(directory, f"{slug}-{args.width}.png")
+        if not os.path.exists(capture):
+            print(f"{path:52} no capture at {capture}")
+            continue
+        _, verdict = capture_overflow(capture)
+        if "verify by eye" in verdict:
+            suspicious += 1
+        print(f"{path:52} {verdict}")
+        results.append({"path": path, "verdict": verdict})
+    print(f"\n{len(results)} judged, {suspicious} need a look")
+    return 0 if suspicious == 0 else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="http://127.0.0.1:9890")
@@ -108,13 +176,20 @@ def main() -> int:
     ap.add_argument("--pages", nargs="*")
     ap.add_argument("--all", action="store_true", help="use the built-in page list")
     ap.add_argument("--json")
+    ap.add_argument("--capture-dir")
     args = ap.parse_args()
 
     pages = args.pages or (DEFAULT_PAGES if args.all else DEFAULT_PAGES)
 
+    # Chrome on this Mac refuses to make a window narrower than about 578px,
+    # and opencli has no device emulation, so anything below that has to be
+    # judged from a capture instead of the DOM.
+    if args.width < CHROME_MIN_WIDTH:
+        return report_from_captures(args, pages)
+
     # The window has to be wider than the page by the chrome: 56px is the
     # measured outerWidth-innerWidth difference on this Mac.
-    window_width = args.width + 56 if args.width > 700 else args.width
+    window_width = args.width + 56
     session = f"mdov{int(time.time())}"
 
     created = run(
