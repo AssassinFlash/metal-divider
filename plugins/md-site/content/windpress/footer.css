@@ -564,8 +564,13 @@
 	padding: 0 14px;
 }
 
-.md-footer__bar-legal a:hover,
-.md-footer__bar-legal a:focus-visible {
+/* `#md-footer a` is (1, 0, 1) and sets `color: inherit`, which outranks the
+   class-only `.md-footer__bar-legal a:hover` (0, 2, 1) — so the hover colour
+   never applied (measured 2026-10-27: hovered=true, computed colour stayed
+   the parent's rgba(255,255,255,0.42)). Scoped to the same id so the state
+   actually lands. */
+#md-footer .md-footer__bar-legal a:hover,
+#md-footer .md-footer__bar-legal a:focus-visible {
 	color: var(--md-gold-light, #d4b878);
 }
 
