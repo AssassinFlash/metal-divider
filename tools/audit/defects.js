@@ -92,6 +92,12 @@
   });
 
   // 4. Content forced against the viewport edge — "字体贴边".
+  //
+  //    Only the LEFT edge is a defect signal. A block whose right edge sits past
+  //    the viewport is a carousel slide waiting to be scrolled to; reported as
+  //    edge-hugging it produced 29 hits on the home page, all of them slides at
+  //    left=809 in a 1224px viewport. Text genuinely pinned to the left edge has
+  //    no padding in three ancestor levels.
   const padOf = (el) => {
     const cs = getComputedStyle(el);
     return { l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0 };
@@ -100,11 +106,12 @@
     if (!shown(el)) return;
     const r = el.getBoundingClientRect();
     if (r.width < 30) return;
-    if (r.left < 6 || r.right > out.viewport.w - 6) {
-      let p = el.parentElement, pl = 0, pr = 0;
-      for (let k = 0; k < 3 && p; k++) { const q = padOf(p); pl += q.l; pr += q.r; p = p.parentElement; }
-      if (pl < 8 && pr < 8) add('edge-hug', 'high', el, 'left ' + Math.round(r.left) + ' right ' + Math.round(r.right) + ' viewport ' + out.viewport.w);
-    }
+    // Off-screen to the right, or below the fold: not a layout defect.
+    if (r.left >= out.viewport.w) return;
+    if (r.left >= 6) return;
+    let p = el.parentElement, pl = 0;
+    for (let k = 0; k < 3 && p; k++) { pl += padOf(p).l; p = p.parentElement; }
+    if (pl < 8) add('edge-hug', 'high', el, 'left ' + Math.round(r.left) + ' with ' + Math.round(pl) + 'px of ancestor padding');
   });
 
   // 5. Panels that carry real content but are forced hidden.
