@@ -49,6 +49,35 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-27 生产首屏性能基线(真实冷加载)
+
+**测量方法**:每页**全新浏览器 context**(否则读数是缓存命中:第一次测 1440 全部 `doc=0KB / ttfb=1ms`,是假象)。生产 `https://metal-divider.com`,1440 视口,8 个代表页型。
+
+| 页面 | 总字节 | 图片 | CSS | JS | 文档 | TTFB |
+|---|---|---|---|---|---|---|
+| `/` | 2,121KB | 1,902KB | 85KB | 75KB | 59KB | 4,320ms |
+| `/shop/` | 347KB | 147KB | 85KB | 75KB | 39KB | 4,088ms |
+| `/collections/` | 516KB | 332KB | 85KB | 75KB | 23KB | 4,792ms |
+| `/custom-metal-divider-screens/` | **4,875KB** | **4,467KB** | 250KB | 75KB | 82KB | 4,675ms |
+| `/outdoor-privacy-landscape-screens/` | 1,454KB | 1,225KB | 85KB | 75KB | 68KB | 3,657ms |
+| `/expanded-metal-panels/` | 1,361KB | 1,143KB | 85KB | 75KB | 58KB | 3,890ms |
+| `/pattern/agave-…` | 497KB | 309KB | 85KB | 75KB | 28KB | 4,639ms |
+| `/inquiry/` | 205KB | 22KB | 85KB | 75KB | 23KB | 4,276ms |
+
+**三个结构性结论**:
+
+1. **TTFB 3.7–4.8 秒是最大单项**,比图片总量更影响客户。分解(curl):DNS/connect **5ms**、TLS **2.3s**、TTFB 2.6–3.1s、总 3.9–4.2s。`x-litespeed-cache: hit` 但 **`x-hcdn-cache-status: MISS`**——请求回源,慢在 CDN 回源路径,**不是 PHP 慢**。这是基础设施项,不是代码能修的;对应业主"性能优化可以激进(转 Cloudflare、调 LiteSpeed)"的开放裁定,实测依据已具备。
+
+2. **CSS 85KB / JS 75KB**(gzip 生效)。**本地测的 592KB 不是客户会下载的数**——本地服务器不压缩,生产有 gzip。字体 87KB(2 个 woff2)已压缩。
+
+3. **图片仍是最大头**,但分两类:
+   - **已修**:枢纽卡不再下 2048px(516KB 总量 vs 首轮 5.4MB);关闭态 mega menu 不再下 382KB;折线外 eager 已改 lazy。
+   - **未修**:定制页缩略图显示 112px 却下 480w(比值 4.3)。根因是**媒体管线 `WIDTH_TIERS` 最小 480**,小档根本不存在;附件 `metadata['sizes']` 为空(管线文件不在 WP 尺寸里),所以方图梯子对这些图也无效。**改它意味着全量媒体重建**(params_digest 变化强制重建),是独立一批,不与本轮样式修复混合。
+
+**顺带修**:`#md-footer a{color:inherit}`(1,0,1)压过 `.md-footer__bar-legal a:hover`(0,2,1),hover 永不生效(实测 hovered=true 颜色不变)——与 quote 按钮同一个坑。改为同 id 作用域后,法务链接 hover 变为金色(实测 rgba(255,255,255,0.42) → rgb(212,184,120))。
+
+**Woo 原生界面判定**:零原生界面出现(本站无购物车/结账语义),询盘表单 HTML5 校验正常聚焦第一个字段、4 个必填项均触发。**无需额外样式化**,此项闭环。
+
 ### 2026-10-27 无 JS 与图片按需:枢纽 9 张破图、掩膜永不解除、菜单空下载
 
 业主的原话清单里有"禁用 JS 时的布局退化"与"首屏加载体积",这轮把它们做完。三项都是**源码读起来完全正确、只有实测才暴露**的类型。
