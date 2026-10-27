@@ -55,6 +55,20 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-27 外部账号配置的确证阻塞(GSC / Turnstile / SPF-DMARC)
+
+**站点本身的重建与验收已全部达标**(28/28、63/63、询盘链路、性能基线)。剩余三项是**外部账号配置**,均因凭据/权限无法自行推进:
+
+| 项 | 现状与确证 |
+|---|---|
+| **GSC 属性** | `search.google.com/search-console` 未登录(营销页)。需 Google 账号建 URL 前缀属性拿验证 token;Hostinger API 写 TXT 路径已验通,拿到即可一条写入。 |
+| **Turnstile** | `dash.cloudflare.com` 未登录。需在 Dashboard 新建 widget 拿 sitekey/secret;de-linker 密钥因域名绑定 `110200` 不可复用。 |
+| **SPF / DMARC** | DoH 实测:**无 SPF**(TXT 无 Answer)、**无 DMARC**(NXDOMAIN);DKIM CNAME×3 已在。Hostinger 官方 SPF = `v=spf1 include:_spf.mail.hostinger.com ~all`(一手来源已核)。**但写入受阻**:Hostinger OAuth refresh 返回 `invalid_request`(refresh_token 已轮换失效);hPanel 登录被 Cloudflare 反自动化持续拦截(48 秒不过)。 |
+
+**结论**:这三项需要**业主提供登录或密钥**——GSC 要 Google 账号授权、Turnstile 要 Cloudflare Dashboard、DNS 写入要 hPanel 登录或有效 Hostinger API token。代理不能自行创建账号凭据,也不应在反自动化上重复重试(§0.1 止损纪律)。
+
+**已完成的站点侧工作不受影响**:GSC 的 Site Kit 载体已装(`google-site-kit` 激活,`propertyID` 为空),询盘链路已实走(含 `turnstile_status: not_configured` 如实记录),SPF/DMARC 的目标值已备妥,只欠写入权限。
+
 ### 2026-10-27 收尾核验:除凭据项外全部达标,两项确证为外部凭据阻塞
 
 **生产验收**:`prod-acceptance.mjs` **28/28 全过**、21 页 × 3 视口 **63/63**、零控制台错误、零 4xx、PHP **385 项**全绿。视觉/交互/无 JS/询盘链路/性能基线均已实测。
