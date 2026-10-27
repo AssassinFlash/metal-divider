@@ -53,6 +53,22 @@
 
 (每轮追加,最新在上)
 
+### 2026-10-27 完整询盘链路线上实走(首次,全环通过)
+
+GOAL 覆盖矩阵的硬项"完整询盘线上实走"此前只验过 dev,本轮在**生产真实提交**并逐环验证。
+
+**实走(真 Chrome,390,生产)**:
+1. PDP `/pattern/agave-architectural-metal-screen-pattern/` — 隐藏域 `md_inquiry_pattern_slug = agave-architectural-metal-screen-pattern` 正确
+2. 点吸底询盘条 → 弹窗打开,表单字段齐全(nonce、pattern_slug、source_page/module/button 全部随单)
+3. 提交 → 跳转 `/inquiry/thank-you/?md_inquiry=1679&key=…`,感谢页文案正确
+4. **后台通知链**:`wp_md_inquiry_mail_queue` 两行——内部通知 `recipients=["sales@sunriverinverter.com","info@metal-divider.com"]`、客户确认 `["sales@sunriverinverter.com"]`,**`dispatched_to` 均只有测试地址**,`status: sent`、`attempts: 1`,主题/正文/Reply-To/单图案上下文全部正确
+5. **WhatsApp 路由**:悬浮 `wa.me/85264731687`;询盘旁链接预填 `I'd like a quote for this pattern:\nAgave | Architectural Metal Screen Pattern (Agave)\nRef: pattern-pdp/quote-modal/request_quote` — **单图案上下文完整**
+6. **清理**:删探针(2 队列行 + 询盘 post)、`test-mode --off`,已读回确认
+
+**调度健康**:`md_inquiry_minute` 已注册、`wp_next_scheduled("md_inquiry_mail_tick") = 1793082692` 在未来、`DISABLE_WP_CRON` 未设——队列能跑,不是 bug。注意我第一次查的是 `md_inquiry_tick`(错名)误报"调度为 false",**查 hook 名要与实现一致,不能凭印象**。
+
+**Turnstile 仍未配置**(`turnstile_status: not_configured`,记录在 meta 中,不掩盖)。这是凭据阻塞,与链路本身无关。
+
 ### 2026-10-27 生产首屏性能基线(真实冷加载)
 
 **测量方法**:每页**全新浏览器 context**(否则读数是缓存命中:第一次测 1440 全部 `doc=0KB / ttfb=1ms`,是假象)。生产 `https://metal-divider.com`,1440 视口,8 个代表页型。
