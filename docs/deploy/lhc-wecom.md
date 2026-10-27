@@ -49,6 +49,7 @@ webhook 行(`lh_webhook`,全部 trigger_id=1、bot_id=1、disabled=0):
 | 1 | `chat.genericbot_chat_command_transfer` | bot/命令转人工(带 is_online) |
 | 2 | `chat.chat_transfered` | 坐席把会话转给其他坐席(立即发卡) |
 | 3 | `chat.addmsguser` | 访客新消息(进行中窗口跟进卡) |
+| 4 | `chat.chat_offline_request_saved` | 下班态留言已保存(staging 行 4;立即发卡) |
 
 ## 值班配置
 
