@@ -419,9 +419,11 @@
             row.setAttribute('data-kind', kind);
             var bubble = doc.createElement('div');
             bubble.className = 'md-bubble';
+            var previous = list.lastElementChild;
+            var previousKind = previous && previous.getAttribute ? previous.getAttribute('data-kind') : '';
             var label = doc.createElement('span');
             label.textContent = KIND_LABEL[kind];
-            label.className = kind === 'bot' ? 'md-kicker' : 'md-sr';
+            label.className = (kind === 'bot' || (kind !== 'system' && kind !== previousKind)) ? 'md-kicker' : 'md-sr';
             var body = doc.createElement('p');
             body.className = 'md-text';
             body.textContent = text;
@@ -449,18 +451,39 @@
             return true;
         }
 
+        function provesAcceptance(message) {
+            if (!message) {
+                return false;
+            }
+            var kind = kindOf(message.kind);
+            if (kind === 'operator') {
+                return true;
+            }
+            if (kind !== 'system') {
+                return false;
+            }
+            return /accepted the pending chat/i.test(String(message.text || ''));
+        }
+
         function appendMessages(messages, forceScroll) {
             var near = forceScroll || isNearBottom(list, NEAR_BOTTOM_PX);
             var added = false;
+            var accepted = false;
             var index;
             for (index = 0; index < messages.length; index += 1) {
                 if (appendMessage(messages[index])) {
                     added = true;
+                    if (provesAcceptance(messages[index])) {
+                        accepted = true;
+                    }
                     var id = parseInt(messages[index].id, 10);
                     if (!isNaN(id)) {
                         setCursor(id);
                     }
                 }
+            }
+            if (accepted) {
+                markChatStatusAccepted();
             }
             if (added) {
                 removeEmpty();
@@ -1282,8 +1305,7 @@
             }
         }
 
-        function setChatStatusPill(label, tone) {
-            var pill = root.querySelector('#md-chat-status');
+        function paintStatusPill(pill, label, tone) {
             if (!pill) {
                 return;
             }
@@ -1300,6 +1322,10 @@
                 pill.textContent = label;
             }
             pill.setAttribute('data-tone', tone);
+        }
+
+        function setChatStatusPill(label, tone) {
+            paintStatusPill(root.querySelector('#md-chat-status'), label, tone);
         }
 
         function chatStatusPillText() {
@@ -1319,6 +1345,32 @@
                 return;
             }
             setChatStatusPill('Active', 'online');
+            var scope = doc && doc.querySelectorAll ? doc : root;
+            var pills = scope.querySelectorAll('.md-pill');
+            var index;
+            for (index = 0; index < pills.length; index += 1) {
+                var text = String(pills[index].textContent || '').replace(/^\s+|\s+$/g, '').toLowerCase();
+                if (text === 'pending' || text === 'waiting' || text === '等待') {
+                    paintStatusPill(pills[index], 'Active', 'online');
+                }
+            }
+            // The drawer and the desktop context both render Status as a
+            // .md-field, so update every matching row, not only the pill.
+            var fields = scope.querySelectorAll('.md-field');
+            for (index = 0; index < fields.length; index += 1) {
+                var term = fields[index].querySelector ? fields[index].querySelector('dt') : null;
+                var value = fields[index].querySelector ? fields[index].querySelector('dd') : null;
+                if (!term || !value) {
+                    continue;
+                }
+                if (String(term.textContent || '').replace(/^\s+|\s+$/g, '').toLowerCase() !== 'status') {
+                    continue;
+                }
+                var current = String(value.textContent || '').replace(/^\s+|\s+$/g, '').toLowerCase();
+                if (current === 'pending' || current === 'waiting' || current === '等待') {
+                    value.textContent = 'Active';
+                }
+            }
             markRailStatus('Active', 'online');
         }
 
@@ -1512,9 +1564,36 @@
                 closeChat(state);
             });
             block.addEventListener('keydown', function (event) {
-                if ((event.key === 'Escape' || event.key === 'Esc') && !state.panel.hidden) {
+                if (state.panel.hidden) {
+                    return;
+                }
+                if (event.key === 'Escape' || event.key === 'Esc') {
                     event.preventDefault();
                     closePanel(state, true);
+                    return;
+                }
+                if (event.key !== 'Tab') {
+                    return;
+                }
+                // role=dialog is inline, not modal; keep Tab inside its two
+                // actions while it is open, then restore focus on cancel.
+                var focusable = state.panel.querySelectorAll(
+                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                );
+                if (!focusable.length) {
+                    return;
+                }
+                var ownerDoc = state.panel.ownerDocument || doc;
+                var active = ownerDoc ? ownerDoc.activeElement : null;
+                var first = focusable[0];
+                var last = focusable[focusable.length - 1];
+                var outside = !state.panel.contains(active);
+                if (event.shiftKey && (outside || active === first)) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && (outside || active === last)) {
+                    event.preventDefault();
+                    first.focus();
                 }
             });
         }

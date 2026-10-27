@@ -74,7 +74,7 @@ final class MdMobileCloseTest extends TestCase
         self::assertStringContainsString('data-md-close-trigger', $html);
         self::assertStringContainsString('data-md-close-panel', $html);
         self::assertStringContainsString('id="md-close-question-md-composer"', $html);
-        self::assertStringContainsString('role="group" aria-labelledby="md-close-question-md-composer"', $html);
+        self::assertStringContainsString('role="dialog" aria-modal="false" aria-labelledby="md-close-question-md-composer"', $html);
         self::assertStringContainsString('Close this conversation? It will show as closed in the chat list.', $html);
         self::assertStringContainsString('>Close conversation</button>', $html);
         self::assertStringContainsString('>Cancel</button>', $html);

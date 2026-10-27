@@ -246,6 +246,15 @@ final class MdMobileInboxTest extends TestCase
             erLhcoreClassMdMobile::inboxItem(array('id' => 16, 'nick' => '   ', 'status' => 9), null, self::BASE . '/mdmobile/chat/16')
         );
         self::assertFalse(erLhcoreClassMdMobile::inboxItem(array('id' => 16, 'has_unread_messages' => 2), null, self::BASE . '/mdmobile/chat/16')['unread']);
+        self::assertFalse(erLhcoreClassMdMobile::inboxItem(array('id' => 16, 'status' => 2, 'has_unread_messages' => 1), null, self::BASE . '/mdmobile/chat/16')['unread']);
+        self::assertSame(
+            'active',
+            erLhcoreClassMdMobile::inboxItem(array('id' => 16, 'status' => 0, 'last_op_msg_time' => 50), null, self::BASE . '/mdmobile/chat/16')['status']
+        );
+        self::assertSame(
+            'pending',
+            erLhcoreClassMdMobile::inboxItem(array('id' => 16, 'status' => 0), null, self::BASE . '/mdmobile/chat/16')['status']
+        );
         self::assertNull(erLhcoreClassMdMobile::inboxItem(array('id' => 16), null, 'javascript:alert(1)'));
         self::assertNull(erLhcoreClassMdMobile::inboxItem(array('id' => 16), null, self::BASE . '/mdmobile/chat/15'));
         self::assertNull(erLhcoreClassMdMobile::inboxItem(array('id' => 16), null, self::BASE . '/mdmobile/chat/16?next=1'));

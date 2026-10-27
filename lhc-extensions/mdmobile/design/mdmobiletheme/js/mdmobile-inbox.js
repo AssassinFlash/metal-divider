@@ -1045,7 +1045,9 @@
             }
             var reported = result.data && Object.prototype.hasOwnProperty.call(result.data, 'unread') ? unreadOf(result.data.unread) : null;
             if (reported && reported.count > 0) {
-                rememberAck(chatId, reported.count - 1);
+                // The server still cannot clear this chat (for example it is
+                // assigned to another operator). Keep the honest badge; a
+                // local grace ack would make it look read for 8 seconds.
                 setListUnread(doc, chatId, reported);
             } else {
                 rememberAck(chatId, badgeCount(doc, chatId));

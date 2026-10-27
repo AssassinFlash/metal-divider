@@ -352,6 +352,41 @@ class erLhcoreClassMdMobile
     }
 
     /**
+     * A chat left at pending while its transcript already has an operator
+     * message or the acceptance system line is inconsistent: the visitor was
+     * accepted, but the stored status was not advanced (for example by test
+     * tooling or a status reset). Show the acceptance the transcript proves.
+     * Only pending is derived; closed and active keep their stored status.
+     *
+     * @param mixed $status
+     * @param array<int, array<string, mixed>> $messages
+     * @return int|null
+     */
+    public static function effectiveStatus($status, array $messages)
+    {
+        $parsed = self::canonicalInt($status);
+        if ($parsed === null || $parsed !== 0) {
+            return $parsed;
+        }
+
+        foreach ($messages as $message) {
+            if (!is_array($message)) {
+                continue;
+            }
+            $kind = isset($message['kind']) ? (string) $message['kind'] : '';
+            if ($kind === self::KIND_OPERATOR) {
+                return 1;
+            }
+            $text = isset($message['text']) ? (string) $message['text'] : '';
+            if ($kind === self::KIND_SYSTEM && preg_match('/accepted the pending chat/i', $text) === 1) {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
      * The mobile desk renders message bodies as text, not HTML. LHC stores
      * offline leave-message bodies and some bot replies as BBCode/HTML, which
      * would otherwise surface as literal tags in the transcript.
@@ -1041,16 +1076,27 @@ class erLhcoreClassMdMobile
         if ($stamp !== null) {
             $item['time'] = $stamp;
         }
+        $statusToken = null;
         $statusValue = self::recordValue($chat, 'status');
         if ($statusValue !== null) {
             $parsed = self::canonicalInt($statusValue);
             $token = $parsed === null ? null : self::statusToken($parsed);
             if ($token !== null) {
                 $item['status'] = $token;
+                $statusToken = $token;
             }
         }
+        // An operator reply is the acceptance event: a pending row that
+        // already has last_op_msg_time was handled even if the status column
+        // was left behind by a reset or a test tool.
+        if ($statusToken === 'pending' && self::positiveStamp(self::recordValue($chat, 'last_op_msg_time')) !== null) {
+            $item['status'] = 'active';
+            $statusToken = 'active';
+        }
         $unread = self::canonicalInt(self::recordValue($chat, 'has_unread_messages'));
-        $item['unread'] = $unread === 1;
+        // A closed chat is no longer a new conversation, even if the unread
+        // flag survived the close (LHC does not always clear it).
+        $item['unread'] = $unread === 1 && $statusToken !== 'closed';
 
         return $item;
     }
@@ -1379,9 +1425,10 @@ class erLhcoreClassMdMobile
      *
      * @param object|array<string, mixed> $chat
      * @param array<int, array<string, mixed>> $history
+     * @param mixed $statusOverride Display status when the transcript proves it (effectiveStatus)
      * @return array{summary: array<int, string>, fields: array<int, array<string, mixed>>, history: array<int, array<string, mixed>>}
      */
-    public static function visitorContext($chat, $department = '', array $history = array())
+    public static function visitorContext($chat, $department = '', array $history = array(), $statusOverride = null)
     {
         if (!is_array($chat) && !is_object($chat)) {
             $chat = array();
@@ -1390,7 +1437,7 @@ class erLhcoreClassMdMobile
         $fields = array();
         $summary = array();
 
-        $statusValue = self::recordValue($chat, 'status');
+        $statusValue = $statusOverride !== null ? $statusOverride : self::recordValue($chat, 'status');
         if ($statusValue !== null) {
             $parsedStatus = self::canonicalInt($statusValue);
             $statusToken = $parsedStatus === null ? null : self::statusToken($parsedStatus);
@@ -1589,9 +1636,6 @@ class erLhcoreClassMdMobile
     {
         $type = self::canonicalInt(self::recordValue($chat, 'device_type'));
         $agent = self::plainText(self::recordValue($chat, 'uagent'));
-        if ($agent !== null) {
-            $agent = self::shorten($agent, self::UA_LIMIT);
-        }
         $word = null;
         if ($type === 1) {
             $word = 'Mobile';
@@ -1601,16 +1645,12 @@ class erLhcoreClassMdMobile
             $word = 'Computer';
         }
 
-        $detail = $agent;
-        if ($word !== null && $agent !== null) {
-            $detail = $word . ' · ' . $agent;
-        } elseif ($word !== null) {
-            $detail = $word;
-        }
-
+        // The details column shows the device class, not a raw user-agent.
+        // A 180-character UA pushed Location, Page and started times below the
+        // fold and added no value beside the class. Unknown agents stay empty.
         return array(
             'word' => $word,
-            'detail' => $detail,
+            'detail' => $word,
         );
     }
 

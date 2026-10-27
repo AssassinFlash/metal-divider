@@ -1563,7 +1563,7 @@ if (!function_exists('mdmobile_render_close')) {
         $html .= '<p class="md-close-note" data-md-close-note' . ($closed ? '' : ' hidden') . '>Conversation closed.</p>';
         $html .= '<button type="button" class="md-close-trigger" data-md-close-trigger aria-expanded="false" aria-controls="'
             . mdmobile_esc($panelId) . '"' . ($closed ? ' hidden' : '') . '>Close conversation</button>';
-        $html .= '<div class="md-close-panel" id="' . mdmobile_esc($panelId) . '" data-md-close-panel role="group" aria-labelledby="' . mdmobile_esc($questionId) . '" hidden>';
+        $html .= '<div class="md-close-panel" id="' . mdmobile_esc($panelId) . '" data-md-close-panel role="dialog" aria-modal="false" aria-labelledby="' . mdmobile_esc($questionId) . '" hidden>';
         $html .= '<p class="md-close-question" id="' . mdmobile_esc($questionId) . '">Close this conversation? It will show as closed in the chat list.</p>';
         $html .= '<div class="md-close-actions">';
         $html .= '<button type="button" class="md-close-cancel" data-md-close-cancel>Cancel</button>';

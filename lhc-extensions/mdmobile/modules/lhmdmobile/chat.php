@@ -80,18 +80,23 @@ if (class_exists('erLhcoreClassModelCannedMsg')) {
     }
     $canned = erLhcoreClassMdMobile::cannedGroups($cannedItems, $department);
 }
+// The transcript can already prove acceptance (an operator message or the
+// acceptance system line) while a reset or test tool left the stored status at
+// pending. Derive the display status once, so the header, the details field and
+// the rail cannot disagree with the transcript. Ownership is not changed.
+$displayStatus = erLhcoreClassMdMobile::effectiveStatus($chat->status, $payload['messages']);
 $bag = erLhcoreClassMdMobile::templateBag(
     (int) $chat->id,
     $payload,
     $urls,
     $gate['user']->getCSFRToken(),
     isset($chat->nick) ? $chat->nick : '',
-    erLhcoreClassMdMobile::visitorContext($chat, $department, $history),
+    erLhcoreClassMdMobile::visitorContext($chat, $department, $history, $displayStatus),
     isset($chat->remarks) ? $chat->remarks : ''
 );
 $bag['canned'] = $canned;
-$bag['status'] = (int) $chat->status;
-$bag['closed'] = erLhcoreClassMdMobile::closedStatus($chat->status);
+$bag['status'] = $displayStatus;
+$bag['closed'] = erLhcoreClassMdMobile::closedStatus($displayStatus);
 $allowCloseRemote = $gate['user']->hasAccessTo('lhchat', 'allowcloseremote') === true;
 $bag['allow_close_remote'] = $allowCloseRemote;
 $bag['allow_open_closed'] = $gate['user']->hasAccessTo('lhchat', 'allowopenclosedchats') === true;
@@ -110,6 +115,13 @@ $bag['can_close'] = $bag['closed'] === false
     && ($allowCloseRemote || ((int) $chat->user_id > 0 && (int) $chat->user_id === (int) $gate['user']->getUserID()));
 $state = mdmobile_inbox_state(isset($Params) ? $Params : array());
 $inbox = mdmobile_load_inbox($state, (int) $chat->id);
+if ($displayStatus !== (int) $chat->status && isset($inbox['chats']) && is_array($inbox['chats'])) {
+    foreach ($inbox['chats'] as $inboxIndex => $inboxItem) {
+        if (is_array($inboxItem) && isset($inboxItem['id']) && (int) $inboxItem['id'] === (int) $chat->id) {
+            $inbox['chats'][$inboxIndex]['status'] = 'active';
+        }
+    }
+}
 if (isset($inbox['list_url']) && $inbox['list_url'] !== '') {
     $bag['list_url'] = $inbox['list_url'];
 }

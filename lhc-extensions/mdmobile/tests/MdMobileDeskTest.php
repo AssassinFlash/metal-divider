@@ -46,6 +46,46 @@ final class MdMobileDeskTest extends TestCase
         );
     }
 
+    public function testEffectiveStatusUsesOnlyTranscriptEvidence(): void
+    {
+        self::assertSame(
+            0,
+            erLhcoreClassMdMobile::effectiveStatus(0, array(
+                array('kind' => 'visitor'),
+                array('kind' => 'bot'),
+                array('kind' => 'system', 'text' => 'Other system line'),
+            ))
+        );
+        self::assertSame(1, erLhcoreClassMdMobile::effectiveStatus(0, array(array('kind' => 'operator'))));
+        self::assertSame(
+            1,
+            erLhcoreClassMdMobile::effectiveStatus('0', array(
+                array('kind' => 'system', 'text' => 'Metal Divider Support has accepted the pending chat by sending a message!'),
+            ))
+        );
+        self::assertSame(2, erLhcoreClassMdMobile::effectiveStatus(2, array(array('kind' => 'operator'))));
+        self::assertSame(1, erLhcoreClassMdMobile::effectiveStatus(1, array(array('kind' => 'visitor'))));
+        self::assertNull(erLhcoreClassMdMobile::effectiveStatus(null, array(array('kind' => 'operator'))));
+        self::assertNull(erLhcoreClassMdMobile::effectiveStatus('not-a-status', array(array('kind' => 'operator'))));
+    }
+
+    public function testVisitorContextAcceptsADisplayStatusOverride(): void
+    {
+        $accepted = erLhcoreClassMdMobile::visitorContext(
+            array('status' => 0, 'nick' => 'Ada'),
+            '',
+            array(),
+            1
+        );
+        self::assertContains(array('label' => 'Status', 'value' => 'Active'), $accepted['fields']);
+
+        $closed = erLhcoreClassMdMobile::visitorContext(array('status' => 0), '', array(), 2);
+        self::assertContains(array('label' => 'Status', 'value' => 'Closed'), $closed['fields']);
+
+        $stored = erLhcoreClassMdMobile::visitorContext(array('status' => 0), '', array(), null);
+        self::assertContains(array('label' => 'Status', 'value' => 'Pending'), $stored['fields']);
+    }
+
     public function testFormatRendersOfflineBodiesAsReadableText(): void
     {
         $payload = erLhcoreClassMdMobile::format(
@@ -313,7 +353,7 @@ final class MdMobileDeskTest extends TestCase
                 array('label' => 'Phone', 'value' => '+852 6473 1687'),
                 array('label' => 'Location', 'value' => 'Central · Hong Kong'),
                 array('label' => 'Language', 'value' => 'zh_HK'),
-                array('label' => 'Device', 'value' => 'Mobile · Mozilla/5.0 (iPhone)'),
+                array('label' => 'Device', 'value' => 'Mobile'),
                 array('label' => 'IP', 'value' => '203.0.113.8'),
                 array(
                     'label' => 'Page',
@@ -403,7 +443,7 @@ final class MdMobileDeskTest extends TestCase
             array()
         );
         self::assertContains('Computer', $pc['summary']);
-        self::assertSame('Computer · Mozilla/5.0', $pc['fields'][0]['value']);
+        self::assertSame('Computer', $pc['fields'][0]['value']);
         $tablet = erLhcoreClassMdMobile::visitorContext(array('device_type' => '2'), '', array());
         self::assertSame('Tablet', $tablet['fields'][0]['value']);
         $unknown = erLhcoreClassMdMobile::visitorContext(
@@ -412,7 +452,7 @@ final class MdMobileDeskTest extends TestCase
             array()
         );
         self::assertSame(array(), $unknown['summary']);
-        self::assertSame('SomeAgent', $unknown['fields'][0]['value']);
+        self::assertSame(array(), $unknown['fields']);
         self::assertNotContains('Tablet', $unknown['summary']);
         self::assertNotContains('Computer', $unknown['summary']);
         self::assertSame(

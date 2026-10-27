@@ -220,14 +220,16 @@ if ($mdHasInbox) {
 <?php if ($mdRows === array()) : ?>
 <p id="md-empty" class="md-empty">No messages yet</p>
 <?php else : ?>
+<?php $mdPrevKind = ''; ?>
 <?php foreach ($mdRows as $mdItem) : ?>
+<?php
+$mdShowKicker = $mdItem['kind'] === 'bot'
+    || ($mdItem['kind'] !== 'system' && $mdItem['kind'] !== $mdPrevKind);
+$mdPrevKind = $mdItem['kind'];
+?>
 <div class="md-row md-row-<?php echo mdmobile_esc($mdItem['kind']); ?>" data-id="<?php echo mdmobile_esc($mdItem['id']); ?>" data-kind="<?php echo mdmobile_esc($mdItem['kind']); ?>">
 <div class="md-bubble">
-<?php if ($mdItem['kind'] === 'bot') : ?>
-<span class="md-kicker"><?php echo mdmobile_esc($mdKindLabel['bot']); ?></span>
-<?php else : ?>
-<span class="md-sr"><?php echo mdmobile_esc($mdKindLabel[$mdItem['kind']]); ?></span>
-<?php endif; ?>
+<span class="<?php echo $mdShowKicker ? 'md-kicker' : 'md-sr'; ?>"><?php echo mdmobile_esc($mdKindLabel[$mdItem['kind']]); ?></span>
 <p class="md-text"><?php echo mdmobile_esc($mdItem['text']); ?></p>
 <?php if ($mdItem['time'] !== '') : ?>
 <?php echo mdmobile_time_html($mdItem['time'], $mdItem['timestamp'], 'time', 'md-time'); ?>
