@@ -98,7 +98,12 @@
 | 「关于图案密度、饰面、安装细节的文章」 | `/blog/` 实测返回 **"No matching posts"**,**一篇文章都没有** |
 | 「technical files ready to download」 | 下载的是 **Zahner 与 Brilliant Architectural 的文件**(竞品):`Architectural-Mesh-Catalog.pdf`、`PerforatedMetalPanels_Datasheet.pdf`、`Drop-Lock-CAD-Details.dwg`、`Moda-Installation-Manual.pdf` 等 8 个 |
 
-**评审还纠正了**:`/about-us/` 未提 "perforated"、`/manufacturing-process/` 无 "pattern lock" 与 "who signs off"、`/custom-screens/` 用了禁用词 "design"、`/collections/` 与家族页会形成 **4 页近似重复**(都抄了首页/目录的 "open area and visual density" 公式)。
+**评审还指出**(我逐条复核,结果不一):
+- **成立**:`/about-us/` 未提 "perforated"、`/manufacturing-process/` 无 "pattern lock" 与 "who signs off"、`/collections/` 与家族页会形成 **4 页近似重复**(都抄了首页/目录的 "open area and visual density" 公式)。
+- **不成立,已撤回**:`/custom-screens/` "用了禁用词 design"。查 `GLOSSARY.md` 实际禁令只有「款式」「花型」「订单」与客户可见面的 `product/products`——**`design` 与 `style` 不在清单内**,且旧站同为 `design 6 / style 2`。守卫 `test_no_customer_template_calls_a_pattern_a_product` 通过(41 断言),GLOSSARY 真实禁令满足。
+- **不成立,已撤回**:「±0.1mm 还是 ±0.03mm」不是矛盾——`±0.03mm` 跟 "repeat accuracy"(板间一致性),`±0.1mm` 跟 "tolerance"(单件切割公差),两个不同工程指标,新旧站一致。
+
+**评审必须严厉,执行者必须有独立判断**:两条套宽了规则,三条经独立复核为真。
 
 **竞品文件是站点级问题,不是文案问题**
 
