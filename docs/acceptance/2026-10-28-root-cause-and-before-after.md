@@ -368,3 +368,36 @@ invalid: []
 
 `turnstile: false` —— Turnstile 未配置（无 sitekey/secret），代码走"未配置就不渲染、不锁提交"
 的既定路径。这是**配置缺失，不是本轮代码缺陷**；要挂上需要业主提供 Cloudflare Turnstile 密钥。
+
+### 十三之补：集成冒烟套件曾一度红，原因是测试载荷过时
+
+`just inquiry-smoke dev` 首跑 **1 项失败**：
+
+```
+InquirySmokeTest::test_the_rate_window_holds_the_sixth_submission
+five fit — Failed asserting that 0 is identical to 5.
+```
+
+**不是产品缺陷，是我的测试载荷落后于同一轮改过的校验契约。** 手工 POST 一次看到真实响应：
+
+```
+status=200
+errorCountry: Please choose your country.
+errorScope:   Please choose the project scope.
+errorRoute:   Please choose an inquiry route.
+errorQuantity:Please choose a quantity range.
+```
+
+表单现在要求 country / scope / route / quantity 四项（加确认勾选),而限流测试只发了
+name / email / message，于是每次都被校验拒、永远到不了限流逻辑,五个 303 一个都没有。
+
+补齐与实际表单一致的合法值（复用主冒烟用例已在用的 `Hong Kong` / `Single zone` /
+`Facade screening` / `10-50 sqm` 与 `md_inquiry_confirm=1`）后：
+
+```
+OK (2 tests, 116 assertions)
+```
+
+**这条值得记住**:改了校验契约,同一轮内所有构造 POST 的测试都要一起看,
+不能只改被点名的那一个。`inquiry-smoke` 跑完之后按§0 清掉了写进实例的 5 条询盘记录与
+4 个临时页面,读回 `records left: 0`。
