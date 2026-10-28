@@ -1392,3 +1392,52 @@ broken internal links:   0
 
 判据说明：只统计 `href="https://metal-divider.com/…"` 形式的绝对站内链接；带 `#` 的锚点
 被剥掉后再测，因为锚点本身不产生请求。
+
+### 9.28 URL 规范化与外链盘点（业主 2026-10-29，此前未验）
+
+#### 9.28.1 规范化：正确，只有一条两跳链
+
+| 入口 | 结果 |
+|---|---|
+| `http://metal-divider.com/` | 301 → `https://metal-divider.com/`（**1 跳**） |
+| `https://www.metal-divider.com/` | 301 → `https://metal-divider.com/`（1 跳） |
+| `http://www.metal-divider.com/` | 2 跳（http→https，再 www→裸域），最终 200 |
+| `https://metal-divider.com`（无尾斜杠） | 200 |
+| `https://METAL-DIVIDER.COM/` | 200 |
+| `/shop`（无尾斜杠） | 301 → `/shop/`（1 跳） |
+
+只有 `http://www.` 这一种组合是两跳。它是**最罕见的入口**（同时用明文 http 和 www），
+且两跳都能完成、最终 200，`GOAL.md` 早已记过这条注记。**记录不修**：合并它需要额外规则，
+收益远小于复杂度。
+
+#### 9.28.2 外链盘点：28 页只有 2 个外站
+
+| 外站 | 次数 | 判定 |
+|---|---:|---|
+| `wa.me/85264731687` | 200 | 业主裁定的单一对客 WhatsApp 号，正确 |
+| `facebook.com/stainlesssteeleverywhere` | 1 | 见下 |
+
+**零第三方下载链接**——`GOAL.md:208` 的裁定（删除竞品文件直链、换本站媒体库文档）已落实。
+
+#### 9.28.3 那个 Facebook 链接是复刻，不是我们加的
+
+它出现在 `/custom-metal-divider-screens/`，来自 `content/livecanvas/custom-screens.html:1925`。
+**旧站同一页也有同一个链接**（实测 grep 计数 1），是原样搬运。
+
+#### 9.28.4 新发现：旧站三个品牌社媒链接全丢了，其中两个已是死链
+
+| 链接 | 旧站出现位置 | 现在访问 |
+|---|---|---|
+| `instagram.com/metaldivider` | 首页 / About / Contact | **200** |
+| `linkedin.com/company/metaldivider` | 同上 | **404** |
+| `youtube.com/@metaldivider` | 同上 | **404** |
+
+新站三处**全都没有**（全站外链盘点里它们一次也没出现）。
+
+这是本轮唯一可能是「内容丢失」的项，但我不擅自补，两个原因：
+
+1. **两个链接已经 404**。照搬会把死链引入新站，比没有更糟。
+2. **剩下那个 Instagram 无法确认归属**。它返回 200，但页面需要登录才能读到账号信息，
+   我拿不到任何能证明「这是业主的账号」的证据。
+
+按「只问业主知道的事」，这三条要由业主确认：账号是否仍归自己、是否要放、放在哪几页。
