@@ -16,7 +16,7 @@
 
 declare( strict_types = 1 );
 
-const MD_CHAT_LAUNCHER_VERSION = '20261028b';
+const MD_CHAT_LAUNCHER_VERSION = '20261028e';
 
 add_action( 'wp_enqueue_scripts', 'md_chat_launcher_enqueue' );
 
@@ -44,13 +44,19 @@ function md_chat_launcher_should_print( string $host, string $path, bool $is_adm
 	 * The hosts whose front end carries the launcher. Production stays out
 	 * until its cutover ticket opts in.
 	 *
+	 * @since 1.0.0
 	 * @param string[] $hosts Allowlisted hostnames.
 	 */
 	$hosts = apply_filters(
 		'md_chat_launcher_hosts',
 		array( 'staging.metal-divider.com', 'localhost' )
 	);
-	return in_array( strtolower( $host ), array_map( 'strtolower', $hosts ), true );
+	$bare  = strtolower( $host );
+	$port  = strrpos( $bare, ':' );
+	if ( false !== $port ) {
+		$bare = substr( $bare, 0, $port );
+	}
+	return in_array( $bare, array_map( 'strtolower', $hosts ), true );
 }
 
 /**

@@ -84,12 +84,30 @@ final class ChatDeleteTest extends TestCase {
 	public function test_file_targets_stay_inside_the_lhc_root(): void {
 		$root = '/srv/site/chat/';
 		$rows = array(
-			(object) array( 'file_path' => 'var/storage/6b/', 'name' => 'a.png' ),
-			array( 'file_path' => 'var/storage/zz/', 'name' => 'b.pdf' ),
-			(object) array( 'file_path' => '../../../etc/', 'name' => 'passwd' ),
-			(object) array( 'file_path' => '/etc/passwd', 'name' => 'x' ),
-			(object) array( 'file_path' => 'var/storage/../storage/', 'name' => 'dotdot.png' ),
-			(object) array( 'file_path' => '', 'name' => 'no-path.png' ),
+			(object) array(
+				'file_path' => 'var/storage/6b/',
+				'name'      => 'a.png',
+			),
+			array(
+				'file_path' => 'var/storage/zz/',
+				'name'      => 'b.pdf',
+			),
+			(object) array(
+				'file_path' => '../../../etc/',
+				'name'      => 'passwd',
+			),
+			(object) array(
+				'file_path' => '/etc/passwd',
+				'name'      => 'x',
+			),
+			(object) array(
+				'file_path' => 'var/storage/../storage/',
+				'name'      => 'dotdot.png',
+			),
+			(object) array(
+				'file_path' => '',
+				'name'      => 'no-path.png',
+			),
 		);
 
 		$targets = md_chat_delete_file_targets( $rows, $root );

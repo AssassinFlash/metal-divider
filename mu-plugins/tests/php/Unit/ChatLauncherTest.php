@@ -54,6 +54,17 @@ final class ChatLauncherTest extends TestCase {
 	}
 
 	/**
+	 * A host with an explicit port still passes the gate.
+	 *
+	 * @return void
+	 */
+	public function test_host_with_port_passes_the_gate() {
+		$this->assertTrue( md_chat_launcher_should_print( 'staging.metal-divider.com:443', '/', false, false ) );
+		$this->assertTrue( md_chat_launcher_should_print( 'STAGING.METAL-DIVIDER.COM:8443', '/', false, false ) );
+		$this->assertFalse( md_chat_launcher_should_print( 'evil.com:443', '/', false, false ) );
+	}
+
+	/**
 	 * A host may be added by filter for a future production cutover.
 	 */
 	public function test_host_list_is_filterable(): void {
@@ -91,8 +102,8 @@ final class ChatLauncherTest extends TestCase {
 	 * footer, pointing at the extension asset with the pinned version.
 	 */
 	public function test_enqueue_fires_on_a_staging_page_request(): void {
-		$_SERVER['HTTP_HOST']  = 'staging.metal-divider.com';
-		$_SERVER['REQUEST_URI'] = '/pattern/agave/';
+		$_SERVER['HTTP_HOST']           = 'staging.metal-divider.com';
+		$_SERVER['REQUEST_URI']         = '/pattern/agave/';
 		$GLOBALS['md_mu_test_enqueues'] = array();
 		$GLOBALS['md_mu_test_is_admin'] = false;
 		$GLOBALS['md_mu_test_is_feed']  = false;
@@ -112,8 +123,8 @@ final class ChatLauncherTest extends TestCase {
 	 * A non-staging host produces no enqueue at all.
 	 */
 	public function test_enqueue_stays_silent_off_staging(): void {
-		$_SERVER['HTTP_HOST']  = 'metal-divider.com';
-		$_SERVER['REQUEST_URI'] = '/pattern/agave/';
+		$_SERVER['HTTP_HOST']           = 'metal-divider.com';
+		$_SERVER['REQUEST_URI']         = '/pattern/agave/';
 		$GLOBALS['md_mu_test_enqueues'] = array();
 
 		md_chat_launcher_enqueue();
@@ -121,6 +132,9 @@ final class ChatLauncherTest extends TestCase {
 		self::assertSame( array(), $GLOBALS['md_mu_test_enqueues'] );
 	}
 
+	/**
+	 * Reset the shared test fixtures.
+	 */
 	protected function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'], $GLOBALS['md_mu_test_enqueues'], $GLOBALS['md_mu_test_is_admin'], $GLOBALS['md_mu_test_is_feed'] );
 	}

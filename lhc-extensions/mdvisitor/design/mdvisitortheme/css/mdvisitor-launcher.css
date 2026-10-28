@@ -59,6 +59,7 @@
 	bottom: 24px;
 	z-index: 2147483000;
 	width: 400px;
+	max-width: calc( 100vw - 48px );
 	height: 680px;
 	max-height: calc( 100dvh - 32px );
 	background: #111;
@@ -88,6 +89,7 @@
 	.mdvl-card {
 		inset: 0;
 		width: 100%;
+		max-width: none;
 		height: 100%;
 		max-height: none;
 		border-radius: 0;

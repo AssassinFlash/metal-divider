@@ -12,17 +12,17 @@
 ( function () {
 	'use strict';
 
-	if ( window.top !== window.self ) {
-		return;
-	}
 	if ( window.__mdvLauncherLoaded ) {
 		return;
 	}
 	window.__mdvLauncherLoaded = true;
+	if ( window.top !== window.self ) {
+		return;
+	}
 
 	var START_PATH = '/chat/index.php/chat/chatwidget/(department)/1';
 	var CSS_PATH = '/chat/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-launcher.css';
-	var CSS_VERSION = '20261028a';
+	var CSS_VERSION = '20261028e';
 
 	if ( location.pathname.indexOf( '/chat/' ) === 0 ) {
 		return;
@@ -117,6 +117,9 @@
 
 		window.addEventListener( 'message', function ( event ) {
 			if ( event.origin !== window.location.origin ) {
+				return;
+			}
+			if ( !frame || event.source !== frame.contentWindow ) {
 				return;
 			}
 			if ( event.data === 'lhc_chat_closed_explicit' ) {
