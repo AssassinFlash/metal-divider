@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028ag', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028ai', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -21,7 +21,7 @@
             }
         }
         ?>
-        <div class="mdv-chat-head">
+        <div class="mdv-chat-head" data-chat-id="<?php echo (int)$chat->id;?>" data-chat-hash="<?php echo htmlspecialchars((string)$chat->hash, ENT_QUOTES, 'UTF-8');?>" data-chat-status="<?php echo (int)$chat->status;?>" data-email-saved="<?php echo trim((string)$chat->email) !== '' ? '1' : '0';?>">
             <div class="mdv-chat-id">
                 <span class="mdv-chat-avatar" data-tone="<?php echo $mdvTone;?>">MD<i></i></span>
                 <div class="mdv-chat-name"><strong id="mdv-chat-title"><?php echo htmlspecialchars($mdvTitle);?></strong><small><span class="mdv-chat-state mdv-chat-state-<?php echo $mdvTone;?>"><i></i><?php echo htmlspecialchars($mdvLabel);?></span></small></div>
@@ -53,6 +53,7 @@
 
     </div>
 </div>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261028c', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <script>
 (function () {
   var chip = document.querySelector('.mdv-chat-head .mdv-chat-state');

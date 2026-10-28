@@ -123,6 +123,22 @@
     });
   }
 
+  function initResume() {
+    var raw = null;
+    try { raw = window.localStorage.getItem('mdv:lastChat'); } catch (err) { return; }
+    if (!raw) { return; }
+    var saved = null;
+    try { saved = JSON.parse(raw); } catch (err) { return; }
+    if (!saved || typeof saved.url !== 'string') { return; }
+    if (saved.url.indexOf('/chat/') !== 0 || saved.url.indexOf('/chatwidgetchat/') === -1) { return; }
+    Array.prototype.forEach.call(card.querySelectorAll('.md-resume'), function (link) {
+      link.href = saved.url;
+      link.hidden = false;
+    });
+  }
+
+  initResume();
+
   try {
     var initial = new URLSearchParams(window.location.search).get('view');
     if (initial === 'faq' || initial === 'home') { view(initial); }

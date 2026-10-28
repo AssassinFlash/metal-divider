@@ -1,5 +1,5 @@
 <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_pre_multiinclude.tpl.php'));?>
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor.css?v=20261028aa', ENT_QUOTES, 'UTF-8'); ?>">
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor.css?v=20261028ab', ENT_QUOTES, 'UTF-8'); ?>">
 
 <?php if (isset($maintenance_mode)) : ?>
     <div class="pt-2">
@@ -93,6 +93,11 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
       <?php endif; ?>
     </header>
     <div class="md-panel md-scroll">
+      <a class="md-resume" href="#" hidden>
+        <span class="md-resume-icon" aria-hidden="true">↩</span>
+        <span class="md-resume-copy"><b>Continue your last conversation</b><small>Pick up where you left off</small></span>
+        <span class="md-chev" aria-hidden="true">›</span>
+      </a>
       <div class="md-section-head"><p class="md-eyebrow"><svg class="md-spark" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0 L6.1 3.9 L10 5 L6.1 6.1 L5 10 L3.9 6.1 L0 5 L3.9 3.9 Z" fill="currentColor"/></svg> Quick Connect</p><span class="md-section-hint">Pick a start</span></div>
       <button class="md-action" type="button" data-mdv-fill="I have a pattern in mind. Can you help me check it?">
         <span class="md-action-icon">▦</span>
@@ -271,7 +276,7 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
     </nav>
   </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028z', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028aa', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 <?php if (isset($start_data_fields['pre_chat_html']) && $start_data_fields['pre_chat_html'] != '') : ?>
     <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/post_chat_html.tpl.php'));?>
@@ -329,6 +334,11 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
     <div class="md-status"><span class="md-pulse md-pulse-off"></span><span>Desk closed</span><span class="md-status-sep">·</span><span>Leave a message</span></div>
   </header>
   <div class="md-panel md-scroll md-offline-panel">
+    <a class="md-resume" href="#" hidden>
+      <span class="md-resume-icon" aria-hidden="true">↩</span>
+      <span class="md-resume-copy"><b>Continue your last conversation</b><small>Pick up where you left off</small></span>
+      <span class="md-chev" aria-hidden="true">›</span>
+    </a>
     <?php if (isset($start_data_fields['pre_offline_chat_html']) && $start_data_fields['pre_offline_chat_html'] != '') : ?>
         <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/pre_offline_chat_html.tpl.php'));?>
     <?php endif?>
@@ -383,7 +393,7 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
     </nav>
   </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028z', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028aa', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 <?php endif;?>
 

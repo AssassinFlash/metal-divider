@@ -8,6 +8,7 @@
 	<file>md-staging-guards.php</file>
 	<file>md-wecom-notify.php</file>
 	<file>md-kb-endpoint.php</file>
+	<file>md-chat-email.php</file>
 	<file>tests</file>
 	<exclude-pattern>tests/php/bootstrap.php</exclude-pattern>
 	<exclude-pattern>tests/php/Doubles/*</exclude-pattern>
@@ -33,6 +34,7 @@
 				<element value="md_site_guards"/>
 				<element value="md_wecom_notify"/>
 				<element value="md_kb_endpoint"/>
+				<element value="md_chat_email"/>
 			</property>
 		</properties>
 	</rule>
