@@ -939,3 +939,22 @@ chinese / stainless / panels / perforated / expanded）、`faqs`、`about-us`、
 
 `ConfigTest` 的写死断言改成只 pin `pages` 这一条，完整性交给新测试；
 `SeoCommandTest` 的夹具改为**从表派生**，不再手抄。
+
+#### 9.15.3 线上读回（部署 `20261028T211251312398Z-0757e16`）
+
+部署前先拍了基线，否则「现在是 301」无法排除它本来就该是 301：
+
+| 阶段 | 13 个 URL |
+|---|---|
+| 部署前 | **13/13 = 404** |
+| 部署后 | **13/13 = 301**，且每个目标与预期逐字一致 |
+| 跟随跳转 | **13/13 = 200**（目标页真的承载内容，不是二次错误） |
+
+目标逐一核对：`/about-us/`、`/chinese-style-artistic-screens/`、`/custom-metal-divider-screens/`、
+`/expanded-metal-panels/`、`/faqs/`、`/glass-hybrid-screens/`、
+`/laser-cut-geometric-metal-screens/`、`/laser-cut-panels/`、`/manufacturing-process/`、
+`/outdoor-privacy-landscape-screens/`、`/perforated-panels/`、`/project-gallery/`、
+`/stainless-steel-screens/`。
+
+另核查迁移期留下的 9 条多余记录（`pages/balcony-terrace-privacy-screens` 等）：它们在**旧站
+本来就返回 301**，新站同样 301，处理对等，不需要改动。这也印证补的 13 条不多不少。
