@@ -70,6 +70,8 @@ final class SitemapDedupe {
 	 * @return string The document without entries for empty post types.
 	 */
 	public function drop_empty_type_entries( string $xml ): string {
+		$empties = array();
+
 		foreach ( array( 'post', 'product', 'page' ) as $type ) {
 			if ( ! \post_type_exists( $type ) ) {
 				continue;
@@ -78,12 +80,45 @@ final class SitemapDedupe {
 			if ( isset( $counts->publish ) && (int) $counts->publish > 0 ) {
 				continue;
 			}
+			$empties[] = $type;
+		}
+
+		// Taxonomies need the same treatment, and the first version of this
+		// method forgot them: measured on production 2026-10-29,
+		// `category-sitemap1.xml` answered with zero `<loc>` (the only category
+		// is `Uncategorized`, count 0) and `sitemaps.xml` still listed it. A
+		// post type is not the only container a sitemap can be built from.
+		foreach ( array( 'category', 'product_cat', 'post_tag' ) as $taxonomy ) {
+			if ( ! \taxonomy_exists( $taxonomy ) ) {
+				continue;
+			}
+			$terms = \get_terms(
+				array(
+					'taxonomy'   => $taxonomy,
+					'hide_empty' => false,
+				)
+			);
+			if ( ! \is_array( $terms ) ) {
+				continue;
+			}
+			$posts = 0;
+			foreach ( $terms as $term ) {
+				$posts += (int) $term->count;
+			}
+			if ( $posts > 0 ) {
+				continue;
+			}
+			$empties[] = $taxonomy;
+		}
+
+		foreach ( $empties as $slug ) {
 			$xml = (string) \preg_replace(
-				'#<sitemap>\s*<loc>[^<]*/' . \preg_quote( $type, '#' ) . '-sitemap\d*\.xml</loc>.*?</sitemap>#s',
+				'#<sitemap>\s*<loc>[^<]*/' . \preg_quote( $slug, '#' ) . '-sitemap\d*\.xml</loc>.*?</sitemap>#s',
 				'',
 				$xml
 			);
 		}
+
 		return $xml;
 	}
 

@@ -118,6 +118,13 @@ final class SitemapDedupeTest extends TestCase {
 				return $counts;
 			}
 		);
+		$this->mockTaxonomies(
+			array(
+				'category'    => 0,
+				'product_cat' => 146,
+				'post_tag'    => 0,
+			)
+		);
 
 		$out = ( new SitemapDedupe() )->drop_empty_type_entries( $index );
 
@@ -145,9 +152,73 @@ final class SitemapDedupeTest extends TestCase {
 				return $counts;
 			}
 		);
+		$this->mockTaxonomies(
+			array(
+				'category'    => 3,
+				'product_cat' => 146,
+				'post_tag'    => 0,
+			)
+		);
 
 		$out = ( new SitemapDedupe() )->drop_empty_type_entries( $index );
 
 		$this->assertStringContainsString( 'post-sitemap1.xml', $out );
+	}
+
+	/**
+	 * Stubs the taxonomy lookups the index filter makes.
+	 *
+	 * @param array<string, int> $posts_per_term Sum of term counts, per taxonomy.
+	 */
+	private function mockTaxonomies( array $posts_per_term ): void {
+		WP_Mock::userFunction( 'taxonomy_exists' )->andReturn( true );
+		WP_Mock::userFunction( 'get_terms' )->andReturnUsing(
+			static function ( array $args ) use ( $posts_per_term ) {
+				$count = $posts_per_term[ (string) ( $args['taxonomy'] ?? '' ) ] ?? 0;
+				if ( 0 === $count ) {
+					return array();
+				}
+				$term        = new \stdClass();
+				$term->count = $count;
+				return array( $term );
+			}
+		);
+	}
+
+	/**
+	 * A taxonomy with no posts in any term also leaves the index.
+	 *
+	 * The first version of the filter walked post types only, and
+	 * `category-sitemap1.xml` answered with zero `<loc>` while staying in the
+	 * index — the only category is `Uncategorized` with a count of 0 (measured
+	 * on production 2026-10-29). A post type is not the only container a
+	 * sitemap is built from.
+	 */
+	public function test_an_empty_taxonomy_leaves_the_index(): void {
+		$index = '<sitemapindex>'
+			. '<sitemap><loc>https://site.test/category-sitemap1.xml</loc></sitemap>'
+			. '<sitemap><loc>https://site.test/product_cat-sitemap1.xml</loc></sitemap>'
+			. '</sitemapindex>';
+
+		WP_Mock::userFunction( 'post_type_exists' )->andReturn( true );
+		WP_Mock::userFunction( 'wp_count_posts' )->andReturnUsing(
+			static function () {
+				$counts          = new \stdClass();
+				$counts->publish = '5';
+				return $counts;
+			}
+		);
+		$this->mockTaxonomies(
+			array(
+				'category'    => 0,
+				'product_cat' => 9,
+				'post_tag'    => 0,
+			)
+		);
+
+		$out = ( new SitemapDedupe() )->drop_empty_type_entries( $index );
+
+		$this->assertStringNotContainsString( 'category-sitemap1.xml', $out, 'a taxonomy with zero posts anywhere is not worth indexing' );
+		$this->assertStringContainsString( 'product_cat-sitemap1.xml', $out, 'a taxonomy with posts keeps its sitemap' );
 	}
 }
