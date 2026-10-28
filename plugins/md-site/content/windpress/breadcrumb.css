@@ -150,6 +150,13 @@ padding: 0 20px;
 display: flex;
 justify-content: flex-start;
 }
+/* The collections breadcrumb sits on the dark page surface, not on white.
+   Measured 2026-10-29: the row's own backdrop samples at rgb(18,18,18) while
+   every `.clb__*` text colour was #000 — a ratio near 1.1:1, i.e. black on a
+   near-black band. These four declarations were carried over from the white
+   `.breadcrumb__*` band above, which really is white (that one keeps #000 and
+   is correct). The old site has no `.clb__*` markup at all, so there is no
+   replica value to match; the colours below follow the page's own tokens. */
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__list {
 display: flex;
 align-items: center;
@@ -160,21 +167,21 @@ padding: 0;
 font-family: "Inter", sans-serif;
 font-size: 13px;
 line-height: 20px;
-color: #000;
+color: rgba(255, 255, 255, 0.62);
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link {
-color: #000;
+color: rgba(255, 255, 255, 0.62);
 text-decoration: none;
 transition: color 0.2s ease;
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link:hover {
-color: #000;
+color: #ffffff;
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__current {
-color: #000;
+color: #ffffff;
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__sep {
-color: #000;
+color: rgba(255, 255, 255, 0.34);
 font-size: 10px;
 }
 @media (max-width: 767px) {
