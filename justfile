@@ -134,6 +134,17 @@ narrow *args:
 spacing *args:
     cd "{{ justfile_directory() }}" && /opt/homebrew/opt/python@3.12/bin/python3.12 tools/audit/spacing.py {{ args }}
 
+# Text that does not separate from the band behind it. Two things this has to
+# get right, both learned the hard way: a gradient is paint (reading only
+# backgroundColor walked past gradient bands to a white ancestor and reported
+# white-on-white), and gradient-clipped text takes its colour from the gradient,
+# so its computed colour says nothing. --self-check plants one legible and one
+# invisible paragraph on the same dark band and fails unless the rule tells
+# them apart.
+[positional-arguments]
+contrast *args:
+    cd "{{ justfile_directory() }}" && /opt/homebrew/opt/python@3.12/bin/python3.12 tools/audit/contrast.py {{ args }}
+
 # Install the SEOPress configuration plane into the instance (spec 22,
 # ticket #34: title/description templates, noindex faces, sitemap, robots.txt,
 # knowledge graph, schema builder posts, /pages redirect, page metas). With

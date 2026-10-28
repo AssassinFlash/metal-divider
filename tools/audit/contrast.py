@@ -1,0 +1,248 @@
+#!/usr/bin/env python3
+"""Find text whose colour does not separate from what sits behind it.
+
+The site is dark, and its text is mostly white or a translucent white — so a
+"is this readable" question is really "is this readable *on that band*". Two
+mistakes made an earlier hand-run of this measurement useless, and both are
+designed out here:
+
+  * **Only `backgroundColor` was read.** A band painted with
+    `background: linear-gradient(...)` keeps `backgroundColor: rgba(0,0,0,0)`,
+    so the walk skipped it and reached a white ancestor: white text on white
+    read as 1:1. The first sweep reported 110 problems; 106 of them were this.
+  * **Gradient text was counted as low contrast.** A headline using
+    `background-clip: text` with `-webkit-text-fill-color: transparent` takes
+    its colour from a gradient, not from `color`. Those render bright; the
+    computed `color` is meaningless for them.
+
+So the backdrop walk accepts a gradient's first stop as paint, and any element
+with `background-clip: text` is skipped and *reported as skipped* rather than
+silently dropped.
+
+The threshold is WCAG AA: 4.5:1 for body text, 3:1 for large text (24px, or
+18.66px bold).
+
+Real Chrome through Playwright, because the measurement needs computed styles
+at a real viewport. Profile leftovers are reclaimed the same way the other
+audits do it.
+
+Usage:
+    python3 tools/audit/contrast.py --width 1440
+    python3 tools/audit/contrast.py --self-check
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+from playwright.sync_api import sync_playwright
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from narrow_viewport import PAGES, reclaim_profiles  # noqa: E402
+
+PROBE = r"""() => {
+  const parse = (c) => {
+    const m = String(c || '').match(/rgba?\(([^)]+)\)/);
+    if (!m) return null;
+    const p = m[1].split(',').map(Number);
+    return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+  };
+  const lum = ({ r, g, b }) => {
+    const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  };
+  const blend = (fg, bg) => ({
+    r: fg.r * fg.a + bg.r * (1 - fg.a),
+    g: fg.g * fg.a + bg.g * (1 - fg.a),
+    b: fg.b * fg.a + bg.b * (1 - fg.a),
+    a: 1,
+  });
+  const firstStop = (img) => {
+    const m = String(img || '').match(/rgba?\([^)]+\)/);
+    return m ? parse(m[0]) : null;
+  };
+  // Walk outward and composite each translucent layer over the next one.
+  // Returning only a fully opaque layer skipped a gold button painted at
+  // `rgba(212,175,55,0.9)` and continued to a black gradient behind it, so its
+  // black label read as 1:1 when it is really about 9:1 (measured 2026-10-29).
+  const backdrop = (el) => {
+    const layers = [];
+    let n = el;
+    while (n && n !== document.documentElement) {
+      const cs = getComputedStyle(n);
+      if (cs.backgroundImage && cs.backgroundImage !== 'none') {
+        const g = firstStop(cs.backgroundImage);
+        if (g) {
+          layers.push(g);
+          if (g.a >= 0.99) break;
+        }
+      }
+      const c = parse(cs.backgroundColor);
+      if (c && c.a > 0) {
+        layers.push(c);
+        if (c.a >= 0.99) break;
+      }
+      n = n.parentElement;
+    }
+    let base = { r: 20, g: 20, b: 20, a: 1 };
+    const body = parse(getComputedStyle(document.body).backgroundColor);
+    if (body && body.a >= 0.99) base = body;
+    // Composite from the deepest layer outward.
+    for (let i = layers.length - 1; i >= 0; i--) {
+      const layer = layers[i];
+      base = {
+        r: layer.r * layer.a + base.r * (1 - layer.a),
+        g: layer.g * layer.a + base.g * (1 - layer.a),
+        b: layer.b * layer.a + base.b * (1 - layer.a),
+        a: 1,
+      };
+    }
+    return base;
+  };
+
+  const findings = [];
+  let skippedGradientText = 0;
+  const scope = document.querySelector('main') || document.body;
+  for (const el of scope.querySelectorAll('p, li, h1, h2, h3, h4, span, a, button, td, th')) {
+    const text = (el.innerText || '').trim();
+    if (text.length < 12) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 40 || r.height < 8) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.5) continue;
+    // Gradient-clipped text paints from its gradient; `color` does not describe it.
+    const clip = cs.webkitBackgroundClip || cs.backgroundClip;
+    const fill = cs.webkitTextFillColor || '';
+    if (clip === 'text' || /rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/.test(fill)) {
+      skippedGradientText += 1;
+      continue;
+    }
+    let fg = parse(cs.color);
+    if (!fg) continue;
+    const bg = backdrop(el);
+    if (fg.a < 1) fg = blend(fg, bg);
+    const l1 = lum(fg);
+    const l2 = lum(bg);
+    const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    const size = parseFloat(cs.fontSize);
+    const bold = (parseInt(cs.fontWeight, 10) || 400) >= 700;
+    const need = size >= 24 || (size >= 18.66 && bold) ? 3.0 : 4.5;
+    if (ratio >= need) continue;
+    findings.push({
+      text: text.slice(0, 44),
+      cls: (el.className || '').toString().slice(0, 52),
+      color: cs.color,
+      backdrop: `rgb(${Math.round(bg.r)}, ${Math.round(bg.g)}, ${Math.round(bg.b)})`,
+      ratio: +ratio.toFixed(2),
+      need,
+      size: +size.toFixed(1),
+    });
+  }
+  return JSON.stringify({ findings, skippedGradientText });
+}"""
+
+# Two paragraphs on a dark surface: one legible, one legible only to its author.
+# A rule that cannot separate them is not measuring contrast.
+FIXTURE = """() => {
+  const host = document.createElement('section');
+  host.style.cssText = 'background:rgb(18,18,18);padding:20px;';
+  const ok = document.createElement('p');
+  ok.id = 'md-contrast-ok';
+  ok.style.cssText = 'color:rgb(255,255,255);font-size:16px;margin:0 0 12px;';
+  ok.textContent = 'White words on a dark band: must not be reported.';
+  const bad = document.createElement('p');
+  bad.id = 'md-contrast-bad';
+  bad.style.cssText = 'color:rgb(0,0,0);font-size:16px;margin:0;';
+  bad.textContent = 'Black words on a dark band: must be reported.';
+  host.appendChild(ok);
+  host.appendChild(bad);
+  document.querySelector('main').appendChild(host);
+  return true;
+}"""
+
+
+def self_check(page, base: str) -> int:
+    """Prove the rule separates legible text from invisible text."""
+    page.goto(f"{base}/collections/", wait_until="load", timeout=60000)
+    page.evaluate(FIXTURE)
+    data = json.loads(page.evaluate(PROBE))
+    texts = " ".join(f["text"] for f in data["findings"])
+    cases = [
+        ("black-on-black", "Black words on a dark band" in texts, True),
+        ("white-on-black", "White words on a dark band" in texts, False),
+    ]
+    failed = 0
+    for name, got, want in cases:
+        ok = got == want
+        failed += 0 if ok else 1
+        print(f"  {'ok  ' if ok else 'FAIL'} {name:16} reported={str(got):5} want={str(want):5}")
+    return failed
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--width", type=int, default=1440)
+    parser.add_argument("--base", default="https://metal-divider.com")
+    parser.add_argument("--pages", nargs="+", default=[p for _, p in PAGES])
+    parser.add_argument("--out", default="/tmp/md-contrast")
+    parser.add_argument("--self-check", action="store_true")
+    args = parser.parse_args()
+
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+
+    with sync_playwright() as play:
+        browser = play.chromium.launch(channel="chrome", headless=False)
+        context = browser.new_context(
+            viewport={"width": args.width, "height": 920}, device_scale_factor=1
+        )
+        page = context.new_page()
+
+        if args.self_check:
+            print(f"contrast self-check at {args.base}")
+            failed = self_check(page, args.base)
+            context.close()
+            browser.close()
+            reclaim_profiles()
+            print("self-check FAILED" if failed else "self-check passed")
+            return 1 if failed else 0
+
+        results = []
+        total = 0
+        for path in args.pages:
+            url = f"{args.base}{path}?mdaudit={__import__('time').time_ns()}"
+            entry: dict = {"path": path}
+            try:
+                page.goto(url, wait_until="load", timeout=60000)
+                page.evaluate(
+                    "() => new Promise(d => { let y = 0; const s = () => {"
+                    " y += innerHeight; scrollTo(0, y);"
+                    " if (y < document.documentElement.scrollHeight)"
+                    " setTimeout(s, 40); else { scrollTo(0, 0);"
+                    " setTimeout(d, 250); } }; s(); })"
+                )
+                data = json.loads(page.evaluate(PROBE))
+                entry.update(data)
+            except Exception as exc:  # noqa: BLE001 - a page that fails is data
+                entry["error"] = str(exc)
+            results.append(entry)
+            n = len(entry.get("findings", []))
+            total += n
+            mark = "" if n == 0 else f"  {n} low-contrast"
+            print(f"{path:56} skipped-gradient={entry.get('skippedGradientText', '?')}{mark}", flush=True)
+        context.close()
+        browser.close()
+
+    reclaim_profiles()
+    (out / "contrast.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
+    print(f"\n{total} low-contrast text run(s) across {len(results)} page(s)")
+    print(f"wrote {out / 'contrast.json'}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
