@@ -621,8 +621,9 @@ opencli 真 Chrome、未登录访客、`visibilityState=visible` 下实测：
 - 打开搜索：`role=dialog`、`aria-modal=true`，初始焦点在搜索输入框。
 - 输入 `leaf` 出现建议后，第一次 Escape：建议关闭、弹层仍打开、焦点回输入框。
 - 第二次 Escape：弹层关闭、焦点回 Search 触发按钮、页面 scroll lock 解除。
-- 连续 14 次 Tab 与一次 Shift+Tab：焦点始终留在弹层内。
-- 实测窗口 `innerWidth=701`，不把这组键盘行为证据冒写成 1440。
+- 连续 14 次 Tab 与一次 Shift+Tab：焦点始终留在弹层内（`innerWidth=701`）。
+- 真 1440 复测：6 个正向 Tab 站与反向 Shift+Tab 均不离开弹层，两次 Escape 行为相同。
+  证据 `desktop-1440-search-open.png` 与 `desktop-1440-search.json`，未新建窗口。
 
 守卫 `test_search_escape_dismisses_suggestions_before_the_dialog` 在临时移除
 `stopPropagation()` 时按预期失败，恢复后通过。`just php-test` 为 405 + 77 + 6 + 26
