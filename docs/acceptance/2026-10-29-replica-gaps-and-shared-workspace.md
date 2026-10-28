@@ -1086,3 +1086,27 @@ chinese / stainless / panels / perforated / expanded）、`faqs`、`about-us`、
 今天最后一次 `php.log` 写入是 28 日 17:50，早于今天全部部署，说明**今天的改动没有产生任何
 站点侧 PHP 错误**。这条与「部署 verify 全绿」「55 个 URL 读回正确」相互独立，
 是第三处佐证。
+
+### 9.19 结构化数据抽查（业主 2026-10-29）
+
+八个页型的 JSON-LD 全部可解析，**零 `INVALID_JSON`**：
+
+| 页型 | 页面 | 块数 | 类型 |
+|---|---|---:|---|
+| 首页 | `/` | 1 | Organization |
+| 目录 | `/shop/` | 2 | BreadcrumbList, ItemList |
+| FAQ | `/faqs/` | 2 | FAQPage, BreadcrumbList |
+| 系列 | `/collections/pattern-abstract/` | 1 | BreadcrumbList |
+| PDP | `/pattern/agave-…/` | 2 | Product, BreadcrumbList |
+| About / 画廊 / 询盘 | 各自 | 1 | BreadcrumbList |
+
+PDP 的 `Product` 抽查：`name`、`brand`、`image`（数组）、`description`、`sku`、
+`material`、`additionalProperty`、`potentialAction` 齐全；**`offers` 缺席**。
+
+`offers` 缺席是**有意的**，不是缺字段：`SchemaFilters::product()` 的注释写明
+「the price is empty by ruling and offers is therefore never asserted」，转换路径以
+`QuoteAction` 表达。本项目不交易、价格展示态为 $0，补 `offers` 等于向 Google 断言一个
+不存在的报价——那是虚假标注，比缺字段更糟。此项**不改**。
+
+代价要说清：Google 的 Rich Results 会把没有 `offers` 的 `Product` 报为「缺少字段」。
+这是「不交易」这一事实的必然结果，不是可以靠加字段消除的问题。
