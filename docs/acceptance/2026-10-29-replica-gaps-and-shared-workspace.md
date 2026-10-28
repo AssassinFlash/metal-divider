@@ -1677,3 +1677,46 @@ luminance: min=0 p5=18 median=18 max=255
 
 判断依据是实测对比度，不是「看到 `#000` 就报」。这与本仓库记的
 「判据要测目标量」一致：`#000` 本身不是缺陷，`#000` 落在什么颜色上才是。
+
+### 9.34 隐私政策与实际数据实践的核对（业主 2026-10-29，此前未验）
+
+隐私页最容易出的问题是**写着已经不存在的东西**（例如 CookieYes、WAF），或者
+**漏了正在使用的东西**。逐项实测：
+
+| 关键词 | 页面 | 实际情况 | 判定 |
+|---|---|---|---|
+| `CookieYes` | **absent** | CookieYes 不在站上 | ✅ 一致 |
+| `WAF` | **absent** | 无前置 CDN/WAF | ✅ 一致 |
+| `pattern list`（图案清单） | **absent** | 站点无图案清单机制 | ✅ 一致 |
+| `Turnstile` | PRESENT | 询盘表单使用 | ✅ 一致 |
+| `Hostinger` | PRESENT | 托管方 | ✅ 一致 |
+| `CDN` | PRESENT | 见下 | ✅ 一致 |
+
+9 个章节结构完整（Who we are / What we collect / Why & legal basis / Cookies /
+Sharing / Retention / Cross-border / Your rights / Children-security-contact），
+正文 5,480 字符。
+
+#### 9.34.1 关于 CDN 那一段写得准确
+
+页面原文：
+
+> Hostinger hosts the site and serves it through its CDN. Cloudflare is not that
+> CDN: when the inquiry form's spam check runs, Cloudflare receives only a
+> one-time Turnstile token and, if known, the IP address…
+
+这与 `AGENTS.md` 的裁定完全一致：**无前置 CDN/Cloudflare，Cloudflare 的唯一身份是
+Turnstile 挂件**。政策明确区分了「托管方的 CDN」与「Cloudflare 不是那个 CDN」，
+没有把 Turnstile 误写成 WAF 或 CDN。
+
+#### 9.34.2 一处需要业主回答的事实：5 年保留期
+
+页面第 6 节写「Inquiry records are kept for **5 years** — the tracking cycle of a
+B2B project」。
+
+`GOAL.md:106` 记的是「询盘回复时限、**隐私保留 5 年**仍未答」，`GOAL.md:125` 记
+「5 年保留期和法域**未改**」。也就是说这个 5 年是从旧站沿用的，**业主从未确认过**。
+
+同一处还有「询盘回复时限」——`GOAL.md` 记旧站同时有 `one business day` /
+`within 24 hours` / `same day` 三种说法，也一直未答。
+
+这两项都属于「只有业主知道的业务事实」，我不编造，列进待确认。
