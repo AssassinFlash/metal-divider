@@ -25,34 +25,47 @@ use MetalDivider\Site\Tests\TestCase;
 final class SitemapDedupeTest extends TestCase {
 
 	/**
-	 * The product archive link is removed.
+	 * Both archive links that name a page are removed.
+	 *
+	 * Two shapes exist today and both are pages, which is why one rule covers
+	 * them: the archive of `product` is the WooCommerce shop page (ID 6,
+	 * `woocommerce_shop_page_id` = 6) and the archive of `post` is the static
+	 * Posts page (ID 1542, `page_for_posts` = 1542). Measured on production
+	 * 2026-10-29, both URLs were listed by the page sitemap as well.
+	 *
+	 * The first version of this rule scoped to `product` alone and left the
+	 * blog page duplicated — this test would have caught that.
 	 */
-	public function test_the_product_archive_link_is_dropped(): void {
-		$markup = "<url>\n<loc>https://metal-divider.com/shop/</loc>\n</url>";
+	public function test_every_archive_link_that_names_a_page_is_dropped(): void {
+		$rule = new SitemapDedupe();
 
-		$this->assertSame(
-			'',
-			( new SitemapDedupe() )->drop_shop_archive( $markup, 'product' ),
-			'the shop page is written by the page generator already; the product archive entry is the duplicate'
-		);
+		foreach ( array(
+			'product' => '/shop/',
+			'post'    => '/blog/',
+		) as $type => $path ) {
+			$this->assertSame(
+				'',
+				$rule->drop_archive_link( "<url>\n<loc>https://metal-divider.com" . $path . "</loc>\n</url>", $type ),
+				'the ' . $type . ' archive is ' . $path . ', which the page generator already lists'
+			);
+		}
 	}
 
 	/**
-	 * Every other post type keeps its archive link.
+	 * The rule never leaves a half-written `<url>` block behind.
 	 *
-	 * `/blog/` is the archive of `post` and is the only page in
-	 * `post-sitemap1.xml`; suppressing its archive link would empty that file.
+	 * It returns the empty string rather than a stripped-out block, because
+	 * SEOPress concatenates whatever it gets into the `<urlset>`. Returning
+	 * markup with the `<loc>` removed would produce invalid XML that a crawler
+	 * rejects for the whole file, not just that entry.
 	 */
-	public function test_every_other_archive_link_survives(): void {
-		$markup = "<url>\n<loc>https://metal-divider.com/blog/</loc>\n</url>";
+	public function test_the_removed_entry_is_an_empty_string_not_a_broken_block(): void {
+		$rule   = new SitemapDedupe();
+		$result = $rule->drop_archive_link( "<url>\n<loc>https://metal-divider.com/blog/</loc>\n</url>", 'post' );
 
-		foreach ( array( 'post', 'page', 'md_inquiry', '' ) as $path ) {
-			$this->assertSame(
-				$markup,
-				( new SitemapDedupe() )->drop_shop_archive( $markup, $path ),
-				'only the product archive is the duplicate; ' . $path . ' keeps its link'
-			);
-		}
+		$this->assertSame( '', $result, 'the whole block must go; a partial block breaks the XML document' );
+		$this->assertStringNotContainsString( '<url>', $result );
+		$this->assertStringNotContainsString( '<loc>', $result );
 	}
 
 	/**

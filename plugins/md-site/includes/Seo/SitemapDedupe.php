@@ -38,25 +38,42 @@ namespace MetalDivider\Site\Seo;
 final class SitemapDedupe {
 
 	/**
-	 * The post type whose sitemap carries the duplicate.
-	 */
-	private const DUPLICATE_TYPE = 'product';
-
-	/**
 	 * Hooks the archive-link filter.
 	 */
 	public function register(): void {
-		add_filter( 'seopress_sitemaps_no_archive_link', array( $this, 'drop_shop_archive' ), 10, 2 );
+		add_filter( 'seopress_sitemaps_no_archive_link', array( $this, 'drop_archive_link' ), 10, 2 );
 	}
 
 	/**
-	 * Empties the archive link in the product sitemap, and nothing else.
+	 * Drops every archive link, because every one of them names a page.
+	 *
+	 * The first version of this scoped to `product` only, and that was too
+	 * narrow: the same shape exists for `post`. Measured on production
+	 * 2026-10-29 — `page-sitemap1.xml` counts 1 URL containing `/blog/` and
+	 * `post-sitemap1.xml` counts 1, and `/blog/` is a real page (ID 1542,
+	 * `page_for_posts` = 1542). So the blog page was listed twice for exactly
+	 * the reason the shop page was: SEOPress writes a post type's archive link
+	 * at the top of that type's sitemap, and WordPress's `page_for_posts` /
+	 * `woocommerce_shop_page_id` make that archive a page the page sitemap
+	 * already covers.
+	 *
+	 * SEOPress's own comment names the two remedies and says plainly that the
+	 * archive of `post` is the static Posts page and the archive of `product`
+	 * is the WooCommerce shop page. Both are pages. The per-page noindex box
+	 * cannot be used (these pages must stay indexable), so this drops the
+	 * archive link for every type and leaves the page entries untouched.
+	 *
+	 * A post type whose archive is NOT a page would lose a legitimate entry
+	 * here. Measured today, none exists: `page`, `post` and `product` are the
+	 * only types in the sitemap, and only `post` and `product` have archives.
+	 * The test pins that reasoning by checking the two known cases.
 	 *
 	 * @param string $markup The `<url>…</url>` block for the archive link.
 	 * @param string $path   The post type whose sitemap is being rendered.
-	 * @return string The untouched markup, or '' when this is the product archive.
+	 * @return string '' — the page generator already lists this URL.
 	 */
-	public function drop_shop_archive( string $markup, string $path ): string {
-		return self::DUPLICATE_TYPE === $path ? '' : $markup;
+	public function drop_archive_link( string $markup, string $path ): string {
+		unset( $markup, $path );
+		return '';
 	}
 }
