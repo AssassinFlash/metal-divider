@@ -65,6 +65,42 @@ final class ChatLauncherTest extends TestCase {
 	}
 
 	/**
+	 * The deploy writes the host list as an option; it replaces the default
+	 * list wholesale, so production's cutover names every host it wants.
+	 */
+	public function test_host_option_replaces_the_default_list(): void {
+		$GLOBALS['md_mu_test_options']['md_chat_launcher_hosts'] = array( 'metal-divider.com', 'www.metal-divider.com' );
+		self::assertTrue( md_chat_launcher_should_print( 'metal-divider.com', '/', false, false ) );
+		self::assertTrue( md_chat_launcher_should_print( 'www.metal-divider.com', '/pattern/agave/', false, false ) );
+		self::assertFalse( md_chat_launcher_should_print( 'staging.metal-divider.com', '/', false, false ) );
+	}
+
+	/**
+	 * A malformed option (empty or non-string entries) falls back to the
+	 * built-in staging list instead of widening or killing the gate.
+	 */
+	public function test_malformed_host_option_falls_back_to_the_default(): void {
+		foreach ( array( array(), array( 42 ), array( 'metal-divider.com', 7 ) ) as $bad ) {
+			$GLOBALS['md_mu_test_options']['md_chat_launcher_hosts'] = $bad;
+			self::assertTrue( md_chat_launcher_should_print( 'staging.metal-divider.com', '/', false, false ), 'staging must stay on for a malformed option' );
+			self::assertFalse( md_chat_launcher_should_print( 'metal-divider.com', '/', false, false ), 'a malformed option must not widen the gate' );
+		}
+	}
+
+	/**
+	 * The filter still applies on top of the option, so code-level overrides
+	 * keep working after a deploy writes the option.
+	 */
+	public function test_filter_stacks_on_top_of_the_host_option(): void {
+		$GLOBALS['md_mu_test_options']['md_chat_launcher_hosts'] = array( 'staging.metal-divider.com' );
+		$adder = static fn ( array $hosts ): array => array_merge( $hosts, array( 'metal-divider.com' ) );
+		add_filter( 'md_chat_launcher_hosts', $adder );
+		self::assertTrue( md_chat_launcher_should_print( 'metal-divider.com', '/', false, false ) );
+		self::assertTrue( md_chat_launcher_should_print( 'staging.metal-divider.com', '/', false, false ) );
+		remove_filter( 'md_chat_launcher_hosts', $adder );
+	}
+
+	/**
 	 * A host may be added by filter for a future production cutover.
 	 */
 	public function test_host_list_is_filterable(): void {
@@ -136,6 +172,6 @@ final class ChatLauncherTest extends TestCase {
 	 * Reset the shared test fixtures.
 	 */
 	protected function tearDown(): void {
-		unset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'], $GLOBALS['md_mu_test_enqueues'], $GLOBALS['md_mu_test_is_admin'], $GLOBALS['md_mu_test_is_feed'] );
+		unset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'], $GLOBALS['md_mu_test_enqueues'], $GLOBALS['md_mu_test_is_admin'], $GLOBALS['md_mu_test_is_feed'], $GLOBALS['md_mu_test_options']['md_chat_launcher_hosts'] );
 	}
 }

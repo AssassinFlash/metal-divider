@@ -42,15 +42,30 @@ function md_chat_launcher_should_print( string $host, string $path, bool $is_adm
 
 	/**
 	 * The hosts whose front end carries the launcher. Production stays out
-	 * until its cutover ticket opts in.
+	 * until its deploy writes the `md_chat_launcher_hosts` option (the same
+	 * gate the review site already passes); an unset or malformed option
+	 * falls back to the built-in staging list, so a bad option value can
+	 * never widen the gate — only the option and the filter can.
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0 Option override ahead of the filter.
+	 *
 	 * @param string[] $hosts Allowlisted hostnames.
 	 */
-	$hosts = apply_filters(
-		'md_chat_launcher_hosts',
-		array( 'staging.metal-divider.com', 'localhost' )
-	);
+	$option = get_option( 'md_chat_launcher_hosts', array() );
+	$valid  = is_array( $option ) && array() !== $option
+		&& ! in_array( false, array_map( 'is_string', $option ), true );
+	$hosts  = $valid
+		? $option
+		: array( 'staging.metal-divider.com', 'localhost' );
+
+	/**
+	 * This hook still applies on top of the option.
+	 *
+	 * @since 1.1.0 Option override ahead of the filter.
+	 *
+	 * @param string[] $hosts Allowlisted hostnames.
+	 */
+	$hosts = apply_filters( 'md_chat_launcher_hosts', $hosts );
 	$bare  = strtolower( $host );
 	$port  = strrpos( $bare, ':' );
 	if ( false !== $port ) {
