@@ -522,6 +522,38 @@ final class TemplatesTest extends TestCase {
 	}
 
 	/**
+	 * The gallery says which scenes are renderings.
+	 *
+	 * 18 of 23 cards carried "visualization" in their alt while the page showed
+	 * no such word: a visitor read the whole gallery as completed projects. The
+	 * alt text keeps the disclosure for screen readers, and the visible note
+	 * makes it available to everyone. Every non-project image must carry it.
+	 */
+	public function test_the_gallery_discloses_which_scenes_are_renderings(): void {
+		$source = (string) file_get_contents( Templates::path( 'project-gallery' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+		$text = (string) preg_replace( '/<!--.*?-->/s', "\n", $source );
+		$text = (string) preg_replace( '/<[^>]*>/s', "\n", $text );
+		$this->assertMatchesRegularExpression(
+			'/visualization/i',
+			html_entity_decode( $text ),
+			'the page explains what a visualization label means'
+		);
+
+		preg_match_all( '/\balt="([^"]*)"/i', $source, $alts );
+		$unlabelled = array();
+		foreach ( $alts[1] as $alt ) {
+			if ( '' === trim( $alt ) ) {
+				continue;
+			}
+			if ( false === stripos( $alt, 'visualization' ) && false === stripos( $alt, 'project image' ) ) {
+				$unlabelled[] = $alt;
+			}
+		}
+		$this->assertSame( array(), $unlabelled, 'gallery scenes with neither a visualization nor a project-image label: ' . implode( ' | ', $unlabelled ) );
+	}
+
+	/**
 	 * The four blog faces render their design source, not the source text:
 	 * every Tangible loop/field sits inside the <tangible> processing
 	 * boundary LiveCanvas renders, no de-linker plugin shortcode survives,
