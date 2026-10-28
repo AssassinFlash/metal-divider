@@ -25,6 +25,7 @@ unless `--write` is given; `drill` writes by design and says so.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -160,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
             deployed = steps.deploy(
                 target,
                 repository=repository,
-                staging=_workspace() / "staging",
+                staging=_workspace(repository) / "staging",
                 on_switch=lambda: print("deploy: switch starting", flush=True),
                 snapshot_home=DATA_HOME,
             )
@@ -316,21 +317,42 @@ def _drill(args: argparse.Namespace, repository: Path) -> int:
         target=named_target(f"local:{args.instance}"),
         repository=repository,
         home=DATA_HOME,
-        staging=_workspace() / "staging",
+        staging=_workspace(repository) / "staging",
     )
     record = rehearsal.run()
     record["plan"] = {
         "planned_plugins": list(plan.PLANNED_PLUGINS),
         "staging_mu": plan.STAGING_MU,
     }
-    destination = drill_module.write(record, _workspace() / _today() / "drill.json")
+    destination = drill_module.write(
+        record, _workspace(repository) / _today() / "drill.json"
+    )
     print(f"drill: record written to {destination}")
     return 0
 
 
-def _workspace() -> Path:
-    """Where a step's intermediate files go: outside the repository, beside the backups."""
-    return DATA_HOME / "deploy-workspace"
+def _workspace(repository: Path) -> Path:
+    """Where a step's intermediate files go: outside the repository, beside the backups.
+
+    Scoped per checkout. The staging tree is a build cache keyed by a
+    fingerprint of the source, and two checkouts share neither the source nor
+    the fingerprint — so a shared workspace lets one checkout's staging
+    deploy overwrite the tree the other is about to publish. Measured
+    2026-10-29: a prod deploy from this checkout reported all eleven
+    artifacts `deployed … by rename` with a 0.023 s switch and answered every
+    verify probe 200, while serving the other checkout's bytes throughout.
+    The stamp it wrote was the other checkout's fingerprint, exactly; its own
+    differed. The directory name is a digest of the checkout's absolute path,
+    so two clones never write to the same tree and neither can publish the
+    other's build.
+    """
+    return DATA_HOME / "deploy-workspace" / _checkout_id(repository)
+
+
+def _checkout_id(repository: Path) -> str:
+    """A short stable name for one checkout: the digest of its absolute path."""
+    resolved = str(Path(repository).resolve())
+    return hashlib.sha256(resolved.encode("utf-8")).hexdigest()[:12]
 
 
 def _cache_buster() -> str:
