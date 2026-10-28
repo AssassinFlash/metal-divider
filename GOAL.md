@@ -86,6 +86,33 @@
 
 **待业主提供原图**:`ripples`(480w)、`pebble-creek`(480w)、`naughts-x-plus`、`coconut-dreaming`、上述两张配图。
 
+### 2026-10-28 文案对抗评审:推翻我 9/10 段草案,并暴露三处站点级问题
+
+草案(`docs/copy/2026-10-28-meta-descriptions.md`)送对抗评审后被逐条打回。**评审的证据我全部复核成立**。
+
+**我写的三处假陈述**
+
+| 我写的 | 实际情况(已复核) |
+|---|---|
+| 「Installed architectural metal screens」 | 画廊模板 `visualization` 出现 **20 次**,alt 原文 `"…in a hotel lobby — visualization"`。**是效果图,不是已完工项目** |
+| 「关于图案密度、饰面、安装细节的文章」 | `/blog/` 实测返回 **"No matching posts"**,**一篇文章都没有** |
+| 「technical files ready to download」 | 下载的是 **Zahner 与 Brilliant Architectural 的文件**(竞品):`Architectural-Mesh-Catalog.pdf`、`PerforatedMetalPanels_Datasheet.pdf`、`Drop-Lock-CAD-Details.dwg`、`Moda-Installation-Manual.pdf` 等 8 个 |
+
+**评审还纠正了**:`/about-us/` 未提 "perforated"、`/manufacturing-process/` 无 "pattern lock" 与 "who signs off"、`/custom-screens/` 用了禁用词 "design"、`/collections/` 与家族页会形成 **4 页近似重复**(都抄了首页/目录的 "open area and visual density" 公式)。
+
+**竞品文件是站点级问题,不是文案问题**
+
+```
+旧站 metalpartition.com/pages/faqs   azahner|brilliantarchitectural 8 次
+新站 metal-divider.com/faqs/          同样 8 次,同样 URL
+Zahner 字样出现 8 次,但全部只在 URL 里,无可读署名
+(courtesy / reference library / third-party 均为 0)
+```
+
+旧站把该区块描述为 **"Direct file links instead of modal requests"**——把竞品文件当自家下载直链。**新旧站一致,属原样搬运。**处置需业主定:①保留但署名 ②删除(该区块会空) ③换成本站自有文件(目前不存在)。
+
+**需业主回答的 4 个事实问题**:①询盘页同时有 "one business day"/"within 24 hours"/"same day" 三种时限,摘要用哪个 ②画廊是否**有任何一个**真实项目 ③竞品文件是否获准使用 ④激光切割页同时有 ±0.1mm 与 ±0.03mm,哪个真。
+
 ### 2026-10-28 meta description:页面 9/11 缺、产品 103/146 缺
 
 **实测规模**
@@ -95,11 +122,20 @@
         → 5 页完全没有 meta description
         → 4 页退回标题(8–25 字符:「About Us」「Project Gallery」「FAQs & Downloads」「Manufacturing Process Hub」)
         → 仅 /shop/ 正常(163 字符,来自 archive 模板)
-产品类  146 个产品中 103 个 excerpt 为空
-        → 103 个 PDP 同样没有描述(模板同为 %%post_excerpt%%)
+产品类  ~~146 个产品中 103 个 excerpt 为空 → 103 个 PDP 无描述~~
+        **此判断错误,已撤回。**实测 `_seopress_titles_desc`:
+        **146/146 全部有,且都 ≥100 字符**(抽查五个页面实测 155–162 字符)
 ```
 
-**根因不是配置错,是内容从未写过**:`Config.php` 的 `page` 与 `product` 描述模板都是 `%%post_excerpt%%`,模板本身正确;缺的是 113 段摘要。
+**判据纠错**:我查的是 `post_excerpt`(103 个为空),而 SEOPress 实际读的是
+**`_seopress_titles_desc` meta**(由 `wp md-site seo` 播种)。`%%post_excerpt%%`
+只是模板里的**回退**,有专用 meta 时根本不走它。**一个字段为空 ≠ 功能缺失**,
+没有验证页面实际输出就下了结论。
+
+**真实缺口只是那 10 个页面**:`collections` / `inquiry` / `faqs` / `about-us` /
+`manufacturing-process` / `project-gallery` / `laser-cut-geometric` / `blog` /
+`custom-metal-divider-screens` / `privacy` 的 `_seopress_titles_desc` **全部为空**,
+确实退回了标题(8–25 字符)。
 
 **已起草 10 个页面的描述**(`docs/copy/2026-10-28-meta-descriptions.md`,131–158 字符,全部基于各页真实 H1 与正文,不编造),并列出 5 个待业主确认的问题。**按 AGENTS.md「客户可见文案走对抗评审」,草案未上站。**
 

@@ -87,5 +87,8 @@ How metal-divider.com handles inquiry data: what we collect, why, how long we ke
 3. **`/blog/` 的 "what to send for an accurate quote"** —— 该页实际文章是否覆盖这个主题？
 4. **`/privacy/` 未提 GDPR/LGPD 等具体法域** —— 站点是 B2B 全球站，
    刻意不写死法域，请确认这是想要的口径。
-5. **是否需要为 146 个 PDP 各写描述** —— 目前 PDP 走 `%%post_excerpt%%`，
-   若产品 excerpt 也为空，则 146 页同样缺描述。**这是更大的面，需单独确认。**
+5. ~~是否需要为 146 个 PDP 各写描述~~ —— **不需要，已撤回。**
+   实测 146/146 个产品的 `_seopress_titles_desc` 均已设置且 ≥100 字符
+   （抽查五个实测 155–162 字符）。产品 excerpt 为空是无关的：SEOPress
+   读专用 meta，`%%post_excerpt%%` 只是它的回退。
+   此处曾误判为「103 个 PDP 无描述」，原因是查错了字段。
