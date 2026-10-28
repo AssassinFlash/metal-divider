@@ -3162,16 +3162,34 @@
         return box.value;
       };
 
-      var fillTile = function (node, href, src, alt, label) {
+      var fillTile = function (node, href, src, alt, label, kind) {
         var link = node.querySelector('a') || (node.tagName === 'A' ? node : null);
         var image = node.querySelector('img');
         var name = node.querySelector('.md-search-tile__name, .md-search-hit__name');
         if (link && href) {
           link.href = href;
         }
-        if (image && src) {
-          image.src = src;
-          image.alt = alt || '';
+        if (image) {
+          if (src) {
+            image.src = src;
+            image.alt = alt || '';
+          } else {
+            // A result with no picture must not keep the frame. The WordPress
+            // search API answers with a title, a url and a subtype and no
+            // media, so a page or an article has nothing to put here — leaving
+            // the img in place paints an empty grey box beside the title,
+            // which is the same blank-card defect the replica was rebuilt to
+            // remove. The media wrapper and the img both go; the row keeps its
+            // title and, for non-patterns, gains a kind label.
+            var media = image.closest('.md-search-hit__media, .md-search-tile__media');
+            (media || image).remove();
+            if (kind && name) {
+              var tag = document.createElement('span');
+              tag.className = 'md-search-hit__kind';
+              tag.textContent = kind;
+              name.parentNode.insertBefore(tag, name);
+            }
+          }
         }
         if (name) {
           name.textContent = decodeText(label);
@@ -3241,7 +3259,15 @@
 
         var controller = typeof AbortController === 'function' ? new AbortController() : null;
         inflight = controller;
-        var url = '/wp-json/wc/store/v1/products?per_page=6&search=' + encodeURIComponent(query);
+        // WordPress's own cross-type search, not the store's product search.
+        // The store endpoint only knows products, so a visitor who searched
+        // "manufacturing" — a real page on this site — got `[]` and the
+        // panel's "No patterns match" line, while /wp-json/wp/v2/search
+        // answered with the Manufacturing Process page (measured on
+        // production 2026-10-29). The old site searched products, pages and
+        // articles together, and the field's own placeholder promises a
+        // search of the site, not of the catalogue.
+        var url = '/wp-json/wp/v2/search?per_page=10&search=' + encodeURIComponent(query);
 
         fetch(url, controller ? { signal: controller.signal } : undefined)
           .then(function (response) {
@@ -3255,7 +3281,16 @@
               return;
             }
             inflight = null;
-            paint(rows, query);
+            // The search API carries no media. Keep the pattern thumbnails by
+            // reading them once for the product hits in this response; a page
+            // or article hit renders without a picture (fillTile drops the
+            // frame rather than leaving it empty).
+            hydrateProductThumbs(rows, function (thumbs) {
+              if (inflight !== controller && controller) {
+                return;
+              }
+              paint(rows, query, thumbs);
+            });
           })
           .catch(function (error) {
             // An aborted request is the normal case: a newer query replaced
@@ -3274,7 +3309,44 @@
           });
       };
 
-      var paint = function (rows, query) {
+      // The WordPress search API answers with a title, a url and a subtype;
+      // it carries no media. Only the product hits have a picture worth
+      // showing, and the store endpoint can supply it by id — so one request
+      // for the ids this response names, and nothing at all when it names
+      // none (a search that only matched pages).
+      var hydrateProductThumbs = function (rows, done) {
+        var ids = [];
+        (rows || []).forEach(function (row) {
+          if (row && row.subtype === 'product' && row.id) {
+            ids.push(row.id);
+          }
+        });
+        if (!ids.length) {
+          done({});
+          return;
+        }
+        fetch('/wp-json/wc/store/v1/products?per_page=24&include=' + ids.join(','), { credentials: 'same-origin' })
+          .then(function (response) {
+            return response.ok ? response.json() : [];
+          })
+          .then(function (products) {
+            var byId = {};
+            (products || []).forEach(function (product) {
+              var image = product && product.images && product.images[0] ? product.images[0] : null;
+              if (product && image) {
+                byId[product.id] = image;
+              }
+            });
+            done(byId);
+          })
+          .catch(function () {
+            // No thumbnail is a row without a picture, which fillTile already
+            // renders cleanly. A failed lookup must not empty the results.
+            done({});
+          });
+      };
+
+      var paint = function (rows, query, thumbs) {
         if (results) {
           results.textContent = '';
         }
@@ -3295,12 +3367,12 @@
           emptyNote.hidden = true;
         }
 
-        // Store API already ranked "leaf" with Leaf Vines first. Keep a
-        // name-first sort so a body mention cannot outrank a pattern named
-        // for the query inside the six rows this panel shows.
+        // WordPress ranks by its own relevance. Keep a name-first sort so a
+        // body mention cannot outrank a pattern named for the query inside
+        // the rows this panel shows.
         var needle = query.toLowerCase();
         var score = function (row) {
-          var title = (row.name || row.slug || '').toLowerCase();
+          var title = (row.title || '').toLowerCase();
           if (title.indexOf(needle) === 0) {
             return 0;
           }
@@ -3310,8 +3382,16 @@
           return score(a) - score(b);
         }).slice(0, 6).forEach(function (row) {
           var node = hitTemplate.content.firstElementChild.cloneNode(true);
-          var image = row.images && row.images[0] ? row.images[0] : {};
-          fillTile(node, row.permalink, image.thumbnail || image.src, image.alt || row.name, row.name || row.slug);
+          var image = (thumbs && row.id && thumbs[row.id]) || {};
+          var kind = row.subtype === 'product' ? '' : (row.subtype === 'post' ? 'Article' : 'Page');
+          fillTile(
+            node,
+            row.url,
+            image.thumbnail || image.src,
+            image.alt || row.title,
+            row.title,
+            kind
+          );
           results.appendChild(node);
         });
       };
