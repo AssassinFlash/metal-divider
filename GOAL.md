@@ -1306,3 +1306,55 @@ desk-noise/desk-visual/visitor)、51 已并入分支删、19 个 verify-* 证据
 chat-delete/email/launcher 三文件+md_chat_delete 前缀缺(phpcs 在 delete 上有
 PreparedSQL 批量整改)——Batch 3 工具硬化;④staging 手工 state flip 仅此一次的教训
 已记。impl/162-merge 已推 origin。
+
+## Batch 2(2026-10-29 凌晨,W2 离线演练+staging 追平+入口收敛)
+
+**勘误(Batch 1 新发现①)**:fork(0fb1c8a8)三方对账=**零漂移**——repo/金源/prod 33 文件
+diff -rq 全一致(锚 chat_status.tpl.php md5 350749d…,bust 同 v20261028aj)。此前"repo 停
+v3"是误读:v3 只存在于已回收的 visitor-widget 分支;金源真态早已由 0917c1a 进 repo,
+Batch 1 合并已统一。原"以金源为准对账回收"项撤销,零工作量。
+
+**staging 站点面追平(fork 9d749b9d)**:快照 db-20261028T162910Z(814,345B);permalink
+全对齐 prod(/blog/%postname%/、/pattern/、collections/、product-tag/;注意 wp option
+update 带 --format=json 会把值再解析而失败,去掉即成);三页创建 inquiry(232)/
+collections(233)/blog(234),绑定=md-site Templates.php:42 PAGE_CHOICE=
+lc_use_template_of_slug;18 series term 18/18。**seed-tiles 真根因=
+stg_wc_product_meta_lookup 0 行**(DB 直拷从未填充,wc_get_product_id_by_sku 返 0)→
+`wp wc tool run regenerate_product_lookup_tables --user=1` 后 18 written+幂等——
+Batch 3 给 seed-tiles 加 lookup 空表显式提示。三批演练:164050Z 归档→回滚演练
+(503 隧道瞬断×2,单次 resume 均过)165559Z rolled_back→终批 171122Z-7cf70a8 全绿。
+
+**W2 离线演练(业主裁定 m00578:今夜 W2+明日 W1)=双环境全链贯通**:
+- staging:表单→lh_chat #27→webhook→trigger→REST→连接器 204→**企微卡发出**
+  (sends=[1793208372,1793208403]);zai 验图确认通知条。
+- prod:表单→lh_chat #33→**企微卡发出**(sends=[1793208828]);业主确认三卡全收
+  (99/27/33,m01038)。深链生成机制核验 LINK OK。
+- **修的三个真雷**:①4 行 lh_webhook 在 10-28 金源推送时被洗掉(双环境;恢复配方=
+  docs/deploy/lhc-wecom.md;01:07-01:19 外部会话同步在修,行内容与文档一致,无冲突);
+  ②REST key IP 白名单漏服务器 IPv6 出口(2a02:4780:3f:1898:0:1721:9213:1)→
+  generateautologin 400,已加双环境 lh_abstract_rest_api_key.id=1;③prod
+  lh_chat_config.autologin_data.secret_hash 为空(chat-push 导出按设计打空但
+  "目标侧重生成"对 secret_hash 没做)=管线缺口记 Batch 3,prod 已生成新 64-hex。
+- **误操作已回滚**:曾以 prod 值整包覆盖 staging md_wecom_notify→staging 连接器
+  401/400;已从 staging 自己的 lh_generic_bot_rest_api/lh_abstract_rest_api_key
+  对齐回位(bearer/lhc_api_key/lhc_base_url)。教训:staging 表前缀是 stg_ 不是
+  wp_(早前"staging 无该 option"是错表假阴性);比对 DB 内长 secret 用 64-hex
+  提取后字符串相等法,grep -qF 在折行输出上会假阴性。
+
+**rapls 内联挂件 P1 根因+业主裁定=Option B**:CSP `script-src 'self' …` 拦死
+wp_localize_script 内联配置块(window.raplsaichConfig 不存在→fetch undefined/session
+404,"Server returned non-JSON response",全站)。两线 guards 同严,非回归;10-28
+验证走通的是 LHC iframe 非 rapls 挂件。业主选 B(隐藏 badge 只留 LHC 胶囊):
+raplsaich_settings 的 badge_show_on_home/posts/pages/archives+show_on_mobile 全
+false(双环境,纯配置可逆),cache-miss 读回 wp-ai-chatbot 标记 0 残留、md-chat-launcher
+在位。插件本体未动(AI 能力保留,走 LHC 面的 generic bot 触发器)。
+
+**清理**:测试 chat 删净(staging #27;prod #30-33 含 11 条 lh_msg);staging #9 为
+昨日金源历史数据(Visitor/status 2),非本轮产物,保留。opencli 会话已回收。
+
+**Batch 3 累计清单(刷新)**:①chat-push 补 autologin secret_hash 目标侧重生成;
+②seed-tiles lookup 空表显式提示;③phpcs/phpstan 覆盖 chat mu-plugins 三文件+
+md_chat_delete 前缀(PreparedSQL 批量整改);④deploy forget 通道(卡死 pending 批的
+合规出口);⑤runbook 补 future-changes/rollback 两节;⑥chat-seed manifest 记 LHC
+版本(钉扎);⑦知识缺口读回命令(raplsaich_unanswered_log 消费端);⑧隐私政策补
+企微出境+保留期条款。明日:W1 在线转人工演练(白天)。
