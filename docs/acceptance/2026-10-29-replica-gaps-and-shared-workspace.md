@@ -1720,3 +1720,29 @@ B2B project」。
 `within 24 hours` / `same day` 三种说法，也一直未答。
 
 这两项都属于「只有业主知道的业务事实」，我不编造，列进待确认。
+
+#### 9.33.4 窄视口全站回归：与改动前逐项相同
+
+面包屑改的是 CSS，必须在 390/320 复核。同一判据、同一 32 页清单：
+
+| 视口 | 页数 | `tiny-type` | `img-ratio` | 合计 | 改动前 |
+|---|---:|---:|---:|---:|---:|
+| 390 | 32 | 9 | 2 | **11** | 11 |
+| 320 | 32 | 9 | 6 | **15** | 15 |
+
+**逐项相同，没有回归。** 两档的全部条目仍是此前已核实为设计的那两类
+（11px 胶囊标签、`object-cover` 裁切），面包屑改动没有制造新条目。
+
+#### 9.34.1 补充：Turnstile 的实际请求体与政策一致
+
+政策写 Cloudflare「receives only a one-time Turnstile token and, if known, the IP
+address」。读 `Turnstile::verify()` 确认代码就是这样：
+
+```php
+'response' => $token,          // 一次性 token
+if ( '' !== $ip ) {
+    $body['remoteip'] = $ip;   // 有 IP 才带，没有就不发
+}
+```
+
+**只发这两项，IP 为空时连它也不发。** 政策没有夸大也没有遗漏。
