@@ -825,3 +825,91 @@ BreadcrumbList 正常；FAQ 下载库改动没有破坏结构化数据。
 `description` 与 `og:description` 逐字一致，缓存均 `hit`。
 证据 `/tmp/md-family-desc-readback.json`、`/tmp/md-seo-site-audit.json`。
 审计时统计 171 个唯一描述，即 3 页缺失；另 4 页属短描述，合计 7 页。
+
+## 三十四、清除竞品平均值与无来源承诺
+
+业主核对后指出：这些数字原本是从竞品调研取来、按平均值当作我方事实。全站扫描
+发现同一事实有多个互相矛盾的版本（国家 15+/20+/30+/40+、PVD 饰面 10+/18/20+、
+厂房 12,000m² 与 15,000+ sqm），另有 ISO 认证、500 吨库存、200+ 设计（目录实为
+146 个图案）、24 小时出 mockup 等无来源承诺。
+
+处理：统一改为可证实表述（`Shipped worldwide`、`PVD finishes`、`146 Ready
+Patterns`、`Foshan production floor`），删除 ISO 与库存吨位，盐雾时长/户外寿命
+改为按项目确认。新增守卫 `test_no_unverified_numeric_claims_on_customer_faces`，
+实证把 `15+ Countries` 放回模板会立即失败、移除后通过。
+
+部署 `20261028T144846042734Z-cb4813a` 已归档。生产 6 个代表页（首页、About、
+工艺、定制、FAQ、扩展金属）匿名读回：七类旧表述**全部为 0**，缓存均 `hit`。
+证据 `/tmp/md-claim-readback.json`。
+
+并发部署覆盖：上一次部署完成后生产模板仍为旧字节（md5 与仓库不符），确认是
+另一会话同时部署 CB4813A 造成；按当前 HEAD 重部署后模板 md5 与仓库逐字节一致
+（`25ec73c9…`）。
+
+## 三十五、接管期只读核对：模板一致性、回复口径、全站缺陷扫描
+
+评审团接管期间另一会话在同分支连续部署，发生过一次覆盖，因此本轮只读核对，
+不写代码、不部署。
+
+- **模板一致性**：生产 `livecanvas` 42 个文件（25 页 + 17 partial）与仓库 HEAD
+  md5 逐一比对，**内容差异 0**；先前覆盖已消除。
+- **回复时限口径**：10 个检查面 `one business day` **全站 0 处**，
+  `within 24 hours` 全部覆盖；仅首页与工艺页各有 1 处 `same day`，是 QC 工序的
+  生产耗时，不是回复承诺。证据 `/tmp/md-replytime-readback.json`。
+- **全站缺陷扫描（174 页）**：非 200 为 **0**；字面短代码 **0**；占位符
+  （Lorem/TODO/undefined/null）**0**；空锚点 **0**。唯一命中的每页 1 个
+  `src=""` 定位到 `rapls-ai-chatbot` 隐藏的 `.chatbot-image-preview`，属第三方
+  客服挂件的惰性占位，不在本 GOAL 范围。证据 `/tmp/md-defect-sweep.json`。
+
+## 三十六、390 移动端复验与两条移交缺陷
+
+`overflow.py` 在 390 无法开窗（Chrome 本机最小 578px），改用一次 Playwright
+`channel:'chrome'` 有界面实例复验 7 页（首页、目录、询盘、FAQ、画廊、PDP、
+定制）。全部 `innerWidth=390`、未登录：`scrollWidth` 均为 390、溢出 **0**、
+可见空卡 **0**；`right>391` 的元素都在横向卡片条与装饰层内，不撑开文档宽度。
+证据 `/tmp/md-390/report.json`、`/tmp/md-390/full-*.png`。
+
+控制台只剩两条错误，均定位到第三方 `rapls-ai-chatbot`，已移交 Batch 2，
+本 GOAL 不越界修改：
+
+| 缺陷 | 实测 |
+|---|---|
+| 配置脚本被 CSP 拦截 | `<script id="raplsaich-chatbot-js-extra">` 无 nonce，`script-src-elem` 拦截 `inline`，`api_base` 未生效（首页第 4010 行第 41 列） |
+| `undefined/session` 404 | `chatbot.js?ver=1.21.4…` 的 `init→loadSession→apiRequest` 用相对地址拼接，产生 `/undefined/session` 与 `/custom-metal-divider-screens/undefined/session` |
+
+主站浏览、图案、询盘与 FAQ 下载不依赖该插件；`mdvisitor-launcher.js` 是另一条
+带 `src` 的外部文件，不在本次错误链内。
+
+## 三十七、口径统一后的询盘链路复验（不发信）
+
+口径改为 24 小时后复验整条链，全程未发送任何邮件、未创建测试记录。
+
+- **文案一致性**：仓库 `plugins/`、`mu-plugins/`、`themes/` 中 `one business day`
+  **0 处**；`Emails.php:128` 为客户确认信写 `within 24 hours on business days`；
+  生产 `/inquiry/` 与 `/inquiry/thank-you/` 各 0 处旧口径、分别 8 处与 3 处 24 小时。
+- **表单完整性**：生产 `/inquiry/` 返回 200，16 个 `md_inquiry_*` 字段齐全、
+  nonce 存在、Turnstile 槽存在、confirm 勾选框存在；因 Turnstile 已配置，提交按钮
+  默认 `disabled`（fail-closed）。
+- **校验真的在拦**：提交 name + 非法 email、其余必填缺失的 POST，返回 200、
+  有错误提示、**未跳转** `/inquiry/thank-you/`，询盘记录 **1→1** 未新增。
+- **邮件调度健康**：`md_inquiry_minute` 已注册、`wp_next_scheduled('md_inquiry_mail_tick')`
+  为未来时间、`DISABLE_WP_CRON` 为 false。
+
+下一步真实验收仍需业主按路径走一次完整提交（会产生一封通知与一封确认信），
+本轮按邮件纪律未代发。
+
+## 三十八、画廊效果图披露
+
+画廊 23 个条目里 18 个的 `alt` 已写 `visualization`，1 个写 `project image`，
+但**页面可见文字里一次都没出现**——访客会把整页当成完工项目。另外 5 个条目
+连 `alt` 也没有标注。
+
+处理：页头加一行可见说明（标注 visualization 的是为规格制作的效果图，项目图才是
+完工照片）；补齐 5 个 `alt` 的 `— visualization`，使 23/23 都有标注。守卫
+`test_the_gallery_discloses_which_scenes_are_renderings` 同时要求可见说明存在、
+且每个非项目图必须带标注；实证去掉其中一个标注即失败、恢复后通过。
+
+部署 `20261028T151346839546Z-f55e8fb` 已归档。生产读回：模板 md5 与仓库一致
+（`83eec5b4…`），页面 200、说明可见、缓存 miss→hit；28 个非空 alt 中 24 个带标注，
+余下 4 个是页眉/页脚 logo 与客服挂件的隐藏预览占位，不属画廊图片。
+证据 `/tmp/md-gallery-readback.json`。

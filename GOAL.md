@@ -59,6 +59,25 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-28 画廊效果图披露
+
+- 23 个条目中 18 个 alt 写 visualization、1 个 project image,但页面可见文字从未出现;另 5 个连 alt 都无标注。已加页头可见说明并补齐 5 个 alt,现 23/23 有标注。
+- 守卫 `test_the_gallery_discloses_which_scenes_are_renderings` 实证可失败。部署 `20261028T151346839546Z-f55e8fb` 已归档;生产模板 md5 一致、页面 200、说明可见、缓存 miss→hit。证据 `/tmp/md-gallery-readback.json`。总目标仍未验收。
+
+### 2026-10-28 接管期只读核对
+
+- 生产 `livecanvas` 42 个文件与仓库 HEAD md5 逐一比对,**内容差异 0**(覆盖已消除)。回复时限 `one business day` 全站 0 处;2 处 `same day` 为 QC 工序耗时,非回复承诺。
+- 174 页扫描:非 200、字面短代码、占位符、空锚点**全部 0**;唯一 `src=""` 定位到第三方 `rapls-ai-chatbot` 隐藏预览容器,不在本 GOAL 范围。证据 `/tmp/md-defect-sweep.json`、`/tmp/md-replytime-readback.json`。
+- **390 真重排复验**(7 页,`innerWidth=390` 未登录):`scrollWidth` 全为 390、溢出 0、可见空卡 0;控制台错误同样只来自下列 rapls 插件。证据 `/tmp/md-390/report.json` 与 `/tmp/md-390/full-*.png`。
+- **口径统一后询盘链复验(不发信)**:仓库 `one business day` 0 处;生产 `/inquiry/` 16 个字段齐全、nonce/Turnstile 槽/confirm 均在、按钮 fail-closed;非法且缺字段的 POST 返回 200 有错误、未跳感谢页、记录 1→1;`md_inquiry_minute` 已注册且 cron 开启。完整提交仍待业主实走(会发信)。
+- **rapls 客服插件的两条实测缺陷(移交 Batch 2,不越界改)**:①`<script id="raplsaich-chatbot-js-extra">` 无 nonce,被本站 CSP `script-src-elem` 拦截,`api_base` 未生效;②`chatbot.js` 以相对地址 `undefined/session` 请求,产生 404(`/undefined/session`、`/custom-metal-divider-screens/undefined/session`)。主站浏览、询盘与 FAQ 不依赖它。总目标仍未验收。
+
+### 2026-10-28 清除竞品平均值与无来源承诺
+
+- 全站发现同一事实多个矛盾版本(国家 15+/20+/30+/40+、PVD 10+/18/20+、厂房 12,000m² 与 15,000+ sqm),另有 ISO 认证、500 吨库存、200+ 设计(实为 146 图案)、24 小时 mockup 等无来源承诺。已统一改为可证实表述并删除无来源项。
+- 新增守卫 `test_no_unverified_numeric_claims_on_customer_faces`,实证放回 `15+ Countries` 即失败。部署 `20261028T144846042734Z-cb4813a` 已归档;生产 6 页七类旧表述全为 0、缓存均 hit。证据 `/tmp/md-claim-readback.json`。
+- 期间发生并发部署覆盖(另一会话同分支部署),按当前 HEAD 重部署后模板 md5 与仓库一致。总目标仍未验收。
+
 ### 2026-10-28 七个产品族页描述补齐
 
 - 174 页 SEO 审计:canonical 174/174 自指、无 noindex、标题全唯一;7 个族页描述缺失或 16–27 字符为唯一缺口。按页面事实补写,未采用 24h/18 PVD/30+ 国家/15,000 sqm 等平均化数字。

@@ -522,6 +522,62 @@ final class TemplatesTest extends TestCase {
 	}
 
 	/**
+	 * A page that shows both accuracy figures explains what each one measures.
+	 *
+	 * ±0.03 mm is panel-to-panel repeat accuracy and ±0.1 mm is single-part
+	 * cutting tolerance. Two unexplained numbers on one page read as a
+	 * contradiction; the note names both so a specifier can tell which applies.
+	 */
+	public function test_pages_showing_both_accuracy_figures_explain_them(): void {
+		$dir   = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
+		foreach ( $files as $file ) {
+			$source = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			if ( false === strpos( $source, '±0.03' ) || false === strpos( $source, '±0.1' ) ) {
+				continue;
+			}
+			$relative = str_replace( $dir . '/', '', (string) $file );
+			$this->assertStringContainsString(
+				'panel-to-panel consistency',
+				$source,
+				"{$relative} shows both ±0.03mm and ±0.1mm without saying what each measures"
+			);
+		}
+	}
+
+	/**
+	 * The gallery says which scenes are renderings.
+	 *
+	 * 18 of 23 cards carried "visualization" in their alt while the page showed
+	 * no such word: a visitor read the whole gallery as completed projects. The
+	 * alt text keeps the disclosure for screen readers, and the visible note
+	 * makes it available to everyone. Every non-project image must carry it.
+	 */
+	public function test_the_gallery_discloses_which_scenes_are_renderings(): void {
+		$source = (string) file_get_contents( Templates::path( 'project-gallery' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+		$text = (string) preg_replace( '/<!--.*?-->/s', "\n", $source );
+		$text = (string) preg_replace( '/<[^>]*>/s', "\n", $text );
+		$this->assertMatchesRegularExpression(
+			'/visualization/i',
+			html_entity_decode( $text ),
+			'the page explains what a visualization label means'
+		);
+
+		preg_match_all( '/\balt="([^"]*)"/i', $source, $alts );
+		$unlabelled = array();
+		foreach ( $alts[1] as $alt ) {
+			if ( '' === trim( $alt ) ) {
+				continue;
+			}
+			if ( false === stripos( $alt, 'visualization' ) && false === stripos( $alt, 'project image' ) ) {
+				$unlabelled[] = $alt;
+			}
+		}
+		$this->assertSame( array(), $unlabelled, 'gallery scenes with neither a visualization nor a project-image label: ' . implode( ' | ', $unlabelled ) );
+	}
+
+	/**
 	 * The four blog faces render their design source, not the source text:
 	 * every Tangible loop/field sits inside the <tangible> processing
 	 * boundary LiveCanvas renders, no de-linker plugin shortcode survives,
