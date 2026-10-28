@@ -29,6 +29,7 @@ import gzip
 import hashlib
 import json
 import shlex
+import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -40,9 +41,12 @@ from md_deploy.target import (
     HTACCESS,
     MU_PLUGINS,
     PLUGINS,
+    TRANSFER_ATTEMPTS,
     UPLOADS,
     DeployError,
     Target,
+    _connection_dropped,
+    _pause_after_drop,
 )
 
 # The data root on this Mac, shared with the local stack (tools/local): full
@@ -235,20 +239,34 @@ def _prove_the_tree_arrived(target: Target, relative: str, local: Path) -> None:
         if path.is_file() and not path.is_symlink()
     }
     if arrived != on_site:
-        missing = ", ".join(sorted(on_site - arrived)[:3])
-        extra = ", ".join(sorted(arrived - on_site)[:3])
+        missing_names = sorted(on_site - arrived)
+        extra_names = sorted(arrived - on_site)
+        missing = ", ".join(missing_names[:3])
+        extra = ", ".join(extra_names[:3])
         raise DeployError(
             f"{relative}: the backup does not hold the site's file set "
-            f"(missing like [{missing}], extra like [{extra}])"
+            f"(missing {len(missing_names)}, extra {len(extra_names)}; "
+            f"missing like [{missing}], extra like [{extra}])"
         )
 
 
 def dump_to(target: Target, path: Path, *, skip: tuple[str, ...] = ()) -> None:
-    """Stream the database into `path` and refuse a dump that does not read to its end."""
-    with path.open("wb") as handle:
-        stream(target, dump_script(target, skip=skip), stdout=handle)
-    if path.stat().st_size == 0 or not readable_gzip(path):
-        raise DeployError(f"{path} is not a readable gzip — the dump is not usable")
+    """Stream the database into `path` and refuse a dump that does not read to its end.
+
+    A failed stream deletes the file. A closed connection can still have
+    written a gzip that reads to its end; leaving that file would make a
+    failed dump look restorable.
+    """
+    written = False
+    try:
+        with path.open("wb") as handle:
+            stream(target, dump_script(target, skip=skip), stdout=handle)
+        if path.stat().st_size == 0 or not readable_gzip(path):
+            raise DeployError(f"{path} is not a readable gzip — the dump is not usable")
+        written = True
+    finally:
+        if not written:
+            path.unlink(missing_ok=True)
 
 
 def restore_database(target: Target, dump: Path) -> None:
@@ -279,20 +297,35 @@ def create(target: Target, home: Path, *, now: datetime | None = None) -> Backup
     """
     directory = destination(home, now=now)
     previous = latest_complete(home, exclude=directory)
-    # An empty directory is a run that died before it wrote anything; anything
-    # in it is somebody's backup, and a second one must not merge into it.
+    # An empty directory is a run that died before it wrote anything. A
+    # complete backup, or a readable dump with no manifest, is somebody's
+    # data and must not be merged into. A failed run that left neither is
+    # not a backup: the same minute can take a new one.
     if directory.exists() and any(directory.iterdir()):
-        state = (
-            "a complete backup"
-            if (directory / MANIFEST).is_file()
-            else "a partial backup"
-        )
-        raise DeployError(
-            f"{directory} already holds {state}; move it aside to take a new one"
-        )
+        if not _replaceable_failure(directory):
+            state = (
+                "a complete backup"
+                if (directory / MANIFEST).is_file()
+                else "a readable database dump"
+            )
+            raise DeployError(
+                f"{directory} already holds {state}; move it aside to take a new one"
+            )
+        shutil.rmtree(directory)
     directory.mkdir(parents=True, exist_ok=True)
     print(f"backup: {directory}")
+    finished = False
+    try:
+        result = _fill(target, directory, previous)
+        finished = True
+        return result
+    finally:
+        if not finished:
+            _discard_incomplete(directory)
 
+
+def _fill(target: Target, directory: Path, previous: Path | None) -> Backup:
+    """Write one backup. The caller deletes a readable dump if this raises."""
     print("backup: database")
     dump = directory / DUMP
     dump_to(target, dump)
@@ -326,6 +359,10 @@ def create(target: Target, home: Path, *, now: datetime | None = None) -> Backup
             link_dest=None if previous is None else previous / MU_PLUGINS,
         )
     except DeployError as error:
+        # A missing directory is a legal site. A dropped connection is not:
+        # swallowing it would write a manifest over a tree that never arrived.
+        if not _path_is_absent(error):
+            raise
         present = False
         print(f"backup: no {MU_PLUGINS} ({error})")
     if present:
@@ -425,6 +462,32 @@ def readable_gzip(path: Path) -> bool:
     return True
 
 
+def _path_is_absent(error: DeployError) -> bool:
+    text = str(error).lower()
+    return "no such file" in text or "not a directory" in text
+
+
+def _replaceable_failure(directory: Path) -> bool:
+    """A same-minute directory this run may replace: no manifest, no readable dump."""
+    if (directory / MANIFEST).is_file():
+        return False
+    dump = directory / DUMP
+    return not (dump.is_file() and readable_gzip(dump))
+
+
+def _discard_incomplete(directory: Path) -> None:
+    """A failed run must not leave a dump or a manifest that looks finished."""
+    (directory / DUMP).unlink(missing_ok=True)
+    (directory / MANIFEST).unlink(missing_ok=True)
+
+
+def _rewind(handle: IO[bytes] | None) -> None:
+    if handle is None:
+        return
+    handle.seek(0)
+    handle.truncate()
+
+
 def stream(
     target: Target,
     script: str,
@@ -435,14 +498,27 @@ def stream(
     """Run a script on the target with the given standard streams.
 
     Public because the deploy's database snapshot streams the same dump the
-    same way.
+    same way. A dump (stdout, no stdin) retries a dropped connection and
+    rewinds the local file first, so a retry does not append to the bytes
+    the closed connection already wrote. Restore stays one shot: replaying
+    a write onto a database that may have applied part of the dump is not
+    a retry.
     """
     command = target.shell_command(script)
-    with tempfile.TemporaryFile() as error:
-        completed = subprocess.run(
-            command, stdin=stdin, stdout=stdout, stderr=error, check=False
-        )
-        error.seek(0)
-        message = error.read().decode(errors="replace").strip()
-    if completed.returncode != 0:
-        raise DeployError(f"{script.splitlines()[0]}: {message}")
+    limit = TRANSFER_ATTEMPTS if stdout is not None and stdin is None else 1
+    message = ""
+    for attempt in range(limit):
+        if attempt:
+            _rewind(stdout)
+        with tempfile.TemporaryFile() as error:
+            completed = subprocess.run(
+                command, stdin=stdin, stdout=stdout, stderr=error, check=False
+            )
+            error.seek(0)
+            message = error.read().decode(errors="replace").strip()
+        if completed.returncode == 0:
+            return
+        if not _connection_dropped(message) or attempt + 1 >= limit:
+            raise DeployError(f"{script.splitlines()[0]}: {message}")
+        _pause_after_drop(attempt + 1)
+    raise DeployError(f"{script.splitlines()[0]}: {message}")

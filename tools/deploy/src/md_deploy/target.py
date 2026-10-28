@@ -28,6 +28,7 @@ import json
 import os
 import shlex
 import subprocess
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -96,6 +97,44 @@ UPLOAD_BATCH_BYTES = 96 * 1024 * 1024
 TRANSFER_ATTEMPTS = 4
 
 
+def _connection_dropped(detail: str) -> bool:
+    """Whether stderr is the host closing the SSH, not a command that ran and failed.
+
+    rsync reports the same drop as "unexpectedly closed" and often does not
+    repeat ssh's own line. Matching only the ssh phrase would retry the
+    listing and miss the transfer.
+    """
+    folded = detail.lower()
+    return (
+        "connection closed" in folded
+        or "connection reset" in folded
+        or "unexpectedly closed" in folded
+    )
+
+
+def _pause_after_drop(failures: int) -> None:
+    """Wait before another try. `failures` is how many drops have already happened.
+
+    1s, then 2s, then 4s. An immediate second handshake is what the host had
+    just refused.
+    """
+    time.sleep(2 ** (failures - 1))
+
+
+def _process_detail(completed: subprocess.CompletedProcess[str]) -> str:
+    return (completed.stderr or completed.stdout or "").strip()
+
+
+def _retry_after(detail: str, attempt: int, *, always: bool) -> bool:
+    """Whether attempt `attempt` (0-based) should be followed by another try."""
+    if attempt + 1 >= TRANSFER_ATTEMPTS:
+        return False
+    if _connection_dropped(detail):
+        _pause_after_drop(attempt + 1)
+        return True
+    return always
+
+
 class DeployError(RuntimeError):
     """A step could not run, or a check it makes failed."""
 
@@ -141,27 +180,32 @@ def _run(command: list[str], *, cwd: Path | None = None) -> str:
 
 
 def remote_entries_command(host: str, source: str) -> list[str]:
-    """The one ssh call that lists a directory's copy chunks.
+    """The one ssh call that lists copy chunks for a tree that is not one leg.
 
-    The host drops a single long transfer, so each chunk — one month under
-    uploads, one directory inside a plugin — gets its own connection. Four
-    kinds are listed because two are not enough: a file that lives directly
-    inside a first-level directory is covered by no directory chunk, and a
-    first-level directory without subdirectories would vanish whole — the
-    blueprint measured 195 files missing from a backup before this listing
-    gained depth-2 files and depth-1 directories.
+    Uploads, and any other tree over the small-tree cap, still walk chunks:
+    the host drops a single long transfer, so each chunk — one month under
+    uploads, one depth-2 directory — gets its own connection. Four kinds are
+    listed because two are not enough: a file that lives directly inside a
+    first-level directory is covered by no directory chunk, and a first-level
+    directory without subdirectories would vanish whole — the blueprint
+    measured 195 files missing from a backup before this listing gained
+    depth-2 files and depth-1 directories.
     """
-    return [
-        "ssh",
-        "-o",
-        "BatchMode=yes",
-        host,
+    # `set -o pipefail` is bash, not the login shell's guarantee, so the script
+    # travels as one `bash -c` word (ssh joins argv and the remote shell splits
+    # again; an unquoted script would lose every argument after `set`). The
+    # finds are `&&`-chained: a `{ find; find; } | sort` group's status is only
+    # the last find, and without that chain pipefail still sees sort's 0 when
+    # an earlier find died. A partial name list must not become a copy plan.
+    script = (
+        "set -o pipefail; "
         f"cd {shlex.quote(source)} && "
-        "{ find . -maxdepth 1 -type f -printf 'F %p\\n'; "
-        "find . -mindepth 2 -maxdepth 2 -type f -printf 'F %p\\n'; "
-        "find . -mindepth 2 -maxdepth 2 -type d -printf 'D %p\\n'; "
-        "find . -mindepth 1 -maxdepth 1 -type d -printf 'd %p\\n'; } | sort",
-    ]
+        "{ find . -maxdepth 1 -type f -printf 'F %p\\n' && "
+        "find . -mindepth 2 -maxdepth 2 -type f -printf 'F %p\\n' && "
+        "find . -mindepth 2 -maxdepth 2 -type d -printf 'D %p\\n' && "
+        "find . -mindepth 1 -maxdepth 1 -type d -printf 'd %p\\n'; } | sort"
+    )
+    return ["ssh", "-o", "BatchMode=yes", host, f"bash -c {shlex.quote(script)}"]
 
 
 def _tree_bytes(source: Path) -> int:
@@ -316,17 +360,19 @@ class Target:
         if self.rsync_remote is not None:
             destination.mkdir(parents=True, exist_ok=True)
             base = self.path_of(relative).rstrip("/")
-            listed = subprocess.run(
-                remote_entries_command(HOST, base),
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if listed.returncode != 0:
-                raise DeployError(
-                    f"listing {relative} on {self.label} failed: "
-                    f"{listed.stderr.strip()[:200]}"
-                )
+            # Uploads stay chunked even when the measured tree is small: that
+            # walk exists because the host drops a multi-GB transfer, and a
+            # wrong size must not collapse it into one leg. A small plugins
+            # tree is the opposite problem — one directory per connection was
+            # ~180 SSH handshakes, and the host closed them. Same cap as
+            # copy_in's single leg.
+            if (
+                relative != UPLOADS
+                and self._remote_tree_bytes(base) <= SMALL_UPLOAD_BYTES
+            ):
+                self._pull_tree(base, destination, link_dest=link_dest)
+                return
+            listed = self._list_remote(base, relative)
             chunks = _remote_chunks(listed.stdout)
             for path, is_dir in chunks:
                 local = destination / path
@@ -347,6 +393,73 @@ class Target:
             f"{self.address(relative).rstrip('/')}/",
             f"{destination}/",
             extra=_link_dest(link_dest),
+        )
+
+    def _list_remote(
+        self, source: str, relative: str
+    ) -> subprocess.CompletedProcess[str]:
+        """The chunk listing, retried only when the connection itself drops.
+
+        A find that exits non-zero is a partial name list. Retrying it would
+        not make the names appear, and pipefail already refused to hide it
+        behind sort.
+        """
+        command = remote_entries_command(HOST, source)
+        last = ""
+        listed = subprocess.CompletedProcess(command, 1, stdout="", stderr="")
+        for attempt in range(TRANSFER_ATTEMPTS):
+            listed = subprocess.run(
+                command, capture_output=True, text=True, check=False
+            )
+            if listed.returncode == 0:
+                return listed
+            detail = _process_detail(listed)
+            last = detail[:200]
+            if not _retry_after(detail, attempt, always=False):
+                raise DeployError(f"listing {relative} on {self.label} failed: {last}")
+        raise DeployError(f"listing {relative} on {self.label} failed: {last}")
+
+    def _remote_tree_bytes(self, path: str) -> int:
+        """Apparent size of a remote tree, for the single-leg choice.
+
+        A dropped connection is retried here too: this read is the first SSH
+        of a small-tree pull, and failing it once would skip the backoff the
+        transfer itself gets. It is not `shell` — a retried shell would also
+        replay writes.
+        """
+        command = self.shell_command(f"du -sb {shlex.quote(path)}")
+        output = ""
+        last = ""
+        for attempt in range(TRANSFER_ATTEMPTS):
+            completed = subprocess.run(
+                command, capture_output=True, text=True, check=False
+            )
+            if completed.returncode == 0:
+                output = completed.stdout
+                break
+            detail = _process_detail(completed)
+            last = detail[:200]
+            if not _retry_after(detail, attempt, always=False):
+                quoted = " ".join(shlex.quote(part) for part in command)
+                raise DeployError(f"{quoted}: {last}")
+        else:
+            quoted = " ".join(shlex.quote(part) for part in command)
+            raise DeployError(f"{quoted}: {last}")
+        try:
+            return int(output.split()[0])
+        except (ValueError, IndexError) as error:
+            raise DeployError(
+                f"could not read the size of {path}: {output.strip()[:200]}"
+            ) from error
+
+    def _pull_tree(
+        self, source: str, destination: Path, *, link_dest: Path | None = None
+    ) -> None:
+        """A small remote tree in one rsync leg, retried like a chunk."""
+        self._transfer(
+            [f"{HOST}:{source}/", f"{destination}/"],
+            f"reading {source} from {HOST}",
+            link_dest=link_dest,
         )
 
     def _pull_entry(
@@ -389,7 +502,7 @@ class Target:
     ) -> None:
         """One retried rsync leg onto or off the host."""
         last = ""
-        for _attempt in range(TRANSFER_ATTEMPTS):
+        for attempt in range(TRANSFER_ATTEMPTS):
             completed = subprocess.run(
                 [
                     "rsync",
@@ -407,7 +520,13 @@ class Target:
             )
             if completed.returncode == 0:
                 return
-            last = completed.stderr.strip()[:200]
+            detail = _process_detail(completed)
+            last = detail[:200]
+            # Other rsync failures still retry at once: that is the existing
+            # deploy behaviour. A dropped connection waits, or the next
+            # handshake lands in the same refusal.
+            if not _retry_after(detail, attempt, always=True):
+                break
         raise DeployError(f"{what} failed after {TRANSFER_ATTEMPTS} attempts: {last}")
 
     def copy_file_out(self, relative: str, destination: Path) -> None:

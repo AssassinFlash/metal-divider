@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import os
+import shlex
+import subprocess
+import time
 from pathlib import Path
 
 import pytest
 
 from md_deploy import target
-from md_deploy.target import DeployError, Target
+from md_deploy.target import PLUGINS, UPLOADS, DeployError, Target
 
 
 def test_a_relative_path_outside_the_root_is_refused(tmp_path: Path) -> None:
@@ -179,3 +183,402 @@ def test_the_remote_chunk_listing_walks_the_same_four_kinds() -> None:
         ("onefile", True),
         ("windpress", True),
     ]
+
+
+def _find_that_fails_once(tmp_path: Path) -> dict[str, str]:
+    """A `find` whose first call exits 1 and whose later calls exit 0.
+
+    The real `sort` stays on PATH, so a pipeline that ignores an early find
+    failure still exits 0 — the masking this guards against.
+    """
+    bindir = tmp_path / "bin"
+    bindir.mkdir(parents=True)
+    count = tmp_path / "find-calls"
+    (bindir / "find").write_text(
+        "#!/bin/sh\n"
+        f"n=$(cat {shlex.quote(str(count))} 2>/dev/null || echo 0)\n"
+        f"echo $((n + 1)) > {shlex.quote(str(count))}\n"
+        'test "$n" = 0 && exit 1\n'
+        "exit 0\n",
+        encoding="utf-8",
+    )
+    (bindir / "find").chmod(0o755)
+    env = os.environ.copy()
+    env["PATH"] = f"{bindir}{os.pathsep}{env.get('PATH', '')}"
+    return env
+
+
+def test_a_failed_find_is_not_hidden_by_sort_and_does_not_start_a_chunk_walk(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Four finds piped to sort: the first find dying must fail the listing.
+
+    Without `pipefail`, and without the group failing on that find, `sort`
+    exits 0 and copy_out treats the missing names as a complete tree. The
+    directory exists, so a failing `cd` cannot fake this result. Uploads stay
+    on the chunk walk, so this does not depend on the small-tree shortcut.
+    """
+    root = tmp_path / "site"
+    (root / UPLOADS).mkdir(parents=True)
+    pulls: list[list[str]] = []
+    real_run = subprocess.run
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        if command and command[0] == "rsync":
+            pulls.append(command)
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        if command and command[0] == "ssh":
+            return real_run(
+                ["bash", "-c", _listing_script_from(command)],
+                capture_output=True,
+                text=True,
+                env=_find_that_fails_once(tmp_path / "walk"),
+                check=False,
+            )
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    site = Target(
+        "prod",
+        str(root),
+        "https://metal-divider.com",
+        (),
+        ("ssh", "host", "bash -c"),
+        f"hostinger-metal-divider:{root}",
+    )
+
+    with pytest.raises(DeployError, match="listing"):
+        site.copy_out(UPLOADS, tmp_path / "uploads")
+
+    assert pulls == []
+
+
+def _listing_script_from(command: list[str]) -> str:
+    payload = command[-1]
+    if payload.startswith("bash -c "):
+        return shlex.split(payload)[2]
+    return payload
+
+
+def _remote_site(root: Path) -> Target:
+    return Target(
+        "prod",
+        str(root),
+        "https://metal-divider.com",
+        (),
+        ("ssh", "-o", "BatchMode=yes", target.HOST, "bash -c"),
+        f"{target.HOST}:{root}",
+    )
+
+
+def test_a_small_plugins_tree_is_one_recursive_pull(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A plugins tree under the small-tree cap is one rsync, not one SSH per directory.
+
+    `rapls-ai-chatbot/assets` is inside that single recursive pull. The earlier
+    backup is still a `--link-dest`, or unchanged plugin files would be copied
+    again. A second ssh would be the chunk listing this path must not start.
+    """
+    root = tmp_path / "site"
+    (root / PLUGINS / "rapls-ai-chatbot" / "assets" / "css").mkdir(parents=True)
+    earlier = tmp_path / "earlier"
+    earlier.mkdir()
+    rsyncs: list[list[str]] = []
+    ssh_calls = 0
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal ssh_calls
+        if command and command[0] == "rsync":
+            rsyncs.append(command)
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        if command and command[0] == "ssh":
+            ssh_calls += 1
+            assert ssh_calls == 1
+            return subprocess.CompletedProcess(
+                command, 0, stdout="1048576\tplugins\n", stderr=""
+            )
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    destination = tmp_path / "plugins"
+
+    _remote_site(root).copy_out(PLUGINS, destination, link_dest=earlier)
+
+    assert ssh_calls == 1
+    assert len(rsyncs) == 1
+    assert rsyncs[0][-2] == f"{target.HOST}:{root}/{PLUGINS}/"
+    assert rsyncs[0][-1] == f"{destination}/"
+    assert f"--link-dest={earlier.resolve()}" in rsyncs[0]
+
+
+def test_uploads_stay_chunked_even_when_small(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Uploads keep the chunk walk. A small measured size must not collapse them."""
+    root = tmp_path / "site"
+    (root / UPLOADS).mkdir(parents=True)
+    listing = "\n".join(["F ./loose.png", "D ./2024/10", "d ./2024", ""])
+    rsyncs: list[list[str]] = []
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        if command and command[0] == "rsync":
+            rsyncs.append(command)
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        if command and command[0] == "ssh":
+            script = " ".join(command)
+            if "du -sb" in script:
+                return subprocess.CompletedProcess(
+                    command, 0, stdout="100\tuploads\n", stderr=""
+                )
+            return subprocess.CompletedProcess(command, 0, stdout=listing, stderr="")
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    _remote_site(root).copy_out(UPLOADS, tmp_path / "uploads")
+
+    sources = [command[-2] for command in rsyncs]
+    assert sources
+    assert f"{target.HOST}:{root}/{UPLOADS}/" not in sources
+    assert f"{target.HOST}:{root}/{UPLOADS}/2024/10/" in sources
+    assert f"{target.HOST}:{root}/{UPLOADS}/loose.png" in sources
+
+
+def test_plugins_over_the_small_tree_cap_still_pull_assets_as_a_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Above the cap, `rapls-ai-chatbot/assets` is one recursive directory chunk.
+
+    A depth-3 css file is not its own chunk: the directory rsync carries it.
+    The whole plugins root is not one leg — that is the transfer the host drops.
+    """
+    root = tmp_path / "site"
+    (root / PLUGINS).mkdir(parents=True)
+    listing = "\n".join(
+        [
+            "F ./rapls-ai-chatbot/rapls-ai-chatbot.php",
+            "D ./rapls-ai-chatbot/assets",
+            "d ./rapls-ai-chatbot",
+            "",
+        ]
+    )
+    rsyncs: list[list[str]] = []
+    ssh_calls = 0
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal ssh_calls
+        if command and command[0] == "rsync":
+            rsyncs.append(command)
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        if command and command[0] == "ssh":
+            ssh_calls += 1
+            if ssh_calls == 1:
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout=f"{target.SMALL_UPLOAD_BYTES + 1}\tplugins\n",
+                    stderr="",
+                )
+            return subprocess.CompletedProcess(command, 0, stdout=listing, stderr="")
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    _remote_site(root).copy_out(PLUGINS, tmp_path / "plugins")
+
+    sources = [command[-2] for command in rsyncs]
+    assert f"{target.HOST}:{root}/{PLUGINS}/rapls-ai-chatbot/assets/" in sources
+    assert f"{target.HOST}:{root}/{PLUGINS}/" not in sources
+    assert all("css" not in source for source in sources)
+
+
+def _record_sleeps(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    sleeps: list[float] = []
+    monkeypatch.setattr(time, "sleep", lambda seconds: sleeps.append(seconds))
+    return sleeps
+
+
+def test_a_dropped_plugins_pull_backs_off_before_the_successful_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Connection closed is not four immediate handshakes. The second wait is longer."""
+    root = tmp_path / "site"
+    (root / PLUGINS).mkdir(parents=True)
+    sleeps = _record_sleeps(monkeypatch)
+    rsyncs = 0
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal rsyncs
+        if command and command[0] == "ssh":
+            return subprocess.CompletedProcess(
+                command, 0, stdout="100\tplugins\n", stderr=""
+            )
+        if command and command[0] == "rsync":
+            rsyncs += 1
+            if rsyncs < 3:
+                return subprocess.CompletedProcess(
+                    command,
+                    255,
+                    stdout="",
+                    stderr="Connection closed by 1.2.3.4 port 22\n",
+                )
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    _remote_site(root).copy_out(PLUGINS, tmp_path / "plugins")
+
+    assert rsyncs == 3
+    assert sleeps[0] >= 1
+    assert sleeps[1] > sleeps[0]
+
+
+def test_four_dropped_pulls_stop_and_do_not_try_a_fifth(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "site"
+    (root / PLUGINS).mkdir(parents=True)
+    sleeps = _record_sleeps(monkeypatch)
+    rsyncs = 0
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal rsyncs
+        if command and command[0] == "ssh":
+            return subprocess.CompletedProcess(
+                command, 0, stdout="100\tplugins\n", stderr=""
+            )
+        if command and command[0] == "rsync":
+            rsyncs += 1
+            return subprocess.CompletedProcess(
+                command, 255, stdout="", stderr="Connection reset by peer\n"
+            )
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with pytest.raises(DeployError, match="4 attempts"):
+        _remote_site(root).copy_out(PLUGINS, tmp_path / "plugins")
+
+    assert rsyncs == target.TRANSFER_ATTEMPTS
+    assert len(sleeps) == target.TRANSFER_ATTEMPTS - 1
+    assert sleeps[1] > sleeps[0]
+
+
+def test_a_dropped_uploads_listing_backs_off_and_then_copies(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "site"
+    (root / UPLOADS).mkdir(parents=True)
+    sleeps = _record_sleeps(monkeypatch)
+    listing = "F ./loose.png\n"
+    ssh_calls = 0
+    rsyncs: list[list[str]] = []
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal ssh_calls
+        if command and command[0] == "rsync":
+            rsyncs.append(command)
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        if command and command[0] == "ssh":
+            ssh_calls += 1
+            if ssh_calls == 1:
+                return subprocess.CompletedProcess(
+                    command,
+                    255,
+                    stdout="",
+                    stderr="Connection closed by 1.2.3.4 port 22\n",
+                )
+            return subprocess.CompletedProcess(command, 0, stdout=listing, stderr="")
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    _remote_site(root).copy_out(UPLOADS, tmp_path / "uploads")
+
+    assert ssh_calls == 2
+    assert sleeps[0] >= 1
+    assert rsyncs[0][-2] == f"{target.HOST}:{root}/{UPLOADS}/loose.png"
+
+
+def test_a_listing_error_that_is_not_a_dropped_connection_is_not_retried(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "site"
+    (root / UPLOADS).mkdir(parents=True)
+    sleeps = _record_sleeps(monkeypatch)
+    ssh_calls = 0
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal ssh_calls
+        if command and command[0] == "ssh":
+            ssh_calls += 1
+            return subprocess.CompletedProcess(
+                command, 1, stdout="", stderr="find: permission denied\n"
+            )
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with pytest.raises(DeployError, match="listing"):
+        _remote_site(root).copy_out(UPLOADS, tmp_path / "uploads")
+
+    assert ssh_calls == 1
+    assert sleeps == []
+
+
+def test_a_dropped_plugins_size_probe_backs_off_before_the_pull(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The size question is an SSH too. A closed connection there must wait, then pull."""
+    root = tmp_path / "site"
+    (root / PLUGINS).mkdir(parents=True)
+    sleeps = _record_sleeps(monkeypatch)
+    ssh_calls = 0
+    rsyncs = 0
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal ssh_calls, rsyncs
+        if command and command[0] == "rsync":
+            rsyncs += 1
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        if command and command[0] == "ssh":
+            ssh_calls += 1
+            if ssh_calls == 1:
+                return subprocess.CompletedProcess(
+                    command,
+                    255,
+                    stdout="",
+                    stderr="Connection reset by peer\n",
+                )
+            return subprocess.CompletedProcess(
+                command, 0, stdout="100\tplugins\n", stderr=""
+            )
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    _remote_site(root).copy_out(PLUGINS, tmp_path / "plugins")
+
+    assert ssh_calls == 2
+    assert sleeps[0] >= 1
+    assert rsyncs == 1
