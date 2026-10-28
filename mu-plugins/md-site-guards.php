@@ -45,7 +45,11 @@ remove_action( 'wp_head', 'rsd_link' );
  * keep the declared content types and the referrer's origin — an inquiry URL
  * carries three source parameters, and wa.me is a plain link, so only the
  * origin ever reaches it. The only external face is Turnstile: scripts,
- * frames and connections from challenges.cloudflare.com. CookieYes is not
+ * frames and connections from challenges.cloudflare.com. Frames allow
+ * 'self' too: the chat launcher opens its card as a same-origin /chat/
+ * iframe, and without 'self' in frame-src the browser kills the widget —
+ * the 2026-10-28 production regression was exactly this entry missing
+ * while the chat plane was live. CookieYes is not
  * on the site, so none of its hosts are allowed. wa.me needs no entry,
  * being a navigation, and scripts carry no 'unsafe-inline' or
  * 'unsafe-eval' — the value is pinned by test, and inline styles remain
@@ -60,7 +64,7 @@ function md_site_guards_header_lines(): array {
 		'X-Frame-Options: SAMEORIGIN',
 		'X-Content-Type-Options: nosniff',
 		'Referrer-Policy: strict-origin-when-cross-origin',
-		"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+		"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
 	);
 }
 

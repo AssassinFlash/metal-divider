@@ -28,8 +28,9 @@ final class SiteGuardsTest extends TestCase {
 
 	/**
 	 * The five header lines, exactly: every header value is pinned here, and
-	 * the CSP with it — Turnstile's scripts, frames and connections, no
-	 * CookieYes host, the inline styles, no unsafe-eval, the closed
+	 * the CSP with it — Turnstile's scripts, frames and connections, the
+	 * same-origin frame the chat card needs, no CookieYes host, the inline
+	 * styles, no unsafe-eval, the closed
 	 * object/base/form/frame-ancestors — so a whitelist change is a test change.
 	 */
 	public function test_the_header_lines_are_the_sites_policy(): void {
@@ -39,7 +40,7 @@ final class SiteGuardsTest extends TestCase {
 				'X-Frame-Options: SAMEORIGIN',
 				'X-Content-Type-Options: nosniff',
 				'Referrer-Policy: strict-origin-when-cross-origin',
-				"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+				"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
 			),
 			md_site_guards_header_lines()
 		);

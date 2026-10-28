@@ -198,11 +198,12 @@ final class TemplateAssetsTest extends TestCase {
 	 * written into the frame's address. That WebP thumbnail did not exist
 	 * either: the stem's only file is the film, so the frame asked for a 404.
 	 *
-	 * Pointing the same iframe at the real MP4 does not repair it. The site's
-	 * CSP is `frame-src https://challenges.cloudflare.com` — Turnstile and
-	 * nothing else — so every same-origin file is refused as a frame. The
-	 * console says so on a plain page load, before any lightbox is opened,
-	 * because the hidden frame navigates anyway:
+	 * Pointing the same iframe at the real MP4 does not repair it. When the
+	 * conversion landed the site's CSP was `frame-src
+	 * https://challenges.cloudflare.com` — Turnstile and nothing else — so
+	 * every same-origin file was refused as a frame, and the console said so
+	 * on a plain page load, before any lightbox was opened, because the
+	 * hidden frame navigates anyway:
 	 *
 	 *   Framing '…-hd-1080p-4-8mbps-68978841.mp4' violates the following
 	 *   Content Security Policy directive: "frame-src
@@ -233,7 +234,7 @@ final class TemplateAssetsTest extends TestCase {
 				$this->assertDoesNotMatchRegularExpression(
 					'#^/wp-content/#',
 					$address,
-					"{$file} frames a local address ('{$address}'); the CSP's frame-src allows only challenges.cloudflare.com, so the browser refuses it and logs a violation on every load"
+					"{$file} frames a local address ('{$address}'); frame-src now allows 'self' for the chat card, but a frame is still the wrong element for local media — play it with <video>"
 				);
 			}
 
