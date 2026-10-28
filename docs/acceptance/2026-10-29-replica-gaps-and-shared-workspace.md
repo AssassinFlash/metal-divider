@@ -817,3 +817,51 @@ Turnstile 冒充成功——那会产出一条假的验收结论。整个过程�
 
 要真正完成「实走」，需要一次**真人完成 Turnstile 挑战**——这属于必须业主动手的动作，
 按 §7 只问业主知道的事，记在待办里。
+
+### 9.13 SEO 面复验：三项历史不通过已修，另发现 sitemap 重复（业主 2026-10-29）
+
+`docs/deploy/seo-verification.md`（2026-10-25）列了四项不通过。本轮逐项实测，**三项已不存在**：
+
+| 项 | 2026-10-25 记录 | 2026-10-29 实测 |
+|---|---|---|
+| `/inquiry/thank-you/` | 404（应为 noindex 页） | **200**，`follow, noindex` ✅ |
+| `/privacy/` | 404 | **200** ✅ |
+| `/faqs/` FAQPage JSON-LD | 缺失 | **存在**，40 组 Question/Answer ✅ |
+| GSC 属性 + TXT | 未建 | 未在本轮范围（需业主账号） |
+
+#### 9.13.1 九个系列归档的 SEO 面（首次验证）
+
+这九页此前从未进过任何扫描或 SEO 检查。实测全部合格：
+
+| 检查 | 结果 |
+|---|---|
+| HTTP | 9/9 = 200 |
+| canonical | 9/9 自引用，与请求路径一致 |
+| robots | 9/9 `index, follow` |
+| meta description | 9/9 存在，长度 139–179 字符，**九条互不相同**（哈希两两不同） |
+| sitemap | 9/9 全在 `product_cat-sitemap1.xml`（该文件恰好 9 条） |
+
+#### 9.13.2 新发现：`/shop/` 同时出现在两份 sitemap
+
+`product-sitemap1.xml` 有 **147** 条，而图案只有 **146** 个。多出来的是 `/shop/`。
+
+根因（读库确认，不是推测）：`/shop/` 是真实页面（ID 6，`publish`），
+`woocommerce_shop_page_id` 也是 6，于是 SEOPress 把它**既当页面写进 page sitemap，
+又当 `product` post type 的 archive link 写进 product sitemap**。同一 URL 出现在两份
+sitemap 里，是「Duplicate, Google chose different canonical」那一类形状。
+
+修法上差点走错，记录下来：
+
+- **错的钩子**：`seopress_sitemaps_url` 是逐条 `<url>` 钩子，在**每一份** sitemap 里都会触发。
+  用它会把 page sitemap 里的 `/shop/` 一起删掉，与修复目标相反。
+- **对的钩子**：读 `wp-seopress/templates/sitemap/single.php` 发现 `/shop/` 是作为
+  **archive link** 写入的，同一文件里 SEOPress 自己给了 `seopress_sitemaps_no_archive_link`
+  这个专门钩子，只在该 post type 的 sitemap 里触发。
+- SEOPress 注释里还提到另一个办法（对 shop page 勾 per-page noindex），但 `/shop/` 必须保持
+  可索引，所以不可用。
+
+实现：`SitemapDedupe::drop_shop_archive()` 只在 `$path === 'product'` 时返回空串。
+
+守卫 `SitemapDedupeTest` 三条断言，**双向证过**：把钩子改回
+`seopress_sitemaps_url` → **1 FAILURE**；改回正确钩子 → 3 OK。其中一条断言直接读源文件
+（先剥注释）确认注册的是 archive-link 钩子、且不含逐条钩子，防止后人换回去。
