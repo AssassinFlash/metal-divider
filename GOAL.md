@@ -59,6 +59,11 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-28 CSP 与桌面搜索交互收尾
+
+- 删除不再使用的 CookieYes script/img/connect 白名单,Turnstile 三个必要源保留,无 unsafe-eval。部署 `20261028T074737779020Z-4063902` 已归档;生产响应头 CookieYes=0、Turnstile 源完整。证据 `/tmp/md-csp-readback.json`。
+- 真 1440 搜索键盘复测通过:正向/反向 Tab 不离开弹层,两次 Escape 分层与回焦正确。证据 `/tmp/md-320-20261028/desktop-1440-search-open.png` 与 `desktop-1440-search.json`。总目标仍未验收。
+
 ### 2026-10-28 隐私页技术事实修正与生产读回
 
 - 隐私页删除已不存在的图案清单、CookieYes、公开浏览 session cookie 与 Cloudflare CDN/WAF 表述;补齐当前询盘字段、单图案上下文、日志/限流与 Turnstile token/IP 处理。Hostinger=托管+CDN,Cloudflare 仅 Turnstile;5 年保留期和法域未改。

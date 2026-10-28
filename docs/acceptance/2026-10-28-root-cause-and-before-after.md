@@ -717,3 +717,14 @@ our CDN/WAF、Session cookie 均为 0，登录测试 cookie、Turnstile token �
 
 首页 20 张是已展示图片，不是未打开面板的 9 张系列图；不能靠减图案处理。
 TTFB 仅记录本机网络，不作站点缺陷；原始数据 `/tmp/md-320-20261028/perf-1440.json`。
+
+## 二十五、CSP 与 1440 搜索交互收尾
+
+CookieYes 已确认不在站上，删除其 script/img/connect 白名单；Turnstile 的
+script/frame/connect 三个源保留，未加 unsafe-eval。反向测试在临时加回 CookieYes
+时失败，恢复后全绿。部署 `20261028T074737779020Z-4063902` 已归档；生产响应头
+CookieYes=0、Turnstile 源完整。证据 `/tmp/md-csp-readback.json`。
+
+真 1440 搜索键盘复测：正向 6 个 Tab 站与反向 Shift+Tab 均未离开弹层，第一次
+Escape 只关建议，第二次关弹层并回焦 Search。未新建窗口，证据
+`desktop-1440-search-open.png` 与 `desktop-1440-search.json`。
