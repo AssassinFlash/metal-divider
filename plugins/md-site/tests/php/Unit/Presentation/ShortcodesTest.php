@@ -924,16 +924,26 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
-	 * A pattern whose only non-scene pictures are unnamed keeps its hero solo:
-	 * the residual class is the migrator's bucket, not a slot candidate.
+	 * A flat pattern sample fills the plate only when nothing else can.
 	 *
-	 * `other` holds the `pattern render` and `reference image` roles, six
-	 * `unknown` and one `qc photo` across the catalogue's product media
-	 * (measured 2026-10-29). ROLE_CLASSES documents that bucket as filling the
-	 * first position only, and a flat render or a workshop photograph is not
-	 * what the old page put in its 3:4 hero frame.
+	 * Four patterns own no photograph the hero has not taken and no accent:
+	 * poseidon, pebble-creek, funk and alhambra. Their galleries hold one
+	 * landscape scene plus one `pattern render`, so the class chain leaves
+	 * them solo — which is what the old site did as well (its alhambra page
+	 * carries the `pdp-hero-plate` rules and `pdp-hero-solo`, with no plate
+	 * element), so this is an upgrade the owner asked for, not a replica gap.
+	 *
+	 * The sample is the right picture and a repeated photograph is not: the
+	 * hero background is that same scene at `object-fit: cover` under a scrim
+	 * that still leaves 58% of it visible at the right edge, and the plate
+	 * sits at that edge. A sample reads as a pattern swatch — measured on all
+	 * four, the 3:4 centre crop keeps only repeating pattern.
+	 *
+	 * `reference image` is not the same thing and stays out: on poseidon that
+	 * role is the bedroom-wide shot with the screen as background, which a
+	 * portrait crop turns into a photo of a bed.
 	 */
-	public function test_image_plate_does_not_reach_into_the_unnamed_residual(): void {
+	public function test_image_plate_falls_back_to_a_pattern_sample(): void {
 		$this->mock_media_product(
 			array(
 				101 => array(
@@ -948,8 +958,39 @@ final class ShortcodesTest extends TestCase {
 		);
 		$shortcodes = new Shortcodes();
 
+		$this->assertStringContainsString(
+			'src="https://site.test/uploads/102.webp"',
+			$shortcodes->image( array( 'slot' => 'plate' ) ),
+			'the sample fills the frame when the scene is the hero'
+		);
+		$this->assertTrue( $shortcodes->has_image( 'plate' ), 'the frame is drawn around the sample' );
+	}
+
+	/**
+	 * A `reference image` gets no frame even as the last resort.
+	 *
+	 * On poseidon that role is a wide bedroom shot in which the screen is
+	 * background furniture; a 3:4 centre crop keeps the ceiling fan, half the
+	 * bed and the rug. It is not a sample and not a hero shot, so the frame
+	 * stays off and the hero keeps its solo layout.
+	 */
+	public function test_image_plate_does_not_reach_for_a_reference_image(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'reference image',
+					'alt'  => 'Akira reference image',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+
 		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'plate' ) ) );
-		$this->assertFalse( $shortcodes->has_image( 'plate' ), 'no frame is drawn around an unnamed residual image' );
+		$this->assertFalse( $shortcodes->has_image( 'plate' ), 'no frame is drawn around a room shot' );
 	}
 
 	/**
@@ -1086,10 +1127,17 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
-	 * A two-image pattern (scene + render) fills the hero only: plate and
-	 * square return nothing, so the template emits no empty src.
+	 * A two-image pattern (scene + sample) fills the hero and the plate, and
+	 * leaves square and wide empty.
+	 *
+	 * This is the shape of poseidon, pebble-creek, funk and alhambra: one
+	 * landscape scene plus one `pattern render`. The plate takes the sample
+	 * (see test_image_plate_falls_back_to_a_pattern_sample for why a sample
+	 * beats repeating the hero's photograph), `square` needs a second scene
+	 * and there is none, and `wide` holds the first accent and there is no
+	 * accent at all.
 	 */
-	public function test_image_two_image_pattern_hides_the_empty_slots(): void {
+	public function test_image_two_image_pattern_fills_the_plate_with_its_sample(): void {
 		$this->mock_media_product(
 			array(
 				101 => array(
@@ -1105,7 +1153,7 @@ final class ShortcodesTest extends TestCase {
 		$shortcodes = new Shortcodes();
 
 		$this->assertStringContainsString( 'src="https://site.test/uploads/101.webp"', $shortcodes->image( array( 'slot' => 'hero-bg' ) ) );
-		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'plate' ) ) );
+		$this->assertStringContainsString( 'src="https://site.test/uploads/102.webp"', $shortcodes->image( array( 'slot' => 'plate' ) ) );
 		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'square' ) ) );
 		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'wide' ) ) );
 	}

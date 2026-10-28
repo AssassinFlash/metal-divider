@@ -612,9 +612,7 @@ final class Shortcodes {
 			// a `qc photo`, which are workshop photographs and not the pattern
 			// — and ROLE_CLASSES documents that residual as filling the first
 			// position only. A cut sheet and an unnamed workshop photo are
-			// both the wrong picture for a 3:4 hero frame, so a pattern whose
-			// media holds only those keeps its hero solo, as do the two-image
-			// patterns whose second image is a flat pattern render.
+			// both the wrong picture for a 3:4 hero frame.
 			$plate = $this->first_in_order(
 				array(
 					$by_class['detail'] ?? array(),
@@ -624,6 +622,35 @@ final class Shortcodes {
 				),
 				array( $hero )
 			);
+
+			// Last resort, and only for the flat pattern sample.
+			//
+			// Four patterns own no photograph the hero has not already taken
+			// and no accent at all: poseidon, pebble-creek, funk and alhambra.
+			// Their galleries hold one landscape scene plus one `pattern
+			// render` — a two-tone sample of the pattern itself. The chain
+			// above leaves them solo, which is what the old site did too
+			// (measured 2026-10-29: its alhambra page carries the
+			// `pdp-hero-plate` rules and `pdp-hero-solo`, no plate element),
+			// so filling them is an upgrade the owner asked for, not a
+			// replica gap.
+			//
+			// A sample is the right picture for the slot and a repeated
+			// photograph is not: the hero background is the same scene at
+			// `object-fit: cover` under a scrim that still leaves 58% of it
+			// visible at the right edge, and the plate sits at that edge
+			// (`justify-self: end`) — the two would read as one image shown
+			// twice. A sample reads as a pattern swatch: measured on all four
+			// (their 3:4 centre crop keeps only repeating pattern), no
+			// perspective, no board thickness, no ground, so it cannot be
+			// mistaken for an installed project.
+			//
+			// `reference image` and `qc photo` stay out: those are the
+			// bedroom-wide shot with the screen as background, and a workshop
+			// photograph. Only the role that names a pattern sample enters.
+			if ( null === $plate ) {
+				$plate = $this->first_unused( $this->ids_with_role( $ids, 'pattern render' ), array( $hero ) );
+			}
 		} else {
 			$plate = $this->first_non_cutsheet( $ids );
 		}
@@ -754,6 +781,30 @@ final class Shortcodes {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * The media ids whose migrator role is exactly one phrase.
+	 *
+	 * The class vocabulary collapses eleven roles into six, and the plate's
+	 * last resort needs one of them back: `pattern render` shares the `other`
+	 * bucket with `reference image`, `unknown` and a `qc photo`, and only the
+	 * first of those is a flat sample of the pattern. Reading the role here
+	 * keeps that distinction without adding a seventh media class the rest of
+	 * the resolution has no use for.
+	 *
+	 * @param int[]  $ids  The product's media ids.
+	 * @param string $role The `_md_role` value to keep.
+	 * @return int[] The matching ids, in the order given.
+	 */
+	private function ids_with_role( array $ids, string $role ): array {
+		$kept = array();
+		foreach ( $ids as $id ) {
+			if ( (string) get_post_meta( (int) $id, '_md_role', true ) === $role ) {
+				$kept[] = (int) $id;
+			}
+		}
+		return $kept;
 	}
 
 	/**
