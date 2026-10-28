@@ -655,6 +655,46 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * The series tiles load when the panel opens, not on every page load.
+	 *
+	 * The nine tiles carry thumbnails. Fetching them at boot cost every visitor
+	 * nine image requests for a panel most never open: measured 2026-10-28 at
+	 * 23 images and 3467 KB on the home page against a 15-request profile
+	 * before the panel existed. Deferring them brought it to 14 images, and the
+	 * panel still shows all nine once opened (verified in the browser).
+	 *
+	 * A regex on the script is the guard that can be written without a browser:
+	 * the deferred path must register a MutationObserver on the panel, and no
+	 * unconditional `loadSeries()` may sit in the initialiser.
+	 */
+	public function test_the_series_tiles_are_fetched_when_the_panel_opens(): void {
+		$script = (string) file_get_contents( // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../assets/js/md-chrome.js'
+		);
+
+		$this->assertStringContainsString(
+			'MutationObserver',
+			$script,
+			'the tile fetch is triggered by the panel opening'
+		);
+		$this->assertStringContainsString(
+			"attributeFilter: ['class']",
+			$script,
+			'the observer watches the class the open state lands on'
+		);
+		$this->assertMatchesRegularExpression(
+			'/series\.hidden = hasValue \|\| !seriesRequested;/',
+			$script,
+			'an unopened panel keeps the empty list out of the layout instead of reserving a box for it'
+		);
+		$this->assertDoesNotMatchRegularExpression(
+			'/\n      loadSeries\(\);\n/',
+			$script,
+			'no unconditional fetch in the initialiser — that is the regression this guards'
+		);
+	}
+
+	/**
 	 * A WindPress volume.
 	 *
 	 * @param string $name The volume file name.
