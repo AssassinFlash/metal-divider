@@ -845,3 +845,18 @@ Patterns`、`Foshan production floor`），删除 ISO 与库存吨位，盐雾�
 并发部署覆盖：上一次部署完成后生产模板仍为旧字节（md5 与仓库不符），确认是
 另一会话同时部署 CB4813A 造成；按当前 HEAD 重部署后模板 md5 与仓库逐字节一致
 （`25ec73c9…`）。
+
+## 三十五、接管期只读核对：模板一致性、回复口径、全站缺陷扫描
+
+评审团接管期间另一会话在同分支连续部署，发生过一次覆盖，因此本轮只读核对，
+不写代码、不部署。
+
+- **模板一致性**：生产 `livecanvas` 42 个文件（25 页 + 17 partial）与仓库 HEAD
+  md5 逐一比对，**内容差异 0**；先前覆盖已消除。
+- **回复时限口径**：10 个检查面 `one business day` **全站 0 处**，
+  `within 24 hours` 全部覆盖；仅首页与工艺页各有 1 处 `same day`，是 QC 工序的
+  生产耗时，不是回复承诺。证据 `/tmp/md-replytime-readback.json`。
+- **全站缺陷扫描（174 页）**：非 200 为 **0**；字面短代码 **0**；占位符
+  （Lorem/TODO/undefined/null）**0**；空锚点 **0**。唯一命中的每页 1 个
+  `src=""` 定位到 `rapls-ai-chatbot` 隐藏的 `.chatbot-image-preview`，属第三方
+  客服挂件的惰性占位，不在本 GOAL 范围。证据 `/tmp/md-defect-sweep.json`。
