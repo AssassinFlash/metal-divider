@@ -103,7 +103,17 @@ function md_kb_endpoint_answer( array $input ): array {
 	}
 
 	$history = $body['history'] ?? array();
-	$history = is_array( $history ) ? array_values( array_filter( $history, 'is_string' ) ) : array();
+	// Each turn is capped where it is accepted: only the last six turns
+	// reach the model, but every accepted byte reached the server and was
+	// held first, so an unbounded turn is an unbounded request payload
+	// from a caller the bearer only vouches for so much. The cap mirrors
+	// the question's own limit in kind — characters, not bytes.
+	$history = is_array( $history )
+		? array_map(
+			static fn ( string $turn ): string => mb_substr( $turn, 0, 2000 ),
+			array_values( array_filter( $history, 'is_string' ) )
+		)
+		: array();
 
 	$pattern  = md_kb_endpoint_pattern_lookup( $q );
 	$page     = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null ) : array( 'context' => '' );

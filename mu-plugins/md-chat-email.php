@@ -55,6 +55,72 @@ function md_chat_email_hash_ok( $submitted, $stored ): bool {
 }
 
 /**
+ * The visitor's address, as the transport reports it: REMOTE_ADDR, never a
+ * forwarded header — the same rule and the same reason as the kb endpoint's
+ * gate (md_kb_endpoint_client_ip): a rate limiter that read a
+ * visitor-supplied header would let an attacker choose whose window to
+ * fill, or dodge their own.
+ *
+ * @return string The address, '' when the transport reports none.
+ */
+function md_chat_email_client_ip(): string {
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- REMOTE_ADDR has no slashes to strip, and FILTER_VALIDATE_IP is the whole validation: an address that fails it is not an address.
+	$raw = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+	return filter_var( $raw, FILTER_VALIDATE_IP ) ? $raw : '';
+}
+
+/**
+ * The store key of one address's failure window: a digest of the address
+ * keyed by the site's salt, so the counter never becomes a log of who
+ * asked — the same shape as md_kb_endpoint_failure_key, keyed by the site
+ * secret instead of a bearer this endpoint has none of.
+ *
+ * @return string The transient name.
+ */
+function md_chat_email_failure_key(): string {
+	return 'md_chat_email_failures_' . hash_hmac( 'sha256', md_chat_email_client_ip(), wp_salt( 'auth' ) );
+}
+
+/**
+ * The address's failed guesses still inside the sliding minute: ints of
+ * the timestamps they happened at, older ones dropped — the same window
+ * md_kb_endpoint_refuse_auth_failure prunes by.
+ *
+ * @return array<int, int> The failure timestamps, ascending.
+ */
+function md_chat_email_recent_failures(): array {
+	$now = time();
+	return array_values(
+		array_filter(
+			(array) get_transient( md_chat_email_failure_key() ),
+			static fn ( mixed $at ): bool => is_int( $at ) && $at > $now - 60
+		)
+	);
+}
+
+/**
+ * Whether the address has spent its ten guesses for this minute: a wrong
+ * chat id or a wrong hash is a guess at the capability, and ten of them
+ * lock the eleventh out before the chat row is even read.
+ *
+ * @return bool True when the address is locked out.
+ */
+function md_chat_email_rate_limited(): bool {
+	return count( md_chat_email_recent_failures() ) >= 10;
+}
+
+/**
+ * Record one failed guess in the address's sliding minute.
+ *
+ * @return void
+ */
+function md_chat_email_record_failure(): void {
+	$failures   = md_chat_email_recent_failures();
+	$failures[] = time();
+	set_transient( md_chat_email_failure_key(), $failures, 60 );
+}
+
+/**
  * Register the guest email route.
  *
  * @return void
@@ -97,6 +163,16 @@ function md_chat_email_respond( $request ) {
 		);
 	}
 
+	// The brute-force gate comes before any chat row is read: a wrong id
+	// and a wrong hash are both guesses at the capability, and this
+	// endpoint's 404 answers them without a hash comparison.
+	if ( md_chat_email_rate_limited() ) {
+		return new \WP_REST_Response(
+			array( 'message' => 'Too many attempts. Please try again in a minute.' ),
+			429
+		);
+	}
+
 	$remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['REMOTE_ADDR'] ) ) : '';
 	$rate_key    = 'md_chat_email_' . md5( $remote_addr . '|' . $chat_id );
 	if ( false !== get_transient( $rate_key ) ) {
@@ -115,6 +191,7 @@ function md_chat_email_respond( $request ) {
 	);
 
 	if ( ! $row ) {
+		md_chat_email_record_failure();
 		return new \WP_REST_Response(
 			array( 'message' => 'This chat link is no longer valid.' ),
 			404
@@ -122,6 +199,7 @@ function md_chat_email_respond( $request ) {
 	}
 
 	if ( ! md_chat_email_hash_ok( $hash, (string) $row->hash ) ) {
+		md_chat_email_record_failure();
 		return new \WP_REST_Response(
 			array( 'message' => 'This chat link is no longer valid.' ),
 			403

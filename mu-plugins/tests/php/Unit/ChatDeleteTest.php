@@ -211,4 +211,132 @@ final class ChatDeleteTest extends TestCase {
 			$GLOBALS['md_mu_test_routes'] ?? array()
 		);
 	}
+
+	/**
+	 * Resets the bootstrap's stand-in state for the respond-path tests, so
+	 * no test sees another's transients or database answers.
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$GLOBALS['md_mu_test_transients']   = array();
+		$GLOBALS['md_mu_test_db_responder'] = null;
+		$GLOBALS['wpdb']->queries           = array();
+		$_SERVER['REMOTE_ADDR']             = '192.0.2.30';
+		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
+	}
+
+	/**
+	 * Puts the request environment back the way the runner had it.
+	 */
+	protected function tearDown(): void {
+		unset( $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_X_FORWARDED_FOR'] );
+		parent::tearDown();
+	}
+
+	/**
+	 * One request to the route, with the body the browser sends.
+	 *
+	 * @param int    $chat_id The chat's id.
+	 * @param string $hash The chat's hash.
+	 * @return \WP_REST_Response The response.
+	 */
+	private function delete_request( int $chat_id, string $hash ): \WP_REST_Response {
+		return md_chat_delete_respond(
+			new \WP_REST_Request(
+				array(
+					'chat_id' => $chat_id,
+					'hash'    => $hash,
+				)
+			)
+		);
+	}
+
+	/**
+	 * Answers every row query with the one chat row given; null leaves the
+	 * chat missing.
+	 *
+	 * @param array<string, mixed>|null $row The chat row, null for no chat.
+	 * @return void
+	 */
+	private function answer_row_with( ?array $row ): void {
+		$GLOBALS['md_mu_test_db_responder'] = static fn (): ?array => $row;
+	}
+
+	/**
+	 * The stored hash shape the capability check accepts.
+	 *
+	 * @return string A 40-character hash.
+	 */
+	private function stored_hash(): string {
+		return 'dryymNnc0foLr9Y9OWbTI5oqH5nX3NROttOCfyUQ';
+	}
+
+	/**
+	 * Ten unknown chat ids from one address lock the eleventh request out
+	 * before the chat row is even read — the database sees ten queries for
+	 * eleven requests.
+	 */
+	public function test_locks_the_address_out_after_ten_unknown_chat_ids(): void {
+		$this->answer_row_with( null );
+
+		for ( $i = 0; $i < 10; ++$i ) {
+			self::assertSame( 404, $this->delete_request( 100 + $i, $this->stored_hash() )->status );
+		}
+
+		$queries_before = count( $GLOBALS['wpdb']->queries );
+		$eleventh       = $this->delete_request( 999, $this->stored_hash() );
+		self::assertSame( 429, $eleventh->status );
+		self::assertSame( 'Too many attempts. Please try again in a minute.', $eleventh->data['message'] );
+		self::assertCount( $queries_before, $GLOBALS['wpdb']->queries );
+	}
+
+	/**
+	 * A wrong hash is a guess at the capability: it answers 403 and leaves
+	 * a failure in the address's window.
+	 */
+	public function test_a_wrong_hash_is_recorded_as_a_guess(): void {
+		$this->answer_row_with(
+			array(
+				'id'     => 7,
+				'hash'   => $this->stored_hash(),
+				'user_id' => 0,
+				'dep_id' => 0,
+			)
+		);
+
+		self::assertSame( 403, $this->delete_request( 7, str_repeat( 'x', 40 ) )->status );
+
+		$failures = $GLOBALS['md_mu_test_transients'][ md_chat_delete_failure_key() ] ?? null;
+		self::assertIsArray( $failures );
+		self::assertCount( 1, $failures );
+	}
+
+	/**
+	 * The failure window is per address: ten failures from one address do
+	 * not lock a second one out, while the first stays locked.
+	 */
+	public function test_the_failure_window_is_per_address(): void {
+		$_SERVER['REMOTE_ADDR'] = '198.51.100.1';
+		$this->answer_row_with( null );
+		for ( $i = 0; $i < 10; ++$i ) {
+			self::assertSame( 404, $this->delete_request( 200 + $i, $this->stored_hash() )->status );
+		}
+
+		$_SERVER['REMOTE_ADDR'] = '198.51.100.2';
+		$this->answer_row_with( null );
+		self::assertSame( 404, $this->delete_request( 7, $this->stored_hash() )->status );
+
+		$_SERVER['REMOTE_ADDR'] = '198.51.100.1';
+		self::assertSame( 429, $this->delete_request( 7, $this->stored_hash() )->status );
+	}
+
+	/**
+	 * The window's key is a digest, not the address: reading the store
+	 * cannot learn who asked.
+	 */
+	public function test_the_failure_key_holds_no_address(): void {
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.9';
+		self::assertSame( 1, preg_match( '/^md_chat_delete_failures_[0-9a-f]{64}$/', md_chat_delete_failure_key() ) );
+		self::assertStringNotContainsString( '203.0.113.9', md_chat_delete_failure_key() );
+	}
 }

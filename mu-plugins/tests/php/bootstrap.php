@@ -660,9 +660,243 @@ final class wpdb {
 		}
 		return '0';
 	}
+
+	/**
+	 * Answers one row query: the responder returns an associative array or
+	 * null, and the row ships as the object the callers read ->hash from.
+	 *
+	 * @param string|null $query The SQL.
+	 * @return \stdClass|null The row, null when there is none.
+	 */
+	public function get_row( ?string $query = null ): ?\stdClass {
+		if ( null !== $query ) {
+			$this->queries[] = $query;
+		}
+		$responder = $GLOBALS['md_mu_test_db_responder'] ?? null;
+		if ( \is_callable( $responder ) ) {
+			$row = $responder( (string) $query );
+			if ( \is_array( $row ) ) {
+				return (object) $row;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Answers a rows query: the responder returns a list of associative
+	 * arrays, and the rows ship as objects.
+	 *
+	 * @param string|null $query The SQL.
+	 * @return array<int, \stdClass> The rows.
+	 */
+	public function get_results( ?string $query = null ): array {
+		if ( null !== $query ) {
+			$this->queries[] = $query;
+		}
+		$responder = $GLOBALS['md_mu_test_db_responder'] ?? null;
+		if ( \is_callable( $responder ) ) {
+			$rows = $responder( (string) $query );
+			if ( \is_array( $rows ) ) {
+				return \array_map( static fn ( array $row ): \stdClass => (object) $row, \array_filter( $rows, 'is_array' ) );
+			}
+		}
+		return array();
+	}
+
+	/**
+	 * Answers a column query: the responder returns the list, scalars only.
+	 *
+	 * @param string|null $query The SQL.
+	 * @return array<int, mixed> The column's values.
+	 */
+	public function get_col( ?string $query = null ): array {
+		if ( null !== $query ) {
+			$this->queries[] = $query;
+		}
+		$responder = $GLOBALS['md_mu_test_db_responder'] ?? null;
+		if ( \is_callable( $responder ) ) {
+			$col = $responder( (string) $query );
+			if ( \is_array( $col ) ) {
+				return $col;
+			}
+		}
+		return array();
+	}
+
+	/**
+	 * Runs one write query: logged, answered by the responder — false means
+	 * failure to the callers, anything else is a result they accept.
+	 *
+	 * @param string $query The SQL.
+	 * @return mixed The responder's answer, 0 when there is none.
+	 */
+	public function query( string $query ): mixed {
+		$this->queries[] = $query;
+		$responder = $GLOBALS['md_mu_test_db_responder'] ?? null;
+		if ( \is_callable( $responder ) ) {
+			return $responder( $query );
+		}
+		return 0;
+	}
+
+	/**
+	 * WordPress's placeholder interpolation, the subset the code under test
+	 * uses: %d, %s and %f, with the literal %% left alone.
+	 *
+	 * @param string $query The SQL with placeholders.
+	 * @param mixed  ...$args The values.
+	 * @return string The SQL with the values in it.
+	 */
+	public function prepare( string $query, mixed ...$args ): string {
+		if ( array() === $args ) {
+			return $query;
+		}
+		$replaced = '';
+		$arg_i    = 0;
+		$length   = \strlen( $query );
+		for ( $i = 0; $i < $length; ++$i ) {
+			$char = $query[ $i ];
+			if ( '%' !== $char || $i + 1 >= $length ) {
+				$replaced .= $char;
+				continue;
+			}
+			$next = $query[ $i + 1 ];
+			if ( '%' === $next ) {
+				$replaced .= '%';
+				++$i;
+				continue;
+			}
+			if ( $arg_i >= \count( $args ) ) {
+				$replaced .= $char;
+				continue;
+			}
+			$value = $args[ $arg_i++ ];
+			if ( 'd' === $next ) {
+				$replaced .= (string) (int) $value;
+			} elseif ( 'f' === $next ) {
+				$replaced .= (string) (float) $value;
+			} else {
+				$replaced .= "'" . \addslashes( (string) $value ) . "'";
+			}
+			++$i;
+		}
+		return $replaced;
+	}
+
+	/**
+	 * Runs one update: logged, answered by the responder — 1 row touched is
+	 * the stand-in's default, false (the failure the callers check) never is.
+	 *
+	 * @param string              $table The table.
+	 * @param array<string,mixed> $data The columns to set.
+	 * @param array<string,mixed> $where The columns to match.
+	 * @return mixed The responder's answer, 1 when there is none.
+	 */
+	public function update( string $table, array $data, array $where ): mixed {
+		$this->queries[] = 'UPDATE ' . $table . ' SET ' . \implode( ',', \array_keys( $data ) ) . ' WHERE ' . \implode( ',', \array_keys( $where ) );
+		$responder = $GLOBALS['md_mu_test_db_responder'] ?? null;
+		if ( \is_callable( $responder ) ) {
+			return $responder( $this->queries[ \count( $this->queries ) - 1 ] );
+		}
+		return 1;
+	}
 }
 
 $GLOBALS['wpdb'] = new wpdb();
+
+/**
+ * The site salt stand-in: a fixed string, because the failure windows only
+ * need it to be stable and secret-shaped inside one test run.
+ *
+ * @param string $scheme The salt's scheme.
+ * @return string The salt.
+ */
+function wp_salt( string $scheme = 'auth' ): string {
+	return 'md-mu-test-salt-' . $scheme;
+}
+
+/**
+ * The REST request stand-in: built from the decoded JSON body the route
+ * callback reads, plus the headers the bearer gate checks.
+ */
+final class WP_REST_Request {
+
+	/**
+	 * The decoded JSON body.
+	 *
+	 * @var array<string, mixed>
+	 */
+	public array $json_params;
+
+	/**
+	 * The request's headers, lowercase names.
+	 *
+	 * @var array<string, string>
+	 */
+	public array $headers;
+
+	/**
+	 * Builds the request.
+	 *
+	 * @param array<string, mixed>  $json_params The decoded body.
+	 * @param array<string, string> $headers The headers.
+	 */
+	public function __construct( array $json_params = array(), array $headers = array() ) {
+		$this->json_params = $json_params;
+		$this->headers     = \array_change_key_case( $headers );
+	}
+
+	/**
+	 * The decoded JSON body.
+	 *
+	 * @return array<string, mixed>|null The body, null when there is none.
+	 */
+	public function get_json_params(): ?array {
+		return $this->json_params;
+	}
+
+	/**
+	 * One header, by its lowercase name.
+	 *
+	 * @param string $name The header's name.
+	 * @return string The header, '' when absent.
+	 */
+	public function get_header( string $name ): string {
+		return $this->headers[ \strtolower( $name ) ] ?? '';
+	}
+}
+
+/**
+ * The REST response stand-in: the data and the status the routes return,
+ * readable by the tests.
+ */
+final class WP_REST_Response {
+
+	/**
+	 * The response's data.
+	 *
+	 * @var mixed
+	 */
+	public mixed $data;
+
+	/**
+	 * The response's HTTP status.
+	 *
+	 * @var int
+	 */
+	public int $status;
+
+	/**
+	 * Builds the response.
+	 *
+	 * @param mixed $data The data.
+	 * @param int   $status The HTTP status.
+	 */
+	public function __construct( mixed $data = null, int $status = 200 ) {
+		$this->data   = $data;
+		$this->status = $status;
+	}
+}
 
 /**
  * Rapls's own whitelist-validated table name (rapls-ai-chatbot.php:316):

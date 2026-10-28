@@ -2772,6 +2772,41 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * History turns are capped where they are accepted: an oversized turn
+	 * reaches the model as its first 2000 characters, and never as the
+	 * unbounded payload the caller sent.
+	 */
+	public function test_history_turns_are_capped_where_they_are_accepted(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Agave is a botanical screen.', false, 'none' )
+		);
+
+		$oversized = str_repeat( 'h', 2500 );
+		md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'       => 'Is MD-101 good for a lobby?',
+					'history' => array( $oversized, 'short turn' ),
+				),
+			)
+		);
+
+		$http = $this->recorded( 'md_mu_test_http' );
+		self::assertCount( 1, $http );
+		$sent = json_decode( (string) $http[0][1]['body'], true );
+		self::assertIsArray( $sent );
+		$contents = array();
+		foreach ( $sent['messages'] as $message ) {
+			$contents[] = (string) $message['content'];
+		}
+		self::assertContains( 'short turn', $contents );
+		self::assertContains( substr( $oversized, 0, 2000 ), $contents );
+		self::assertNotContains( $oversized, $contents );
+	}
+
+	/**
 	 * A recorded bootstrap global, reset between the tests.
 	 *
 	 * @param string $name The global's name.
