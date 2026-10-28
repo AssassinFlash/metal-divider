@@ -1830,3 +1830,26 @@ git worktree list
 **这条要记的**：`.scratch/` 在 `.gitignore` 里，容易被当成「随便可删的临时目录」。
 但 git 的 worktree 可以注册在仓库内任何路径下——**忽略规则管不到它是不是别处的工作现场**。
 判断依据是 `git worktree list`，不是目录名。
+
+#### 9.37.1 WhatsApp 按钮同样是复刻，连类名都一样
+
+旧站那三个按钮的 class 原文：
+
+```
+bg-[#25d366] px-6 text-center text-[15px] font-semibold text-white …
+bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline …
+bg-[#25D366] hover:bg-[#22c55e] text-white font-semibold …
+```
+
+`bg-[#25D366]` + `text-white` —— 新站用的是同一对，连 `text-white` 都在。
+所以那条 1.98:1 **不是我们引入的**，是旧站本来就有的品牌色组合。
+
+至此对比度相关的三类剩余项全部定案为**复刻**：
+
+| 项 | 数量 | 旧站同位置 | 结论 |
+|---|---:|---|---|
+| 半透明小字 `rgba(255,255,255,0.38–0.45)` | 16 | `rgba(255,255,255,0.4)` | 复刻 |
+| WhatsApp 绿底白字 | 1（全站 29 处用该色） | `bg-[#25D366] text-white` | 复刻 |
+| 超长 description（191 字符） | 27 | 逐字相同 | 复刻 |
+
+三项都属「要不要为了 WCAG / SERP 截断而升级」的同一个决策，不属于搬运阶段的缺陷。
