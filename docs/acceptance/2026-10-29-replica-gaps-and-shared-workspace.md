@@ -1225,3 +1225,27 @@ checking 814 references against https://metal-divider.com
 3. **保持现状**——接受 PDP 上 39KB 与 2 条控制台错误。
 
 我不擅自选，因为「停用一个 active 插件」属于生产变更，且该插件在本仓库之外。
+
+### 9.24 PDP × 146 全量复扫（业主 2026-10-29）
+
+`GOAL.md:987` 记过这四项检查，但那是 10 月 26 日的读数。今天有多次 CSS 与代码部署，
+本轮用**当前部署**重跑，并加了第五项（title 有效性）。取数来源是站点自己的
+`product-sitemap1.xml`（146 条），不是本地清单。
+
+| 检查项 | 结果 |
+|---|---|
+| HTTP 200 | **146 / 146** |
+| canonical 自指 | **146 / 146** |
+| `Product` JSON-LD 存在 | **146 / 146** |
+| 隐藏域 `md_inquiry_pattern_slug` 与 URL slug 一致 | **146 / 146** |
+| `<title>` 有效（长度 > 10） | **146 / 146** |
+
+10 路并发，逐条记录在 `/tmp/pdp_sweep.json`。样本：
+
+```
+/pattern/serpentine-architectural-metal-screen-pattern/
+  code=200 canonical=self jsonld=True slug=self title_ok=True
+```
+
+`GOAL.md:987` 记过首轮曾报 146 个「canonical 不符」，那是**脚本缺陷**（basename 去尾斜杠后
+比较值缺 `/`）。本轮直接按「canonical 是否等于 URL 本身」判定，0 不符——与那条记录一致。
