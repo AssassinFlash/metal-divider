@@ -52,11 +52,22 @@ CHROME_MIN_WIDTH = 578
 # can legitimately differ by.
 OVERFLOW_SLACK = 1
 
+# Page commands (`eval`, `open`, `screenshot`) require --session; the `chrome`
+# subcommands reject it. Without this the width assertion reads `None` for every
+# page and the whole run reports SKIP instead of measuring anything.
+SESSION: dict[str, str] = {}
+
+
+def _with_session(args: list[str]) -> list[str]:
+    if SESSION and args and args[0] != "chrome" and not any(a == "--session" for a in args):
+        return [*args, "--session", SESSION["name"]]
+    return args
+
 
 def run(args: list[str], timeout: int = 240) -> dict:
     try:
         completed = subprocess.run(
-            [OPENCLI, "browser", *args],
+            [OPENCLI, "browser", *_with_session(args)],
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -191,6 +202,7 @@ def main() -> int:
     # measured outerWidth-innerWidth difference on this Mac.
     window_width = args.width + 56
     session = f"mdov{int(time.time())}"
+    SESSION["name"] = session
 
     created = run(
         [
