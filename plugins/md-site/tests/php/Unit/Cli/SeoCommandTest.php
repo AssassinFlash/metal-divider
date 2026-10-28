@@ -410,12 +410,32 @@ final class SeoCommandTest extends TestCase {
 			),
 		);
 
+		// Every other redirect the table declares, each on its own post with its
+		// own target: `redirect_is_current()` compares the stored value against
+		// that row's target, so a shared post would make all but one look stale.
+		// Derived from the table so this fixture cannot fall behind it again.
+		$redirect_ids = array( 'pages' => $redirect );
+		$next_id      = $redirect;
+		foreach ( (array) ( new \ReflectionClass( Config::class ) )->getConstant( 'REDIRECT_TARGETS' ) as $r_title => $r_target ) {
+			if ( 'pages' === $r_title ) {
+				continue;
+			}
+			++$next_id;
+			$redirect_ids[ (string) $r_title ] = $next_id;
+			$meta[ $next_id ]                  = array(
+				'_seopress_redirections_enabled'       => 'yes',
+				'_seopress_redirections_type'          => '301',
+				'_seopress_redirections_value'         => (string) $r_target,
+				'_seopress_redirections_param'         => 'without_param',
+				'_seopress_redirections_logged_status' => 'both',
+				'_seopress_redirections_enabled_regex' => '',
+			);
+		}
+
 		return array(
 			'posts'     => $posts,
 			'meta'      => $meta,
-			'redirects' => array(
-				'pages' => $redirect,
-			),
+			'redirects' => $redirect_ids,
 		);
 	}
 }

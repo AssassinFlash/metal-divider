@@ -293,11 +293,18 @@ final class ConfigTest extends TestCase {
 		$this->assertArrayNotHasKey( 'pages', $metas, 'the shell must not be demanded as a page' );
 
 		$reflection = new \ReflectionClass( Config::class );
+		$table      = $reflection->getConstant( 'REDIRECT_TARGETS' );
+		$this->assertIsArray( $table );
 		$this->assertSame(
-			array( 'pages' => '/' ),
-			$reflection->getConstant( 'REDIRECT_TARGETS' ),
+			'/',
+			$table['pages'],
 			'the shell is expressed as the 301 that keeps it out of the index'
 		);
+		// This used to assert the table equalled exactly this one entry, which
+		// made the incompleteness look correct: SEOPress matches a redirect
+		// title as an exact path, so `pages` covered `/pages` and none of the
+		// thirteen `/pages/<handle>` URLs. Completeness is now PageRedirectTest's
+		// job; this one only pins the shell entry itself.
 	}
 
 	/**
