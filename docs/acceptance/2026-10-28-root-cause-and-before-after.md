@@ -567,3 +567,35 @@ cannot be flattened away"）。**这不是压缩错误，也不是我这一轮�
 
 这一轮确实引入过一次真回归（搜索图块预取，见第十五节），已修并验证：
 线上实测图片请求 **23 → 14**、页面加载时 `tiles: 0`、打开面板后 **9 个图块 9 张图全部加载**。
+
+## 十七、横向溢出回归：1440 与 578 两档，各 23 页零失败
+
+本轮改了正文宽度上限、目录侧栏（280 → 240px）、卡片（333 → 342px）与搜索面板，
+这些都是布局参数，必须确认没有引入横向滚动。
+
+用 `tools/audit/overflow.py`（判据是 `documentElement.scrollWidth` 对 `innerWidth`，
+不是「截图里内容碰到右边缘」——本站大量全幅摄影本来就碰到边缘）。
+
+| 视口 | 页面数 | 失败 |
+|---|---|---|
+| 1440 | 23 | **0** |
+| 578（Chrome 能开的最小窗口） | 23 | **0** |
+
+覆盖：首页、`/collections/`、`/shop/`、`/faqs/`、`/inquiry/`、`/privacy/`、`/about-us/`、
+`/manufacturing-process/`、`/project-gallery/`、`/blog/`、5 个家族页、3 个工艺页、
+`/custom-metal-divider-screens/`、2 个 PDP、2 个系列归档。
+
+### 这个工具此前一直在空转
+
+第一次跑报「23 pages, 23 failed，全部 SKIP — viewport is None」。原因不是站点：
+`run()` 不给页面命令附加 `--session`，`eval` 于是读不到页面，`window.innerWidth` 返回 `None`，
+每一页都被判成「宽度不对」而跳过。**它一直是绿的/红的外观，但什么都没测。**
+
+修法是给 `run()` 加 `_with_session()`：非 `chrome` 子命令自动补 `--session`
+（`chrome` 子命令相反，带上就报 unknown option）。`page_weight.py` 有同样的毛病，一并修了。
+
+### 320 仍然只能用截图
+
+Chrome 在本机最小窗口宽 **578px**，因此 320 无法从 DOM 询问。`overflow.py` 对此有
+截图兜底（读最右一列是否为不变的滚动条轨道色），但那条路径需要 `--capture-dir`，
+本轮未使用。320 的结论仍来自第十四节的整页截图与纯色带检测。
