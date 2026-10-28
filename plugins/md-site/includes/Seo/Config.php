@@ -313,6 +313,27 @@ final class Config {
 				'_seopress_titles_title' => 'Privacy Policy %%sep%% %%sitetitle%%',
 				'_seopress_titles_desc'  => 'How metal-divider.com handles inquiry data: what we collect, why, how long we keep it, and how to ask about access or deletion.',
 			),
+			'chinese-style-artistic-screens'    => array(
+				'_seopress_titles_desc' => 'Chinese-style and artistic stainless steel screens for hotels, restaurants and luxury homes. Send the pattern, dimensions and finish for a project spec.',
+			),
+			'glass-hybrid-screens'              => array(
+				'_seopress_titles_desc' => 'Glass and hybrid screens pairing stainless steel frames with glass for zoning and privacy in premium interiors. Send the opening and glass direction for a spec.',
+			),
+			'outdoor-privacy-landscape-screens' => array(
+				'_seopress_titles_desc' => 'Outdoor privacy and landscape screens in 304 and 316 stainless steel, specified for coastal, alpine and courtyard conditions. Send the site and dimensions.',
+			),
+			'expanded-metal-panels'             => array(
+				'_seopress_titles_desc' => 'Expanded stainless steel mesh panels for facades, partitions and ceilings. Compare diamond, hexagonal and fine patterns, then send the panel schedule.',
+			),
+			'laser-cut-panels'                  => array(
+				'_seopress_titles_desc' => 'Laser-cut stainless steel panels cut to your drawing in 304 or 316, brushed or PVD finish. Send a DXF for a manufacturability review and quote.',
+			),
+			'perforated-panels'                 => array(
+				'_seopress_titles_desc' => 'Perforated stainless steel panels in 304 or 316, punched to your pattern and open area. Send the hole pattern, open area and panel size for a quote.',
+			),
+			'stainless-steel-screens'           => array(
+				'_seopress_titles_desc' => 'Stainless steel screen systems for facades, partitions and outdoor privacy. Compare laser-cut, perforated, expanded and hybrid directions, then send the brief.',
+			),
 			'inquiry/thank-you'                 => array(
 				'_seopress_robots_index' => 'yes',
 			),

@@ -202,6 +202,13 @@ final class SeoCommandTest extends TestCase {
 		$gallery       = 109;
 		$geometric     = 110;
 		$custom        = 111;
+		$chinese       = 112;
+		$glass         = 113;
+		$outdoor       = 114;
+		$expanded      = 115;
+		$laser_panels  = 116;
+		$perforated    = 117;
+		$stainless     = 118;
 		$s_product     = 201;
 		$s_faq         = 202;
 		$s_article     = 203;
@@ -265,6 +272,41 @@ final class SeoCommandTest extends TestCase {
 				'type'  => 'page',
 				'title' => 'Custom metal divider screens',
 			),
+			'chinese-style-artistic-screens'    => array(
+				'id'    => $chinese,
+				'type'  => 'page',
+				'title' => 'Chinese style screens',
+			),
+			'glass-hybrid-screens'              => array(
+				'id'    => $glass,
+				'type'  => 'page',
+				'title' => 'Glass hybrid screens',
+			),
+			'outdoor-privacy-landscape-screens' => array(
+				'id'    => $outdoor,
+				'type'  => 'page',
+				'title' => 'Outdoor privacy screens',
+			),
+			'expanded-metal-panels'             => array(
+				'id'    => $expanded,
+				'type'  => 'page',
+				'title' => 'Expanded metal panels',
+			),
+			'laser-cut-panels'                  => array(
+				'id'    => $laser_panels,
+				'type'  => 'page',
+				'title' => 'Laser-cut panels',
+			),
+			'perforated-panels'                 => array(
+				'id'    => $perforated,
+				'type'  => 'page',
+				'title' => 'Perforated panels',
+			),
+			'stainless-steel-screens'           => array(
+				'id'    => $stainless,
+				'type'  => 'page',
+				'title' => 'Stainless steel screens',
+			),
 			'md-schema-product'                 => array(
 				'id'    => $s_product,
 				'type'  => 'seopress_schemas',
@@ -294,6 +336,13 @@ final class SeoCommandTest extends TestCase {
 			$gallery       => $page_metas['project-gallery'],
 			$geometric     => $page_metas['laser-cut-geometric-metal-screens'],
 			$custom        => $page_metas['custom-metal-divider-screens'],
+			$chinese       => $page_metas['chinese-style-artistic-screens'],
+			$glass         => $page_metas['glass-hybrid-screens'],
+			$outdoor       => $page_metas['outdoor-privacy-landscape-screens'],
+			$expanded      => $page_metas['expanded-metal-panels'],
+			$laser_panels  => $page_metas['laser-cut-panels'],
+			$perforated    => $page_metas['perforated-panels'],
+			$stainless     => $page_metas['stainless-steel-screens'],
 			$s_product     => array(
 				'_seopress_pro_rich_snippets_type'         => 'products',
 				'_seopress_pro_rich_snippets_rules'        => array(
