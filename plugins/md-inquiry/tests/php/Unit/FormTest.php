@@ -269,10 +269,12 @@ final class FormTest extends TestCase {
 		$src              = '';
 		$deps             = array();
 		$behavior_version = '';
+		$api_version      = false;
 		foreach ( $this->registered_scripts as $call ) {
 			if ( Form::TURNSTILE_SCRIPT === $call[0] ) {
-				$src  = $call[1];
-				$deps = $call[2];
+				$src         = $call[1];
+				$deps        = $call[2];
+				$api_version = $call[3];
 			}
 			if ( Form::SCRIPT === $call[0] ) {
 				$behavior_version = (string) $call[3];
@@ -284,6 +286,7 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'onload=' . Form::TURNSTILE_ONLOAD, $src );
 		$this->assertStringNotContainsString( 'cf-turnstile', $src );
 		$this->assertContains( Form::SCRIPT, $deps );
+		$this->assertNull( $api_version, 'Cloudflare must not receive WordPress\'s unrelated ver parameter' );
 		$expected = \MetalDivider\Inquiry\Plugin::VERSION . '.' . substr( (string) md5_file( dirname( __DIR__, 3 ) . '/assets/inquiry.js' ), 0, 10 );
 		$this->assertSame( $expected, $behavior_version, 'the behavior URL changes whenever its bytes change' );
 

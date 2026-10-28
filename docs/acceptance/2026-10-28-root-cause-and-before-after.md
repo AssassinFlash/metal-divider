@@ -648,3 +648,28 @@ hPanel 只追加一条 `@` TXT；公共 DoH 读回 `Status=0` 且该 TXT 存在�
 
 截图 8 张与原始 `report.json` 在 `/tmp/md-320-20261028/`。搜索建议的图区未读
 `naturalWidth`，因此该部分不宣称图片验证通过。
+
+## 二十一、Turnstile：从挂件存在到真实 verified
+
+完整备份 `backup-20261028-0401`（31,296 files + manifest）完成后才写生产配置；
+被超时切断的 `0346` 不完整目录已删除并读回。
+
+上线前修掉四层根因：每个表单独立显式渲染，隐藏弹层有布局并进视口后才初始化；
+siteverify 除 `success=true` 外还要求 hostname 精确等于 `metal-divider.com`；
+CSP `connect-src` 放行挑战域；`inquiry.js` URL 带文件摘要，避免旧缓存没有
+`mdInquiryTurnstileReady`。PHP 532 项、询盘集成 2/116 与项目门禁均通过。
+
+生产读回：规范 `/inquiry/` 第二次请求为 LiteSpeed `hit`，显式挂件与 CSP 仍在；
+假 token 经真实表单 POST 返回 `Verification failed`，无 303，询盘数 1→1。
+真 Chrome 中 token 生成、提交解锁；一次真实表单到感谢页，记录为 `verified`，
+内部通知/客户确认的队列路由正确，实际只投递指定测试地址。探针 post 1721 与
+两条队列已删，测试模式已 off。
+
+WP-CLI 成功行意外回显首组密钥后，未继续用该组验收：替换挂件已写入，
+旧挂件经 Cloudflare API 删除并读回，剩余 Linker 与新的 production 两项。
+密钥与 token 不写入本文件。
+
+320 报价弹层补测：关闭时无 token/iframe，真实 CTA 打开后才出现 Cloudflare
+人工复选框。自动化会话被要求人工挑战且 pat 返回 401，因此不冒充弹层 token
+已通过；页面表单的 real verified 是独立证据。截图 `09`–`12` 与 `quote-modal.json`
+同在 `/tmp/md-320-20261028/`。
