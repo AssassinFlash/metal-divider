@@ -1209,3 +1209,38 @@ GOAL 覆盖矩阵的硬项"完整询盘线上实走"此前只验过 dev,本轮�
 
 证据:`docs/acceptance/2026-10-28-root-cause-and-before-after.md`;
 截图 `/tmp/visual-audit/`(前,访客态)与 `/tmp/visual-after2/`(后,访客态,同条件)。
+
+## 2026-10-28 晚 · 评审团接管:Batch 0(P0 修复)+口径统一(22:24–22:50)
+
+**业主裁定(22:24)**:①询盘回复时限三口径统一(全按竞品平均,统一为 24 hours 变体);
+②坐席台密码不轮换;③企微隐私条款确认(120 字+昵称出境腾讯已写明);④无期限,尽快,
+最高并发,子代理用起来。模型路由:GLM5.3(thinking=Max,最强,非多模态)>Grok4.7(XHigh,
+多模态)>GLM5.3 Flash(Max,多模态较低档)。
+
+**P0 CSP 修复上线**:根因=07:47Z 与 12:34Z 两次站点线部署用 158 版 guards(缺 frame-src
+'sself')覆盖了 161 版。修复=语义合并(158 基底+'self',不留 CookieYes 残留),提交
+ac5a14f(含 SiteGuardsTest 精确串断言与 TemplateAssetsTest 同步,10/10+8/8 绿)。
+22:34T 批次 `20261028T143450035145Z-9f7cb21`(外部并行的 meta-descriptions 会话所发,
+构建基底含 ac5a14f)原子切换后修复生效;该批 verify 由 resume-deploy 补完归档。
+三件套验证:①cache-miss 头读回 `frame-src 'self' https://challenges.cloudflare.com` ✅
+②chat-verify 6/6 exit 0(新增第 6 探针 home-csp-allows-widget-frame,ed4db40@161 线,
+红侧 5过1红→绿侧 6/6 双证)③真 Chrome(opencli)实开:窗口 380×520、问候气泡渲染、
+控制台 0 错误(截图 /tmp/mdchat-widget-open2.png,zai 视觉复核确认无 chrome-error)。
+
+**K16 口径统一(cb4813a,12 文件 15+/15−)**:one business day→24 hours 变体 10 处
+(Emails.php:128+EmailsTest 同步、about/manufacturing/project-gallery 同句、geometric、
+thank-you、inquiry:17/30、footer+cta partials);same-day 承诺 4 处(inquiry:71/87、
+custom-screens:189、outdoor-privacy:2502)。规则:提交后承诺面=within 24 hours on
+business days(对齐 Form.php:264);提交前营销面=within 24 hours。保留:Lead 芯片 6 处
+生产耗时、same-day template fit 案例叙事、48h 交付物(feasibility 24h/48h 打架另票)。
+9f7cb21 后行号漂移+大小写遗漏,以 grep 为权威重新定位,读回 0 残留,EmailsTest 7/7。
+
+**观察(非缺陷,留 Batch 2)**:①rapls 挂件占位文字按浏览器语言自适应(JS 三级优先:
+response_language→site_locale→navigator.language),业主 zh Chrome 见中文属设计;
+response_language=auto 时回复语言是否随访客——业主裁定面。②同屏双入口(rapls 徽章
++mdvisitor 胶囊)在窗口开启时叠压输入区右角——走查时业主过目。
+
+**运维教训**:并发写者在主 worktree 时,部署须从 detached 干净 worktree 跑;但
+deploy.just 未入库,`just` 会向上搜索命中主仓库 justfile——隔离 worktree 内必须自带
+deploy.just 或显式 --justfile。部署门禁(unresolved previous deployment)按 §5 用
+resume-deploy 收尾,不重试。impl/158-ai-wiring 已推 origin(e70e825..cb4813a)。
