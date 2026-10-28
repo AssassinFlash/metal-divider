@@ -1326,3 +1326,33 @@ sort all-sitemap-urls | uniq -d   →  https://metal-divider.com/blog/
 
 另外记一条并发风险：`deploy6` 与 `deploy7` 同时存在时，`deploy7` 被静默拒绝；
 若两次改动不同，线上会停在前一个版本而日志看起来「有过部署」。本项目应避免并发部署。
+
+#### 9.25.2 最终读回：索引 4 → 3，跨 sitemap 零重复
+
+部署前的实况是索引 **4 条**（`post` 已在上一次移除），其中 `category` 是空项。
+
+**部署前先写下的预测**：索引应从 4 条变为 **3 条**，`category` 消失，
+`page` / `product` / `product_cat` 三条必须保留；若是 2 条或仍 4 条，说明逻辑仍有问题。
+
+读回结果：
+
+```
+https://metal-divider.com/page-sitemap1.xml
+https://metal-divider.com/product-sitemap1.xml
+https://metal-divider.com/product_cat-sitemap1.xml
+```
+
+**3 条，与预测一致**。连续两次读数相同（排除瞬时值）。
+
+再查跨 sitemap 重复：
+
+| 项 | 结果 |
+|---|---:|
+| 三份 sitemap 的 URL 总数 | **174** |
+| 去重后 | **174** |
+| 重复 | **0** |
+
+修复前跨五份 sitemap 有 175 条、其中 `/blog/` 出现两次；现在是 174 条、零重复。
+
+两份空 sitemap（`post-` 与 `category-`）自身仍返回 200，但**已不在索引里**，
+搜索引擎不会被指过去，因此空文件本身无害——不为它额外做 404 处理。
