@@ -309,6 +309,7 @@ body.widget-chat .mdv-email button:hover{background:#24503a}
 body.widget-chat .mdv-email button:focus-visible{outline:2px solid #c9a962;outline-offset:2px}
 body.widget-chat .mdv-email .mdv-email-skip{margin-top:7px;padding:0;border:0;background:transparent;color:#7a6438;font-size:11.5px;text-decoration:underline;cursor:pointer}
 body.widget-chat .mdv-email-skip:hover{color:#1b3b2c}
+body.widget-chat .mdv-email-skip:focus-visible{outline:2px solid #c9a962;outline-offset:2px}
 body.widget-chat .mdv-email-status{min-height:15px;margin-top:6px;color:#7d5a2e;font-size:11.5px;line-height:1.35}
 body.widget-chat .mdv-email-status[data-tone="error"]{color:#a4452e}
 body.widget-chat .mdv-email-status[data-tone="ok"]{color:#2f6a4a}

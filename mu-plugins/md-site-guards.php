@@ -50,7 +50,10 @@ remove_action( 'wp_head', 'rsd_link' );
  * and *.cookieyes.com, inline styles); wa.me needs no entry, being a
  * navigation, and scripts carry no 'unsafe-inline' — the value is pinned by
  * test, and the one allowed fallback needs a recorded violation first
- * (docs/specs/23-mu-plugins.md §2.2).
+ * (docs/specs/23-mu-plugins.md §2.2). frame-src also carries 'self': the
+ * site pages frame the same-origin visitor chat widget (the Ask Metal
+ * Divider launcher, mu-plugins/md-chat-launcher.php), so self-framing is a
+ * first-party need, not an opening to third parties.
  *
  * @return array<int, string> The header lines, name and value, ready for header().
  */
@@ -60,7 +63,7 @@ function md_site_guards_header_lines(): array {
 		'X-Frame-Options: SAMEORIGIN',
 		'X-Content-Type-Options: nosniff',
 		'Referrer-Policy: strict-origin-when-cross-origin',
-		"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com https://cdn-cookieyes.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn-cookieyes.com; font-src 'self'; connect-src 'self' https://*.cookieyes.com https://cdn-cookieyes.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+		"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com https://cdn-cookieyes.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn-cookieyes.com; font-src 'self'; connect-src 'self' https://*.cookieyes.com https://cdn-cookieyes.com; frame-src 'self' https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
 	);
 }
 

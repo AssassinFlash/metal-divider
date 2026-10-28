@@ -1270,6 +1270,50 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * A question that names no pattern but is asked on a pattern page is
+	 * answered from that page's live product facts, and the audit trail
+	 * names the page's pattern — never the knowledge rows the retrieval
+	 * dragged in alongside it.
+	 */
+	public function test_a_page_url_answer_cites_the_pages_pattern_not_the_knowledge_rows(): void {
+		$this->configure_kb(
+			array(
+				array(
+					'type'      => 'knowledge',
+					'source_id' => 11,
+					'title'     => 'Showroom visits',
+					'content'   => 'Showroom availability is being confirmed with the team.',
+					'url'       => null,
+					'score'     => 9.5,
+				),
+			),
+			'{"choices":[{"message":{"role":"assistant","content":"{\"answer\":\"The open area of this pattern is 32%.\",\"handoff\":false}"}}]}'
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'What is the open area of this pattern?',
+					'page_url' => 'https://staging.metal-divider.com/product/agave/',
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( "The open area of this pattern is 32%.\n\nBased on: Pattern MD-101", $out['body']['msg'] );
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
+		self::assertSame( array( 'Pattern MD-101' ), $out['body']['source_labels'] );
+
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'CURRENT PATTERN (the page the visitor opened the chat on):', $user );
+		self::assertStringContainsString( '32%', $user );
+	}
+
+	/**
 	 * An empty open area is the site's honest wording, never a zero the
 	 * model could repeat as a measurement.
 	 */
@@ -1959,7 +2003,7 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( 200, $out['status'] );
-		self::assertSame( array( 'knowledge#4 Contact' ), $out['body']['sources'] );
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
 		$http    = $this->recorded( 'md_mu_test_http' );
 		$payload = json_decode( (string) $http[0][1]['body'], true );
 		$user    = (string) end( $payload['messages'] )['content'];
@@ -1976,6 +2020,44 @@ final class KbEndpointTest extends TestCase {
 		self::assertStringNotContainsString( 'permalink', $user );
 		self::assertStringNotContainsString( 'series:', $user );
 		self::assertDoesNotMatchRegularExpression( '/\bprice\b|lead time|\bmoq\b/i', $user );
+	}
+
+	/**
+	 * Staging serves the single-product page under /product/ today; the
+	 * /pattern/ base lands with the main-site URL work. Both are this
+	 * site's own product permalink, so both carry the pattern context.
+	 */
+	public function test_a_product_base_page_url_is_current_context(): void {
+		$this->configure_kb(
+			array(
+				array(
+					'type'      => 'knowledge',
+					'source_id' => 4,
+					'title'     => 'Contact',
+					'content'   => 'WhatsApp +852 6473 1687.',
+				),
+			),
+			$this->model_reply( 'Agave is a botanical screen.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'What is the open area of this pattern?',
+					'page_url' => 'https://staging.metal-divider.com/product/agave/',
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'CURRENT PATTERN (the page the visitor opened the chat on):', $user );
+		self::assertStringContainsString( 'MD-101', $user );
+		self::assertStringContainsString( '32%', $user );
 	}
 
 	/**
@@ -2155,7 +2237,7 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( 'transfer_operator', $out['body']['action'] );
-		self::assertSame( array(), $out['body']['sources'] );
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
@@ -2380,7 +2462,7 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( 'transfer_operator', $out['body']['action'] );
-		self::assertSame( array(), $out['body']['sources'] );
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
 		self::assertStringContainsString( "Agave's open area is 32%.", (string) $out['body']['msg'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}

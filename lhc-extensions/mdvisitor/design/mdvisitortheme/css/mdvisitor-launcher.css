@@ -1,0 +1,95 @@
+/* Metal Divider site launcher — charcoal/brass, matches the visitor widget
+ * (#162 design). Served from the chat extension asset path and injected by
+ * mdvisitor-launcher.js; no site-page styling depends on it. */
+
+.mdvl-launcher {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 2147483000;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	height: 54px;
+	padding: 0 18px 0 8px;
+	border: 1px solid rgba( 201, 169, 98, 0.34 );
+	border-radius: 999px;
+	background: #050806;
+	color: #f7f3ea;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	font-size: 14px;
+	letter-spacing: 0.01em;
+	box-shadow: 0 16px 40px rgba( 0, 0, 0, 0.45 ), inset 0 1px 0 rgba( 255, 255, 255, 0.06 );
+	cursor: pointer;
+}
+
+.mdvl-launcher[hidden] {
+	display: none;
+}
+
+.mdvl-launcher:focus-visible {
+	outline: 2px solid #c9a962;
+	outline-offset: 3px;
+}
+
+.mdvl-mark {
+	display: inline-grid;
+	place-items: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	background: #c9a962;
+	color: #0a0e0b;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 11px;
+	letter-spacing: 0.04em;
+}
+
+.mdvl-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: #4ec98a;
+	box-shadow: 0 0 0 3px rgba( 78, 201, 138, 0.12 );
+}
+
+.mdvl-card {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 2147483000;
+	width: 400px;
+	height: 680px;
+	max-height: calc( 100dvh - 32px );
+	background: #111;
+	border-radius: 18px;
+	overflow: hidden;
+	box-shadow: 0 28px 70px rgba( 0, 0, 0, 0.5 );
+}
+
+.mdvl-card[hidden] {
+	display: none;
+}
+
+.mdvl-frame {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	background: #faf7ef;
+}
+
+@media ( max-width: 560px ) {
+	.mdvl-launcher {
+		right: 16px;
+		bottom: 16px;
+	}
+
+	.mdvl-card {
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		max-height: none;
+		border-radius: 0;
+	}
+}

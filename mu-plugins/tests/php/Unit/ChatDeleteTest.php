@@ -28,23 +28,76 @@ use PHPUnit\Framework\TestCase;
 final class ChatDeleteTest extends TestCase {
 
 	/**
-	 * The delete set is the chat-domain satellite tables enumerated from
-	 * information_schema: unique, lh_-prefixed, no mail id space.
+	 * The generic sweep is the chat-domain satellite tables enumerated from
+	 * information_schema: unique, lh_-prefixed, no mail id space. The three
+	 * tables keyed differently (lh_group_msg, lh_group_chat, lh_transfer)
+	 * travel through their own statements, not this list.
 	 */
 	public function test_tables_are_the_chat_domain_set(): void {
 		$tables = md_chat_delete_tables();
 
-		self::assertCount( 28, $tables );
+		self::assertCount( 25, $tables );
 		self::assertSame( $tables, array_values( array_unique( $tables ) ) );
 		foreach ( $tables as $table ) {
 			self::assertStringStartsWith( 'lh_', $table );
 			self::assertStringNotContainsString( 'mailconv', $table );
 		}
 		self::assertContains( 'lh_msg', $tables );
-		self::assertContains( 'lh_transfer', $tables );
 		self::assertContains( 'lh_chat_online_user', $tables );
 		self::assertContains( 'lh_generic_bot_chat_event', $tables );
 		self::assertContains( 'lh_abstract_form_collected', $tables );
+		self::assertNotContains( 'lh_group_msg', $tables );
+		self::assertNotContains( 'lh_group_chat', $tables );
+		self::assertNotContains( 'lh_transfer', $tables );
+	}
+
+	/**
+	 * Group cleanup mirrors erLhcoreClassModelGroupChat::afterRemove():
+	 * messages and members are keyed by the GROUP id, the group rows by the
+	 * chat id. A bare chat_id sweep would delete the wrong rows.
+	 */
+	public function test_group_cleanup_keys_messages_by_group_id(): void {
+		$sql = md_chat_delete_group_cleanup_sql();
+
+		self::assertSame( 'SELECT id FROM lh_group_chat WHERE chat_id = %d', $sql['group_ids'] );
+		self::assertSame( 'DELETE FROM lh_group_msg WHERE chat_id = %d', $sql['group_msgs'] );
+		self::assertSame( 'DELETE FROM lh_group_chat_member WHERE group_id = %d', $sql['members'] );
+		self::assertSame( 'DELETE FROM lh_group_chat WHERE chat_id = %d', $sql['groups'] );
+	}
+
+	/**
+	 * The transfer delete keeps mail transfers: chat_id is a shared id
+	 * space, transfer_scope 0 is the chat side (upstream beforeRemove).
+	 */
+	public function test_transfer_delete_keeps_mail_transfers(): void {
+		self::assertSame(
+			'DELETE FROM lh_transfer WHERE chat_id = %d AND transfer_scope = 0',
+			md_chat_delete_transfer_sql()
+		);
+	}
+
+	/**
+	 * File targets resolve under the LHC root only: normal var/storage rows
+	 * resolve, traversal and outside-root paths are dropped, rows without a
+	 * file or name are ignored.
+	 */
+	public function test_file_targets_stay_inside_the_lhc_root(): void {
+		$root = '/srv/site/chat/';
+		$rows = array(
+			(object) array( 'file_path' => 'var/storage/6b/', 'name' => 'a.png' ),
+			array( 'file_path' => 'var/storage/zz/', 'name' => 'b.pdf' ),
+			(object) array( 'file_path' => '../../../etc/', 'name' => 'passwd' ),
+			(object) array( 'file_path' => '/etc/passwd', 'name' => 'x' ),
+			(object) array( 'file_path' => 'var/storage/../storage/', 'name' => 'dotdot.png' ),
+			(object) array( 'file_path' => '', 'name' => 'no-path.png' ),
+		);
+
+		$targets = md_chat_delete_file_targets( $rows, $root );
+
+		self::assertSame(
+			array( '/srv/site/chat/var/storage/6b/a.png', '/srv/site/chat/var/storage/zz/b.pdf' ),
+			$targets
+		);
 	}
 
 	/**

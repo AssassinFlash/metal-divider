@@ -87,10 +87,24 @@
     no.addEventListener('click', closeBox);
 
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !box.hidden) {
+      if (box.hidden) {
+        return;
+      }
+      if (event.key === 'Escape') {
         event.preventDefault();
-        event.stopPropagation();
+        event.stopImmediatePropagation();
         closeBox();
+        return;
+      }
+      if (event.key === 'Tab') {
+        /* keep focus inside the modal confirm: Tab and shift+Tab cycle its
+         two buttons in order, wrapping at both ends */
+        event.preventDefault();
+        if (document.activeElement === yes) {
+          no.focus();
+        } else {
+          yes.focus();
+        }
       }
     }, true);
 

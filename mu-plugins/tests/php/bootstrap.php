@@ -459,9 +459,103 @@ if ( ! defined( 'OBJECT' ) ) {
 	define( 'OBJECT', 'OBJECT' );
 }
 
-function wp_parse_url( string $url ): array|false {
+function wp_parse_url( string $url, int $component = -1 ): array|string|int|false|null {
 	$parts = parse_url( $url );
+	if ( -1 !== $component ) {
+		return is_array( $parts ) ? ( $parts[ $component ] ?? null ) : false;
+	}
 	return is_array( $parts ) ? $parts : false;
+}
+
+/**
+ * Whether the request is an admin screen, overridable per test.
+ *
+ * @return bool
+ */
+function is_admin(): bool {
+	return $GLOBALS['md_mu_test_is_admin'] ?? false;
+}
+
+/**
+ * Whether the request is a feed, overridable per test.
+ *
+ * @return bool
+ */
+function is_feed(): bool {
+	return $GLOBALS['md_mu_test_is_feed'] ?? false;
+}
+
+/**
+ * Removes a filter callback recorded by add_filter.
+ *
+ * @param string $hook     The filter name.
+ * @param mixed  $callback The callback to remove.
+ * @return void
+ */
+function remove_filter( string $hook, mixed $callback ): void {
+	$GLOBALS['md_mu_test_hooks'][ $hook ] = array_values(
+		array_filter(
+			$GLOBALS['md_mu_test_hooks'][ $hook ] ?? array(),
+			static fn ( array $entry ): bool => $entry[0] !== $callback
+		)
+	);
+}
+
+/**
+ * Records enqueue calls for assertions.
+ *
+ * @param string           $handle The script handle.
+ * @param string           $src    The script source.
+ * @param array<int,mixed> $deps   The dependencies.
+ * @param string|bool|null $ver    The version.
+ * @param array<string,mixed>|bool $args Footer and strategy arguments.
+ * @return void
+ */
+function wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, array|bool $args = array() ): void {
+	$GLOBALS['md_mu_test_enqueues'][] = array(
+		'handle' => $handle,
+		'src'    => $src,
+		'deps'   => $deps,
+		'ver'    => $ver,
+		'args'   => $args,
+	);
+}
+
+/**
+ * WordPress's text sanitizer, a strip-and-trim for test purposes.
+ *
+ * @param mixed $value The submitted value.
+ * @return string|array<string>|null The sanitized value.
+ */
+function sanitize_text_field( mixed $value ): string|array|null {
+	if ( is_string( $value ) ) {
+		return trim( preg_replace( '/[\r\n\t ]+/', ' ', strip_tags( $value ) ) ?? '' );
+	}
+	if ( is_array( $value ) ) {
+		return array_map( 'sanitize_text_field', $value );
+	}
+	return null;
+}
+
+/**
+ * Path normalizer: lowercases the drive letter and turns backslashes into
+ * slashes, matching the WP core behaviour the delete endpoint relies on.
+ *
+ * @param string $path The path.
+ * @return string The normalized path.
+ */
+function wp_normalize_path( string $path ): string {
+	return str_replace( '\\', '/', $path );
+}
+
+/**
+ * WordPress's unslash, a no-op for test superglobals.
+ *
+ * @param mixed $value The submitted value.
+ * @return mixed The value unchanged.
+ */
+function wp_unslash( mixed $value ): mixed {
+	return $value;
 }
 
 function get_page_by_path( string $page_path, string $output = OBJECT, string|array $post_type = 'page' ): ?\WP_Post {
@@ -626,3 +720,4 @@ require_once dirname( __DIR__, 2 ) . '/md-staging-guards.php';
 require_once dirname( __DIR__, 2 ) . '/md-kb-endpoint.php';
 require_once dirname( __DIR__, 2 ) . '/md-chat-email.php';
 require_once dirname( __DIR__, 2 ) . '/md-chat-delete.php';
+require_once dirname( __DIR__, 2 ) . '/md-chat-launcher.php';

@@ -35,7 +35,7 @@
         <?php endif; ?>
         <div class="mdv-danger-actions" data-mdv-start-url="<?php echo erLhcoreClassDesign::baseurl('chat/chatwidget')?>/(department)/<?php echo (int)$chat->dep_id;?>">
             <button class="mdv-delete-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mdv-delete-confirm">Delete this conversation</button>
-            <div class="mdv-confirm" id="mdv-delete-confirm" role="dialog" aria-labelledby="mdv-delete-confirm-text" hidden>
+            <div class="mdv-confirm" id="mdv-delete-confirm" role="dialog" aria-modal="true" aria-labelledby="mdv-delete-confirm-text" tabindex="-1" hidden>
                 <p id="mdv-delete-confirm-text">Delete this conversation from our records? This cannot be undone.</p>
                 <div class="mdv-confirm-actions">
                     <button class="mdv-confirm-no" type="button">Cancel</button>
@@ -64,7 +64,7 @@
 
     </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261028e', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261028g', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <script>
 (function () {
   var chip = document.querySelector('.mdv-chat-head .mdv-chat-state');
@@ -79,6 +79,8 @@
   window.setTimeout(setPlaceholder, 500);
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') { return; }
+    var confirmBox = document.getElementById('mdv-delete-confirm');
+    if (confirmBox && !confirmBox.hidden) { return; }
     var target = '';
     try {
       var origins = window.location.ancestorOrigins;

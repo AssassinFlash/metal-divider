@@ -108,6 +108,10 @@ function md_kb_endpoint_answer( array $input ): array {
 	$pattern  = md_kb_endpoint_pattern_lookup( $q );
 	$page     = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null ) : array( 'context' => '' );
 	$resolved = '' !== $pattern['context'] ? $pattern['context'] : $page['context'];
+	// The source the answer actually used: the named pattern, else the page
+	// the visitor has open, else the knowledge rows. A page-resolved answer
+	// never cites knowledge rows the retrieval dragged in alongside it.
+	$resolved_sources = 0 < $pattern['hits'] ? $pattern['sources'] : ( isset( $page['sources'] ) ? $page['sources'] : array() );
 	// A confirmed fact the question asked for stays. Neither a commercial
 	// commitment nor an unpublished project fact is invented by the model.
 	if ( md_kb_endpoint_asks_unverified_fact( $q ) ) {
@@ -116,7 +120,7 @@ function md_kb_endpoint_answer( array $input ): array {
 			'body'   => array(
 				'msg'     => md_kb_endpoint_unverified_fact_reply( $q, $resolved ),
 				'action'  => 'transfer_operator',
-				'sources' => $pattern['sources'],
+				'sources' => $resolved_sources,
 			),
 		);
 	}
@@ -126,7 +130,7 @@ function md_kb_endpoint_answer( array $input ): array {
 			'body'   => array(
 				'msg'     => md_kb_endpoint_commercial_reply( $q, $resolved ),
 				'action'  => 'transfer_operator',
-				'sources' => $pattern['sources'],
+				'sources' => $resolved_sources,
 			),
 		);
 	}
@@ -193,7 +197,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		md_kb_endpoint_log_unanswered( $q, $gap_reason );
 	}
 
-	$sources = 0 < $pattern['hits'] ? $pattern['sources'] : md_kb_endpoint_sources( $results );
+	$sources = array() !== $resolved_sources ? $resolved_sources : md_kb_endpoint_sources( $results );
 	$labels  = md_kb_endpoint_source_labels( $sources );
 	$msg     = $answer['answer'];
 	if ( ! $answer['handoff'] && array() !== $labels ) {
@@ -1150,14 +1154,20 @@ function md_kb_endpoint_page_context( mixed $page_url ): array {
 	if ( 'publish' !== $post->post_status || 'product' !== $post->post_type ) {
 		return $empty;
 	}
-	return array( 'context' => md_kb_endpoint_page_facts( $post ) );
+	$sku  = md_kb_endpoint_product_sku( (int) $post->ID );
+	$code = '' !== $sku ? $sku : $post->post_name;
+	return array(
+		'context' => md_kb_endpoint_page_facts( $post ),
+		'sources' => array( 'pattern#' . (int) $post->ID . ' ' . $code ),
+	);
 }
 
 /**
  * The pattern slug of a page URL this site may trust: an http or https URL
  * (or the protocol-relative form Live Helper Chat stores) on an allowlisted
- * host, whose path is /pattern/<slug>/ and nothing else. The query and the
- * fragment are never a slug.
+ * host, whose path is a single-product permalink base — /pattern/<slug>/ (the
+ * final base) or /product/<slug>/ (the base staging serves today) — and
+ * nothing else. The query and the fragment are never a slug.
  *
  * @param mixed $page_url The request's page_url, untrusted.
  * @return string The slug, or '' when the URL is not a pattern page.
@@ -1186,7 +1196,7 @@ function md_kb_endpoint_page_slug( mixed $page_url ): string {
 		return '';
 	}
 	$path = rawurldecode( (string) ( $parts['path'] ?? '' ) );
-	if ( ! preg_match( '#^/pattern/([^/]+)/?$#', $path, $match ) ) {
+	if ( ! preg_match( '#^/(?:pattern|product)/([^/]+)/?$#', $path, $match ) ) {
 		return '';
 	}
 	$slug = strtolower( $match[1] );

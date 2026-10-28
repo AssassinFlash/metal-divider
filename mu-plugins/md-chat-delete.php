@@ -13,8 +13,10 @@
  * removeThis()) removes only the lh_chat row: 'chat.delete' has zero
  * registered listeners and this schema has zero foreign keys (staging
  * information_schema, 2026-10-28), so nothing cascades. This endpoint
- * therefore deletes every chat-domain satellite row itself, then mirrors
- * the two counters the native afterRemove() maintains: lh_userdep via
+ * therefore deletes every chat-domain satellite row itself — group chats
+ * and transfers through their own keyed statements, uploaded files from
+ * disk — then mirrors the two counters the native afterRemove()
+ * maintains: lh_userdep via
  * erLhcoreClassChat::updateActiveChats() (lib/core/lhchat/lhchat.php) and
  * lh_departament via updateDepartmentStats()
  * (lib/core/lhchat/lhchatstatsresque.php).
@@ -27,11 +29,18 @@ declare( strict_types = 1 );
 add_action( 'rest_api_init', 'md_chat_delete_register' );
 
 /**
- * The chat-domain tables that carry a chat_id column.
+ * The chat-domain tables deleted by chat_id in the generic sweep.
  *
  * Enumerated from information_schema on staging 2026-10-28. Mail-conversation
  * tables (lhc_mailconv_*) are excluded: that is a different id space, and the
  * chat widget never writes to it.
+ *
+ * Three tables need more than a bare chat_id match and are handled by their
+ * own statements instead of this list: lh_group_msg (its chat_id column is
+ * the GROUP id, not the chat id — see md_chat_delete_group_cleanup_sql),
+ * lh_group_chat (its row is deleted by that same group cleanup), and
+ * lh_transfer (chat_id is shared with mail conversations, which
+ * transfer_scope = 0 keeps out).
  *
  * @return string[] Table names, without prefix.
  */
@@ -59,13 +68,132 @@ function md_chat_delete_tables(): array {
 		'lh_generic_bot_chat_workflow',
 		'lh_generic_bot_pending_event',
 		'lh_generic_bot_repeat_restrict',
-		'lh_group_chat',
-		'lh_group_msg',
 		'lh_msg',
 		'lh_notification_subscriber',
 		'lh_speech_chat_language',
-		'lh_transfer',
 	);
+}
+
+/**
+ * The group-chat cleanup statements, keyed by their SQL text.
+ *
+ * lh_group_chat.chat_id is the visitor chat id, but lh_group_msg.chat_id is
+ * the GROUP id and lh_group_chat_member is keyed by group_id — the native
+ * erLhcoreClassModelGroupChat::afterRemove() deletes both through the group
+ * row (lib/models/lhchat/erlhcoreclassmodelgroupchat.php), so a bare
+ * chat_id sweep would hit the wrong rows. These statements mirror that
+ * flow: messages and members go by group id, the group rows go last.
+ *
+ * @return array<string, string> Statement templates with %d placeholders.
+ */
+function md_chat_delete_group_cleanup_sql(): array {
+	return array(
+		'group_ids'  => 'SELECT id FROM lh_group_chat WHERE chat_id = %d',
+		'group_msgs' => 'DELETE FROM lh_group_msg WHERE chat_id = %d',
+		'members'    => 'DELETE FROM lh_group_chat_member WHERE group_id = %d',
+		'groups'     => 'DELETE FROM lh_group_chat WHERE chat_id = %d',
+	);
+}
+
+/**
+ * The chat transfer delete: chat transfers only, mail stays.
+ *
+ * lh_transfer.chat_id is shared by chat (transfer_scope 0) and mail
+ * (transfer_scope 1) conversations; the native beforeRemove filters
+ * transfer_scope = 0 (lib/models/lhchat/erlhcoreclassmodelchat.php).
+ *
+ * @return string The statement template with a %d placeholder.
+ */
+function md_chat_delete_transfer_sql(): string {
+	return 'DELETE FROM lh_transfer WHERE chat_id = %d AND transfer_scope = 0';
+}
+
+/**
+ * The Live Helper Chat filesystem root, where chat file paths resolve.
+ *
+ * lh_chat_file.file_path is stored relative to that root ('var/storage/…'),
+ * and file_path_server is file_path . name
+ * (lib/models/lhchat/erlhcoreclassmodelchatfile.php).
+ *
+ * @return string Absolute path with a trailing slash.
+ */
+function md_chat_delete_lhc_root(): string {
+	$root = trailingslashit( (string) apply_filters( 'md_chat_delete_lhc_root', trailingslashit( ABSPATH ) . 'chat' ) );
+	$real = wp_normalize_path( $root );
+	return rtrim( $real, '/' ) . '/';
+}
+
+/**
+ * Map lh_chat_file rows to unlinkable absolute targets under the LHC root.
+ *
+ * A row yields a target only when its resolved path stays inside the root
+ * and is a plain file: a crafted or legacy path that escapes the root is
+ * reported as skipped, never unlinked. Prune points to the file's storage
+ * directory so empty var/storage folders can be removed afterwards.
+ *
+ * @param array<int, object|array<string, mixed>> $rows Rows with file_path and name.
+ * @param string                                    $root The absolute LHC root, normalized.
+ * @return array<int, string> Absolute file paths that stay inside the root.
+ */
+function md_chat_delete_file_targets( array $rows, string $root ): array {
+	$targets = array();
+	$base    = rtrim( wp_normalize_path( $root ), '/' ) . '/';
+	foreach ( $rows as $row ) {
+		$file_path = is_object( $row ) && isset( $row->file_path ) ? (string) $row->file_path : ( is_array( $row ) && isset( $row['file_path'] ) ? (string) $row['file_path'] : '' );
+		$name      = is_object( $row ) && isset( $row->name ) ? (string) $row->name : ( is_array( $row ) && isset( $row['name'] ) ? (string) $row['name'] : '' );
+		if ( '' === $file_path || '' === $name ) {
+			continue;
+		}
+		$rel  = ltrim( $file_path . $name, '/' );
+		$full = wp_normalize_path( $base . $rel );
+		if ( 0 !== strpos( $full, $base ) || str_contains( $rel, '..' ) || str_starts_with( $file_path, '/' ) ) {
+			continue;
+		}
+		$targets[] = $full;
+	}
+	return $targets;
+}
+
+/**
+ * Unlink chat files and prune the empty storage directories they leave.
+ *
+ * Mirrors erLhcoreClassModelChatFile::beforeRemove(): the file goes first,
+ * then empty var/storage parents up to the LHC root's var/ folder disappear.
+ * A path that resolves outside the root is skipped — the same containment
+ * rule as md_chat_delete_file_targets(), checked again on the real path.
+ * Missing files are skipped silently: the database rows are already going,
+ * and an absent file is the desired end state.
+ *
+ * @param array<int, string> $targets From md_chat_delete_file_targets().
+ * @param string             $root   The absolute LHC root, normalized.
+ * @return int Files actually unlinked.
+ */
+function md_chat_delete_remove_files( array $targets, string $root ): int {
+	$unlinked = 0;
+	$base     = rtrim( wp_normalize_path( $root ), '/' );
+	$var_stop = $base . '/var';
+	foreach ( $targets as $target ) {
+		$real = realpath( $target );
+		if ( false === $real || ! is_file( $real ) || 0 !== strpos( wp_normalize_path( $real ), $base . '/' ) ) {
+			continue;
+		}
+		if ( ! @unlink( $real ) ) {
+			continue;
+		}
+		$unlinked++;
+		$dir = dirname( $real );
+		while ( 0 === strpos( $dir, $var_stop ) && $dir !== $var_stop ) {
+			$entries = @scandir( $dir );
+			if ( false === $entries || count( $entries ) > 2 ) {
+				break;
+			}
+			if ( ! @rmdir( $dir ) ) {
+				break;
+			}
+			$dir = dirname( $dir );
+		}
+	}
+	return $unlinked;
 }
 
 /**
@@ -208,6 +336,17 @@ function md_chat_delete_respond( $request ) {
 		);
 	}
 
+	$file_rows = $wpdb->get_results(
+		$wpdb->prepare( 'SELECT file_path, name FROM lh_chat_file WHERE chat_id = %d', $chat_id )
+	);
+	md_chat_delete_remove_files(
+		md_chat_delete_file_targets( is_array( $file_rows ) ? $file_rows : array(), md_chat_delete_lhc_root() ),
+		md_chat_delete_lhc_root()
+	);
+
+	$group_sql = md_chat_delete_group_cleanup_sql();
+	$group_ids = $wpdb->get_col( $wpdb->prepare( $group_sql['group_ids'], $chat_id ) );
+
 	$committed = true;
 	$wpdb->query( 'START TRANSACTION' );
 	foreach ( md_chat_delete_tables() as $table ) {
@@ -219,10 +358,36 @@ function md_chat_delete_respond( $request ) {
 			break;
 		}
 	}
+	if ( $committed && is_array( $group_ids ) ) {
+		foreach ( $group_ids as $group_id ) {
+			$gid = (int) $group_id;
+			if ( $gid < 1 ) {
+				continue;
+			}
+			$deleted = $wpdb->query( $wpdb->prepare( $group_sql['group_msgs'], $gid ) );
+			if ( false !== $deleted ) {
+				$deleted = $wpdb->query( $wpdb->prepare( $group_sql['members'], $gid ) );
+			}
+			if ( false === $deleted ) {
+				$committed = false;
+				break;
+			}
+		}
+	}
 	if ( $committed ) {
 		$deleted = $wpdb->query(
-			$wpdb->prepare( 'DELETE FROM lh_chat WHERE id = %d', $chat_id )
+			$wpdb->prepare( $group_sql['groups'], $chat_id )
 		);
+		if ( false !== $deleted ) {
+			$deleted = $wpdb->query(
+				$wpdb->prepare( md_chat_delete_transfer_sql(), $chat_id )
+			);
+		}
+		if ( false !== $deleted ) {
+			$deleted = $wpdb->query(
+				$wpdb->prepare( 'DELETE FROM lh_chat WHERE id = %d', $chat_id )
+			);
+		}
 		if ( false === $deleted ) {
 			$committed = false;
 		}
