@@ -94,10 +94,84 @@ final class SchemaFiltersTest extends TestCase {
 		WP_Mock::expectFilterAdded( 'seopress_pro_breadcrumbs_crumbs', array( $filters, 'crumbs' ) );
 		WP_Mock::expectFilterAdded( 'seopress_titles_title', array( $filters, 'title' ) );
 		WP_Mock::expectFilterAdded( 'seopress_pro_breadcrumbs_json_remove_home', '__return_false' );
+		// The catalogue's ItemList: an action, not a filter, because it prints
+		// its own block rather than amending one of SEOPress's.
+		WP_Mock::expectActionAdded( 'wp_head', array( $filters, 'catalog_item_list' ), 99 );
 
 		$filters->register();
 
 		$this->assertConditionsMet();
+	}
+
+	/**
+	 * The catalogue's ItemList lists what the page renders, and only there.
+	 *
+	 * The defect this covers: /shop/ is WooCommerce's product archive, so
+	 * `is_page('shop')` is always false and the first version of this method
+	 * emitted nothing at all. A test that only checked "some JSON is printed"
+	 * would have passed an empty string.
+	 */
+	public function test_the_catalog_item_list_lists_the_rendered_products(): void {
+		WP_Mock::userFunction( 'is_shop', array( 'return' => true ) );
+		WP_Mock::userFunction(
+			'get_posts',
+			array(
+				'return' => array( 11, 12, 13 ),
+			)
+		);
+		WP_Mock::userFunction(
+			'get_permalink',
+			array(
+				'return' => function ( int $id ) {
+					return 'https://metal-divider.com/pattern/p' . $id . '/';
+				},
+			)
+		);
+		WP_Mock::userFunction(
+			'get_the_title',
+			array(
+				'return' => function ( int $id ) {
+					return 'Pattern ' . $id;
+				},
+			)
+		);
+		WP_Mock::userFunction(
+			'wp_json_encode',
+			array(
+				// Mirror the real call's flags: the production code passes
+				// JSON_UNESCAPED_SLASHES, and a stub without them turns every
+				// "/" into "\/" so a url assertion fails on the stub, not the code.
+				'return' => function ( $data, $flags = 0 ) {
+					return (string) json_encode( $data, $flags ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- the test stub for wp_json_encode.
+				},
+			)
+		);
+
+		ob_start();
+		( new SchemaFilters() )->catalog_item_list();
+		$output = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'ItemList', $output, 'a list is emitted' );
+		$this->assertStringContainsString( '"numberOfItems":3', $output, 'the count matches the items' );
+		$this->assertStringContainsString( 'Pattern 11', $output, 'the items are named' );
+		$this->assertStringContainsString( '/pattern/p13/', $output, 'the items carry their urls' );
+	}
+
+	/**
+	 * Every other page stays list-free.
+	 *
+	 * The block is only meaningful on the catalogue; emitting it site-wide
+	 * would tell a search engine that every page is a 24-item list.
+	 */
+	public function test_the_catalog_item_list_is_silent_elsewhere(): void {
+		WP_Mock::userFunction( 'is_shop', array( 'return' => false ) );
+		WP_Mock::userFunction( 'is_post_type_archive', array( 'return' => false ) );
+
+		ob_start();
+		( new SchemaFilters() )->catalog_item_list();
+		$output = (string) ob_get_clean();
+
+		$this->assertSame( '', $output, 'no list outside the catalogue' );
 	}
 
 	/**

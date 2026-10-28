@@ -56,6 +56,68 @@ final class SchemaFilters {
 		add_filter( 'seopress_titles_title', array( $this, 'title' ) );
 		add_filter( 'seopress_titles_title', array( $this, 'title' ) );
 		add_filter( 'seopress_pro_breadcrumbs_json_remove_home', '__return_false' );
+
+		// The catalogue is a page listing 146 patterns, and no SEOPress builder
+		// emits an ItemList for a page: its Product schema is per-product and
+		// its CollectionPage is a WooCommerce archive, which /shop/ is not (it
+		// is page #6 with the default template). Without this block a search
+		// engine sees a WebPage and no list at all.
+		add_action( 'wp_head', array( $this, 'catalog_item_list' ), 99 );
+	}
+
+	/**
+	 * The catalogue's ItemList: the patterns the page actually renders.
+	 *
+	 * Reads the same query the catalogue template uses so the list and the
+	 * grid cannot disagree, and emits nothing on any other page. Item urls
+	 * are the patterns' own permalinks; the order is the page's order.
+	 */
+	public function catalog_item_list(): void {
+		// `/shop/` is WooCommerce's product archive, not a page: its body class
+		// is `post-type-archive-product woocommerce-shop`. `is_page('shop')` is
+		// therefore always false here, which is why the first version emitted
+		// nothing and the page still had a single JSON-LD block.
+		$is_catalog = \function_exists( 'is_shop' ) ? \is_shop() : \is_post_type_archive( 'product' );
+		if ( ! $is_catalog ) {
+			return;
+		}
+		$products = \get_posts(
+			array(
+				'post_type'      => 'product',
+				'post_status'    => 'publish',
+				'posts_per_page' => 24,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'fields'         => 'ids',
+			)
+		);
+		if ( array() === $products ) {
+			return;
+		}
+		$items    = array();
+		$position = 0;
+		foreach ( $products as $product_id ) {
+			++$position;
+			$items[] = array(
+				'@type'    => 'ListItem',
+				'position' => $position,
+				'url'      => (string) \get_permalink( (int) $product_id ),
+				'name'     => (string) \get_the_title( (int) $product_id ),
+			);
+		}
+		// `numberOfItems` is the size of the list this page renders, not the
+		// catalogue total: schema.org defines it as the number of items in the
+		// list, and claiming 146 while listing 24 would be a false statement
+		// about the markup. The total is already visible on the page.
+		$schema = array(
+			'@context'        => 'https://schema.org',
+			'@type'           => 'ItemList',
+			'name'            => 'Architectural metal screen patterns',
+			'numberOfItems'   => \count( $items ),
+			'itemListOrder'   => 'https://schema.org/ItemListOrderAscending',
+			'itemListElement' => $items,
+		);
+		echo "\n<script type=\"application/ld+json\">" . \wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "</script>\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode output inside a script tag.
 	}
 
 	/**
