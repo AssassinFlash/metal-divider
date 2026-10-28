@@ -9,6 +9,7 @@ namespace MetalDivider\Site\Tests\Unit\Seo;
 
 use MetalDivider\Site\Seo\SitemapDedupe;
 use MetalDivider\Site\Tests\TestCase;
+use WP_Mock;
 
 /**
  * Guards the sitemap dedupe for the WooCommerce shop page.
@@ -92,5 +93,61 @@ final class SitemapDedupeTest extends TestCase {
 			$source,
 			'the per-entry hook fires in every sitemap, including the page one that must keep /shop/'
 		);
+	}
+
+	/**
+	 * An empty post type's sitemap is removed from the index, and a non-empty
+	 * one is kept.
+	 *
+	 * Without this the archive-link drop above leaves `post-sitemap1.xml` with
+	 * zero entries while `sitemaps.xml` still points at it: one duplicate URL
+	 * becomes one dead entry.
+	 */
+	public function test_an_empty_post_type_leaves_the_index(): void {
+		$index = '<sitemapindex>'
+			. '<sitemap><loc>https://site.test/post-sitemap1.xml</loc></sitemap>'
+			. '<sitemap><loc>https://site.test/page-sitemap1.xml</loc></sitemap>'
+			. '<sitemap><loc>https://site.test/product-sitemap1.xml</loc></sitemap>'
+			. '</sitemapindex>';
+
+		WP_Mock::userFunction( 'post_type_exists' )->andReturn( true );
+		WP_Mock::userFunction( 'wp_count_posts' )->andReturnUsing(
+			static function ( string $type ) {
+				$counts          = new \stdClass();
+				$counts->publish = 'post' === $type ? '0' : '146';
+				return $counts;
+			}
+		);
+
+		$out = ( new SitemapDedupe() )->drop_empty_type_entries( $index );
+
+		$this->assertStringNotContainsString( 'post-sitemap1.xml', $out, 'a type with no published posts must not be indexed' );
+		$this->assertStringContainsString( 'page-sitemap1.xml', $out, 'a type with published entries keeps its sitemap' );
+		$this->assertStringContainsString( 'product-sitemap1.xml', $out );
+		$this->assertStringContainsString( '</sitemapindex>', $out, 'the document stays well-formed' );
+	}
+
+	/**
+	 * The entry returns as soon as the type has a published post.
+	 *
+	 * This is the difference between "the blog is empty today" and "the blog is
+	 * excluded forever": `GOAL.md:104` records that the blog has no content
+	 * source yet, so the rule must react to state, not to a hard-coded list.
+	 */
+	public function test_a_populated_post_type_comes_back(): void {
+		$index = '<sitemapindex><sitemap><loc>https://site.test/post-sitemap1.xml</loc></sitemap></sitemapindex>';
+
+		WP_Mock::userFunction( 'post_type_exists' )->andReturn( true );
+		WP_Mock::userFunction( 'wp_count_posts' )->andReturnUsing(
+			static function () {
+				$counts          = new \stdClass();
+				$counts->publish = '3';
+				return $counts;
+			}
+		);
+
+		$out = ( new SitemapDedupe() )->drop_empty_type_entries( $index );
+
+		$this->assertStringContainsString( 'post-sitemap1.xml', $out );
 	}
 }

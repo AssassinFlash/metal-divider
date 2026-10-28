@@ -38,10 +38,53 @@ namespace MetalDivider\Site\Seo;
 final class SitemapDedupe {
 
 	/**
-	 * Hooks the archive-link filter.
+	 * Hooks the archive-link filter and the sitemap index.
 	 */
 	public function register(): void {
 		add_filter( 'seopress_sitemaps_no_archive_link', array( $this, 'drop_archive_link' ), 10, 2 );
+		add_filter( 'seopress_sitemaps_xml_index', array( $this, 'drop_empty_type_entries' ) );
+	}
+
+	/**
+	 * Keeps an empty post type's sitemap out of the index.
+	 *
+	 * Dropping every archive link (§ above) leaves `post-sitemap1.xml` with no
+	 * entries at all, because a post's sitemap holds its archive link at the
+	 * top and this site has no published posts. Measured on production
+	 * 2026-10-29 after that change: the file answered 200 with **zero `<loc>`**,
+	 * while `sitemaps.xml` still listed it — trading one duplicate URL for one
+	 * dead entry.
+	 *
+	 * SEOPress's index loop computes `$count_posts` but only uses it to size
+	 * pagination: a zero count leaves `$max_loop = 1` and the entry is printed
+	 * anyway. There is no filter that turns a zero count into "skip", so this
+	 * filters the assembled index instead and removes the `<sitemap>` element
+	 * for any type that has no published posts.
+	 *
+	 * The rule is current-state, not a permanent exclusion: once the blog has a
+	 * published post, this type stops being empty and its entry comes back on
+	 * the next render. `GOAL.md:104` and `AGENTS.md` both record that the blog
+	 * has no content source yet, which is why it is empty today.
+	 *
+	 * @param string $xml The assembled `<sitemapindex>` document.
+	 * @return string The document without entries for empty post types.
+	 */
+	public function drop_empty_type_entries( string $xml ): string {
+		foreach ( array( 'post', 'product', 'page' ) as $type ) {
+			if ( ! \post_type_exists( $type ) ) {
+				continue;
+			}
+			$counts = \wp_count_posts( $type );
+			if ( isset( $counts->publish ) && (int) $counts->publish > 0 ) {
+				continue;
+			}
+			$xml = (string) \preg_replace(
+				'#<sitemap>\s*<loc>[^<]*/' . \preg_quote( $type, '#' ) . '-sitemap\d*\.xml</loc>.*?</sitemap>#s',
+				'',
+				$xml
+			);
+		}
+		return $xml;
 	}
 
 	/**
