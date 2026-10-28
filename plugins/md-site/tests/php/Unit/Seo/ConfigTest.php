@@ -176,18 +176,52 @@ final class ConfigTest extends TestCase {
 
 	/**
 	 * The SEO-owned pages' metas (T9/T10/T11/T6): inquiry and privacy
-	 * titles, the blog index's title, the thank-you noindex.
+	 * titles, the blog index's title, the thank-you noindex, and the
+	 * ten page descriptions. The thank-you page stays noindex only.
 	 */
 	public function test_page_metas_table(): void {
 		$metas = ( new Config() )->page_metas( '' );
 		$this->assertSame(
-			array( 'inquiry', 'privacy', 'blog', 'inquiry/thank-you' ),
+			array(
+				'collections',
+				'inquiry',
+				'faqs',
+				'about-us',
+				'manufacturing-process',
+				'project-gallery',
+				'laser-cut-geometric-metal-screens',
+				'blog',
+				'custom-metal-divider-screens',
+				'privacy',
+				'inquiry/thank-you',
+			),
 			array_keys( $metas )
 		);
 		$this->assertSame( 'Request a Quote %%sep%% %%sitetitle%%', $metas['inquiry']['_seopress_titles_title'] );
 		$this->assertSame( 'Privacy Policy %%sep%% %%sitetitle%%', $metas['privacy']['_seopress_titles_title'] );
 		$this->assertSame( 'Blog %%sep%% %%sitetitle%% %%current_pagination%%', $metas['blog']['_seopress_titles_title'] );
-		$this->assertSame( 'yes', $metas['inquiry/thank-you']['_seopress_robots_index'] );
+		$this->assertSame(
+			array( '_seopress_robots_index' => 'yes' ),
+			$metas['inquiry/thank-you']
+		);
+		$this->assertSame(
+			array(
+				'collections'                       => 'Decorative metal screen pattern series. Choose a family by privacy, airflow, light, and project use, then send a reference.',
+				'inquiry'                           => 'Request your quote. Write what the project needs. A person replies with questions, or with a quote.',
+				'faqs'                              => 'Answers on 304 and 316 stainless steel, panel sizes, lead times, and installation for architectural screens.',
+				'about-us'                          => 'Laser-cut screens finished in your chosen PVD color, checked before they ship, and delivered exactly as approved.',
+				'manufacturing-process'             => 'From drawing review to shipment: stainless screens matched to laser, perforation, or expanded metal, with route-specific tolerances and quality gates.',
+				'project-gallery'                   => 'Interior partition screen gallery for hotels, commercial spaces and homes. Filter by category and open a case to view its photo set.',
+				'laser-cut-geometric-metal-screens' => 'Laser-cut stainless steel (304 / 316) screens in three interior pattern directions. Compare the directions, then request a quote.',
+				'blog'                              => 'Metal Divider journal: technical guidance for architects, contractors and dealers. Browse patterns, read the FAQs, or send an inquiry.',
+				'custom-metal-divider-screens'      => 'Custom stainless steel (304 / 316) divider screens from your drawing or an existing pattern. Send dimensions and the application to request a quote.',
+				'privacy'                           => 'How metal-divider.com handles inquiry data: what we collect, why, how long we keep it, and how to ask about access or deletion.',
+			),
+			array_map(
+				static fn( array $row ): string => $row['_seopress_titles_desc'],
+				array_diff_key( $metas, array( 'inquiry/thank-you' => true ) )
+			)
+		);
 	}
 
 	/**

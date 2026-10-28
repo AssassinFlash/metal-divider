@@ -235,8 +235,11 @@ final class Config {
 
 	/**
 	 * The per-page metas of the SEO-owned pages (spec 22 §2.2 T9/T10/
-	 * T11/T6): the inquiry and privacy titles, the blog index's title, and
-	 * the thank-you page's noindex.
+	 * T11/T6): the inquiry and privacy titles, the blog index's title, the
+	 * thank-you page's noindex, and the descriptions of the ten pages whose
+	 * excerpt fallback is empty. A metabox description wins over the
+	 * `%%post_excerpt%%` template, so these rows are the description; the
+	 * fallback template stays the fallback.
 	 *
 	 * The noindex row stores `yes`, not `noindex`, and that is not a
 	 * cosmetic choice: `_seopress_robots_index` is SEOPress's checkbox, and
@@ -277,16 +280,40 @@ final class Config {
 	public function page_metas( string $home ): array {
 		unset( $home );
 		return array(
-			'inquiry'           => array(
+			'collections'                       => array(
+				'_seopress_titles_desc' => 'Decorative metal screen pattern series. Choose a family by privacy, airflow, light, and project use, then send a reference.',
+			),
+			'inquiry'                           => array(
 				'_seopress_titles_title' => 'Request a Quote %%sep%% %%sitetitle%%',
+				'_seopress_titles_desc'  => 'Request your quote. Write what the project needs. A person replies with questions, or with a quote.',
 			),
-			'privacy'           => array(
-				'_seopress_titles_title' => 'Privacy Policy %%sep%% %%sitetitle%%',
+			'faqs'                              => array(
+				'_seopress_titles_desc' => 'Answers on 304 and 316 stainless steel, panel sizes, lead times, and installation for architectural screens.',
 			),
-			'blog'              => array(
+			'about-us'                          => array(
+				'_seopress_titles_desc' => 'Laser-cut screens finished in your chosen PVD color, checked before they ship, and delivered exactly as approved.',
+			),
+			'manufacturing-process'             => array(
+				'_seopress_titles_desc' => 'From drawing review to shipment: stainless screens matched to laser, perforation, or expanded metal, with route-specific tolerances and quality gates.',
+			),
+			'project-gallery'                   => array(
+				'_seopress_titles_desc' => 'Interior partition screen gallery for hotels, commercial spaces and homes. Filter by category and open a case to view its photo set.',
+			),
+			'laser-cut-geometric-metal-screens' => array(
+				'_seopress_titles_desc' => 'Laser-cut stainless steel (304 / 316) screens in three interior pattern directions. Compare the directions, then request a quote.',
+			),
+			'blog'                              => array(
 				'_seopress_titles_title' => 'Blog %%sep%% %%sitetitle%% %%current_pagination%%',
+				'_seopress_titles_desc'  => 'Metal Divider journal: technical guidance for architects, contractors and dealers. Browse patterns, read the FAQs, or send an inquiry.',
 			),
-			'inquiry/thank-you' => array(
+			'custom-metal-divider-screens'      => array(
+				'_seopress_titles_desc' => 'Custom stainless steel (304 / 316) divider screens from your drawing or an existing pattern. Send dimensions and the application to request a quote.',
+			),
+			'privacy'                           => array(
+				'_seopress_titles_title' => 'Privacy Policy %%sep%% %%sitetitle%%',
+				'_seopress_titles_desc'  => 'How metal-divider.com handles inquiry data: what we collect, why, how long we keep it, and how to ask about access or deletion.',
+			),
+			'inquiry/thank-you'                 => array(
 				'_seopress_robots_index' => 'yes',
 			),
 		);

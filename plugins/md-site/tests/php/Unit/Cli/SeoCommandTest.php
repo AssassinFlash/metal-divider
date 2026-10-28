@@ -93,7 +93,7 @@ final class SeoCommandTest extends TestCase {
 
 	/**
 	 * The site both modes run against: the options at their target
-	 * (or overridden by $options), the four SEO-owned pages and the
+	 * (or overridden by $options), every page in page_metas() and the
 	 * three builder posts installed with their target metas, the
 	 * /pages redirect in place. With $installed false every post
 	 * lookup misses, so apply has everything to create.
@@ -191,55 +191,91 @@ final class SeoCommandTest extends TestCase {
 	 * @return array{posts: array<string, array{id: int<1, max>, type: non-empty-string, title: string}>, meta: array<int, array<string, mixed>>, redirects: array<string, int<1, max>>}
 	 */
 	private function target_metas( string $faqs_ld ): array {
-		$inquiry    = 101;
-		$privacy    = 102;
-		$blog       = 103;
-		$thank_you  = 104;
-		$faqs       = 105;
-		$s_product  = 201;
-		$s_faq      = 202;
-		$s_article  = 203;
-		$redirect   = 301;
-		$config     = new Config();
-		$page_metas = $config->page_metas( '' );
+		$inquiry       = 101;
+		$privacy       = 102;
+		$blog          = 103;
+		$thank_you     = 104;
+		$faqs          = 105;
+		$collections   = 106;
+		$about         = 107;
+		$manufacturing = 108;
+		$gallery       = 109;
+		$geometric     = 110;
+		$custom        = 111;
+		$s_product     = 201;
+		$s_faq         = 202;
+		$s_article     = 203;
+		$redirect      = 301;
+		$config        = new Config();
+		$page_metas    = $config->page_metas( '' );
 
 		$posts = array(
-			'inquiry'           => array(
+			'inquiry'                           => array(
 				'id'    => $inquiry,
 				'type'  => 'page',
 				'title' => 'Inquiry',
 			),
-			'privacy'           => array(
+			'privacy'                           => array(
 				'id'    => $privacy,
 				'type'  => 'page',
 				'title' => 'Privacy policy',
 			),
-			'blog'              => array(
+			'blog'                              => array(
 				'id'    => $blog,
 				'type'  => 'page',
 				'title' => 'Blog',
 			),
-			'inquiry/thank-you' => array(
+			'inquiry/thank-you'                 => array(
 				'id'    => $thank_you,
 				'type'  => 'page',
 				'title' => 'Inquiry thank you',
 			),
-			'faqs'              => array(
+			'faqs'                              => array(
 				'id'    => $faqs,
 				'type'  => 'page',
 				'title' => 'FAQs & Downloads',
 			),
-			'md-schema-product' => array(
+			'collections'                       => array(
+				'id'    => $collections,
+				'type'  => 'page',
+				'title' => 'Pattern series hub',
+			),
+			'about-us'                          => array(
+				'id'    => $about,
+				'type'  => 'page',
+				'title' => 'About us',
+			),
+			'manufacturing-process'             => array(
+				'id'    => $manufacturing,
+				'type'  => 'page',
+				'title' => 'Manufacturing process',
+			),
+			'project-gallery'                   => array(
+				'id'    => $gallery,
+				'type'  => 'page',
+				'title' => 'Project gallery',
+			),
+			'laser-cut-geometric-metal-screens' => array(
+				'id'    => $geometric,
+				'type'  => 'page',
+				'title' => 'Laser-cut geometric screens',
+			),
+			'custom-metal-divider-screens'      => array(
+				'id'    => $custom,
+				'type'  => 'page',
+				'title' => 'Custom metal divider screens',
+			),
+			'md-schema-product'                 => array(
 				'id'    => $s_product,
 				'type'  => 'seopress_schemas',
 				'title' => 'Product — pattern pages',
 			),
-			'md-schema-faq'     => array(
+			'md-schema-faq'                     => array(
 				'id'    => $s_faq,
 				'type'  => 'seopress_schemas',
 				'title' => 'FAQPage — /pages/faqs',
 			),
-			'md-schema-article' => array(
+			'md-schema-article'                 => array(
 				'id'    => $s_article,
 				'type'  => 'seopress_schemas',
 				'title' => 'BlogPosting — journal posts',
@@ -247,11 +283,18 @@ final class SeoCommandTest extends TestCase {
 		);
 
 		$meta = array(
-			$inquiry   => $page_metas['inquiry'],
-			$privacy   => $page_metas['privacy'],
-			$blog      => $page_metas['blog'],
-			$thank_you => $page_metas['inquiry/thank-you'],
-			$s_product => array(
+			$inquiry       => $page_metas['inquiry'],
+			$privacy       => $page_metas['privacy'],
+			$blog          => $page_metas['blog'],
+			$thank_you     => $page_metas['inquiry/thank-you'],
+			$collections   => $page_metas['collections'],
+			$faqs          => $page_metas['faqs'],
+			$about         => $page_metas['about-us'],
+			$manufacturing => $page_metas['manufacturing-process'],
+			$gallery       => $page_metas['project-gallery'],
+			$geometric     => $page_metas['laser-cut-geometric-metal-screens'],
+			$custom        => $page_metas['custom-metal-divider-screens'],
+			$s_product     => array(
 				'_seopress_pro_rich_snippets_type'         => 'products',
 				'_seopress_pro_rich_snippets_rules'        => array(
 					array(
@@ -278,7 +321,7 @@ final class SeoCommandTest extends TestCase {
 				'_seopress_pro_rich_snippets_product_positive_notes' => 'none',
 				'_seopress_pro_rich_snippets_product_negative_notes' => 'none',
 			),
-			$s_faq     => array(
+			$s_faq         => array(
 				'_seopress_pro_rich_snippets_type'   => 'custom',
 				'_seopress_pro_rich_snippets_rules'  => array(
 					array(
@@ -291,7 +334,7 @@ final class SeoCommandTest extends TestCase {
 				),
 				'_seopress_pro_rich_snippets_custom' => $faqs_ld,
 			),
-			$s_article => array(
+			$s_article     => array(
 				'_seopress_pro_rich_snippets_type'         => 'articles',
 				'_seopress_pro_rich_snippets_rules'        => array(
 					array(
@@ -308,7 +351,7 @@ final class SeoCommandTest extends TestCase {
 				'_seopress_pro_rich_snippets_article_img'  => 'post_thumbnail',
 				'_seopress_pro_rich_snippets_article_author' => 'none',
 			),
-			$redirect  => array(
+			$redirect      => array(
 				'_seopress_redirections_enabled'       => 'yes',
 				'_seopress_redirections_type'          => '301',
 				'_seopress_redirections_value'         => '/',
