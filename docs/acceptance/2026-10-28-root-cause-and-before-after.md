@@ -814,3 +814,14 @@ FAQ 部署 `20261028T123427030669Z-25b4fba` 经 resume 归档。规范页两次 
 生产 `/faqs/` 的 `ld+json` 仍有两个块：FAQPage 含 **40** 个 `Question`，
 BreadcrumbList 正常；FAQ 下载库改动没有破坏结构化数据。
 原始结果 `/tmp/md-link-audit.json`、`/tmp/md-sitemap-urls.txt`。
+
+## 三十三、七个产品族页描述补齐
+
+174 页 SEO 审计：canonical 自指 174/174、robots 无 noindex、标题 174 个全唯一；
+7 个族页描述缺失或仅 16–27 字符，是唯一缺口。按各页正文事实补写，
+未采用页面上的 24h、18 PVD、30+ 国家、15,000 sqm 等平均化数字。
+
+部署 `20261028T141901634029Z-08cb644` 已归档。7 页匿名读回 7/7：
+`description` 与 `og:description` 逐字一致，缓存均 `hit`。
+证据 `/tmp/md-family-desc-readback.json`、`/tmp/md-seo-site-audit.json`。
+审计时统计 171 个唯一描述，即 3 页缺失；另 4 页属短描述，合计 7 页。
