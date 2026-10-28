@@ -887,3 +887,55 @@ sitemap 里，是「Duplicate, Google chose different canonical」那一类形�
 本轮实测给出答案：**146 是正确的图案数**，147 是 `/shop/` 混入造成的。也就是说当年那条
 「通过」判定把一个重复条目当成了正常值 —— 正是本仓库反复记的「写死的数字不等于事实」。
 文档里的 147 不改写（它是当时读数的记录），但本节给出正确值与证据。
+
+### 9.14 断点扫描：359/360/560/561/640/760/767/768（业主 2026-10-29）
+
+`GOAL.md:1002` 声称这六个边界宽度「均已实测」，但那是在判据与面板 CSS 修改之前的说法。
+本轮用当前判据在 7 个代表页上重扫，并补上同样翻转的 **640** 与 **760**（从编译后 CSS 里读出
+真实断点集合：`min-width` 有 560/640/760/761/768/990/991/992/1024，`max-width` 有
+359/639/759/767/989）。
+
+| 宽度 | 结果 |
+|---|---|
+| 561 / 640 | 7 页中 6 页 0 缺陷；`family-perforated` 5 条 |
+| 760 / 767 / 768 | 6 页 0 缺陷（760 与 767/768 上 `shop`、`series-geometric` 各 1 条） |
+
+`family-perforated` 那 5 条是 11px 胶囊标签，与 390/320 同一批、已核实为设计。
+**无横向溢出、无空容器、无贴边。**
+
+### 9.15 旧的 `/pages/*` 内容页：13 个 404（本轮最严重的发现）
+
+把旧站 25 个页面 handle 逐条对到生产（不是抽样）：
+
+| 结果 | 数量 |
+|---|---:|
+| 旧站 200，新站 **301** | 11 |
+| 旧站 200，新站 **404** | **13** |
+
+13 个 404 涵盖了站点的内容主体：8 个产品族页（geometric / glass / outdoor /
+chinese / stainless / panels / perforated / expanded）、`faqs`、`about-us`、
+`manufacturing-process`、`project-gallery`、`custom-metal-divider-screens`。
+
+#### 9.15.1 根因是对机制的错误假设，不是漏列清单
+
+`Seo/Config::REDIRECT_TARGETS` 原本只有一条 `'pages' => '/'`，旁边的注释写着它
+「sends the prefix home with a 301」。但 **SEOPress 把重定向的 post title 当作精确路径匹配**，
+所以这一条只覆盖 `/pages` 本身，其下全部落空。
+
+更关键的是：`ConfigTest` 里有一条断言写死了 `array( 'pages' => '/' )`，**把不完整性锁成了
+「正确」**。同理，`SeoCommandTest` 的夹具只预置了那一条重定向，于是「已完全铺设时零 drift」
+在一个缺了大多数重定向的站点上也成立。两个测试共同把这个缺口藏了很久。
+
+这正是仓库反复记的那类错误：**断言与夹具都只是当时状态的快照，不是需求的证明。**
+
+#### 9.15.2 修法
+
+迁移把每个内容页都写在站点根（`post_parent` 0），所以 14 个 handle 直落同名路径；
+唯一例外是 `pages/custom-metal-divider` → `/custom-metal-divider-screens/`，这也正是旧站
+自己的跳转方向。
+
+新增 `PageRedirectTest` 三条断言：13 个 URL 一个不缺、目标就是承载其内容的页面、`/pages`
+本身仍回首页。**双向证过**：删掉 `pages/faqs` 一条 → 测试失败且信息里直接写出该 URL。
+
+`ConfigTest` 的写死断言改成只 pin `pages` 这一条，完整性交给新测试；
+`SeoCommandTest` 的夹具改为**从表派生**，不再手抄。
