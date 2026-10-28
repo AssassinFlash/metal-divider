@@ -1061,3 +1061,28 @@ chinese / stainless / panels / perforated / expanded）、`faqs`、`about-us`、
 
 教训与本仓库记录的「判据要测目标量，不要测代理」同型：`naturalWidth === 0` 不代表文件坏了，
 它同时是「还没请求」的正常状态。**判断资源是否可用，要直接请求那个 URL，不要读页面上的加载状态。**
+
+### 9.18 生产 PHP 错误日志审计（业主 2026-10-29）
+
+今天有多次部署，需要确认没有引入站点侧错误。生产没有可读的 `debug.log`，但仓库自带
+`mu-plugins/md-error-recorder.php`，它把 PHP 错误写进 `wp-content/md-errors/php.log`
+（轮转在 256KB）。读回结果：
+
+| 项 | 数量 | 性质 |
+|---|---:|---|
+| `PHP Fatal error` | 6 | **全部来自 `wp eval`**（CLI 调试命令），无一条访客侧 |
+| `PHP Warning` | 82 | 6 条来自 `wp eval`；**76 条全部是同一条**：LiveCanvas 插件在 `SERVER_NAME` 缺失时告警 |
+| 日期分布 | 25/26/27/28-Oct | **今天（29 日）零新增** |
+
+两条结论：
+
+1. **6 个 Fatal 没有一个是站点问题**。逐条看过堆栈，全部落在
+   `phar:///usr/local/bin/wp-cli-2.12.0.phar/.../Eval_Command.php`，是执行 `wp eval`
+   时脚本本身抛的异常（`unserialize()` 参数类型、`get_col()` on null、未定义函数等）。
+   访客请求永远不会走这条路径。
+2. **76 条 `SERVER_NAME` 告警出自第三方插件** `plugins/livecanvas/`，且只在 CLI 环境触发
+   ——Web 请求由 Web 服务器提供，`SERVER_NAME` 必定存在。不在本站代码范围内。
+
+今天最后一次 `php.log` 写入是 28 日 17:50，早于今天全部部署，说明**今天的改动没有产生任何
+站点侧 PHP 错误**。这条与「部署 verify 全绿」「55 个 URL 读回正确」相互独立，
+是第三处佐证。
