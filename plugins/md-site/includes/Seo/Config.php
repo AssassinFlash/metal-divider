@@ -675,12 +675,26 @@ final class Config {
 	 * @return string The URL, '' when the attachment is not in the library yet.
 	 */
 	private function logo_url(): string {
+		// The brand mark ships with the plugin and the header template already
+		// points at it; only the media-library copy was ever awaited, and on
+		// production that attachment has never existed — so the Organization
+		// logo and the default og:image were blank on eight of eleven pages.
+		// Either source will do, and the shipped asset is the one that is
+		// actually served.
 		$attachment = get_page_by_path( 'metal-divider-primary-logo--120w', OBJECT, 'attachment' );
-		if ( null === $attachment ) {
-			return '';
+		if ( null !== $attachment ) {
+			$url = (string) wp_get_attachment_url( (int) $attachment->ID );
+			if ( '' !== $url ) {
+				return $url;
+			}
 		}
-		$url = (string) wp_get_attachment_url( (int) $attachment->ID );
-		return $url;
+		$root = \defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR . '/md-site' : '';
+		foreach ( array( 'metal-divider-logo-240w.webp', 'metal-divider-icon-512.png' ) as $file ) {
+			if ( '' !== $root && \is_readable( $root . '/assets/brand/' . $file ) ) {
+				return \plugins_url( 'assets/brand/' . $file, $root . '/md-site.php' );
+			}
+		}
+		return '';
 	}
 
 	/**
