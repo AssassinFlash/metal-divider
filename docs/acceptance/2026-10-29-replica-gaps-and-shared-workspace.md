@@ -958,3 +958,52 @@ chinese / stainless / panels / perforated / expanded）、`faqs`、`about-us`、
 
 另核查迁移期留下的 9 条多余记录（`pages/balcony-terrace-privacy-screens` 等）：它们在**旧站
 本来就返回 301**，新站同样 301，处理对等，不需要改动。这也印证补的 13 条不多不少。
+
+### 9.16 旧站 URL 族完整核查（业主 2026-10-29）
+
+上一轮的 `/pages/*` 缺口说明「旧站 URL 是否都可达」从未被完整验证。本轮把旧站四族 URL 全部对到生产。
+
+| URL 族 | 旧站 | 新站 | 判定 |
+|---|---|---|---|
+| `/products/<146 个 handle>` | 200 | **146/146 = 301 → `/pattern/<handle>/`** | ✅ 全部正确 |
+| `/pages/<24 个 handle>` | 200 | 13 条本轮已补，11 条原本就对 | ✅ 见 §9.15 |
+| `/collections/pattern-<9 个系列>` | 200 | **9/9 = 200** | ✅ |
+| `/blogs/news/<8 个 handle>` | **全部 404** | 404 | ✅ 对等（旧站无内容可迁） |
+
+产品族批量核对里首次出现 2 个 `000`（`moulin-casse`、`ripples`），逐个重测两次均得
+**301 且目标正确** —— 是网络瞬时失败，不是配置问题。**不把瞬时失败记成缺陷。**
+
+#### 9.16.1 目录产品完整性：146/146，无缺失
+
+一度误判「`/shop/` 少 24 个产品」，原因是抓取方式错：`/shop/page/1/` 会 **301 回 `/shop/`**
+（WordPress 标准行为），所以从第 1 页开始循环抓只会拿到空结果。改用 `/shop/` 抓第 1 页、
+`/shop/page/2..7` 抓其余后：
+
+| 项 | 数量 |
+|---|---:|
+| 数据库 `post_type=product, publish` | **146** |
+| `/shop/` 7 页不重复产品链接 | **146** |
+| 数据库有、目录无 | **0** |
+| 目录有、数据库无 | **0** |
+
+分页结构：第 1–6 页各 24 个，第 7 页 2 个，`/shop/page/8/` = 404。
+
+#### 9.16.2 一处**不修**的决定：旧站目录分页深链
+
+旧站 `/collections/all?page=2` 返回 200（共 7 页），新站该 URL **404**。查清后决定不修：
+
+- 新站自己的分页是 `/shop/page/N/`，工作正常；
+- 旧站分页 URL **不在旧站 sitemap 里**，也没有 canonical —— 搜索引擎从未把它们当作独立页面；
+- 新站 `/collections/all` 主路径 301 → `/shop/` 是正确的（`x-redirect-by: WordPress`，
+  即 WordPress 核心的 canonical 重定向，不是 SEOPress 规则）。
+
+为什么无法机械转发：旧站第 1 页与新站第 1 页**完全一致**（agave / akira / alhambra），
+但第 2 页起点不同（旧站 `casablanca`，新站第 2 页是别的），两边排序不同。
+把 `?page=2` 直接送到 `/shop/page/2/` 会给访客**不同于旧站**的内容，那比 404 更容易误导。
+按 §0.1「说明不了改变哪个交付判断就不追加」的原则，这一项记录为已知且已判定，不计为缺陷。
+
+**顺带澄清一条机制事实**（读 SEOPress 源码得到，纠正了我先前的假设）：非正则重定向是靠
+`basename( path )` 与 post title 精确比较来命中的，不是整路径比较。所以
+`collections/all` 那条记录匹配的是 basename `all`，而不是完整路径——这也是为什么
+`/collections/all` 的 301 实际由 WordPress 核心完成，SEOPress 那条记录并未生效。
+`^/products/(.+)$` 能工作，是因为它是**正则**（`enabled_regex=yes`）。
