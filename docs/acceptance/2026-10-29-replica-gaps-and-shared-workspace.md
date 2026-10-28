@@ -1166,3 +1166,62 @@ PDP 的 `Product` 抽查：`name`、`brand`、`image`（数组）、`description
 一条容易混淆的边界要写清：本判据量的是**贴边**与**行高**，不量**行宽**。1440 下那 96 条
 `long-measure` 属于另一个判据（`defects.js`，760px 绝对阈值），见 §9.9.2。两者互不替代：
 `spacing` 答「文字离边多远、行挤不挤」，`defects` 答「一行有多长」。
+
+### 9.23 控制台与资源可达性（业主 2026-10-29，此前未验）
+
+#### 9.23.1 814 个图片引用全部可达
+
+`tools/audit/media_refs.py` 从**模板读真实引用**再逐个请求，不是按猜测拼 URL：
+
+```
+checking 814 references against https://metal-divider.com
+814 checked, 0 not served
+```
+
+这同时是 §9.17.4 那次错误的正确做法：我当时按 `<name>-550w.webp` 猜文件名，得出 3 个假 404；
+工具取的是模板里真实写的 `<name>-01-550w.webp`，请求全部 200。
+
+#### 9.23.2 控制台错误：五页干净，两页全部来自同一个第三方插件
+
+| 页面 | console errors | HTTP ≥400 |
+|---|---:|---:|
+| `/` | 0 | 0 |
+| `/shop/` | 0 | 0 |
+| `/collections/` | 0 | 0 |
+| `/faqs/` | 0 | 0 |
+| `/inquiry/` | 0 | 0 |
+| `/collections/pattern-abstract/` | **7**（CSP） | 1（401） |
+| `/pattern/agave-…/` | **2**（CSP） | 1（404） |
+
+抓到的最具体的证据是一条 URL：**`/pattern/agave-…/undefined/session`** —— `undefined`
+被拼进了路径，是变量未定义就参与拼接的典型缺陷。
+
+#### 9.23.3 这些错误与 `GOAL.md:73` 记录的两条**完全吻合**，不是新增
+
+`GOAL.md` 在 2026-10-27 已记录 rapls 的两条缺陷：①`raplsaich-chatbot-js-extra` 无 nonce，
+被本站 CSP `script-src-elem` 拦截；②`chatbot.js` 以相对地址 `undefined/session` 请求产生 404。
+本轮控制台读到的就是这两条，一条不多。
+
+**补充三项此前没有的量化事实**：
+
+| 项 | 实测 |
+|---|---|
+| 作用范围 | **只有 PDP**：9 个页型里 8 个 0 请求，PDP 2 个请求 / **39KB** |
+| 页面上渲染了什么 | **什么都没渲染**：`[id*=rapls]`、`[class*=rapls]`、`[id*=chatbot]` 全部 0 个元素 |
+| 配置状态 | `rapls_api_key`、`rapls_settings`、`rapls_chatbot_settings` **全部 unset** |
+
+也就是说：一个**未配置、不渲染任何 UI** 的第三方插件，只在 PDP 上加载 39KB 脚本，
+并稳定产生 CSP 违规与 `undefined/session` 404。
+
+#### 9.23.4 为什么本轮不动它
+
+`GOAL.md` 已把它划为 Batch 2、写明「不越界改」，并注明「主站浏览、询盘与 FAQ 不依赖它」。
+本轮验证支持这个判断：五页控制台零错误，询盘页干净。
+
+但它与本次完成标准里的「没有已知未解决缺陷」确有张力，所以把处置选项列清，等业主选：
+
+1. **停用插件**（`wp plugin deactivate rapls-ai-chatbot`）——零配置、零渲染，停用不损失功能；
+2. **保留但让它在 PDP 之外不加载**——需要改第三方插件或加过滤器，成本更高；
+3. **保持现状**——接受 PDP 上 39KB 与 2 条控制台错误。
+
+我不擅自选，因为「停用一个 active 插件」属于生产变更，且该插件在本仓库之外。
