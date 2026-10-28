@@ -625,3 +625,4 @@ require_once dirname( __DIR__, 2 ) . '/md-site-guards.php';
 require_once dirname( __DIR__, 2 ) . '/md-staging-guards.php';
 require_once dirname( __DIR__, 2 ) . '/md-kb-endpoint.php';
 require_once dirname( __DIR__, 2 ) . '/md-chat-email.php';
+require_once dirname( __DIR__, 2 ) . '/md-chat-delete.php';

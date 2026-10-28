@@ -33,6 +33,104 @@
     return !!(body && (body.textContent || '').trim() !== '');
   }
 
+  var deleteWired = false;
+
+  function wireDelete() {
+    if (deleteWired) {
+      return;
+    }
+    var wrap = document.querySelector('.mdv-danger-actions');
+    if (!wrap) {
+      return;
+    }
+    var btn = wrap.querySelector('.mdv-delete-btn');
+    var box = wrap.querySelector('.mdv-confirm');
+    var yes = wrap.querySelector('.mdv-confirm-yes');
+    var no = wrap.querySelector('.mdv-confirm-no');
+    var status = wrap.querySelector('.mdv-delete-status');
+    if (!btn || !box || !yes || !no || !status) {
+      return;
+    }
+    deleteWired = true;
+    var lastFocus = null;
+
+    function setStatus(text, tone) {
+      status.textContent = text;
+      status.setAttribute('data-tone', tone || '');
+      status.hidden = text === '';
+    }
+
+    function openBox() {
+      lastFocus = document.activeElement;
+      box.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      no.focus();
+    }
+
+    function closeBox() {
+      box.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      if (lastFocus && typeof lastFocus.focus === 'function') {
+        lastFocus.focus();
+      }
+    }
+
+    btn.addEventListener('click', function () {
+      setStatus('', '');
+      if (box.hidden) {
+        openBox();
+      } else {
+        closeBox();
+      }
+    });
+
+    no.addEventListener('click', closeBox);
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !box.hidden) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeBox();
+      }
+    }, true);
+
+    yes.addEventListener('click', function () {
+      yes.disabled = true;
+      no.disabled = true;
+      setStatus('Deleting…', '');
+      fetch(window.location.origin + '/wp-json/md/v1/chat/delete', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, hash: chatHash })
+      }).then(function (res) {
+        if (res.status === 200 || res.status === 404) {
+          return { gone: true };
+        }
+        return { gone: false };
+      }).then(function (result) {
+        if (result.gone) {
+          try {
+            window.localStorage.removeItem(lastStoreKey);
+            window.localStorage.removeItem('mdv:emailSaved:' + chatId);
+            window.localStorage.removeItem('mdv:emailSkip:' + chatId);
+          } catch (e) {
+            /* private mode: nothing persisted, nothing to clear */
+          }
+          window.location.assign(wrap.getAttribute('data-mdv-start-url') || '/chat/');
+          return;
+        }
+        yes.disabled = false;
+        no.disabled = false;
+        setStatus('Could not delete this conversation right now. Please try again.', 'error');
+      }).catch(function () {
+        yes.disabled = false;
+        no.disabled = false;
+        setStatus('Could not delete this conversation right now. Please try again.', 'error');
+      });
+    });
+  }
+
   function rememberLastChat() {
     if (!block) {
       return;
@@ -183,8 +281,7 @@
       return;
     }
     head = document.querySelector('.mdv-chat-head');
-    block = document.getElementById('messagesBlock');
-    if (!head || !block) {
+    if (!head) {
       return;
     }
     chatId = parseInt(head.getAttribute('data-chat-id') || '0', 10);
@@ -193,6 +290,12 @@
     emailSaved = head.getAttribute('data-email-saved') === '1';
     skipKey = 'mdv:emailSkip:' + chatId;
     if (!chatId || !chatHash) {
+      return;
+    }
+    wireDelete();
+
+    block = document.getElementById('messagesBlock');
+    if (!block) {
       return;
     }
     started = true;

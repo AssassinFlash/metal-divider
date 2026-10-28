@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028ai', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028aj', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -33,6 +33,17 @@
             <a class="mdv-new-chat" href="<?php echo erLhcoreClassDesign::baseurl('chat/chatwidget')?>/(department)/<?php echo (int)$chat->dep_id;?>">Start a new chat</a>
         </div>
         <?php endif; ?>
+        <div class="mdv-danger-actions" data-mdv-start-url="<?php echo erLhcoreClassDesign::baseurl('chat/chatwidget')?>/(department)/<?php echo (int)$chat->dep_id;?>">
+            <button class="mdv-delete-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mdv-delete-confirm">Delete this conversation</button>
+            <div class="mdv-confirm" id="mdv-delete-confirm" role="dialog" aria-labelledby="mdv-delete-confirm-text" hidden>
+                <p id="mdv-delete-confirm-text">Delete this conversation from our records? This cannot be undone.</p>
+                <div class="mdv-confirm-actions">
+                    <button class="mdv-confirm-no" type="button">Cancel</button>
+                    <button class="mdv-confirm-yes" type="button">Delete</button>
+                </div>
+            </div>
+            <p class="mdv-delete-status" role="status" aria-live="polite" data-tone="" hidden></p>
+        </div>
         <div id="status-chat">
             <?php if (!($chat->status == erLhcoreClassModelChat::STATUS_BOT_CHAT && $chat->bot !== null && isset($chat->bot->configuration_array['profile_hide']) && $chat->bot->configuration_array['profile_hide'] == true)) : ?>
                 <?php if ($chat->status == erLhcoreClassModelChat::STATUS_CLOSED_CHAT) : ?>
@@ -53,7 +64,7 @@
 
     </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261028c', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261028e', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <script>
 (function () {
   var chip = document.querySelector('.mdv-chat-head .mdv-chat-state');
