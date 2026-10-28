@@ -17,6 +17,7 @@ selector is the defect.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 import time
@@ -97,12 +98,17 @@ def strip_comments(css: str) -> str:
 def self_check() -> int:
     """Prove every marker tells the before and after states apart.
 
-    Run with `--self-check` and a saved copy of the pre-fix stylesheet. A
-    marker that fires in both states measures nothing, and this is how the
-    first draft of this file went wrong: `object-fit: contain` and `gap: 14px`
-    are legitimate elsewhere, so they reported defects that were already fixed.
+    Run with `--self-check [path]`. With no path it reads the committed fixture
+    `tools/audit/fixtures/before-markers.css`, so the check does not depend on a
+    copy of the old stylesheet surviving in /tmp. A marker that fires in both
+    states measures nothing, and this is how the first draft of this file went
+    wrong: `object-fit: contain` and `gap: 14px` are legitimate elsewhere, so
+    they reported defects that were already fixed.
     """
-    before_path = sys.argv[2]
+    here = os.path.dirname(os.path.abspath(__file__))
+    before_path = (
+        sys.argv[2] if len(sys.argv) > 2 else os.path.join(here, "fixtures", "before-markers.css")
+    )
     before = strip_comments(open(before_path, encoding="utf-8").read())
     after = strip_comments(
         "".join(

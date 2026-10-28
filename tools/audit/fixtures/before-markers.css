@@ -1,0 +1,34 @@
+/* The declarations the 2026-10-28 round removed, kept as a self-check fixture.
+ *
+ * `just readback --self-check <file>` requires every marker to fire on the
+ * pre-fix state and clear on the fixed one. Without this file that check needs
+ * a 624 KB copy of the old compiled stylesheet, which lives in /tmp and would
+ * be gone after a reboot.
+ *
+ * Copied verbatim from `tailwind.css?ver=1793136205` (the last compiled sheet
+ * before the fix). The legitimate `object-fit: contain` rules are kept on
+ * purpose: they are why the markers had to be selector-scoped, and they prove
+ * a scoped marker does not fire on a rule that merely shares the value.
+ */
+main p[class*=max-w-],main p[class*=text-],main p:not([class*=max-w-]){max-width:40em!important}
+.xo-menu-hamburger-style1__content{background-color:#fff;flex-direction:column;width:300px;max-width:88vw;min-height:100dvh;display:flex;overflow-y:auto;box-shadow:0 0 40px #00000040}
+.xo-menu-hamburger-style1__content{color:#fff;width:100%;max-width:none;min-height:100dvh;box-shadow:none;padding-bottom:calc(88px + env(safe-area-inset-bottom));background:#141414}
+xo-modal[xo-name=search] .xo-modal-content{background:#141414;max-width:none;min-height:100dvh;padding:0}
+xo-modal[xo-name=search] .xo-modal-content__inner{color:#fff;background:#141414;border-radius:0;max-width:none;min-height:100dvh;max-height:none;margin:0;padding:80px 20px 24px}
+#md-blog-index .journal-feature-image img{object-fit:contain;object-position:right center;width:100%;height:100%;display:block}
+:is(#md-blog-index,#md-blog-category,#md-blog-search) :is(.journal-card-image,.journal-suggestion-image) img{object-fit:contain;width:100%;height:100%;display:block}
+#md-blog-single .reader-cover img{object-fit:contain;width:100%;height:100%;display:block}
+#md-blog-single .md-blog-single-related-img img{object-fit:contain;width:100%;height:100%}
+.menu-hamburger-style1-top__brand-link img,.menu-hamburger-style1-top__brand-link picture,.menu-hamburger-style1-top__brand-link svg{object-fit:contain;max-width:140px;max-height:28px;display:block;width:auto!important;height:auto!important}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img{object-fit:contain;width:100px;height:44px;max-height:44px;display:block}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{object-fit:contain;width:auto;max-width:80px;height:auto;max-height:34px;display:block}
+[data-id=sections--21844031144189__mega_menu_v2_HEAtbw] .mmv2__img img{box-sizing:border-box;padding:12px;object-fit:contain!important;object-position:center!important;width:100%!important;height:100%!important;display:block!important}
+[data-id=sections--21844031144189__mega_menu_v2_x7pRC4] .mmv2__img img{box-sizing:border-box;padding:12px;object-fit:contain!important;object-position:center!important;width:100%!important;height:100%!important;display:block!important}
+footer .footer-v21__block-logo-image img{object-fit:contain;width:140px;height:140px;display:block}
+.object-contain{-o-object-fit:contain;object-fit:contain}
+#why-us-template--22465876033789__why_us_a7TA6d .logo-image{object-fit:contain;opacity:.9;filter:none;width:auto;max-height:100%;transition:all .3s}
+#project-gallery-template--21844034846973__project_gallery_8jJr6t .lightbox-image{object-fit:contain;border-radius:8px;max-width:100%;max-height:100%;transition:opacity .2s;animation:.25s zoomIn;box-shadow:0 30px 90px #000c}
+.pattern-lightbox-image{object-fit:contain;width:100%;height:100%;max-height:60vh;display:block}
+.object-contain{object-fit:contain}
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__container{grid-template-columns:280px minmax(0,1fr)}
+#pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__body{gap:14px;padding:14px;display:grid}

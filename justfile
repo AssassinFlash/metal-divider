@@ -110,8 +110,8 @@ present name="dev": php-install
 # Read the fixed defect markers back from the live stylesheet. A fix can be in
 # the repository, pass every unit test, and still not be on the site: `present`
 # re-renders templates and WindPress recompiles the CSS, and either step can be
-# skipped. Pass a saved pre-fix stylesheet to prove the markers discriminate:
-# `just readback /path/to/before.css`.
+# skipped. `just readback --self-check` proves the markers discriminate against
+# the committed pre-fix fixture; pass a path to check some other baseline.
 [positional-arguments]
 readback *args:
     python3 "{{ justfile_directory() }}/tools/audit/marker_readback.py" {{ args }}

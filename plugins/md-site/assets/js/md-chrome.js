@@ -3164,11 +3164,38 @@
         }
       };
 
+      // The series tiles carry nine thumbnails. Loading them at boot costs
+      // every visitor nine image requests for a panel they may never open —
+      // measured at +9 images and roughly 2.8 MB on the home page alone. Load
+      // them the first time the search panel actually opens.
+      var seriesModal = document.querySelector("xo-modal[xo-name='search']");
+      var seriesRequested = false;
+      var requestSeriesOnce = function () {
+        if (seriesRequested) {
+          return;
+        }
+        seriesRequested = true;
+        loadSeries();
+      };
+      if (seriesModal) {
+        var seriesObserver = new MutationObserver(function () {
+          if (seriesModal.classList.contains('is-open')) {
+            requestSeriesOnce();
+          }
+        });
+        seriesObserver.observe(seriesModal, { attributes: true, attributeFilter: ['class'] });
+        if (seriesModal.classList.contains('is-open')) {
+          requestSeriesOnce();
+        }
+      }
+
       var sync = function () {
         var hasValue = !!(input.value || '').trim();
         reset.hidden = !hasValue;
         if (series) {
-          series.hidden = hasValue;
+          // Nothing to show until the tiles are fetched, so an untouched panel
+          // must not reserve an empty list box above the prompt.
+          series.hidden = hasValue || !seriesRequested;
         }
         if (prompt) {
           prompt.hidden = hasValue;
@@ -3360,7 +3387,6 @@
         }
       });
 
-      loadSeries();
       sync();
     });
   }
