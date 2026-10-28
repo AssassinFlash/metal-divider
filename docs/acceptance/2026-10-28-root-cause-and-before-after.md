@@ -825,3 +825,23 @@ BreadcrumbList 正常；FAQ 下载库改动没有破坏结构化数据。
 `description` 与 `og:description` 逐字一致，缓存均 `hit`。
 证据 `/tmp/md-family-desc-readback.json`、`/tmp/md-seo-site-audit.json`。
 审计时统计 171 个唯一描述，即 3 页缺失；另 4 页属短描述，合计 7 页。
+
+## 三十四、清除竞品平均值与无来源承诺
+
+业主核对后指出：这些数字原本是从竞品调研取来、按平均值当作我方事实。全站扫描
+发现同一事实有多个互相矛盾的版本（国家 15+/20+/30+/40+、PVD 饰面 10+/18/20+、
+厂房 12,000m² 与 15,000+ sqm），另有 ISO 认证、500 吨库存、200+ 设计（目录实为
+146 个图案）、24 小时出 mockup 等无来源承诺。
+
+处理：统一改为可证实表述（`Shipped worldwide`、`PVD finishes`、`146 Ready
+Patterns`、`Foshan production floor`），删除 ISO 与库存吨位，盐雾时长/户外寿命
+改为按项目确认。新增守卫 `test_no_unverified_numeric_claims_on_customer_faces`，
+实证把 `15+ Countries` 放回模板会立即失败、移除后通过。
+
+部署 `20261028T144846042734Z-cb4813a` 已归档。生产 6 个代表页（首页、About、
+工艺、定制、FAQ、扩展金属）匿名读回：七类旧表述**全部为 0**，缓存均 `hit`。
+证据 `/tmp/md-claim-readback.json`。
+
+并发部署覆盖：上一次部署完成后生产模板仍为旧字节（md5 与仓库不符），确认是
+另一会话同时部署 CB4813A 造成；按当前 HEAD 重部署后模板 md5 与仓库逐字节一致
+（`25ec73c9…`）。
