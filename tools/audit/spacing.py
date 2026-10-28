@@ -42,7 +42,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from narrow_viewport import reclaim_profiles  # noqa: E402
+from narrow_viewport import PAGES, reclaim_profiles  # noqa: E402
 
 # 8px: below this a gutter reads as a layout mistake rather than a choice. The
 # value is a judgement, so it is printed with every finding and the caller can
@@ -331,7 +331,10 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--width", type=int, default=390)
     parser.add_argument("--base", default="https://metal-divider.com")
-    parser.add_argument("--pages", nargs="+", default=[])
+    # Default to the same page list the mobile sweep uses. Two hand-kept lists
+    # drift: the mobile one had a single series archive while the sitemap has
+    # nine, and nothing would have noticed (measured 2026-10-29).
+    parser.add_argument("--pages", nargs="+", default=[p for _, p in PAGES])
     parser.add_argument("--out", default="/tmp/md-space")
     parser.add_argument("--min-gutter", type=float, default=MIN_GUTTER)
     parser.add_argument("--min-leading", type=float, default=MIN_LEADING)
