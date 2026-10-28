@@ -701,3 +701,18 @@ WP-CLI 成功行意外回显首组密钥后，未继续用该组验收：替换�
 our CDN/WAF、Session cookie 均为 0，登录测试 cookie、Turnstile token 不存储、
 限流计数与处理器文本均在，meta description 保持正确。证据
 `/tmp/md-privacy-readback.json`。
+
+## 二十四、当前性能基线复测（真 1440 访客态）
+
+使用现有 `tools/audit/perf.py` 与 `page_weight.py` 复测 `/`、`/shop/`、`/inquiry/`，
+不减少图案、不重跑全站。三页 `loggedIn=false`、`innerWidth=1440`，均无过量投递，
+关闭搜索面板均 `seriesTiles=0` 且无 categories 请求。
+
+| 页面 | 冷载 | 暖载 | 图片 | 结论 |
+|---|---|---|---|---|
+| `/` | 3232KB / 29 请求 | 3224KB / 28 | 20 张 / 2990KB | 落在换档后既有区间，无预取回归 |
+| `/shop/` | 3696KB / 27 请求 | 2999KB / 26 | 18 张 / 3454KB | 无过量投递 |
+| `/inquiry/` | 871KB / 18 请求 | 302KB / 11 | 8 张 / 629KB | 无过量投递 |
+
+首页 20 张是已展示图片，不是未打开面板的 9 张系列图；不能靠减图案处理。
+TTFB 仅记录本机网络，不作站点缺陷；原始数据 `/tmp/md-320-20261028/perf-1440.json`。
