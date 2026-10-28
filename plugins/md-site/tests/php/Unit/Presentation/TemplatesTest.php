@@ -518,62 +518,105 @@ final class TemplatesTest extends TestCase {
 	}
 
 	/**
-	 * The eight download cards on /faqs/ stay, and a visitor can see who
-	 * published each file without reading the URL. The hrefs are
-	 * Brilliant Architectural and Zahner; the page must say so in text,
-	 * not only in an href or a title attribute, and must not call the
-	 * files Metal Divider specifications, certificates, or project files.
-	 * This guard does not decide whether those third parties allow the
-	 * links. It only stops the source from disappearing back into the URL.
+	 * The eight download cards on /faqs/ are Metal Divider files on this
+	 * site. A third-party host, a missing path, or an empty card fails.
+	 * Format chips name the file that is actually linked. The old "5
+	 * formats" count does not.
 	 */
-	public function test_faq_downloads_name_their_third_party_source_in_visible_text(): void {
+	public function test_faq_downloads_are_own_site_files_without_empty_cards(): void {
 		$source = (string) file_get_contents( Templates::path( 'faqs' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
-		$urls   = array(
-			'https://www.brilliantarchitectural.com/wp-content/uploads/Architectural-Mesh-Catalog.pdf',
-			'https://azahner.com/wp-content/uploads/PerforatedMetalPanels_Datasheet_250716.pdf',
-			'https://azahner.com/wp-content/uploads/Drop-Lock-CAD-Details.dwg',
-			'https://azahner.com/wp-content/uploads/Moda-Installation-Manual_250826.pdf',
-			'https://azahner.com/wp-content/uploads/Surfaces-Datasheet-and-Order-Form_260402.pdf',
-			'https://azahner.com/wp-content/uploads/Double-Return_3-part-Specification-1.docx',
-			'https://azahner.com/wp-content/uploads/MODA-Revit-Families.zip',
-			'https://azahner.com/wp-content/uploads/Zahner-Angel-Hair-and-GB-60-EPD-v1.1.pdf',
+		$paths  = array(
+			'/wp-content/uploads/2026/10/pattern-catalog.pdf',
+			'/wp-content/uploads/2026/10/perforated-data-sheet.pdf',
+			'/wp-content/uploads/2026/10/metal-divider-cad-details.zip',
+			'/wp-content/uploads/2026/10/installation-guide.pdf',
+			'/wp-content/uploads/2026/10/finish-reference.pdf',
+			'/wp-content/uploads/2026/10/project-specification.pdf',
+			'/wp-content/uploads/2026/10/metal-divider-revit-pack.zip',
+			'/wp-content/uploads/2026/10/stainless-finish-care.pdf',
 		);
-		foreach ( $urls as $url ) {
-			$this->assertSame( 1, substr_count( $source, $url ), $url );
+		foreach ( $paths as $path ) {
+			$this->assertSame( 1, substr_count( $source, 'href="' . $path . '"' ), $path );
 		}
-		$this->assertSame( 8, substr_count( $source, 'data-source-button="download_file"' ) );
+
+		preg_match_all( '/\bhref=(["\'])([^"\']*)\1/i', $source, $hrefs );
+		$external = array();
+		foreach ( $hrefs[2] as $href ) {
+			if ( preg_match( '#^(?:https?:)?//#i', $href ) ) {
+				$external[] = $href;
+			}
+		}
+		$this->assertSame( array(), $external, 'faqs.html has a third-party href' );
+		$this->assertSame( 0, preg_match( '/brilliant|zahner/i', $source ) );
+		$this->assertStringNotContainsString( 'Source: Brilliant', $source );
+		$this->assertStringNotContainsString( 'Source: Zahner', $source );
+		$this->assertDoesNotMatchRegularExpression(
+			'/Formats<\/p>\s*<p[^>]*>\s*5\s*<\/p>/',
+			$source
+		);
+		$this->assertStringContainsString( '>304/316<', $source );
+		$this->assertStringContainsString( 'Stainless Steel Finish &amp; Care', $source );
+		$this->assertStringNotContainsString( 'QC &amp; Certificate Pack', $source );
+		$this->assertStringNotContainsString( 'EPD', $source );
+
+		$start = strpos( $source, '<div id="faq-download-files"' );
+		$end   = strpos( $source, '<div id="faq-download-questions"' );
+		$this->assertNotFalse( $start );
+		$this->assertNotFalse( $end );
+		$this->assertLessThan( $end, $start );
+		$section = substr( $source, (int) $start, (int) $end - (int) $start );
+		$this->assertStringContainsString(
+			'These eight files are Metal Divider documents for Stainless Steel (304 / 316).',
+			$section
+		);
+		$this->assertDoesNotMatchRegularExpression(
+			'/id="faq-download-sources"[^>]*(hidden|aria-hidden|sr-only)/',
+			$section
+		);
+
+		preg_match_all( '/<a\b[^>]*data-source-button="download_file"[^>]*>.*?<\/a>/s', $section, $cards );
+		$this->assertCount( 8, $cards[0] );
+		foreach ( $cards[0] as $card ) {
+			$this->assertMatchesRegularExpression( '/href="\/wp-content\/uploads\/2026\/10\/[^"]+"/', $card );
+			$text = trim( (string) preg_replace( '/\s+/', ' ', html_entity_decode( strip_tags( $card ), ENT_QUOTES | ENT_HTML5 ) ) );
+			$this->assertNotSame( '', $text, $card );
+			$this->assertStringNotContainsString( 'Source:', $text );
+		}
 		foreach ( array(
 			'Download Catalog',
 			'Download Data Sheet',
-			'Download DWG',
+			'Download CAD Pack',
 			'Download Guide',
 			'Download Spec Card',
 			'Download Spec',
-			'Download BIM',
-			'Download Pack',
+			'Download Revit Pack',
+			'Download Care Note',
 		) as $button ) {
-			$this->assertSame( 1, substr_count( $source, '>' . $button . '<' ), $button );
+			$this->assertSame( 1, substr_count( $section, '>' . $button . '<' ), $button );
 		}
 
-		$text = preg_replace( '/<!--.*?-->/s', "\n", $source );
-		$text = preg_replace( '/<[^>]*>/s', "\n", (string) $text );
-		$text = html_entity_decode( (string) $text, ENT_QUOTES | ENT_HTML5 );
-		$this->assertStringContainsString(
-			'These links open third-party reference files from Brilliant Architectural and Zahner. They are not Metal Divider specifications, certificates, or project files.',
-			$text
-		);
-		$this->assertSame( 1, substr_count( $text, 'Source: Brilliant' ) );
-		$this->assertSame( 7, substr_count( $text, 'Source: Zahner' ) );
-		$this->assertDoesNotMatchRegularExpression(
-			'/id="faq-download-sources"[^>]*(hidden|aria-hidden|sr-only)/',
-			$source
-		);
-		$this->assertSame(
-			8,
-			preg_match_all(
-				'/items-center gap-4">\s*<span class="font-\[\'Inter\'\] text-xl font-semibold leading-tight text-white">.*?<\/span>\s*<span class="rounded-full border border-\[#c9a962\]\/25[^"]*">Source: (?:Brilliant|Zahner)<\/span>/s',
-				$source
-			)
-		);
+		$dom      = new \DOMDocument();
+		$previous = libxml_use_internal_errors( true );
+		$loaded   = $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $section );
+		libxml_clear_errors();
+		libxml_use_internal_errors( $previous );
+		$this->assertTrue( $loaded );
+		$empty        = array();
+		$text_content = 'textContent';
+		$tag_name     = 'tagName';
+		foreach ( $dom->getElementsByTagName( '*' ) as $node ) {
+			if ( false === strpos( $node->getAttribute( 'class' ), 'rounded-2xl' ) ) {
+				continue;
+			}
+			$text = trim( (string) preg_replace( '/\s+/', ' ', $node->{$text_content} ) );
+			if ( '' !== $text ) {
+				continue;
+			}
+			if ( $node->getElementsByTagName( 'img' )->length > 0 || $node->getElementsByTagName( 'svg' )->length > 0 ) {
+				continue;
+			}
+			$empty[] = $node->{$tag_name} . ' ' . substr( $node->getAttribute( 'class' ), 0, 80 );
+		}
+		$this->assertSame( array(), $empty, 'empty download cards' );
 	}
 }
