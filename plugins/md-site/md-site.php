@@ -31,6 +31,7 @@ require_once __DIR__ . '/includes/Presentation/template-functions.php';
 	new Seo\SchemaFilters(),
 	new Seo\CatalogRobots(),
 	new Seo\PageNoindex(),
+	new Seo\SitemapDedupe(),
 	new Presentation\Assets(),
 	new Catalog(),
 	new Media\Sizes()
