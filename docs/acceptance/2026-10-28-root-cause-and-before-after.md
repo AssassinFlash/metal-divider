@@ -728,3 +728,11 @@ CookieYes=0、Turnstile 源完整。证据 `/tmp/md-csp-readback.json`。
 真 1440 搜索键盘复测：正向 6 个 Tab 站与反向 Shift+Tab 均未离开弹层，第一次
 Escape 只关建议，第二次关弹层并回焦 Search。未新建窗口，证据
 `desktop-1440-search-open.png` 与 `desktop-1440-search.json`。
+
+## 二十六、Search Console 站点地图提交
+
+`https://metal-divider.com/sitemaps.xml` 返回 200、`text/xml`，根为 sitemapindex，
+含 5 个子地图。主账号下 GSC 的已提交列表原本为 0，提交 `sitemaps.xml` 后显示
+Sitemap index、Submitted/Last read 均为 2026-10-28、状态 **Success**。
+刚提交发现页数/视频为 0/0，只记录当时状态，不冒充已经收录。未改 DNS、未连 GA4。
+证据 `gsc-sitemap-before/owner/filled/after.png` 与 `gsc-sitemap.json`。
