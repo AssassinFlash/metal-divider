@@ -646,8 +646,11 @@ hPanel 只追加一条 `@` TXT；公共 DoH 读回 `Status=0` 且该 TXT 存在�
 - name/email/country/scope/route/quantity/message 与 confirm 均可见且 required；
   表单唯一，提交按钮与 WhatsApp 链接存在，控制台 error/warning 为 0。
 
-截图 8 张与原始 `report.json` 在 `/tmp/md-320-20261028/`。搜索建议的图区未读
-`naturalWidth`，因此该部分不宣称图片验证通过。
+截图与原始读数在 `/tmp/md-320-20261028/`。搜索建议图区随后补测：
+两条建议初次绘制时 `naturalWidth=0`、图框底色 `#141414`，解码后均为 `complete=true`、
+`naturalWidth=300`、119×74 渲染，平均亮度 80/83，控制台零 error/warning。
+此前深色块是解码时序，不是破图或暗掩膜。证据 `13-search-leaf-thumbs.png` 与
+`search-thumbs.json`。
 
 ## 二十一、Turnstile：从挂件存在到真实 verified
 
