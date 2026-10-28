@@ -30,7 +30,7 @@ final class FormTest extends TestCase {
 	/**
 	 * Script registrations captured while a test calls register_assets().
 	 *
-	 * @var array<int, array{0: string, 1: string, 2: mixed}>
+	 * @var array<int, array{0: string, 1: string, 2: mixed, 3: mixed}>
 	 */
 	private array $registered_scripts = array();
 
@@ -66,8 +66,8 @@ final class FormTest extends TestCase {
 		$this->registered_scripts = array();
 		$scripts                  = &$this->registered_scripts;
 		WP_Mock::userFunction( 'wp_register_script' )->andReturnUsing(
-			static function ( string $handle, string $src, $deps = array() ) use ( &$scripts ): void {
-				$scripts[] = array( $handle, $src, $deps );
+			static function ( string $handle, string $src, $deps = array(), $version = false ) use ( &$scripts ): void {
+				$scripts[] = array( $handle, $src, $deps, $version );
 			}
 		);
 		WP_Mock::userFunction( 'wp_enqueue_script' )->andReturn( null );
@@ -266,12 +266,16 @@ final class FormTest extends TestCase {
 		$form   = new Form( $config, new Pattern(), new FormState() );
 		$form->register_assets();
 
-		$src  = '';
-		$deps = array();
+		$src              = '';
+		$deps             = array();
+		$behavior_version = '';
 		foreach ( $this->registered_scripts as $call ) {
 			if ( Form::TURNSTILE_SCRIPT === $call[0] ) {
 				$src  = $call[1];
 				$deps = $call[2];
+			}
+			if ( Form::SCRIPT === $call[0] ) {
+				$behavior_version = (string) $call[3];
 			}
 		}
 
@@ -280,6 +284,8 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'onload=' . Form::TURNSTILE_ONLOAD, $src );
 		$this->assertStringNotContainsString( 'cf-turnstile', $src );
 		$this->assertContains( Form::SCRIPT, $deps );
+		$expected = \MetalDivider\Inquiry\Plugin::VERSION . '.' . substr( (string) md5_file( dirname( __DIR__, 3 ) . '/assets/inquiry.js' ), 0, 10 );
+		$this->assertSame( $expected, $behavior_version, 'the behavior URL changes whenever its bytes change' );
 
 		$tag      = '<script src="' . $src . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- a tag passed to defer_turnstile(), not a script this test enqueues.
 		$deferred = $form->defer_turnstile( $tag, Form::TURNSTILE_SCRIPT, $src );

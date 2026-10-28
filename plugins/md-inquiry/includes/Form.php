@@ -178,8 +178,10 @@ final class Form {
 	 * the render step to enqueue where the form actually appears.
 	 */
 	public function register_assets(): void {
-		$url = \plugin_dir_url( \dirname( __DIR__ ) . '/md-inquiry.php' );
-		\wp_register_script( self::SCRIPT, $url . 'assets/inquiry.js', array(), Plugin::VERSION, true );
+		$url     = \plugin_dir_url( \dirname( __DIR__ ) . '/md-inquiry.php' );
+		$digest  = @\md5_file( \dirname( __DIR__ ) . '/assets/inquiry.js' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a deploy race must fall back to the plugin version, not fatal.
+		$version = '' === (string) $digest ? Plugin::VERSION : Plugin::VERSION . '.' . \substr( (string) $digest, 0, 10 );
+		\wp_register_script( self::SCRIPT, $url . 'assets/inquiry.js', array(), $version, true );
 		\wp_register_script( self::TURNSTILE_SCRIPT, 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=' . self::TURNSTILE_ONLOAD, array( self::SCRIPT ), Plugin::VERSION, true );
 	}
 
