@@ -879,3 +879,21 @@ Patterns`、`Foshan production floor`），删除 ISO 与库存吨位，盐雾�
 
 主站浏览、图案、询盘与 FAQ 下载不依赖该插件；`mdvisitor-launcher.js` 是另一条
 带 `src` 的外部文件，不在本次错误链内。
+
+## 三十七、口径统一后的询盘链路复验（不发信）
+
+口径改为 24 小时后复验整条链，全程未发送任何邮件、未创建测试记录。
+
+- **文案一致性**：仓库 `plugins/`、`mu-plugins/`、`themes/` 中 `one business day`
+  **0 处**；`Emails.php:128` 为客户确认信写 `within 24 hours on business days`；
+  生产 `/inquiry/` 与 `/inquiry/thank-you/` 各 0 处旧口径、分别 8 处与 3 处 24 小时。
+- **表单完整性**：生产 `/inquiry/` 返回 200，16 个 `md_inquiry_*` 字段齐全、
+  nonce 存在、Turnstile 槽存在、confirm 勾选框存在；因 Turnstile 已配置，提交按钮
+  默认 `disabled`（fail-closed）。
+- **校验真的在拦**：提交 name + 非法 email、其余必填缺失的 POST，返回 200、
+  有错误提示、**未跳转** `/inquiry/thank-you/`，询盘记录 **1→1** 未新增。
+- **邮件调度健康**：`md_inquiry_minute` 已注册、`wp_next_scheduled('md_inquiry_mail_tick')`
+  为未来时间、`DISABLE_WP_CRON` 为 false。
+
+下一步真实验收仍需业主按路径走一次完整提交（会产生一封通知与一封确认信），
+本轮按邮件纪律未代发。

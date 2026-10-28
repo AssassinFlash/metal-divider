@@ -64,6 +64,7 @@
 - 生产 `livecanvas` 42 个文件与仓库 HEAD md5 逐一比对,**内容差异 0**(覆盖已消除)。回复时限 `one business day` 全站 0 处;2 处 `same day` 为 QC 工序耗时,非回复承诺。
 - 174 页扫描:非 200、字面短代码、占位符、空锚点**全部 0**;唯一 `src=""` 定位到第三方 `rapls-ai-chatbot` 隐藏预览容器,不在本 GOAL 范围。证据 `/tmp/md-defect-sweep.json`、`/tmp/md-replytime-readback.json`。
 - **390 真重排复验**(7 页,`innerWidth=390` 未登录):`scrollWidth` 全为 390、溢出 0、可见空卡 0;控制台错误同样只来自下列 rapls 插件。证据 `/tmp/md-390/report.json` 与 `/tmp/md-390/full-*.png`。
+- **口径统一后询盘链复验(不发信)**:仓库 `one business day` 0 处;生产 `/inquiry/` 16 个字段齐全、nonce/Turnstile 槽/confirm 均在、按钮 fail-closed;非法且缺字段的 POST 返回 200 有错误、未跳感谢页、记录 1→1;`md_inquiry_minute` 已注册且 cron 开启。完整提交仍待业主实走(会发信)。
 - **rapls 客服插件的两条实测缺陷(移交 Batch 2,不越界改)**:①`<script id="raplsaich-chatbot-js-extra">` 无 nonce,被本站 CSP `script-src-elem` 拦截,`api_base` 未生效;②`chatbot.js` 以相对地址 `undefined/session` 请求,产生 404(`/undefined/session`、`/custom-metal-divider-screens/undefined/session`)。主站浏览、询盘与 FAQ 不依赖它。总目标仍未验收。
 
 ### 2026-10-28 清除竞品平均值与无来源承诺
