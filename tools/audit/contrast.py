@@ -106,14 +106,50 @@ PROBE = r"""() => {
 
   const findings = [];
   let skippedGradientText = 0;
-  const scope = document.querySelector('main') || document.body;
-  for (const el of scope.querySelectorAll('p, li, h1, h2, h3, h4, span, a, button, td, th')) {
-    const text = (el.innerText || '').trim();
-    if (text.length < 12) continue;
+  // Header and footer carry text on every page and were never measured before
+  // 2026-10-29. They are swept alongside <main> rather than instead of it.
+  const zones = [
+    ['main', 'main'],
+    ['header', 'header, #lc-header, .site-header'],
+    ['footer', 'footer, .site-footer'],
+  ];
+  const roots = [];
+  for (const [zone, selector] of zones) {
+    for (const root of document.querySelectorAll(selector)) {
+      const rr = root.getBoundingClientRect();
+      if (rr.width > 200 && rr.height > 40) roots.push([zone, root]);
+    }
+  }
+  // A container's `color` is not a claim about any glyph. Reading it reported a
+  // nav <li> as white-on-white 140 times when the only rendered text in it is a
+  // black <a>; `innerText` concatenates descendants, so "container" and "text"
+  // had collapsed into one node (measured 2026-10-29). Only elements holding
+  // their own text node are measured.
+  const ownText = (el) => {
+    let out = '';
+    for (const node of el.childNodes) {
+      if (node.nodeType === 3) out += node.nodeValue;
+    }
+    return out.replace(/\s+/g, ' ').trim();
+  };
+  const effOpacity = (el) => {
+    let op = 1;
+    let n = el;
+    while (n && n !== document.documentElement) {
+      op *= parseFloat(getComputedStyle(n).opacity || '1');
+      n = n.parentElement;
+    }
+    return op;
+  };
+  for (const [zone, root] of roots) {
+  for (const el of root.querySelectorAll('*')) {
+    const text = ownText(el);
+    if (text.length < 4) continue;
     const r = el.getBoundingClientRect();
-    if (r.width < 40 || r.height < 8) continue;
+    if (r.width < 20 || r.height < 6) continue;
     const cs = getComputedStyle(el);
-    if (cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.5) continue;
+    if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+    if (effOpacity(el) < 0.5) continue;
     // Gradient-clipped text paints from its gradient; `color` does not describe it.
     const clip = cs.webkitBackgroundClip || cs.backgroundClip;
     const fill = cs.webkitTextFillColor || '';
@@ -133,6 +169,7 @@ PROBE = r"""() => {
     const need = size >= 24 || (size >= 18.66 && bold) ? 3.0 : 4.5;
     if (ratio >= need) continue;
     findings.push({
+      zone,
       text: text.slice(0, 44),
       cls: (el.className || '').toString().slice(0, 52),
       color: cs.color,
@@ -141,6 +178,7 @@ PROBE = r"""() => {
       need,
       size: +size.toFixed(1),
     });
+  }
   }
   return JSON.stringify({ findings, skippedGradientText });
 }"""
