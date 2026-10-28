@@ -516,4 +516,64 @@ final class TemplatesTest extends TestCase {
 			$this->assertStringNotContainsString( '<style', $source, "{$relative} carries a <style> block" );
 		}
 	}
+
+	/**
+	 * The eight download cards on /faqs/ stay, and a visitor can see who
+	 * published each file without reading the URL. The hrefs are
+	 * Brilliant Architectural and Zahner; the page must say so in text,
+	 * not only in an href or a title attribute, and must not call the
+	 * files Metal Divider specifications, certificates, or project files.
+	 * This guard does not decide whether those third parties allow the
+	 * links. It only stops the source from disappearing back into the URL.
+	 */
+	public function test_faq_downloads_name_their_third_party_source_in_visible_text(): void {
+		$source = (string) file_get_contents( Templates::path( 'faqs' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+		$urls   = array(
+			'https://www.brilliantarchitectural.com/wp-content/uploads/Architectural-Mesh-Catalog.pdf',
+			'https://azahner.com/wp-content/uploads/PerforatedMetalPanels_Datasheet_250716.pdf',
+			'https://azahner.com/wp-content/uploads/Drop-Lock-CAD-Details.dwg',
+			'https://azahner.com/wp-content/uploads/Moda-Installation-Manual_250826.pdf',
+			'https://azahner.com/wp-content/uploads/Surfaces-Datasheet-and-Order-Form_260402.pdf',
+			'https://azahner.com/wp-content/uploads/Double-Return_3-part-Specification-1.docx',
+			'https://azahner.com/wp-content/uploads/MODA-Revit-Families.zip',
+			'https://azahner.com/wp-content/uploads/Zahner-Angel-Hair-and-GB-60-EPD-v1.1.pdf',
+		);
+		foreach ( $urls as $url ) {
+			$this->assertSame( 1, substr_count( $source, $url ), $url );
+		}
+		$this->assertSame( 8, substr_count( $source, 'data-source-button="download_file"' ) );
+		foreach ( array(
+			'Download Catalog',
+			'Download Data Sheet',
+			'Download DWG',
+			'Download Guide',
+			'Download Spec Card',
+			'Download Spec',
+			'Download BIM',
+			'Download Pack',
+		) as $button ) {
+			$this->assertSame( 1, substr_count( $source, '>' . $button . '<' ), $button );
+		}
+
+		$text = preg_replace( '/<!--.*?-->/s', "\n", $source );
+		$text = preg_replace( '/<[^>]*>/s', "\n", (string) $text );
+		$text = html_entity_decode( (string) $text, ENT_QUOTES | ENT_HTML5 );
+		$this->assertStringContainsString(
+			'These links open third-party reference files from Brilliant Architectural and Zahner. They are not Metal Divider specifications, certificates, or project files.',
+			$text
+		);
+		$this->assertSame( 1, substr_count( $text, 'Source: Brilliant' ) );
+		$this->assertSame( 7, substr_count( $text, 'Source: Zahner' ) );
+		$this->assertDoesNotMatchRegularExpression(
+			'/id="faq-download-sources"[^>]*(hidden|aria-hidden|sr-only)/',
+			$source
+		);
+		$this->assertSame(
+			8,
+			preg_match_all(
+				'/items-center gap-4">\s*<span class="font-\[\'Inter\'\] text-xl font-semibold leading-tight text-white">.*?<\/span>\s*<span class="rounded-full border border-\[#c9a962\]\/25[^"]*">Source: (?:Brilliant|Zahner)<\/span>/s',
+				$source
+			)
+		);
+	}
 }
