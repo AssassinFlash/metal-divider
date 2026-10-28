@@ -249,7 +249,8 @@ def test_push_plan_names_only_operations_the_code_runs() -> None:
         "snapshot the target database first",
         "open the maintenance window",
         "merge the chat option rows on the target host",
-        "purge the LHC compiled-template cache",
+        "reset the LHC compiled-template cache dirs inside the window",
+        "purge the WordPress page cache",
         "hash-verify the shipped lhc-extensions and mu-plugins",
         "close the maintenance window",
     ):
@@ -265,9 +266,16 @@ def test_push_plan_lists_the_envelope_in_execution_order() -> None:
         i for i, s in enumerate(plan) if s.startswith("open the maintenance window")
     )
     relay = next(i for i, s in enumerate(plan) if s.startswith("relay the golden"))
+    reset = next(
+        i
+        for i, s in enumerate(plan)
+        if s.startswith("reset the LHC compiled-template cache dirs")
+    )
     closed = next(i for i, s in enumerate(plan) if s == "close the maintenance window")
-    purge = next(i for i, s in enumerate(plan) if s.startswith("purge the LHC"))
-    assert snapshot < opened < relay < closed < purge
+    purge = next(
+        i for i, s in enumerate(plan) if s.startswith("purge the WordPress page cache")
+    )
+    assert snapshot < opened < relay < reset < closed < purge
     assert purge == len(plan) - 2, "only the manual runbook line may follow"
     assert closed < purge, "purge runs after the window: the notify 503s inside it"
 
@@ -432,16 +440,36 @@ def test_chat_push_runs_inside_the_snapshot_and_maintenance_envelope(
         _maintenance_success,
     )
     monkeypatch.setattr(backup_module, "stream", lambda *a, **k: order.append("import"))
+    _real_shell = target.shell
+
+    def _recording_shell(script: str) -> str:
+        if script.startswith("rm -rf"):
+            order.append("reset")
+        return _real_shell(script)
+
+    monkeypatch.setattr(target, "shell", _recording_shell)
+    _real_wp = target.wp
+
+    def _recording_wp(*args: str, check: bool = True) -> str:
+        if args[:2] == ("litespeed-purge", "all"):
+            order.append("purge")
+        return _real_wp(*args, check=check)
+
+    monkeypatch.setattr(target, "wp", _recording_wp)
     _write_minimal_seed(tmp_path, with_credentials=True)
 
     result = chat.chat_push(cast(Target, target), repository=REPO_ROOT, home=tmp_path)
 
     assert order[0] == "snapshot"
     assert order[1] == "on"
-    assert order[-1] == "off", "the window must close even when a later step fails"
+    assert order[-4:] == ["reset", "reset", "off", "purge"], (
+        "the cache-dir reset is a shell command and belongs inside the window;"
+        " only the LiteSpeed notify runs after it closes"
+    )
     assert "import" in order
     joined = "\n".join(result.actions)
     assert "open the maintenance window" in joined
+    assert "reset the LHC compiled-template cache dirs inside the window" in joined
     assert "close the maintenance window" in joined
     assert chat.BRINGUP_OPTION in joined, "the one-time credential import is marked"
     marker_updates = [
@@ -818,23 +846,127 @@ def test_purge_caches_retries_once_and_records_the_note(
                 raise DeployError("purge notify failed")
             return ""
 
-    flaky_shell_calls: list[str] = []
-
-    class _RecordingShell(_FlakyTarget):
-        def shell(self, script: str) -> str:
-            flaky_shell_calls.append(script)
-            return ""
-
     sleeps: list[float] = []
     monkeypatch.setattr(time, "sleep", sleeps.append)
     notes: list[str] = []
-    target = _RecordingShell(label="x", base_url="https://x.test", root="/tmp/x")
-    chat_module._purge_caches(cast(Target, target), notes)
+    target = _FlakyTarget(label="x", base_url="https://x.test", root="/tmp/x")
+    assert chat_module._purge_page_cache(cast(Target, target), notes) is True
     purges = [c for c in calls if c[:2] == ("litespeed-purge", "all")]
     assert len(purges) == 2
     assert sleeps == [5]
     assert notes == ["litespeed-purge failed once; retrying after a 5s pause"]
-    assert any("mkdir -p" in s for s in flaky_shell_calls), flaky_shell_calls
+
+
+def test_chat_push_resets_the_cache_dirs_and_purges_when_a_merge_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failure inside the window still resets caches, closes, purges, re-raises."""
+    target = _PushTarget(
+        label="prod", base_url="https://metal-divider.com", root="/home/prod"
+    )
+    golden = _PushTarget(
+        label="staging",
+        base_url="https://staging.metal-divider.com",
+        root="/home/golden",
+    )
+    monkeypatch.setattr(chat, "named_target", lambda _name: golden)
+    events: list[str] = []
+
+    def _maintenance_events(tgt: object, *, on: bool) -> str:
+        events.append("on" if on else "off")
+        return "ok"
+
+    monkeypatch.setattr(steps, "maintenance", _maintenance_events)
+    monkeypatch.setattr(
+        snapshot_module,
+        "take",
+        lambda tgt, home: SimpleNamespace(name="db.sql.gz"),
+    )
+    monkeypatch.setattr(backup_module, "stream", lambda *a, **k: None)
+    _real_shell = target.shell
+
+    def _recording_shell(script: str) -> str:
+        if script.startswith("rm -rf"):
+            events.append("reset")
+        return _real_shell(script)
+
+    monkeypatch.setattr(target, "shell", _recording_shell)
+    _real_wp = target.wp
+
+    def _recording_wp(*args: str, check: bool = True) -> str:
+        if args[:2] == ("litespeed-purge", "all"):
+            events.append("purge")
+        return _real_wp(*args, check=check)
+
+    monkeypatch.setattr(target, "wp", _recording_wp)
+    target.eval_file_output = "no ack from the host script"
+    _write_minimal_seed(tmp_path, with_credentials=True)
+
+    with pytest.raises(DeployError, match="did not acknowledge"):
+        chat.chat_push(cast(Target, target), repository=REPO_ROOT, home=tmp_path)
+    assert events[-4:] == ["reset", "reset", "off", "purge"], events
+    assert events[0] == "on"
+
+
+def test_chat_push_deferred_purge_appends_no_success_line(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When the purge defers to a note, no success action may claim it ran."""
+
+    class _NoPurgeTarget(_PushTarget):
+        def wp(self, *args: str, check: bool = True) -> str:
+            if args[:2] == ("litespeed-purge", "all"):
+                raise DeployError("purge notify failed")
+            return super().wp(*args, check=check)
+
+    target = _NoPurgeTarget(
+        label="prod", base_url="https://metal-divider.com", root="/home/prod"
+    )
+    golden = _PushTarget(
+        label="staging",
+        base_url="https://staging.metal-divider.com",
+        root="/home/golden",
+    )
+    monkeypatch.setattr(chat, "named_target", lambda _name: golden)
+    monkeypatch.setattr(
+        steps,
+        "maintenance",
+        lambda tgt, *, on: "ok",
+    )
+    monkeypatch.setattr(
+        snapshot_module,
+        "take",
+        lambda tgt, home: SimpleNamespace(name="db.sql.gz"),
+    )
+    monkeypatch.setattr(backup_module, "stream", lambda *a, **k: None)
+    monkeypatch.setattr(time, "sleep", lambda _s: None)
+    _write_minimal_seed(tmp_path, with_credentials=True)
+
+    result = chat.chat_push(cast(Target, target), repository=REPO_ROOT, home=tmp_path)
+
+    joined = chr(10).join(result.actions)
+    assert "purge the WordPress page cache after the window closed" not in joined
+    assert "close the maintenance window" in joined
+    assert any("litespeed-purge failed twice" in n for n in result.notes)
+
+
+def test_reset_lhc_caches_deletes_and_recreates_in_one_command() -> None:
+    """rm and mkdir are one shell command: no live gap can fatal LHC renders."""
+    shells: list[str] = []
+
+    class _ShellTarget(_PushTarget):
+        def shell(self, script: str) -> str:
+            shells.append(script)
+            return ""
+
+    target = _ShellTarget(label="x", base_url="https://x.test", root="/tmp/x")
+    notes: list[str] = []
+    chat_module._reset_lhc_caches(cast(Target, target), notes)
+    assert len(shells) == 2
+    for script in shells:
+        assert script.startswith("rm -rf ")
+        assert " && mkdir -p " in script
+    assert notes == []
 
 
 def test_purge_caches_defers_a_second_failure_to_a_loud_note(
@@ -851,7 +983,7 @@ def test_purge_caches_defers_a_second_failure_to_a_loud_note(
     monkeypatch.setattr(time, "sleep", lambda _s: None)
     notes: list[str] = []
     dead = _DeadTarget(label="x", base_url="https://x.test", root="/tmp/x")
-    chat_module._purge_caches(cast(Target, dead), notes)  # no raise
+    assert chat_module._purge_page_cache(cast(Target, dead), notes) is False  # no raise
     assert notes == [
         "litespeed-purge failed once; retrying after a 5s pause",
         "litespeed-purge failed twice; the page cache may serve"

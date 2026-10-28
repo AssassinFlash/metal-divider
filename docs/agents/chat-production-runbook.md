@@ -135,18 +135,21 @@ uv run --locked --project tools/deploy md-deploy chat-push --target prod
 
 `chat_push_plan()` is the order a push must show, whether or not the CLI prints it yet:
 
-1. Relay the golden `/chat/` tree. Excludes: `settings/`, `cache/`, `var/`, `sites/`, `storage/`.
-2. Ship `lhc-extensions/mdvisitor` and `lhc-extensions/mdmobile` from the repository into `chat/extension/`.
-3. Ship the five mu-plugins from the repository into `wp-content/mu-plugins/`.
+1. Snapshot the target database (kept on this Mac).
+2. Open the maintenance window.
+3. Relay the golden `/chat/` tree. Excludes: `/settings/`, `/cache/`, `/var/`, `/sites/`, `/storage/`.
 4. Relay `rapls-ai-chatbot` from the golden host.
-5. Target LHC installer state check. Schema must already exist. Do not import `lhc-schema-local-only.sql`.
-6. Import the sanitized seed (`REPLACE`, data only). The golden host and any target whose `md_chat_push_bringup` marker reads back `1` skip the four sanitized credential files (`users`, `users_setting`, `chat_config`, `secret_tables`) so a later push never blanks secrets that were set on the host.
-7. Rewrite seed URLs (`staging.metal-divider.com` → target host, bare hostname) and the Rapls prefix (`stg_raplsaich_` → the target's own prefix, read from that site's `wp-config.php`). Do not assume the production prefix.
-8. Regenerate every chat secret on the target host. See Secrets relay procedure.
-9. Write the chat option rows on the host. Secrets never transit the Mac.
-10. Purge LHC compiled templates and the WordPress page cache (after the maintenance window closes — the purge notify is an HTTP self-request that 503s against the live maintenance page).
-11. Set the launcher host gate for this target.
-12. md5-verify every shipped file on both sides.
+5. Ship `lhc-extensions/mdvisitor` and `lhc-extensions/mdmobile` from the repository.
+6. Ship the five mu-plugins from the repository.
+7. Import the sanitized seed (`REPLACE`, data only). The golden host and any target whose `md_chat_push_bringup` marker reads back `1` skip the four sanitized credential files (`users`, `users_setting`, `chat_config`, `secret_tables`) so a later push never blanks secrets that were set on the host. `chat.py` blanks those rows once on the first import and never generates secrets.
+8. Rewrite seed URLs (bare hostname) and the Rapls prefix (`stg_raplsaich_` → the target's own prefix, read from that site's `wp-config.php`). Do not assume the production prefix.
+9. Merge the chat option rows on the target host. Secrets never transit the Mac.
+10. Hash-verify the shipped lhc-extensions and mu-plugins on both sides.
+11. Reset the LHC compiled-template cache dirs inside the window (`rm -rf` + `mkdir -p`: LHC never recreates a deleted cache directory, it fatal-errors).
+12. Close the maintenance window.
+13. Purge the WordPress page cache after the window closes (the purge notify is an HTTP self-request that 503s against the live maintenance page).
+
+The three things the push does NOT do stay manual: fresh secrets (next section), the launcher host gate, the operator password.
 
 Done when the dry-run printed the plan and changed nothing. If the subcommand is missing, stop. Do not run a hand-rolled `rsync --delete` from the Mac.
 
@@ -200,7 +203,7 @@ Path constraint: staging and production share the host behind `hostinger-metal-d
 There is no relay script in the repo. Do not add one to the checkout to make this step "easier".
 
 1. SSH with `BatchMode=yes`. Do not add `-v`. Do not `scp` `settings.ini.php` or an options dump.
-2. On the host, generate the fresh-on-target secret values and write them into the target's `settings.ini.php`, `lh_abstract_rest_api_key.api_key`, and the two WP options. The fresh list is not a copy of the staging secret row. `chat.py` regenerates chat secrets on the target.
+2. On the host, generate the fresh-on-target secret values and write them into the target's `settings.ini.php`, `lh_abstract_rest_api_key.api_key`, and the two WP options. The fresh list is not a copy of the staging secret row. `chat.py` never generates secrets; it blanks the seed credential rows once and defers regeneration to this procedure.
 3. The one required coupling: the new `lh_abstract_rest_api_key.api_key` and `md_wecom_notify.lhc_api_key` are the same value, written once on the host into both places.
 4. Seal stdout the way `export-chat-seed.php` already does: key name, byte length, `set` or `blank`. A command that would echo the value is the wrong command. Redirect nothing into a file that later gets committed or attached to a log.
 5. Non-secret rewrites (`lhc_base_url`, launcher hosts, `customer_site_url`, SMTP from-address) may be printed. Secret fields may not.
@@ -295,7 +298,7 @@ Listed here instead of invented. Do not fill these gaps with a guessed command.
 - `wecom_corp_id` and `lhc_username` values are not in the files read. `wecom_to_user=John` and `wecom_agent_id=1000002` are the values this runbook writes; the unit fixture uses `wecom_to_user` `chester` and the same agent id. Live staging option values were not read.
 - LiteSpeed full-page TTL of up to a week is a given operating fact. The files read confirm `wp litespeed-purge all`, not the TTL number.
 - Rapls 1.21.4 is named by the task and by a test-stub comment. No Rapls version file is in the repository (the plugin is relayed from the golden host).
-- The LHC compiled-template purge is executed by `chat_push` after the maintenance window closes (`_purge_caches`: `rm -rf && mkdir -p` on `chat/cache/compiledtemplates` and `chat/cache/cacheconfig` — LHC does not recreate a deleted cache directory, it fatal-errors through a template titled "Site Maintenance" — then `wp litespeed-purge all`).
+- The LHC cache-dir reset runs inside the maintenance window (`_reset_lhc_caches`: `rm -rf && mkdir -p` on `chat/cache/compiledtemplates` and `chat/cache/cacheconfig` — LHC does not recreate a deleted cache directory, it fatal-errors through a template titled "Site Maintenance"); the WordPress page-cache purge runs after the window closes (`_purge_page_cache`: `wp litespeed-purge all`; the notify is an HTTP self-request that 503s against the live maintenance page).
 - The operator-password set command is not in the repo.
 - No real-Chrome chat-chain script path is in the grounding files.
 - Issue #148 and #161 were not re-fetched in this session; the roles above are the ones this runbook was told to cite.

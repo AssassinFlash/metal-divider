@@ -14,6 +14,7 @@
 set -euo pipefail
 
 BASE_URL="https://staging.metal-divider.com"
+BASE_URL_WAS_PASSED=0
 CHROME=0
 OUT_DIR=".scratch/verify-chat"
 
@@ -212,7 +213,7 @@ main() {
     case "$1" in
       --base-url)
         [[ $# -ge 2 ]] || { echo "error: --base-url requires a value" >&2; exit 2; }
-        BASE_URL="$2"; shift 2 ;;
+        BASE_URL="$2"; BASE_URL_WAS_PASSED=1; shift 2 ;;
       --base-url=*)
         BASE_URL="$(printf '%s' "$1" | cut -d= -f2-)"; shift ;;
       --chrome)
@@ -233,6 +234,11 @@ main() {
 
   BASE_URL="$(printf '%s' "$BASE_URL" | sed 's:/$::')"
 
+  if [[ $BASE_URL_WAS_PASSED -eq 0 && $BASE_URL != https://staging.* ]]; then
+    echo "FAIL  a non-staging base url requires an explicit --base-url" >&2
+    exit 2
+  fi
+
   curl_chain
 
   if [[ $CHROME -eq 1 ]]; then
@@ -240,8 +246,9 @@ main() {
   fi
 
   overall_fail=$CURL_FAIL
-  if [[ $CHROME -eq 1 && $CHROME_OC -eq 1 ]]; then
-    overall_fail=$((overall_fail + CHROME_FAIL))
+  if [[ $CHROME -eq 1 ]]; then
+    # fail closed: a requested chrome chain that could not run is a failure
+    overall_fail=$((overall_fail + CHROME_FAIL + CHROME_OC))
   fi
 
   echo ""

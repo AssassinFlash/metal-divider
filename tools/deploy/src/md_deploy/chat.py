@@ -245,8 +245,8 @@ def chat_push_plan() -> list[str]:
 
     Every line names an operation the code executes — the sequence below is
     the sequence chat_push performs (snapshot and maintenance window first,
-    mutation and verification inside the window, then the purge after the
-    window closes — the LiteSpeed purge notify 503s against a live
+    mutation, the LHC cache-dir reset, and verification inside the window,
+    then the page-cache purge after the window closes — the LiteSpeed purge notify 503s against a live
     maintenance page). The three things a deploy must never do unattended (fresh
     secrets, the launcher host gate, the operator password) are called out
     as manual runbook steps.
@@ -266,9 +266,9 @@ def chat_push_plan() -> list[str]:
         "rewrite seed URLs and the Rapls table prefix for the target",
         "merge the chat option rows on the target host (secrets never leave it)",
         "hash-verify the shipped lhc-extensions and mu-plugins on both sides",
+        "reset the LHC compiled-template cache dirs inside the window",
         "close the maintenance window",
-        "purge the LHC compiled-template cache and the WordPress page cache"
-        " after the maintenance window closed",
+        "purge the WordPress page cache after the maintenance window closed",
         "defer to the runbook for the manual items: fresh secrets host-side,"
         " launcher host gate, operator password",
     ]
@@ -451,8 +451,9 @@ def chat_push(
     every other target imports them exactly once — the bring-up marker
     (md_chat_push_bringup) makes a re-push after the runbook set real
     secrets a no-op for those files. The chat option rows merge on the
-    target host, so the live secret values never leave it. Finally the LHC
-    and page caches purge and the shipped files hash-verify.
+    target host, so the live secret values never leave it. The shipped files
+    hash-verify, the LHC cache dirs reset inside the window (on the failure
+    path too), and the page cache purges after the window closes.
     """
     golden = named_target(GOLDEN_TARGET)
     out_dir = seed_directory(home)
@@ -463,6 +464,7 @@ def chat_push(
     actions.append(f"snapshot the database first ({snapshot.name})")
 
     golden_self = is_golden_target(target, golden)
+    failure: DeployError | None = None
     try:
         steps.maintenance(target, on=True)
         actions.append("open the maintenance window")
@@ -564,21 +566,36 @@ def chat_push(
                 f"{MU_PLUGINS}/{filename}",
                 notes,
             )
+    except DeployError as exc:
+        failure = exc
     finally:
+        # Reset the LHC cache dirs while the window still shields the site:
+        # the reset is a shell command (safe inside the window), and a live
+        # request in a rm-before-mkdir gap fatal-errors through LHC's
+        # "Site Maintenance" template. Runs on the failure path too, so a
+        # half-applied tree never reopens with stale compiled templates.
+        try:
+            _reset_lhc_caches(target, notes)
+            actions.append(
+                "reset the LHC compiled-template cache dirs inside the window"
+            )
+        except DeployError as cache_error:
+            notes.append(
+                f"lhc cache reset failed before the window closed: {cache_error}"
+            )
         steps.maintenance(target, on=False)
         actions.append("close the maintenance window")
 
-    # Purge only after the window closes: the LiteSpeed purge notify is an
-    # HTTP self-request, and a live maintenance window answers it with a 503,
-    # which the plugin reports as "Could not notify the web server to
-    # purge" (reproduced deterministically on staging 5/5 pushes; every
-    # isolated attempt passed because the probe had written a plain-text
-    # .maintenance whose $upgrading stays unset, so core skips it).
-    _purge_caches(target, notes)
-    actions.append(
-        "purge the LHC compiled-template cache and the WordPress page cache"
-        " after the maintenance window closed"
-    )
+    # The page-cache purge runs only after the window closes: the LiteSpeed
+    # purge notify is an HTTP self-request, and a live maintenance window
+    # answers it with a 503, which the plugin reports as "Could not notify
+    # the web server to purge" (reproduced deterministically on staging 5/5
+    # pushes; every isolated attempt passed because the probe had written a
+    # plain-text .maintenance whose $upgrading stays unset, so core skips it).
+    if _purge_page_cache(target, notes):
+        actions.append("purge the WordPress page cache after the window closed")
+    if failure is not None:
+        raise failure
     return steps.Result("chat-push", actions, notes)
 
 
@@ -817,44 +834,48 @@ def _verify_tree(target: Target, source: Path, relative: str, notes: list[str]) 
             notes.append(f"{relative}/{path}: the bytes do not match on the target")
 
 
-def _purge_caches(target: Target, notes: list[str]) -> None:
-    """Drop the LHC compiled-template cache and the WordPress page cache.
+def _reset_lhc_caches(target: Target, notes: list[str]) -> None:
+    """Delete and immediately recreate the LHC compiled-template cache dirs.
 
     LHC compiles its templates and module PHP into `cache/compiledtemplates`
     and maps them in `cache/cacheconfig`; a push that changed either source
-    would be silently ignored until both are dropped (blueprint-measured).    Both directories must exist again before the first request: LHC does not
-    recreate a missing cache directory, it fatal-errors (staging-measured).
-    One retry, then a loud note: the shared-host purge notify can flake
-    right after a push burst (measured on staging; every isolated path
-    passes). The page cache follows because the launcher tag and the pushed assets
-    are served inside full-page HTML.
+    would be silently ignored until both are dropped (blueprint-measured).
+    Both directories must exist again before the first request: LHC does
+    not recreate a missing cache directory, it fatal-errors through a
+    template titled "Site Maintenance" (staging-measured). rm alone also
+    leaves that gap live, so the recreate is part of the same shell command
+    and the whole reset runs inside the maintenance window.
     """
     for name in ("compiledtemplates", "cacheconfig"):
         cache_dir = shlex.quote(target.path_of(f"{CHAT_ROOT}/cache/{name}"))
-        # rm alone deletes the directory itself, and LHC never recreates it:
-        # every template render then fatals (LHC ships a fatal-error template
-        # titled "Site Maintenance" — misread as WordPress maintenance while
-        # diagnosing this on staging). Delete and immediately recreate.
         target.shell(f"rm -rf {cache_dir} && mkdir -p {cache_dir}")
+
+
+def _purge_page_cache(target: Target, notes: list[str]) -> bool:
+    """Purge the WordPress page cache after the maintenance window closes.
+
+    The launcher tag and the pushed assets ship inside full-page HTML, so
+    the page cache must drop too. The purge notify is an HTTP self-request
+    that 503s against a live maintenance window, which is why this runs
+    only after the window closes. One retry (the shared-host notify can
+    flake right after a push burst, measured both ways on staging), then a
+    loud note that fails the CLI run. Returns True when the purge landed.
+    """
     try:
         target.wp("litespeed-purge", "all")
     except DeployError:
-        # Shared-host flake: the purge notify can fail right after a push
-        # burst and pass seconds later (measured both ways on staging).
         notes.append("litespeed-purge failed once; retrying after a 5s pause")
         time.sleep(5)
         try:
             target.wp("litespeed-purge", "all")
         except DeployError:
-            # Not fatal: every isolated reproduction passes and only the full
-            # push sequence triggers the flake. The push completes, and the
-            # note fails the run loudly (cli exits 1 on notes) with the
-            # operator action spelled out below.
             notes.append(
                 "litespeed-purge failed twice; the page cache may serve"
                 " stale HTML - run wp litespeed-purge all on the target"
                 " before accepting traffic"
             )
+            return False
+    return True
 
 
 def _hash_file(target: Target, relative: str) -> str:
