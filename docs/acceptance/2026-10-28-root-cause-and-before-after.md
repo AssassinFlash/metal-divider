@@ -676,3 +676,15 @@ WP-CLI 成功行意外回显首组密钥后，未继续用该组验收：替换�
 人工复选框。自动化会话被要求人工挑战且 pat 返回 401，因此不冒充弹层 token
 已通过；页面表单的 real verified 是独立证据。截图 `09`–`12` 与 `quote-modal.json`
 同在 `/tmp/md-320-20261028/`。
+
+## 二十二、十页 meta description：对抗复核后再上线
+
+原草案十句均未直接采用：删除 installed、mockups、第三方技术文件、未证实的工艺
+承诺与冲突时限。最终文案只保留各页模板可证明的事实，写入现有幂等
+`Seo\Config::page_metas()`；两个相关 PHPUnit 文件 17/71 通过，完整门禁通过，
+部署 `20261028T064120630063Z-d18ad8d` 已归档。
+
+生产匿名 HTML 读回 10/10：规范 URL 均为 200，`description` 与 `og:description`
+逐字一致，最终缓存均 hit。laser 与 privacy 中途各有一次 hit→miss，未直接算过；
+只对这两页复测，随后各连续 3/3 hit。无文章时 `/blog/page/2/` 返回 404，
+不把它列为有效描述页。原始结果与稳定性补记 `/tmp/md-seo-readback.json`。

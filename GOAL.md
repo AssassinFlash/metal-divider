@@ -59,6 +59,12 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-28 十页 meta description 定稿与生产读回
+
+- 原草案经对抗复核全部推翻:不写 installed、mockups、第三方技术文件、未证实的工艺承诺或冲突时限。10 条保守定稿进入 `Seo\Config::page_metas()`,部署 `20261028T064120630063Z-d18ad8d` 已归档。
+- 10 个规范 URL 均为 200,`description` 与 `og:description` 逐字一致,最终缓存均 hit;两页中途 hit→miss 后分别复测连续 3/3 hit。`/blog/page/2/` 在无文章时为 404,不冒充有效页面。
+- 证据 `/tmp/md-seo-readback.json`,文案留档 `docs/copy/2026-10-28-meta-descriptions.md`。总目标仍未验收。
+
 ### 2026-10-28 GSC、Turnstile 与搜索键盘交互生产读回
 
 - **GSC 已在业主指定主账号验证**:URL 前缀属性 `https://metal-divider.com/`,DNS TXT 公共读回与 Ownership verified 均通过;未改 NS、未添加共同管理员。
