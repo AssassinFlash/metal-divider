@@ -172,6 +172,12 @@ PROBE = r"""() => {
     if (r.width < 20 || r.height < 6) continue;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+    // A decorative layer is meant to be faint. The manufacturing page carries a
+    // 50.7px wordmark at 4% opacity as `pointer-events-none absolute -z-0`;
+    // reporting it as unreadable text is the criterion mistaking decoration for
+    // content (measured 2026-10-29). Same rule `defects.js` applies.
+    if ('none' === cs.pointerEvents && el.getAttribute('aria-hidden') === 'true') continue;
+    if ('none' === cs.pointerEvents && 'absolute' === cs.position) continue;
     if (effOpacity(el) < 0.5) continue;
     // Gradient-clipped text paints from its gradient; `color` does not describe it.
     const clip = cs.webkitBackgroundClip || cs.backgroundClip;
