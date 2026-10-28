@@ -35,7 +35,7 @@ MARKERS: list[tuple[str, str, bool, str]] = [
     ),
     (
         "search 100dvh",
-        r"xo-modal\[xo-name=search\][^{]*\{[^}]*min-height:\s*100dvh",
+        r'xo-modal\[xo-name=["\']?search["\']?\][^{]*\{[^}]*min-height:\s*100dvh',
         True,
         "search panel held a full viewport of background around one input",
     ),
@@ -59,7 +59,7 @@ MARKERS: list[tuple[str, str, bool, str]] = [
     ),
     (
         "uncapped measure",
-        r'main p:not\(\[class\*=["\']?max-w-',
+        r'main p:not\(\[class\*=["\']?max-w-["\']?\]\)\s*\{[^{}]*max-width:\s*\d+px',
         False,
         "the replacement cap for copy that carries no width of its own",
     ),
@@ -68,6 +68,12 @@ MARKERS: list[tuple[str, str, bool, str]] = [
         r"mmv2__img img[^{]*\{[^}]*object-fit:\s*cover",
         False,
         "menu images now fill their card",
+    ),
+    (
+        "card gap 16px",
+        r"pattern-card__body[^{]*\{[^}]*gap:\s*16px",
+        False,
+        "catalog card internals back on the 16px rhythm",
     ),
 ]
 
@@ -78,7 +84,56 @@ def get(url: str) -> str:
         return r.read().decode("utf-8", "replace")
 
 
+def strip_comments(css: str) -> str:
+    """Remove CSS comments before matching.
+
+    The fixed volumes explain in comments which rule was removed and why, so a
+    bare `max-width: 40em` search finds the explanation and reports the defect
+    as still present. Matching the stylesheet means matching what it applies.
+    """
+    return re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+
+
+def self_check() -> int:
+    """Prove every marker tells the before and after states apart.
+
+    Run with `--self-check` and a saved copy of the pre-fix stylesheet. A
+    marker that fires in both states measures nothing, and this is how the
+    first draft of this file went wrong: `object-fit: contain` and `gap: 14px`
+    are legitimate elsewhere, so they reported defects that were already fixed.
+    """
+    before_path = sys.argv[2]
+    before = strip_comments(open(before_path, encoding="utf-8").read())
+    after = strip_comments(
+        "".join(
+            open(f"plugins/md-site/content/windpress/{name}", encoding="utf-8").read()
+            for name in ("chrome.css", "pattern-grid.css", "base.css")
+        )
+    )
+    bad = 0
+    print(f"{'marker':<20}{'want':>9}{'before':>8}{'after':>7}  verdict")
+    for label, pattern, must_be_absent, _ in MARKERS:
+        b = len(re.findall(pattern, before))
+        a = len(re.findall(pattern, after))
+        ok_before = (b == 0) if must_be_absent else (b > 0)
+        ok_after = (a == 0) if must_be_absent else (a > 0)
+        discriminates = (not ok_before) and ok_after
+        if not discriminates:
+            bad += 1
+        want = "absent" if must_be_absent else "present"
+        print(
+            f"{label:<20}{want:>9}{b:>8}{a:>7}  "
+            f"{'discriminates' if discriminates else 'NO DISCRIMINATION'}"
+        )
+    print()
+    print("every marker tells the two states apart" if bad == 0 else f"{bad} marker(s) measure nothing")
+    return 0 if bad == 0 else 1
+
+
 def main() -> int:
+    if "--self-check" in sys.argv:
+        return self_check()
+
     stamp = int(time.time() * 1000)
     home = get(f"{BASE}/?mdaudit={stamp}")
     match = re.search(
@@ -89,8 +144,8 @@ def main() -> int:
         print("FAIL: the home page links no compiled stylesheet")
         return 1
     css_url = match.group(0)
-    css = get(css_url)
-    print(f"stylesheet: {css_url}\n            {len(css):,} bytes\n")
+    css = strip_comments(get(css_url))
+    print(f"stylesheet: {css_url}\n            {len(css):,} bytes (comments stripped)\n")
 
     failures = 0
     for label, pattern, must_be_absent, meaning in MARKERS:
