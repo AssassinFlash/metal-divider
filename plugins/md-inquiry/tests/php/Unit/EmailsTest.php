@@ -129,7 +129,7 @@ final class EmailsTest extends TestCase {
 
 		$this->assertStringContainsString( 'Hello Jane Chan,', $body, 'the full name, international B2B' );
 		$this->assertStringContainsString( 'Thank you for your inquiry about Apiary (APIARY) — this email confirms we have received it.', $body );
-		$this->assertStringContainsString( 'replies within one business day', $body );
+		$this->assertStringContainsString( 'replies within 24 hours on business days', $body );
 		$this->assertStringContainsString( 'Reply directly to this email', $body );
 		$this->assertStringContainsString( 'WhatsApp: +852 6473 1687 — https://wa.me/85264731687', $body, 'the number reads grouped; the link carries the wa.me digits' );
 		$this->assertStringContainsString( 'Email: info@metal-divider.com', $body );

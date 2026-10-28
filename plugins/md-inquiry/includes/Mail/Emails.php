@@ -125,7 +125,7 @@ final class Emails {
 			$lines[] = 'Thank you for your inquiry — this email confirms we have received it.';
 		}
 		$lines[] = '';
-		$lines[] = 'Our team replies within one business day with pattern availability, material options and pricing. If you sent dimensions, quantities or a timeline, we will address them in that reply. If you have drawings or site photos, attaching them to your reply helps us quote faster.';
+		$lines[] = 'Our team replies within 24 hours on business days with pattern availability, material options and pricing. If you sent dimensions, quantities or a timeline, we will address them in that reply. If you have drawings or site photos, attaching them to your reply helps us quote faster.';
 		$lines[] = '';
 		$lines[] = 'Need to reach us sooner? Reply directly to this email, or use:';
 		$lines[] = '- WhatsApp: +852 6473 1687 — https://wa.me/85264731687';
