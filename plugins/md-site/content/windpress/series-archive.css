@@ -296,12 +296,20 @@ padding-right: 40px;
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__header {
 grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.55fr);
 }
-/* The 0.9fr / 0.62fr split put the photo in 60% of the card and a flat
-   #141414 cell in the other 40% (measured ~1053px beside the photo, and a
-   second edge under the photo that did not line up). One column: the photo
-   fills the card width, the copy band starts on the same left edge. */
+/* Two columns, matching the old site at every desktop width it was measured:
+   1440 gives 795/548 (ratio 1 : 0.689), 1280 gives 700/483, and 1024 gives
+   492/380 where the right column hits its 380px floor. `0.62fr` over `0.9fr`
+   is 0.689, so the split below reproduces that ratio exactly.
+
+   A previous edit replaced this with a single column, reasoning that the
+   0.9fr/0.62fr split "put a flat #141414 cell in the other 40%". Re-measured
+   2026-10-29: with this split restored, the right cell carries the title,
+   body (294 characters), PATTERN ROUTES and the CTA — it is not a flat cell —
+   and the panel is 607px tall against 982px for the single column. The
+   single column also stretched body copy to 126 characters per line where the
+   old site sets 66. */
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__panel {
-grid-template-columns: minmax(0, 1fr);
+grid-template-columns: minmax(0, 0.9fr) minmax(380px, 0.62fr);
 min-height: 0;
 }
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual {
@@ -317,20 +325,16 @@ padding: 32px 40px 40px;
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__visual {
 min-height: clamp(480px, 42vw, 720px);
 }
-#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__routes {
-display: flex;
-flex-wrap: nowrap;
-gap: 12px;
-}
-#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route {
-flex: 1 1 0;
-min-width: 0;
-border: 1px solid rgba(255, 255, 255, 0.12);
-border-radius: 14px;
-}
-#pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route + .pag__route {
-border-top: 1px solid rgba(255, 255, 255, 0.12);
-}
+/* The routes stay the vertical three-row list the base rule already builds.
+   Overriding them into horizontal flex cards here is what broke the restored
+   two-column panel: measured 2026-10-29 with the cards reinstated in a 548px
+   column, the labels wrapped to two lines, the gold arrow landed on top of
+   "Patterns", and the row of cards ended 154px short of the photo so the
+   column filled with a flat band. The old site renders grid rows at 1440,
+   1280 and 1024 alike — display:grid, 38px / 1fr / auto, 174px for three
+   rows, no border, no radius — so there is no desktop width where the cards
+   match it.
+ */
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__cta {
 width: fit-content;
 }
