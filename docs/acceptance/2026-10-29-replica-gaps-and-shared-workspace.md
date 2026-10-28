@@ -226,3 +226,106 @@ scene`）属那 8 个 `scene` 单图产品。`first_in_order` 正确排除了已
 生成 WP 认证 cookie 的 SSH 命令**没有封住输出**，凭据被回显到会话。cookie 一小时
 后自然过期，风险有限，但违反了仓库"含密钥命令先封输出"的纪律。记录在此，
 后续同类操作必须先重定向再取用。
+
+## 八、图集恢复与最后四个主图位
+
+### 8.1 图集只挂了应有量的四分之一
+
+生产 WP-CLI 实测（2026-10-29）：
+
+```
+已发布产品 146
+当前挂到产品的图   277
+媒体库里可用的孤儿 1063
+可恢复量            786
+附件总数 1319，其中 post_parent=0 的 1319 个 —— 全部是孤儿
+```
+
+`data/media-final/products/<slug>/` 里每个产品都有完整的序号变体（alhambra
+`--01--`…`--05--`、breeze-block 28 个文件、kyoto-dynasty 27 个），导入时只把
+一张写进 `_thumbnail_id`，其余留在库里未挂回。
+
+`tools/media/reattach-orphans.sh` 按文件名里的 `--NN--` 序号把孤儿挂回
+`_product_image_gallery`，并把附件的 `post_parent` 指回产品。先 dry run 后写库：
+
+```
+products_changed = 145 / 146
+images_added     = 785
+```
+
+写库前快照 `db-20261028T165621Z`。验证 `white-sands`：raw 与
+`wc_get_product()->get_gallery_image_ids()` 都返回 10 个 id，含 `1258`
+（400×800 竖版 `finish preview`）。`media_ids()` 读的正是 thumbnail 加
+gallery（`Shortcodes.php:687-705`），所以挂回即刻生效。
+
+**注意顺序不等于尺寸**：`white-sands --01--` 是 400×800 竖版，`--02--` 才是
+2048 宽。序号是旧站图集顺序，不是清晰度排序。
+
+### 8.2 主图真正缺的只有四个
+
+逐产品调用 `[md_pdp_image slot="plate"]` 全量审计：
+
+```
+filled=142  empty=4
+  poseidon / pebble-creek / funk / alhambra
+```
+
+早先 22/24 的抽样口径漏掉了这几个，全量审计才是准的。
+
+### 8.3 搜索记录（Apify）
+
+| 查询 | 结果 |
+|---|---|
+| 四个图案名 + 描述性限定 | 命中的是 Pinterest 与非相关页面 |
+| `site:parasoleil.com <name>` × 4 | **0 条** |
+| 按来源确认 | 这四个是 `dsd`；全站 `parasoleil` 96 / `dsd` 50 |
+| 找到 DSD 源头 `decorativescreensdirect.com.au` | 抓取其激光切割页，**四个图案都不在目录里** |
+| 图案名 + decorative metal screen | 同名噪音（希腊神话 Poseidon、Alhambra 宫殿） |
+
+结论：外部不存在可用的竖版实景照。所以没有走"外部补素材"这条路。
+
+### 8.4 站内逐张看图的结果
+
+四张 `pattern render` 都用图像方式核对过，不是读文件名：
+
+| 产品 | 图 | 判定 |
+|---|---|---|
+| pebble-creek | `725` 500×1000 | 黑白二值图稿，底部标题条在 3:4 裁切线外 |
+| funk | `327` 499×998 | 同上 |
+| alhambra | `247` 500×999 | 图稿；标题条 y≈938，裁切可见区 y=166–833，恰好裁掉 |
+| poseidon | `728` 500×1000 | 图稿；`POSEIDON` 标题条 y≈943，同样被裁掉 |
+
+而 `poseidon 726`（`reference image`）是黄昏卧室广角，屏风只是背景一角；按
+3:4 居中裁切后留下吊扇、半张床与地毯，**不可用**。`poseidon 727` 才是屏风为主
+体的实景照，但它已被 hero 占用。
+
+`alhambra 246`（768×768）是深色棚拍渲染，有板厚与地面倒影，会被读成"一块深色
+成品板"，也不采用。
+
+### 8.5 为什么用样张而不是复用
+
+`pdp.css:53` 的遮罩是 `linear-gradient(90deg, .92 → .42)`，右端仍有 58% 可见；
+主图框是 `justify-self: end`，正好落在那一侧。复用会让同一张照片在首屏出现两次。
+
+`pdp.css:74` 是 `object-fit: cover`，横图同样能填满 3:4 框——"必须竖图"是先前
+我和子代理误加的约束，这一条已撤回。
+
+### 8.6 旧站同样是空的
+
+抓 `metalpartition.com/products/alhambra-…`：`pdp-hero-plate` 只出现 3 次，全部
+是 `<style>` 里的 CSS 规则，DOM 里没有对应元素，并且布局类是
+`pdp-hero-grid-cols pdp-hero-solo`。所以填满主图是**升级**，不是复刻缺口。
+
+### 8.7 实现与守卫
+
+主图候选链末端加一条精确兜底：仅当其他候选全空时，取 `_md_role` 恰为
+`pattern render` 的图（`ids_with_role()` 按角色精确筛选，不把整个 `other` 桶
+放进来）。`reference image`、`qc photo`、`unknown` 仍然排除。
+
+两条守卫，各自实证会红（去掉兜底即失败）：
+
+- `test_image_plate_falls_back_to_a_pattern_sample`
+- `test_image_plate_does_not_reach_for_a_reference_image`
+
+同时更新了 `test_image_two_image_pattern_*`：`pebble-creek` 正是"一场景 + 一
+样张"的真实形状，主图现在取自样张，`square` 与 `wide` 仍为空。
