@@ -736,3 +736,14 @@ Escape 只关建议，第二次关弹层并回焦 Search。未新建窗口，证
 Sitemap index、Submitted/Last read 均为 2026-10-28、状态 **Success**。
 刚提交发现页数/视频为 0/0，只记录当时状态，不冒充已经收录。未改 DNS、未连 GA4。
 证据 `gsc-sitemap-before/owner/filled/after.png` 与 `gsc-sitemap.json`。
+
+## 二十七、SPF 与 DMARC 追加及 DNS 读回
+
+写入前 hPanel 与 DoH 均无 SPF/_dmarc。只追加：`@ TXT v=spf1
+include:_spf.mail.hostinger.com ~all`，以及 `_dmarc TXT v=DMARC1; p=none;
+rua=mailto:info@metal-divider.com; adkim=s; aspf=s`，TTL 14400。未重置 DNS 区、
+未改 Nameserver。
+
+Cloudflare DoH 读回两个目标值，原 GSC TXT 哈希不变；MX、三条 DKIM CNAME 与
+NS 均未变。证据 `dns-mail-spf-saved.png`、`dns-mail-hpanel-after.png`、
+`dns-mail-doh-before.json`、`dns-mail-doh-after.json`、`dns-mail-summary.json`。
