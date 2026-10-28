@@ -804,3 +804,13 @@ FAQ 部署 `20261028T123427030669Z-25b4fba` 经 resume 归档。规范页两次 
 缓存 miss→hit：第三方链接 0、本站链接 8、空卡 0。1440 与真 320 均无截断、
 空槽或横向溢出。证据 `/tmp/md-document-upload-readback.json`、
 `/tmp/md-faq-own-library-readback.json`、`faq-own-1440.png`、`faq-own-320.png`。
+
+## 三十二、全站内部链接与结构化数据核查
+
+从 `sitemaps.xml` 递归取到 **174 个 HTML 页面**，抓取每页内部链接并去重，得到
+**194 个唯一站内 URL**（含 8 个新下载文件），逐一请求：**0 个 404/非 200**。
+唯一一次状态 0 是瞬时超时，复测 3/3 返回 200、缓存 `hit`。
+
+生产 `/faqs/` 的 `ld+json` 仍有两个块：FAQPage 含 **40** 个 `Question`，
+BreadcrumbList 正常；FAQ 下载库改动没有破坏结构化数据。
+原始结果 `/tmp/md-link-audit.json`、`/tmp/md-sitemap-urls.txt`。
