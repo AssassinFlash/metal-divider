@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028ad', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028ag', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -117,14 +117,50 @@
     setTitle('Metal Divider AI');
     setChip('AI assistant', 'ai');
   }
-  var messages = document.getElementById('messages');
-  if (messages && window.MutationObserver) {
-    new MutationObserver(sync).observe(messages, { childList: true, subtree: true, characterData: true });
+  function tagSources() {
+    var bodies = document.querySelectorAll('#messages .msg-body');
+    for (var i = 0; i < bodies.length; i += 1) {
+      if (bodies[i].querySelector('.mdv-sources')) { continue; }
+      var walker = document.createTreeWalker(bodies[i], NodeFilter.SHOW_TEXT, null, false);
+      var node = walker.nextNode();
+      while (node) {
+        var at = node.nodeValue.indexOf('Based on:');
+        if (at !== -1) {
+          var after = node.splitText(at);
+          var label = document.createElement('span');
+          label.className = 'mdv-sources';
+          after.parentNode.insertBefore(label, after);
+          label.appendChild(after);
+          var prev = label.previousSibling;
+          while (prev && ((prev.nodeType === 3 && !prev.nodeValue.trim()) || prev.nodeName === 'BR')) {
+            var before = prev.previousSibling;
+            prev.parentNode.removeChild(prev);
+            prev = before;
+          }
+          break;
+        }
+        node = walker.nextNode();
+      }
+    }
   }
-  if (window.MutationObserver) {
+  function initObservers() {
+    tagSources();
+    var messages = document.getElementById('messages');
+    if (messages && window.MutationObserver && !messages.getAttribute('data-mdv-observed')) {
+      messages.setAttribute('data-mdv-observed', '1');
+      new MutationObserver(function () { sync(); tagSources(); }).observe(messages, { childList: true, subtree: true, characterData: true });
+    }
     var status = document.getElementById('status-chat');
-    if (status) { new MutationObserver(sync).observe(status, { childList: true, subtree: true, characterData: true }); }
+    if (status && window.MutationObserver && !status.getAttribute('data-mdv-observed')) {
+      status.setAttribute('data-mdv-observed', '1');
+      new MutationObserver(sync).observe(status, { childList: true, subtree: true, characterData: true });
+    }
+    sync();
   }
-  sync();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initObservers);
+  } else {
+    initObservers();
+  }
 }());
 </script>

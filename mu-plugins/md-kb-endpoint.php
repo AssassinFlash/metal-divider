@@ -141,6 +141,29 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 
+	if ( md_kb_endpoint_asks_showroom( $q ) ) {
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'msg'           => md_kb_endpoint_showroom_reply(),
+				'action'        => '',
+				'sources'       => array( 'Showroom visits' ),
+				'source_labels' => array( 'Showroom visits' ),
+			),
+		);
+	}
+	if ( md_kb_endpoint_asks_dimensions( $q ) ) {
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'msg'           => md_kb_endpoint_dimensions_reply( $q, $resolved ),
+				'action'        => '',
+				'sources'       => array( 'Thickness and weight' ),
+				'source_labels' => array( 'Thickness and weight' ),
+			),
+		);
+	}
+
 	list( $results, $context ) = md_kb_endpoint_retrieve( $q );
 	if ( '' !== $pattern['context'] ) {
 		$context = "PATTERN FACTS (WooCommerce, current publish):\n" . $pattern['context']
@@ -171,12 +194,18 @@ function md_kb_endpoint_answer( array $input ): array {
 	}
 
 	$sources = 0 < $pattern['hits'] ? $pattern['sources'] : md_kb_endpoint_sources( $results );
+	$labels  = md_kb_endpoint_source_labels( $sources );
+	$msg     = $answer['answer'];
+	if ( ! $answer['handoff'] && array() !== $labels ) {
+		$msg .= md_kb_endpoint_source_footer( $sources );
+	}
 	return array(
 		'status' => 200,
 		'body'   => array(
-			'msg'     => $answer['answer'],
-			'action'  => $answer['handoff'] ? 'transfer_operator' : '',
-			'sources' => $sources,
+			'msg'           => $msg,
+			'action'        => $answer['handoff'] ? 'transfer_operator' : '',
+			'sources'       => $sources,
+			'source_labels' => $labels,
 		),
 	);
 }
@@ -264,18 +293,68 @@ function md_kb_endpoint_commercial_reply( string $q, string $context ): string {
 
 /**
  * Whether the question asks for a project fact the public site does not
- * publish consistently: a showroom visit, a destination, installation,
- * thickness or weight. The model must not turn a guess into a fact for
- * any of them; the team confirms the actual project.
+ * publish consistently: a destination or installation. A showroom visit and
+ * the published thickness/weight guidance are answered directly, with the
+ * project-specific value still left to the team.
  *
  * @param string $q The visitor's question.
  * @return bool Whether the team must answer it.
  */
 function md_kb_endpoint_asks_unverified_fact( string $q ): bool {
 	return 1 === preg_match(
-		'/\b(?:showroom|show\s+room|visit\s+(?:the\s+)?(?:factory|office|showroom)|thickness|how\s+thick|weight|weigh(?:s|t)?|how\s+heavy|kg\s*\/\s*m|ship\s+to|deliver\s+to|install(?:ation)?\s+(?:in|at|for)|do\s+you\s+install|ship\s+(?:internationally|worldwide)|deliver\s+(?:internationally|worldwide))\b|展厅|参观|厚度|多厚|重量|多重|安装|发货到|送到|运到|发到/iu',
+		'/\b(?:ship\s+to|deliver\s+to|install(?:ation)?\s+(?:in|at|for)|do\s+you\s+install|ship\s+(?:internationally|worldwide)|deliver\s+(?:internationally|worldwide))\b|安装|发货到|送到|运到|发到/iu',
 		$q
 	);
+}
+
+/**
+ * Whether the visitor asks about visiting the team in person.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether the question is a visit question.
+ */
+function md_kb_endpoint_asks_showroom( string $q ): bool {
+	return 1 === preg_match( '/\b(?:showroom|show\s+room|visit\s+(?:the\s+)?(?:factory|office|showroom)|visit\s+you|come\s+to\s+your)\b|展厅|参观/iu', $q );
+}
+
+/**
+ * Whether the visitor asks for thickness or weight. The published guidance
+ * is shown; the exact value is still confirmed per project.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether the question is a thickness or weight question.
+ */
+function md_kb_endpoint_asks_dimensions( string $q ): bool {
+	return 1 === preg_match( '/\b(?:thickness|how\s+thick|weight|weigh(?:s|t)?|how\s+heavy|kg\s*\/\s*m)\b|厚度|多厚|重量|多重/iu', $q );
+}
+
+/**
+ * The direct reply for a showroom visit. Owner decided visits are welcome
+ * (2026-10-27); no street address is invented, and the team confirms time.
+ *
+ * @return string The visitor-facing reply.
+ */
+function md_kb_endpoint_showroom_reply(): string {
+	return 'You are welcome to visit our Foshan, Guangdong location by arrangement, Monday to Saturday 9:00-18:00 GMT+8. Contact our team with a preferred date and we will confirm the address and time.'
+		. md_kb_endpoint_source_footer( array( 'Showroom visits' ) );
+}
+
+/**
+ * The direct reply for thickness and weight: the published decorative-panel
+ * guidance and one qualified weight reference, never an exact project value.
+ *
+ * @param string $q       The visitor's question.
+ * @param string $context The resolved pattern facts, '' when none.
+ * @return string The visitor-facing reply.
+ */
+function md_kb_endpoint_dimensions_reply( string $q, string $context ): string {
+	$parts = array();
+	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
+	if ( '' !== $facts ) {
+		$parts[] = $facts;
+	}
+	$parts[] = 'Decorative stainless steel panels are commonly 0.8-3.0 mm thick. As a reference, 1.0 mm stainless steel weighs about 8 kg/m2. The exact thickness and weight are confirmed for each project from the pattern, fixing and span.';
+	return implode( ' ', $parts ) . md_kb_endpoint_source_footer( array( 'Thickness and weight' ) );
 }
 
 /**
@@ -1277,6 +1356,53 @@ function md_kb_endpoint_sources( array $results ): array {
 		}
 	}
 	return $sources;
+}
+
+/**
+ * The visitor-safe labels of the sources an answer used: the internal
+ * knowledge/pattern/post id is stripped, patterns are named as patterns,
+ * and repeats collapse. No internal id reaches the visitor.
+ *
+ * @param array<int, string> $sources The internal source lines.
+ * @return array<int, string> The visitor-facing labels, at most three.
+ */
+function md_kb_endpoint_source_labels( array $sources ): array {
+	$labels = array();
+	foreach ( $sources as $source ) {
+		$source = trim( (string) $source );
+		if ( '' === $source ) {
+			continue;
+		}
+		$label = $source;
+		if ( 1 === preg_match( '/^([a-z_]+)#\d+\s+(.+)$/iu', $source, $match ) ) {
+			$label = trim( $match[2] );
+			if ( 'pattern' === strtolower( $match[1] ) ) {
+				$label = 'Pattern ' . $label;
+			}
+		}
+		$label = trim( (string) preg_replace( '/[a-z_]+#\d+/iu', '', $label ) );
+		$label = trim( (string) preg_replace( '/\s+/u', ' ', $label ) );
+		if ( '' === $label ) {
+			continue;
+		}
+		$labels[ mb_strtolower( $label ) ] = $label;
+	}
+	return array_slice( array_values( $labels ), 0, 3 );
+}
+
+/**
+ * The "Based on:" footer the visitor sees. The internal source ids stay in
+ * the response's sources field for acceptance; the chat shows only titles.
+ *
+ * @param array<int, string> $sources The internal source lines or plain labels.
+ * @return string The footer, '' when there is no label.
+ */
+function md_kb_endpoint_source_footer( array $sources ): string {
+	$labels = md_kb_endpoint_source_labels( $sources );
+	if ( array() === $labels ) {
+		return '';
+	}
+	return "\n\nBased on: " . implode( '; ', $labels );
 }
 
 /**

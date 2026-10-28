@@ -273,9 +273,10 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( 200, $out['status'] );
-		self::assertSame( 'Standard patterns ship in 3 weeks.', $out['body']['msg'] );
+		self::assertSame( "Standard patterns ship in 3 weeks.\n\nBased on: Lead time", $out['body']['msg'] );
 		self::assertSame( '', $out['body']['action'] );
 		self::assertSame( array( 'knowledge#12 Lead time' ), $out['body']['sources'] );
+		self::assertSame( array( 'Lead time' ), $out['body']['source_labels'] );
 
 		$engine_calls = \Md\Mu\Tests\Unit\FakeRaplsEngine::$calls;
 		self::assertContains( array( 'set_bot_filters', array(), true, true ), $engine_calls );
@@ -1253,9 +1254,10 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( 200, $out['status'] );
-		self::assertSame( 'Agave is a botanical screen with a 32% open area.', $out['body']['msg'] );
+		self::assertSame( "Agave is a botanical screen with a 32% open area.\n\nBased on: Pattern MD-101", $out['body']['msg'] );
 		self::assertSame( '', $out['body']['action'] );
 		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
+		self::assertSame( array( 'Pattern MD-101' ), $out['body']['source_labels'] );
 
 		$http    = $this->recorded( 'md_mu_test_http' );
 		$payload = json_decode( (string) $http[0][1]['body'], true );
@@ -1822,21 +1824,17 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * Showroom visits, installation, thickness and weight have no consistent
-	 * public fact. They transfer without a number or promise, and the model
-	 * is not asked.
+	 * Installation and a shipping destination are not published facts. They
+	 * transfer without a promise, and the model is not asked.
 	 */
 	public function test_unpublished_project_facts_are_handed_off_without_a_claim(): void {
 		$this->configure_kb(
 			array(),
-			$this->model_reply( 'A typical panel is about 2 mm thick and weighs 8 kg/m2.', false, 'none' )
+			$this->model_reply( 'Yes, we ship worldwide.', false, 'none' )
 		);
 
 		$questions = array(
-			'Can I visit your showroom?',
 			'Do you install screens in Iceland?',
-			'What is the thickness of a typical panel?',
-			'How much does a panel weigh?',
 			'Do you ship to my country?',
 		);
 		foreach ( $questions as $q ) {
@@ -1852,6 +1850,84 @@ final class KbEndpointTest extends TestCase {
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
+	/**
+	 * The owner decided visits are welcome (2026-10-27). The reply states the
+	 * published location, hours and arrangement, never an invented address.
+	 */
+	public function test_a_showroom_visit_is_answered_with_the_published_arrangement(): void {
+		$this->configure_kb( array(), $this->model_reply( 'Yes, come any time.', false, 'none' ) );
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Can I visit your showroom?' ),
+			)
+		);
+
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( array( 'Showroom visits' ), $out['body']['sources'] );
+		self::assertSame( array( 'Showroom visits' ), $out['body']['source_labels'] );
+		self::assertStringContainsString( 'Foshan, Guangdong', (string) $out['body']['msg'] );
+		self::assertStringContainsString( 'Monday to Saturday 9:00-18:00 GMT+8', (string) $out['body']['msg'] );
+		self::assertStringContainsString( 'Based on: Showroom visits', (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( 'come any time', (string) $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+	/**
+	 * Thickness and weight show the published decorative-panel guidance and
+	 * a qualified weight reference; the exact project value stays with the
+	 * team, and a pattern fact asked alongside is kept.
+	 */
+	public function test_thickness_and_weight_show_published_guidance(): void {
+		$this->configure_kb( array(), $this->model_reply( 'About 9 mm.', false, 'none' ) );
+		$this->plant_pattern();
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the open area and thickness of Agave?' ),
+			)
+		);
+
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( array( 'Thickness and weight' ), $out['body']['sources'] );
+		self::assertSame( array( 'Thickness and weight' ), $out['body']['source_labels'] );
+		self::assertStringContainsString( 'open area is 32%', (string) $out['body']['msg'] );
+		self::assertStringContainsString( '0.8-3.0 mm thick', (string) $out['body']['msg'] );
+		self::assertStringContainsString( 'about 8 kg/m2', (string) $out['body']['msg'] );
+		self::assertStringContainsString( 'exact thickness and weight are confirmed', (string) $out['body']['msg'] );
+		self::assertStringContainsString( 'Based on: Thickness and weight', (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( 'About 9 mm', (string) $out['body']['msg'] );
+		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
+	}
+
+
+	/**
+	 * The visitor sees titles, never the internal knowledge/pattern/post id.
+	 * Repeats collapse and the footer is a separate paragraph for styling.
+	 */
+	public function test_source_labels_are_visitor_safe_and_deduplicated(): void {
+		self::assertSame(
+			array( 'Lead time' ),
+			md_kb_endpoint_source_labels( array( 'knowledge#12 Lead time' ) )
+		);
+		self::assertSame(
+			array( 'Pattern Agave' ),
+			md_kb_endpoint_source_labels( array( 'pattern#101 Agave' ) )
+		);
+		self::assertSame(
+			array( 'Geometric Weave' ),
+			md_kb_endpoint_source_labels( array( 'product#146 Geometric Weave' ) )
+		);
+		self::assertSame(
+			array( 'Lead time', 'Contact details' ),
+			md_kb_endpoint_source_labels( array( 'knowledge#12 Lead time', 'knowledge#8 Contact details', 'knowledge#12 Lead time' ) )
+		);
+		$footer = md_kb_endpoint_source_footer( array( 'knowledge#12 Lead time', 'pattern#101 Agave' ) );
+		self::assertSame( "\n\nBased on: Lead time; Pattern Agave", $footer );
+		self::assertStringNotContainsString( '#', $footer );
+	}
 
 	/**
 	 * A pattern detail page the visitor opened the widget on is current
@@ -2436,7 +2512,7 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( '', $out['body']['action'] );
-		self::assertSame( 'Yes, the CAD drawing is available.', $out['body']['msg'] );
+		self::assertSame( "Yes, the CAD drawing is available.\n\nBased on: Pattern MD-101", $out['body']['msg'] );
 	}
 
 	/**
@@ -2539,10 +2615,11 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * Thickness and weight are not consistent public facts. The question is
-	 * handed off without a number, and the model is not asked.
+	 * The published thickness/weight guidance is shown, not the model's or
+	 * an unrelated knowledge row's number. The project value stays a team
+	 * confirmation.
 	 */
-	public function test_a_thickness_question_is_handed_off_without_a_number(): void {
+	public function test_a_thickness_question_shows_published_guidance_without_a_model_number(): void {
 		$this->configure_kb(
 			array(
 				array(
@@ -2552,7 +2629,7 @@ final class KbEndpointTest extends TestCase {
 					'content'   => 'Typical thickness is 2 mm.',
 				),
 			),
-			$this->model_reply( 'A typical panel is about 2 mm thick; weight depends on the sheet.', false, 'none' )
+			$this->model_reply( 'A typical panel is about 9 mm thick.', false, 'none' )
 		);
 		$this->plant_pattern();
 
@@ -2563,12 +2640,12 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), $out['body']['msg'] );
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
-		self::assertSame( array(), $out['body']['sources'] );
-		self::assertStringNotContainsString( 'Agave', (string) $out['body']['msg'] );
-		self::assertStringNotContainsString( '32%', (string) $out['body']['msg'] );
-		self::assertStringNotContainsString( '2 mm', (string) $out['body']['msg'] );
+		self::assertStringContainsString( '0.8-3.0 mm thick', (string) $out['body']['msg'] );
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( array( 'Thickness and weight' ), $out['body']['sources'] );
+		self::assertStringNotContainsString( '9 mm', (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( '2 mm thick', (string) $out['body']['msg'] );
+		self::assertStringContainsString( 'Based on: Thickness and weight', (string) $out['body']['msg'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 

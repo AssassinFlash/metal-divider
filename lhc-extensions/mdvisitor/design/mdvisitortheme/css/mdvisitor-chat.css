@@ -89,6 +89,23 @@ body.widget-chat #messagesBlock .message-row.message-admin .msg-body{
   border:1px solid #e5dfd1;
   border-radius:16px 16px 16px 4px;
 }
+body.widget-chat #messagesBlock .message-row .msg-body .mdv-sources{
+  display:block;
+  max-width:min(78%,320px);
+  margin:4px 0 0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#8a8172;
+  font-size:11.5px;
+  line-height:1.35;
+  text-align:left;
+}
+body.widget-chat #messagesBlock .message-row.response .msg-body .mdv-sources{
+  margin-left:auto;
+  text-align:right;
+}
 body.widget-chat .message-row .msg-date{
   display:block;
   margin-top:4px;
