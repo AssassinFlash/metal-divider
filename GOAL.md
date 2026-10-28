@@ -59,6 +59,11 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-28 隐私页技术事实修正与生产读回
+
+- 隐私页删除已不存在的图案清单、CookieYes、公开浏览 session cookie 与 Cloudflare CDN/WAF 表述;补齐当前询盘字段、单图案上下文、日志/限流与 Turnstile token/IP 处理。Hostinger=托管+CDN,Cloudflare 仅 Turnstile;5 年保留期和法域未改。
+- 部署 `20261028T072022739700Z-f5490fd` 已归档。规范 `/privacy/` 两次请求 200、缓存 miss→hit,旧标记全 0,新必需文本全在,meta description 保持正确。证据 `/tmp/md-privacy-readback.json`。总目标仍未验收。
+
 ### 2026-10-28 十页 meta description 定稿与生产读回
 
 - 原草案经对抗复核全部推翻:不写 installed、mockups、第三方技术文件、未证实的工艺承诺或冲突时限。10 条保守定稿进入 `Seo\Config::page_metas()`,部署 `20261028T064120630063Z-d18ad8d` 已归档。

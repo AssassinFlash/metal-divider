@@ -688,3 +688,16 @@ WP-CLI 成功行意外回显首组密钥后，未继续用该组验收：替换�
 逐字一致，最终缓存均 hit。laser 与 privacy 中途各有一次 hit→miss，未直接算过；
 只对这两页复测，随后各连续 3/3 hit。无文章时 `/blog/page/2/` 返回 404，
 不把它列为有效描述页。原始结果与稳定性补记 `/tmp/md-seo-readback.json`。
+
+## 二十三、隐私页按当前实现重写数据事实
+
+第 2–6 节经询盘插件与生产只读核对后修正：删除不存在的图案清单、CookieYes、
+公开浏览 session cookie 与 Cloudflare CDN/WAF；补全表单字段、单图案、技术记录、
+邮件副本、WhatsApp 边界，以及 Hostinger=托管+CDN、Cloudflare 仅 Turnstile。
+5 年保留期与第 7–9 节未改。完整 PHP 与项目门禁通过，部署
+`20261028T072022739700Z-f5490fd` 已归档。
+
+规范 `/privacy/` 两次匿名请求均 200，缓存 miss→hit；CookieYes、pattern list、
+our CDN/WAF、Session cookie 均为 0，登录测试 cookie、Turnstile token 不存储、
+限流计数与处理器文本均在，meta description 保持正确。证据
+`/tmp/md-privacy-readback.json`。
