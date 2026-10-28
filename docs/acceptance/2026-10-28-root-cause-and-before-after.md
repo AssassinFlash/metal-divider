@@ -747,3 +747,17 @@ rua=mailto:info@metal-divider.com; adkim=s; aspf=s`，TTL 14400。未重置 DNS 
 Cloudflare DoH 读回两个目标值，原 GSC TXT 哈希不变；MX、三条 DKIM CNAME 与
 NS 均未变。证据 `dns-mail-spf-saved.png`、`dns-mail-hpanel-after.png`、
 `dns-mail-doh-before.json`、`dns-mail-doh-after.json`、`dns-mail-summary.json`。
+
+## 二十八、320 Turnstile 挑战框裁切修复
+
+真实 320 复验发现：站点槽位 230px，Cloudflare 人工挑战框 300px，右缘被裁。
+仅在 `max-width:389px` 下把询盘页槽位改为 300px 居中，并解除面板 overflow 裁切；
+390/1440 不走该规则。守卫删除规则即失败，完整门禁通过，部署
+`20261028T084224193755Z-2dae19f` 已归档。两次 SSH 中断均早于切换，服务恢复后
+按标准管线完成，未手工拼文件。
+
+WindPress 重编译 626156→626458 字节，mtime 1793178261，anchors 通过。
+真 320 复测：槽位 x=10、宽300、右缘310，左右各10px，`scrollWidth=320`、
+`overflowPx=0`。此次挑战内容未绘制，因此只确认裁切根因与几何修复，不把
+Privacy/logo 可见性列为已验证。证据 `inquiry-turnstile-after-slot.png` 与
+`inquiry-turnstile-after.json`。

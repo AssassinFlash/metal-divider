@@ -59,6 +59,11 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-28 320 Turnstile 挑战框裁切修复
+
+- 真实 320 发现 230px 槽位裁切 300px 挑战框。仅窄屏改为 300px 居中并解除面板裁切,390/1440 不走该规则;部署 `20261028T084224193755Z-2dae19f` 已归档。两次 SSH 中断均早于切换,只读恢复后完成,未手工拼文件。
+- WindPress 已重编译:626156→626458 字节,mtime 1793178261,anchors 通过。真 320 槽位 x=10、右缘310、scrollWidth=320。此次挑战内容未绘制,故只声明裁切根因与几何修复,不冒称 Privacy/logo 可见性已验证。证据 `/tmp/md-320-20261028/inquiry-turnstile-after-slot.png` 与 `inquiry-turnstile-after.json`。总目标仍未验收。
+
 ### 2026-10-28 CSP 与桌面搜索交互收尾
 
 - 删除不再使用的 CookieYes script/img/connect 白名单,Turnstile 三个必要源保留,无 unsafe-eval。部署 `20261028T074737779020Z-4063902` 已归档;生产响应头 CookieYes=0、Turnstile 源完整。证据 `/tmp/md-csp-readback.json`。
