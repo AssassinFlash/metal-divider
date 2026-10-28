@@ -6,11 +6,9 @@
 
      This is a LINK band, not the form. Eighteen page sections include it
      (home, the family faces, shop, gallery, about, manufacturing,
-     custom-screens, the series archive, blog-single), so it must stay free of
-     the form's markup: [md_inquiry_form] emits fixed ids (md-inquiry-name,
-     md-inquiry-source-*) and md-inquiry.js binds only the first
-     .md-inquiry-app on a page, so a form here would duplicate and collide on
-     every page and leave the real one inert.
+     custom-screens, the series archive, blog-single), so it stays free of
+     the form's markup. The footer's quote dialog is the single contextual
+     form on these pages; another copy here would add a competing path.
 
      The place that needs pattern context at the point of intent is the
      footer's quote dialog, and that dialog places [md_inquiry_form] directly

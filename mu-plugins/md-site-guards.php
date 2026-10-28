@@ -45,11 +45,12 @@ remove_action( 'wp_head', 'rsd_link' );
  * keep the declared content types and the referrer's origin — an inquiry URL
  * carries three source parameters, and wa.me is a plain link, so only the
  * origin ever reaches it. The CSP closes the site around its two external
- * faces: Turnstile (scripts and frames from challenges.cloudflare.com) and
- * the CookieYes banner (scripts, images and connections from cdn-cookieyes.com
- * and *.cookieyes.com, inline styles); wa.me needs no entry, being a
- * navigation, and scripts carry no 'unsafe-inline' — the value is pinned by
- * test, and the one allowed fallback needs a recorded violation first
+ * faces: Turnstile (scripts, frames and connections from
+ * challenges.cloudflare.com) and the CookieYes banner (scripts, images and
+ * connections from cdn-cookieyes.com and *.cookieyes.com, inline styles);
+ * wa.me needs no entry, being a navigation, and scripts carry no
+ * 'unsafe-inline' or 'unsafe-eval' — the value is pinned by test, and the
+ * one allowed fallback needs a recorded violation first
  * (docs/specs/23-mu-plugins.md §2.2).
  *
  * @return array<int, string> The header lines, name and value, ready for header().
@@ -60,7 +61,7 @@ function md_site_guards_header_lines(): array {
 		'X-Frame-Options: SAMEORIGIN',
 		'X-Content-Type-Options: nosniff',
 		'Referrer-Policy: strict-origin-when-cross-origin',
-		"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com https://cdn-cookieyes.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn-cookieyes.com; font-src 'self'; connect-src 'self' https://*.cookieyes.com https://cdn-cookieyes.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+		"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com https://cdn-cookieyes.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn-cookieyes.com; font-src 'self'; connect-src 'self' https://challenges.cloudflare.com https://*.cookieyes.com https://cdn-cookieyes.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
 	);
 }
 

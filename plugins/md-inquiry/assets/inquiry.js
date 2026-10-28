@@ -11,20 +11,35 @@
  * validation, no WhatsApp text, no Turnstile status. Each app is now bound on
  * its own, and its lookups stay inside its own form.
  *
- * The Turnstile callbacks must exist on window before Turnstile's api.js
- * loads: the script is registered with this file as its dependency, so the
- * order holds. They are page-level, because the challenge is page-level:
- * every bound form is enabled when it passes.
+ * Turnstile is explicit and per form. api.js loads with render=explicit and
+ * onload=mdInquiryTurnstileReady, so nothing renders until this file asks.
+ * That function lives here, and this file is api.js's dependency, so it
+ * exists before the deferred script calls it. Each form passes its own
+ * callbacks and the widget id turnstile.reset needs. A page-level callback
+ * used to disable every submit when the widget inside the closed quote
+ * dialog failed. That dialog has no box until it is open, so its widget is
+ * not rendered until the slot has layout and has entered the viewport. A
+ * form already on the page renders when the API is ready, even below the fold.
  */
 (function () {
 	'use strict';
+
+	var bound = [];
+
+	// api.js?onload= names this. It has to exist before that script runs, and
+	// it has to be a no-op until forms are bound. Each form renders itself.
+	window.mdInquiryTurnstileReady = function () {
+		bound.forEach(function (instance) {
+			if (instance.mountTurnstile) {
+				instance.mountTurnstile();
+			}
+		});
+	};
 
 	var apps = document.querySelectorAll('.md-inquiry-app');
 	if (!apps.length) {
 		return;
 	}
-
-	var bound = [];
 
 	// Every element id in these forms is suffixed per instance, so a lookup by
 	// id would need to know which instance it is. The field's `name` is stable
@@ -55,6 +70,7 @@
 		var submit = form.querySelector('.md-inquiry-submit');
 		var waLink = form.querySelector('.md-inquiry-whatsapp');
 		var statusEl = form.querySelector('.md-inquiry-turnstile-status');
+		var container = form.querySelector('.md-inquiry-turnstile');
 
 		function field(name) {
 			return fieldIn(form, name);
@@ -257,11 +273,180 @@
 
 		updateWhatsApp();
 
+		var widgetId = null;
+		var rendering = false;
+		var watching = false;
+		var seenErrors = {};
+		var unwatch = null;
+
+		function lockSubmit() {
+			if (submit && cfg.turnstile) {
+				submit.disabled = true;
+			}
+		}
+
+		function resetThis() {
+			if (widgetId && window.turnstile && typeof window.turnstile.reset === 'function') {
+				window.turnstile.reset(widgetId);
+			}
+		}
+
+		function stopWatching() {
+			if (!unwatch) {
+				return;
+			}
+			var stop = unwatch;
+			unwatch = null;
+			stop();
+		}
+
+		function renderWidget() {
+			if (widgetId || rendering || !container) {
+				return;
+			}
+			if (!window.turnstile || typeof window.turnstile.render !== 'function') {
+				return;
+			}
+			var sitekey = container.getAttribute('data-sitekey') || '';
+			if (!sitekey) {
+				return;
+			}
+			rendering = true;
+			var id = window.turnstile.render(container, {
+				sitekey: sitekey,
+				appearance: container.getAttribute('data-appearance') || 'interaction-only',
+				theme: container.getAttribute('data-theme') || 'auto',
+				retry: container.getAttribute('data-retry') || 'auto',
+				callback: function () {
+					if (submit) {
+						submit.disabled = false;
+					}
+					setStatus('');
+				},
+				'expired-callback': function () {
+					lockSubmit();
+					setStatus((cfg.i18n && cfg.i18n.turnstileExpired) || 'Verification expired. Please try again.');
+					resetThis();
+				},
+				'error-callback': function (code) {
+					lockSubmit();
+					if (seenErrors[code]) {
+						return;
+					}
+					seenErrors[code] = true;
+					setStatus((cfg.i18n && cfg.i18n.turnstileError) || 'Verification could not run. Please refresh the page and try again.');
+				},
+				'timeout-callback': function () {
+					lockSubmit();
+					resetThis();
+				}
+			});
+			rendering = false;
+			if (!id) {
+				return;
+			}
+			widgetId = id;
+			stopWatching();
+		}
+
+		function watchHidden() {
+			var io = null;
+			var mo = null;
+			var intersecting = false;
+			var hadLayout = hasLayout(container);
+			var hadCloak = cloaked(container);
+
+			function tryRender() {
+				if (widgetId) {
+					stopWatching();
+					return;
+				}
+				if (cloaked(container) || !hasLayout(container) || !intersecting) {
+					return;
+				}
+				renderWidget();
+			}
+
+			function arm() {
+				intersecting = false;
+				if (io) {
+					io.disconnect();
+					io = null;
+				}
+				if (typeof IntersectionObserver !== 'function') {
+					intersecting = geometryInViewport(container);
+					tryRender();
+					return;
+				}
+				io = new IntersectionObserver(function (entries) {
+					var i;
+					for (i = 0; i < entries.length; i++) {
+						if (entries[i].target === container) {
+							intersecting = !!entries[i].isIntersecting;
+						}
+					}
+					tryRender();
+				});
+				io.observe(container);
+			}
+
+			function stop() {
+				if (io) {
+					io.disconnect();
+					io = null;
+				}
+				if (mo) {
+					mo.disconnect();
+					mo = null;
+				}
+			}
+
+			if (typeof MutationObserver === 'function') {
+				mo = new MutationObserver(function () {
+					var laid = hasLayout(container);
+					var covered = cloaked(container);
+					if ((laid && !hadLayout) || (hadCloak && !covered)) {
+						arm();
+					}
+					hadLayout = laid;
+					hadCloak = covered;
+					tryRender();
+				});
+				var node = container;
+				while (node && node !== document.documentElement) {
+					mo.observe(node, {
+						attributes: true,
+						attributeFilter: ['style', 'class', 'hidden', 'open', 'x-cloak', 'aria-hidden']
+					});
+					node = node.parentElement;
+				}
+			}
+
+			unwatch = stop;
+			arm();
+		}
+
+		function mountTurnstile() {
+			if (widgetId || watching || !container || !cfg.turnstile) {
+				return;
+			}
+			if (!container.getAttribute('data-sitekey')) {
+				return;
+			}
+			if (pageVisible(container)) {
+				renderWidget();
+				return;
+			}
+			watching = true;
+			watchHidden();
+		}
+
 		return {
 			cfg: cfg,
 			form: form,
 			submit: submit,
-			setStatus: setStatus
+			setStatus: setStatus,
+			mountTurnstile: mountTurnstile
 		};
 	}
 
@@ -272,72 +457,49 @@
 		}
 	});
 
-	if (!bound.length) {
-		return;
-	}
 
-	/* ---------- Turnstile ---------- */
-
-	// The challenge is one per page, so its outcome is page-level: a pass
-	// releases every bound form.
-	function eachBound(fn) {
-		bound.forEach(fn);
-	}
-
-	function enableSubmit() {
-		eachBound(function (b) {
-			if (b.submit) {
-				b.submit.disabled = false;
-			}
-		});
-	}
-
-	function disableSubmit() {
-		eachBound(function (b) {
-			if (b.submit && b.cfg.turnstile) {
-				b.submit.disabled = true;
-			}
-		});
-	}
-
-	function resetWidget() {
-		if (window.turnstile && typeof window.turnstile.reset === 'function') {
-			window.turnstile.reset();
+	function hasLayout(el) {
+		if (!el || typeof el.getClientRects !== 'function') {
+			return false;
 		}
+		var rects = el.getClientRects();
+		if (!rects || !rects.length) {
+			return false;
+		}
+		var box = el.getBoundingClientRect();
+		return box.width > 0 && box.height > 0;
 	}
 
-	var seenTurnstileErrors = {};
-
-	window.mdInquiryTurnstileCallback = function () {
-		enableSubmit();
-		eachBound(function (b) {
-			b.setStatus('');
-		});
-	};
-
-	window.mdInquiryTurnstileExpired = function () {
-		disableSubmit();
-		eachBound(function (b) {
-			b.setStatus((b.cfg.i18n && b.cfg.i18n.turnstileExpired) || 'Verification expired. Please try again.');
-		});
-		resetWidget();
-	};
-
-	window.mdInquiryTurnstileError = function (code) {
-		disableSubmit();
-		/* Cloudflare's own warning: the same error may report itself more than
-		 * once — the message shows for its first report only. */
-		if (seenTurnstileErrors[code]) {
-			return;
+	// A closed quote dialog can still have a box for a frame: x-cloak hides it
+	// only after md-js is on the root, and x-show has not run yet. Treat that
+	// as hidden. A page form below the fold has a box and no cloak, so it is
+	// not this case.
+	function cloaked(el) {
+		var node = el;
+		while (node && node !== document.documentElement) {
+			if (node.hasAttribute && (node.hasAttribute('hidden') || node.hasAttribute('x-cloak'))) {
+				return true;
+			}
+			if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') {
+				return true;
+			}
+			node = node.parentElement;
 		}
-		seenTurnstileErrors[code] = true;
-		eachBound(function (b) {
-			b.setStatus((b.cfg.i18n && b.cfg.i18n.turnstileError) || 'Verification could not run. Please refresh the page and try again.');
-		});
-	};
+		return false;
+	}
 
-	window.mdInquiryTurnstileTimeout = function () {
-		disableSubmit();
-		resetWidget();
-	};
+	function pageVisible(el) {
+		return hasLayout(el) && !cloaked(el);
+	}
+
+	function geometryInViewport(el) {
+		var box = el.getBoundingClientRect();
+		var width = window.innerWidth || (document.documentElement && document.documentElement.clientWidth) || 0;
+		var height = window.innerHeight || (document.documentElement && document.documentElement.clientHeight) || 0;
+		return box.width > 0 && box.height > 0 && box.bottom > 0 && box.right > 0 && box.top < height && box.left < width;
+	}
+
+	if (window.turnstile && typeof window.turnstile.render === 'function') {
+		window.mdInquiryTurnstileReady();
+	}
 })();

@@ -28,9 +28,9 @@ final class SiteGuardsTest extends TestCase {
 
 	/**
 	 * The five header lines, exactly: every header value is pinned here, and
-	 * the CSP with it — its two external faces (Turnstile, CookieYes), the
-	 * inline styles, the closed object/base/form/frame-ancestors — so a
-	 * whitelist change is a test change.
+	 * the CSP with it — its two external faces (Turnstile scripts, frames and
+	 * connections; CookieYes), the inline styles, no unsafe-eval, the closed
+	 * object/base/form/frame-ancestors — so a whitelist change is a test change.
 	 */
 	public function test_the_header_lines_are_the_sites_policy(): void {
 		self::assertSame(
@@ -39,10 +39,46 @@ final class SiteGuardsTest extends TestCase {
 				'X-Frame-Options: SAMEORIGIN',
 				'X-Content-Type-Options: nosniff',
 				'Referrer-Policy: strict-origin-when-cross-origin',
-				"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com https://cdn-cookieyes.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn-cookieyes.com; font-src 'self'; connect-src 'self' https://*.cookieyes.com https://cdn-cookieyes.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+				"Content-Security-Policy: default-src 'self'; script-src 'self' 'inline-speculation-rules' https://challenges.cloudflare.com https://cdn-cookieyes.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn-cookieyes.com; font-src 'self'; connect-src 'self' https://challenges.cloudflare.com https://*.cookieyes.com https://cdn-cookieyes.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
 			),
 			md_site_guards_header_lines()
 		);
+	}
+
+	/**
+	 * Turnstile may open a connection to challenges.cloudflare.com, and that
+	 * is the only loosening: scripts stay free of unsafe-inline and unsafe-eval,
+	 * and unsafe-inline remains the style-src exception it already was.
+	 */
+	public function test_turnstile_connect_does_not_loosen_scripts(): void {
+		$csp        = '';
+		$directives = array();
+		foreach ( md_site_guards_header_lines() as $line ) {
+			if ( str_starts_with( $line, 'Content-Security-Policy: ' ) ) {
+				$csp = substr( $line, strlen( 'Content-Security-Policy: ' ) );
+			}
+		}
+		self::assertNotSame( '', $csp );
+
+		foreach ( explode( ';', $csp ) as $part ) {
+			$part = trim( $part );
+			if ( '' === $part ) {
+				continue;
+			}
+			$tokens = preg_split( '/\s+/', $part );
+			self::assertIsArray( $tokens );
+			$name                = array_shift( $tokens );
+			$directives[ $name ] = $tokens;
+		}
+
+		self::assertContains( 'https://challenges.cloudflare.com', $directives['connect-src'] );
+		foreach ( $directives as $name => $tokens ) {
+			self::assertNotContains( "'unsafe-eval'", $tokens, $name );
+			if ( 'style-src' === $name ) {
+				continue;
+			}
+			self::assertNotContains( "'unsafe-inline'", $tokens, $name );
+		}
 	}
 
 	/**

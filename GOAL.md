@@ -45,7 +45,7 @@
 - [x] **`/inquiry/thank-you/` 404** — 生产已返回 200(2026-10-25 复核);dev 亦 200
 - [x] **`/privacy/` 404** — 生产已返回 200(2026-10-25 复核);dev 亦 200
 - [x] **FAQPage JSON-LD 缺失** — 根因二连:页面查找仍用 `/pages/faqs`(实际 `/faqs/`),且抽取正则绑定已被改写的 `openFaq` 表达式。两处已修;dev 与**生产**均已输出 FAQPage(2026-10-26 复核:生产 `https://metal-divider.com/faqs/` 200,JSON-LD 内 **40** 问)
-- [ ] **GSC 属性未建**:Hostinger API 写 TXT 的路径已验通(PUT 追加模式),等 GSC 建 URL 前缀属性拿 token 后一条写入;顺带:hPanel 区无 SPF/_dmarc TXT(邮件三防,归 T1 邮件面)
+- [x] **GSC 属性已建并验证**(2026-10-28):业主指定主账号下新建 URL 前缀属性 `https://metal-divider.com/`;hPanel 追加 DNS TXT 后公共 DoH 读回存在,GSC 返回 **Ownership verified**,最终属性 URL 的 `resource_id` 正确。未改 NS、未建 Domain 属性、未添加共同管理员;验证 token 不入库。顺带:hPanel 区无 SPF/_dmarc TXT(邮件三防,归 T1 邮件面)
 
 ## 工作法(每轮)
 

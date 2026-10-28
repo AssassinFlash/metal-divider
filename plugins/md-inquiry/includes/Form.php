@@ -45,6 +45,14 @@ final class Form {
 	public const TURNSTILE_SCRIPT = 'md-inquiry-turnstile';
 
 	/**
+	 * The onload name api.js calls once explicit mode is ready.
+	 *
+	 * It has to be a window function in the behavior file: the CSP allows
+	 * no inline script, so the name travels in the script URL instead.
+	 */
+	public const TURNSTILE_ONLOAD = 'mdInquiryTurnstileReady';
+
+	/**
 	 * The configuration.
 	 *
 	 * @var Config
@@ -172,12 +180,17 @@ final class Form {
 	public function register_assets(): void {
 		$url = \plugin_dir_url( \dirname( __DIR__ ) . '/md-inquiry.php' );
 		\wp_register_script( self::SCRIPT, $url . 'assets/inquiry.js', array(), Plugin::VERSION, true );
-		\wp_register_script( self::TURNSTILE_SCRIPT, 'https://challenges.cloudflare.com/turnstile/v0/api.js', array( self::SCRIPT ), Plugin::VERSION, true );
+		\wp_register_script( self::TURNSTILE_SCRIPT, 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=' . self::TURNSTILE_ONLOAD, array( self::SCRIPT ), Plugin::VERSION, true );
 	}
 
 	/**
-	 * Turnstile's api.js loads deferred: it renders after the page parses, and
-	 * after our behavior file, whose window-level callbacks it must find.
+	 * Turnstile's api.js loads deferred, after this file's behavior script.
+	 *
+	 * The URL names mdInquiryTurnstileReady as its onload. That function lives
+	 * in the behavior file, which is this script's dependency and is therefore
+	 * printed first. Defer keeps api.js from running, and from calling that
+	 * function, until the behavior file has defined it. There is no inline
+	 * script: the CSP allows none.
 	 *
 	 * @param string $tag    The script tag.
 	 * @param string $handle The script's handle.
@@ -494,11 +507,20 @@ final class Form {
 	}
 
 	/**
-	 * The Turnstile widget, when the keys are in place: implicit rendering,
-	 * interaction-only appearance (spec 07 §8), with the callbacks the
-	 * behavior file defines. Without keys — the early deployment and the
-	 * local and staging instances — the widget is absent and the submission
-	 * is marked instead of gated.
+	 * The Turnstile slot, when the keys are in place.
+	 *
+	 * Explicit, not implicit. The container is not a cf-turnstile element:
+	 * api.js is loaded with render=explicit, and the behavior file calls
+	 * turnstile.render once per form, with that form's own callbacks. An
+	 * implicit widget inside the closed quote dialog has no box; its error
+	 * used to run the page-level callback and disable every submit.
+	 *
+	 * The sitekey and appearance stay on the element so the behavior file can
+	 * read them without an inline script. The callbacks do not: a data-callback
+	 * name would be one function for every form again.
+	 *
+	 * Without keys the slot is absent and the submission is marked instead of
+	 * gated.
 	 *
 	 * @param array{page: string, module: string, button: string} $source The source triple.
 	 * @return string
@@ -509,7 +531,7 @@ final class Form {
 			return '';
 		}
 		$sitekey = \esc_attr( $this->config->turnstile_sitekey() );
-		$out     = '<div class="md-inquiry-turnstile cf-turnstile" data-sitekey="' . $sitekey . '" data-appearance="interaction-only" data-theme="auto" data-retry="auto" data-callback="mdInquiryTurnstileCallback" data-expired-callback="mdInquiryTurnstileExpired" data-error-callback="mdInquiryTurnstileError" data-timeout-callback="mdInquiryTurnstileTimeout"></div>';
+		$out     = '<div class="md-inquiry-turnstile" data-sitekey="' . $sitekey . '" data-appearance="interaction-only" data-theme="auto" data-retry="auto"></div>';
 		$out    .= '<p class="md-inquiry-turnstile-status" role="status" hidden></p>';
 		return $out;
 	}

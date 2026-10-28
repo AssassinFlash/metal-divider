@@ -204,11 +204,9 @@
     // dialog as the single open target, so the footer copy stays inert there.
     //
     // A page that already renders the inquiry form itself (the inquiry face)
-    // must not get a second copy inside the dialog: md-inquiry's markup
-    // carries fixed ids (md-inquiry-name, md-inquiry-source-*) and its script
-    // binds only the page's first .md-inquiry-app, so a dialog copy would both
-    // duplicate nine ids and sit inert. On such a page the CTA scrolls to the
-    // form that is already on screen instead of opening a dialog over it.
+    // must not get a second copy inside the dialog: the form already on the
+    // page is the single place to start and verify the inquiry. On such a page
+    // the CTA scrolls to that form instead of opening a dialog over it.
     Alpine.data('quoteModal', function () {
       return {
         isOpen: false,
@@ -345,9 +343,8 @@
   }
 
   // Drops the dialog's copy of the inquiry form on a page that already renders
-  // one. Leaving it would duplicate nine ids and, because md-inquiry's script
-  // binds only the first .md-inquiry-app on the page, also leave the dialog's
-  // copy inert. Runs once at start, before anything can be opened.
+  // one. The visible page form owns the inquiry and its verification; the CTA
+  // scrolls to it instead of presenting a second copy. Runs once at start.
   function dropDuplicateModalForm() {
     var pageForm = pageInquiryForm();
     if (!pageForm) {

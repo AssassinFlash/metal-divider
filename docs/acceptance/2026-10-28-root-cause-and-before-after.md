@@ -609,3 +609,42 @@ Chrome 在本机最小窗口宽 **578px**，opencli 开不出真 320，`--width 
 - 3467 KB / 38 请求含已修的搜索预取；预取修好后仍是 3230–3487 KB，没有回到 690 KB。预取不是这五倍差的全部原因。
 - 第十五节「减少首屏可见数量」与第十六节「只能减少首屏图案数」均已作废。
 - 总目标尚未验收。本订正不宣称性能或全站完成。
+
+## 十九、搜索键盘交互与 Search Console（生产实测）
+
+搜索修复提交 `b2ab093`。部署在 post-switch 阶段超时后没有重跑部署，而是执行
+`resume-deploy`：5 个生产 URL 均为 200、首页缓存 hit、批次已归档；生产与仓库
+`md-chrome.js` 的 MD5 均为 `42689abb61940a8b00ab1a65f499825c`。
+
+opencli 真 Chrome、未登录访客、`visibilityState=visible` 下实测：
+
+- 打开搜索：`role=dialog`、`aria-modal=true`，初始焦点在搜索输入框。
+- 输入 `leaf` 出现建议后，第一次 Escape：建议关闭、弹层仍打开、焦点回输入框。
+- 第二次 Escape：弹层关闭、焦点回 Search 触发按钮、页面 scroll lock 解除。
+- 连续 14 次 Tab 与一次 Shift+Tab：焦点始终留在弹层内。
+- 实测窗口 `innerWidth=701`，不把这组键盘行为证据冒写成 1440。
+
+守卫 `test_search_escape_dismisses_suggestions_before_the_dialog` 在临时移除
+`stopPropagation()` 时按预期失败，恢复后通过。`just php-test` 为 405 + 77 + 6 + 26
+全绿，`just check` 全绿。
+
+Search Console 在业主指定主账号下创建 URL 前缀属性 `https://metal-divider.com/`。
+hPanel 只追加一条 `@` TXT；公共 DoH 读回 `Status=0` 且该 TXT 存在，GSC 返回
+**Ownership verified**，进入属性后的 `resource_id=https://metal-divider.com/`。
+未改 NS、未添加共同管理员，验证 token 未写入仓库或日志。
+
+## 二十、真 320px 补测（一次本机 Chrome 会话）
+
+按业主开放的窄例外，使用 Playwright `channel:'chrome'` 驱动本机有界面 Chrome，
+只创建一个浏览器实例与一个上下文，结束后已关闭。实测 `innerWidth=clientWidth=320`，
+未登录访客，不使用自带 Chromium 或无头替代。
+
+- 首页搜索按钮 44×44；输入 `leaf` 后 Store API 返回 200，两条具名结果与 See all 均存在。
+- 第一次 Escape 只关闭建议，输入值和弹层保持、焦点留在输入框；第二次 Escape 关闭弹层并回焦。
+- `/inquiry/` 在 320×720 与加高视口下均为 `scrollWidth=320`、`overflowPx=0`。
+- 可见空卡 0、破图 0、相邻内容块大于 160px 的异常间距 0。
+- name/email/country/scope/route/quantity/message 与 confirm 均可见且 required；
+  表单唯一，提交按钮与 WhatsApp 链接存在，控制台 error/warning 为 0。
+
+截图 8 张与原始 `report.json` 在 `/tmp/md-320-20261028/`。搜索建议的图区未读
+`naturalWidth`，因此该部分不宣称图片验证通过。
