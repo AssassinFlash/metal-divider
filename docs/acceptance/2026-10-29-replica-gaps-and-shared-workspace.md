@@ -1441,3 +1441,52 @@ broken internal links:   0
    我拿不到任何能证明「这是业主的账号」的证据。
 
 按「只问业主知道的事」，这三条要由业主确认：账号是否仍归自己、是否要放、放在哪几页。
+
+### 9.29 全站元数据审计：174 页 title / description / h1（业主 2026-10-29）
+
+这是此前未整体做过的检查。取数来源是站点自己的三份 sitemap（page + product + product_cat）。
+
+| 检查项 | 结果 |
+|---|---|
+| 缺失 title | **0** |
+| 缺失 description | **0** |
+| 缺失 h1 | **0** |
+| 重复 title | **0** |
+| 重复 description | **0** |
+| 重复 h1 | **0** |
+| title 长度 | 24–62 字符，**0 条超 70、0 条短于 15** |
+
+**174 页零缺失、零重复，title 长度全部合规。** 这是本轮最干净的一组读数。
+
+#### 9.29.1 27 条 description 超过 165 字符，是复刻不是我们的问题
+
+最长的 191 字符（`/pattern/kyoto-dynasty-…/`）。逐条看下来，27 条全部是 PDP，都是同一个
+句式模板：`Review the <产品名> architectural metal screen pattern for privacy screens,
+facades, and partitions. Compare visual density, open area, and specification fit.`
+产品名长的就超过 165。
+
+**与旧站逐字对照**：旧站同一页的 `<meta name='description'>`、`og:description`、
+`twitter:description` 与新站**完全相同，包括 191 这个长度**。
+
+所以这不是新站缩短或加长造成的，是旧站数据的原样搬运。按「先搬运、再升级」的原则，
+搬运阶段不改写它；是否要为了不被 SERP 截断而缩短，属于文案裁定，记在这里等业主定。
+
+descriptions 长度区间 99–191，**没有一条短于 70**——不存在「描述过短等于没写」的问题。
+
+### 9.30 图片 alt：静态 HTML 里 96 张没有 alt，但运行时会被补上
+
+| 项 | 数量 |
+|---|---:|
+| 扫描页面 | 28（page + product_cat sitemap） |
+| 图片总数（单次抓取） | 1332 |
+| 无 `alt` 属性 | 96 |
+| 其中 `xo-lazyload` 惰性图 | 0 |
+
+分类：64 张无 class、28 张 `md-search-tile__img`、4 张 `w-full h-full object-cover`。
+
+**这 28 张搜索图块不是缺陷**：`md-chrome.js:3175` 有 `image.alt = alt || ''`，
+图块由 JS 在搜索面板打开时克隆模板并**设置 alt**，静态 HTML 里本来就不该有。
+
+另 64 张无 class 的图本轮**未逐张定性**，因为它们分散在惰性渲染区块里，静态抓取看到的是
+未初始化状态。要定性必须逐页开面板读运行时 DOM——那是另一轮的工作，本轮不做，
+也不把「静态 HTML 没 alt」当成「页面对用户没有 alt」。
