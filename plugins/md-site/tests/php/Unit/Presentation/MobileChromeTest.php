@@ -823,4 +823,99 @@ final class MobileChromeTest extends TestCase {
 			);
 		}
 	}
+
+	/**
+	 * The inquiry page's Turnstile frame is 300px and must not be cropped
+	 * by the 230px column at 320.
+	 *
+	 * Measured: 16px container padding, 1px panel border and 28px
+	 * quote-inner padding leave a 230px slot. The challenge frame is 300px,
+	 * so a slot that stays at the column width crops its right edge. The
+	 * narrow rule widens the slot to the frame and centers it on the parent;
+	 * (100% - 300px) / 2 is -35px in that column, which is 10px from each
+	 * viewport edge. The quote panel's overflow: hidden is the ancestor that
+	 * would still clip the overhang. 390 is already a 300px column and 1440
+	 * is wider, so the breakout stops at 389px. Scaling the frame or hiding
+	 * its Privacy link and logo is not the repair.
+	 */
+	public function test_the_inquiry_turnstile_frame_fits_a_320_viewport_without_cropping(): void {
+		$css   = $this->volume( 'inquiry.css' );
+		$block = $this->media_block( $css, 389 );
+		$slot  = $this->rule_body( $block, '#md-inquiry .md-inquiry-turnstile' );
+		$panel = $this->rule_body( $block, '#md-inquiry .quote-panel' );
+		$frame = $this->rule_body( $block, '#md-inquiry .md-inquiry-turnstile iframe' );
+
+		$this->assertNotSame( '', $slot, 'the 300px slot rule is missing — the 230px column crops the challenge' );
+		$this->assertStringContainsString( 'width: 300px', $slot );
+		$this->assertStringContainsString( 'max-width: none', $slot, 'a 100% cap squeezes the frame back to the 230px column' );
+		$this->assertStringContainsString( 'margin-left: calc((100% - 300px) / 2)', $slot );
+		$this->assertStringContainsString( 'margin-right: calc((100% - 300px) / 2)', $slot );
+		$this->assertStringContainsString( 'padding-left: 0', $slot );
+		$this->assertStringContainsString( 'padding-right: 0', $slot );
+		$this->assertStringNotContainsString( 'max-width: 100%', $slot );
+		$this->assertStringNotContainsString( 'transform:', $slot, 'scaling the frame is not the repair' );
+		$this->assertDoesNotMatchRegularExpression( '/font-size\s*:/', $slot );
+
+		$this->assertStringContainsString( 'overflow: visible', $panel, 'quote-panel overflow: hidden still clips the frame' );
+		$this->assertStringContainsString( 'width: 300px', $frame );
+		$this->assertStringContainsString( 'max-width: none', $frame );
+		$this->assertStringContainsString( 'flex-shrink: 0', $frame );
+		$this->assertStringNotContainsString( 'display: none', $block, 'the challenge Privacy link and logo stay visible' );
+
+		$base = substr( $css, 0, (int) strpos( $css, '@media (max-width: 389px)' ) );
+		$this->assertStringNotContainsString( 'width: 300px', $this->rule_body( $base, '.md-inquiry .md-inquiry-turnstile' ), '390 and 1440 keep the full-width slot' );
+
+		// 320: the column is 230px, and centering a 300px frame in it is 10px
+		// from each viewport edge. 390 is the first width whose column is
+		// already 300px, so the breakout must not be required there.
+		$this->assertSame( 230, 320 - 16 * 2 - 1 * 2 - 28 * 2 );
+		$this->assertSame( 10, 16 + 1 + 28 + (int) ( ( 230 - 300 ) / 2 ) );
+		$this->assertSame( 300, 390 - 16 * 2 - 1 * 2 - 28 * 2 );
+	}
+
+	/**
+	 * The body of one media query, from its opening brace to its matching close.
+	 *
+	 * @param string $css       The volume.
+	 * @param int    $max_width The query's max-width in px.
+	 */
+	private function media_block( string $css, int $max_width ): string {
+		$needle = '@media (max-width: ' . $max_width . 'px)';
+		$start  = strpos( $css, $needle );
+		if ( false === $start ) {
+			return '';
+		}
+		$open = strpos( $css, '{', $start );
+		if ( false === $open ) {
+			return '';
+		}
+		$depth = 0;
+		$end   = strlen( $css );
+		for ( $i = $open; $i < $end; $i++ ) {
+			$char = $css[ $i ];
+			if ( '{' === $char ) {
+				++$depth;
+			} elseif ( '}' === $char ) {
+				--$depth;
+				if ( 0 === $depth ) {
+					return substr( $css, $start, $i - $start + 1 );
+				}
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * The declaration block of one selector, or '' when the selector is absent.
+	 *
+	 * @param string $css      The stylesheet fragment.
+	 * @param string $selector The exact selector.
+	 */
+	private function rule_body( string $css, string $selector ): string {
+		$pattern = '/' . preg_quote( $selector, '/' ) . '\s*\{([^}]*)\}/';
+		if ( 1 !== preg_match( $pattern, $css, $matches ) ) {
+			return '';
+		}
+		return $matches[1];
+	}
 }

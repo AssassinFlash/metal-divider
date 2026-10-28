@@ -151,6 +151,42 @@
   padding: 12px 16px;
 }
 .md-inquiry .md-inquiry-turnstile-status { margin: 0; }
+/* At 320 the quote column is 230px: 16px container padding, 1px panel
+   border and 28px quote-inner padding on each side (320 - 32 - 2 - 56).
+   Cloudflare's manual challenge frame is 300px, so a slot that stays
+   230px crops the right edge. Widen the slot to that frame and center it
+   on its parent with a negative margin — (100% - 300px) / 2 is -35px in
+   the 230px column, which lands the frame 10px from each viewport edge.
+   max-width: none keeps a 100% cap from squeezing the frame back to the
+   column. Horizontal padding and border stay out of the 300px, or the
+   border box would exceed the viewport and grow scrollWidth.
+   The quote panel's overflow: hidden is the only ancestor that still
+   clips that overhang (6px past the panel, inside the 16px page gutter).
+   #xo-root's overflow: clip does not: the frame stays inside the viewport.
+   390 is already a 300px column, and 1440 is wider; this block stops at
+   389px so those widths keep the full-width slot. No font scaling, and
+   the challenge's Privacy link and logo stay in the frame. */
+@media (max-width: 389px) {
+  #md-inquiry .quote-panel {
+    overflow: visible;
+  }
+  #md-inquiry .md-inquiry-turnstile {
+    box-sizing: content-box;
+    width: 300px;
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    margin-left: calc((100% - 300px) / 2);
+    margin-right: calc((100% - 300px) / 2);
+  }
+  #md-inquiry .md-inquiry-turnstile iframe {
+    flex-shrink: 0;
+    width: 300px;
+    max-width: none;
+  }
+}
 .md-inquiry .md-inquiry-actions {
   display: flex;
   flex-wrap: wrap;
