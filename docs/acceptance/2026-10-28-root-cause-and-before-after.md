@@ -860,3 +860,22 @@ Patterns`、`Foshan production floor`），删除 ISO 与库存吨位，盐雾�
   （Lorem/TODO/undefined/null）**0**；空锚点 **0**。唯一命中的每页 1 个
   `src=""` 定位到 `rapls-ai-chatbot` 隐藏的 `.chatbot-image-preview`，属第三方
   客服挂件的惰性占位，不在本 GOAL 范围。证据 `/tmp/md-defect-sweep.json`。
+
+## 三十六、390 移动端复验与两条移交缺陷
+
+`overflow.py` 在 390 无法开窗（Chrome 本机最小 578px），改用一次 Playwright
+`channel:'chrome'` 有界面实例复验 7 页（首页、目录、询盘、FAQ、画廊、PDP、
+定制）。全部 `innerWidth=390`、未登录：`scrollWidth` 均为 390、溢出 **0**、
+可见空卡 **0**；`right>391` 的元素都在横向卡片条与装饰层内，不撑开文档宽度。
+证据 `/tmp/md-390/report.json`、`/tmp/md-390/full-*.png`。
+
+控制台只剩两条错误，均定位到第三方 `rapls-ai-chatbot`，已移交 Batch 2，
+本 GOAL 不越界修改：
+
+| 缺陷 | 实测 |
+|---|---|
+| 配置脚本被 CSP 拦截 | `<script id="raplsaich-chatbot-js-extra">` 无 nonce，`script-src-elem` 拦截 `inline`，`api_base` 未生效（首页第 4010 行第 41 列） |
+| `undefined/session` 404 | `chatbot.js?ver=1.21.4…` 的 `init→loadSession→apiRequest` 用相对地址拼接，产生 `/undefined/session` 与 `/custom-metal-divider-screens/undefined/session` |
+
+主站浏览、图案、询盘与 FAQ 下载不依赖该插件；`mdvisitor-launcher.js` 是另一条
+带 `src` 的外部文件，不在本次错误链内。
