@@ -897,3 +897,19 @@ Patterns`、`Foshan production floor`），删除 ISO 与库存吨位，盐雾�
 
 下一步真实验收仍需业主按路径走一次完整提交（会产生一封通知与一封确认信），
 本轮按邮件纪律未代发。
+
+## 三十八、画廊效果图披露
+
+画廊 23 个条目里 18 个的 `alt` 已写 `visualization`，1 个写 `project image`，
+但**页面可见文字里一次都没出现**——访客会把整页当成完工项目。另外 5 个条目
+连 `alt` 也没有标注。
+
+处理：页头加一行可见说明（标注 visualization 的是为规格制作的效果图，项目图才是
+完工照片）；补齐 5 个 `alt` 的 `— visualization`，使 23/23 都有标注。守卫
+`test_the_gallery_discloses_which_scenes_are_renderings` 同时要求可见说明存在、
+且每个非项目图必须带标注；实证去掉其中一个标注即失败、恢复后通过。
+
+部署 `20261028T151346839546Z-f55e8fb` 已归档。生产读回：模板 md5 与仓库一致
+（`83eec5b4…`），页面 200、说明可见、缓存 miss→hit；28 个非空 alt 中 24 个带标注，
+余下 4 个是页眉/页脚 logo 与客服挂件的隐藏预览占位，不属画廊图片。
+证据 `/tmp/md-gallery-readback.json`。

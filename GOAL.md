@@ -59,6 +59,11 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-28 画廊效果图披露
+
+- 23 个条目中 18 个 alt 写 visualization、1 个 project image,但页面可见文字从未出现;另 5 个连 alt 都无标注。已加页头可见说明并补齐 5 个 alt,现 23/23 有标注。
+- 守卫 `test_the_gallery_discloses_which_scenes_are_renderings` 实证可失败。部署 `20261028T151346839546Z-f55e8fb` 已归档;生产模板 md5 一致、页面 200、说明可见、缓存 miss→hit。证据 `/tmp/md-gallery-readback.json`。总目标仍未验收。
+
 ### 2026-10-28 接管期只读核对
 
 - 生产 `livecanvas` 42 个文件与仓库 HEAD md5 逐一比对,**内容差异 0**(覆盖已消除)。回复时限 `one business day` 全站 0 处;2 处 `same day` 为 QC 工序耗时,非回复承诺。
