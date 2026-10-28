@@ -300,7 +300,9 @@ final class TemplateAssetsTest extends TestCase {
 	 * `html { font-size: 62.5% }`; the landing page alone ran at the
 	 * browser's 16px (measured on the old page 2026-10-26: `3rem` = 48px).
 	 * `custom-screens.css` therefore restores a 16px root under
-	 * `html:has(#landing-nav)`. The WindPress cache is one stylesheet for
+	 * `html:has(#hero-section-template--22465876033789__hero_landing_yPiYEt)`.
+	 * The second brand nav used to be that guard and has been removed; the
+	 * hero section is the marker this face still emits. The WindPress cache is one stylesheet for
 	 * every face, so an unscoped `html { font-size: 100% }` would resize all
 	 * of them — this test pins the guard, and the body pin that keeps
 	 * base.css's rem-sized body text at its old 16px.
@@ -310,12 +312,12 @@ final class TemplateAssetsTest extends TestCase {
 		$path   = dirname( $volume ) . '/../../content/windpress/custom-screens.css';
 		$source = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
 		$this->assertMatchesRegularExpression(
-			'/html:has\(\s*#landing-nav\s*\)\s*\{\s*font-size:\s*100%\s*;?\s*\}/',
+			'/html:has\(\s*#hero-section-template--22465876033789__hero_landing_yPiYEt\s*\)\s*\{\s*font-size:\s*100%\s*;?\s*\}/',
 			$source,
 			'the landing face restores the 16px root its capture assumed'
 		);
 		$this->assertMatchesRegularExpression(
-			'/html:has\(\s*#landing-nav\s*\)\s*body\s*\{\s*font-size:\s*1rem\s*;?\s*\}/',
+			'/html:has\(\s*#hero-section-template--22465876033789__hero_landing_yPiYEt\s*\)\s*body\s*\{\s*font-size:\s*1rem\s*;?\s*\}/',
 			$source,
 			'the body is pinned so base.css\'s rem body size does not inflate'
 		);
@@ -324,13 +326,12 @@ final class TemplateAssetsTest extends TestCase {
 		// comments are dropped first — this volume's own header explains the
 		// old rule in prose.
 		$rules = (string) preg_replace( '#/\*.*?\*/#s', '', $source );
-		preg_match_all( '/html\s*\{[^}]*font-size\s*:[^;}]*/', $rules, $roots, PREG_OFFSET_CAPTURE );
+		preg_match_all( '/html(?::has\([^)]+\))?\s*\{[^}]*font-size\s*:[^;}]*/', $rules, $roots, PREG_OFFSET_CAPTURE );
 		foreach ( $roots[0] as $root ) {
-			$before = substr( $rules, max( 0, (int) $root[1] - 40 ), 40 );
 			$this->assertStringContainsString(
-				'#landing-nav',
-				$before,
-				'a root font-size in custom-screens.css is not scoped to #landing-nav'
+				'#hero-section-template--22465876033789__hero_landing_yPiYEt',
+				$root[0],
+				'a root font-size in custom-screens.css is not scoped to this face'
 			);
 		}
 	}

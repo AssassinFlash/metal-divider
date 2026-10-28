@@ -184,16 +184,20 @@ final class PatternFacts {
 	/**
 	 * The card's second badge: the open area when the pattern has one, and
 	 * the fit word — labelled "Effect" — when it does not, so a card never
-	 * shows an empty pill or a "0%".
+	 * shows an empty pill or a "0%". A pattern with neither a sourced open
+	 * area nor a best-fit word says "On request": "Effect: " with nothing
+	 * after the colon is the empty pill this method exists to avoid.
 	 *
 	 * @param int $post_id The product id.
 	 * @return string The badge text.
 	 */
 	public static function badge( int $post_id ): string {
 		$cell = self::open_area( $post_id );
-		return self::OPEN_AREA_ON_REQUEST === $cell
-			? 'Effect: ' . self::best_fit( $post_id )
-			: 'Open: ' . $cell;
+		if ( self::OPEN_AREA_ON_REQUEST !== $cell ) {
+			return 'Open: ' . $cell;
+		}
+		$fit = self::best_fit( $post_id );
+		return '' === $fit ? self::OPEN_AREA_ON_REQUEST : 'Effect: ' . $fit;
 	}
 
 	/**

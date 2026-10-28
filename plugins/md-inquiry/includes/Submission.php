@@ -194,6 +194,7 @@ final class Submission {
 			'scope'         => $this->post_text( $post, 'md_inquiry_scope' ),
 			'route'         => $this->post_text( $post, 'md_inquiry_route' ),
 			'quantity'      => $this->post_text( $post, 'md_inquiry_quantity' ),
+			'confirm'       => $this->post_text( $post, 'md_inquiry_confirm' ),
 			'message'       => isset( $post['md_inquiry_message'] ) && \is_string( $post['md_inquiry_message'] ) ? \sanitize_textarea_field( \wp_unslash( $post['md_inquiry_message'] ) ) : '',
 			'pattern_slug'  => isset( $post['md_inquiry_pattern_slug'] ) && \is_string( $post['md_inquiry_pattern_slug'] ) ? \sanitize_title( \wp_unslash( $post['md_inquiry_pattern_slug'] ) ) : '',
 			'source_page'   => $this->post_text( $post, 'md_inquiry_source_page' ),

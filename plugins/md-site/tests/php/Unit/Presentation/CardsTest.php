@@ -531,9 +531,8 @@ final class CardsTest extends TestCase {
 	}
 
 	/**
-	 * A series without a thumbnail draws the empty media box the card CSS
-	 * styles — not an `<img>` with no source, which the browser would fetch
-	 * as the page itself.
+	 * A series without a thumbnail draws the series-name fallback, not an
+	 * `<img>` with no source, which the browser would fetch as the page itself.
 	 */
 	public function test_a_hub_series_without_a_thumbnail_draws_the_empty_media_box(): void {
 		WP_Mock::userFunction( 'get_term_meta' )->once()->with( 22, 'thumbnail_id', true )->andReturn( '' );
@@ -547,7 +546,7 @@ final class CardsTest extends TestCase {
 			)
 		);
 
-		$this->assertStringContainsString( '<div class="cph__media"></div>', $html );
+		$this->assertStringContainsString( '<span class="cph__media-fallback">Landscape</span>', $html );
 		$this->assertStringNotContainsString( '<img', $html );
 		$this->assertStringNotContainsString( 'src=""', $html );
 	}
@@ -1216,6 +1215,53 @@ final class CardsTest extends TestCase {
 		);
 	}
 
+
+	/**
+	 * A related product with no thumbnail is not a card. The partial prints
+	 * src unconditionally, and a missing thumbnail is false — drawing it would
+	 * ship src="".
+	 */
+	public function test_a_related_card_without_a_thumbnail_is_not_drawn(): void {
+		$this->mock_product( array(), true, '58', 'product', array( 400, 800 ), null, array(), array( 11, 12 ), array( 12 ) );
+
+		$html = ( new Cards() )->related( self::PRODUCT, array( 11, 12, 0 ) );
+
+		$this->assertSame( 1, substr_count( $html, 'class="pdp-related-card' ) );
+		$this->assertStringContainsString( 'href="https://site.test/pattern/11/"', $html );
+		$this->assertStringNotContainsString( '/pattern/12/', $html );
+		$this->assertStringNotContainsString( 'src=""', $html );
+	}
+
+	/**
+	 * Family and Best fit rows are omitted when those facts are empty. Open
+	 * stays: a missing open area is the words "On request", not a blank cell.
+	 */
+	public function test_the_catalog_card_omits_empty_family_and_best_fit_rows(): void {
+		$this->mock_product( array(), true, '', 'product', array( 400, 800 ), null, array(), array(), array(), '', false );
+		// A later case in this process defines the function; without a handler
+		// this render fatals instead of falling back to the ordinary ladder.
+		WP_Mock::userFunction( 'wp_get_attachment_metadata' )->andReturn( false );
+
+		$html = ( new Cards() )->catalog( self::PRODUCT );
+
+		$this->assertStringNotContainsString( '>Family<', $html );
+		$this->assertStringNotContainsString( '>Best fit<', $html );
+		$this->assertStringContainsString( '>Open<', $html );
+		$this->assertStringContainsString( 'On request', $html );
+		$this->assertStringNotContainsString( 'Effect: ', $html );
+		$this->assertStringNotContainsString( '[md_', $html );
+	}
+
+	/**
+	 * A pattern with neither a sourced open area nor a best-fit word does not
+	 * get a badge that ends on a colon.
+	 */
+	public function test_a_badge_with_no_fit_says_on_request(): void {
+		WP_Mock::userFunction( 'get_post_meta' )->andReturn( '' );
+
+		$this->assertSame( 'On request', PatternFacts::badge( self::PRODUCT ) );
+	}
+
 	/**
 	 * A throwaway directory under the system temp dir, named for this test.
 	 *
@@ -1244,8 +1290,11 @@ final class CardsTest extends TestCase {
 	 * @param \stdClass|null                                                                                       $counter    Counts the gallery-meta reads when given.
 	 * @param array{file?: string, basedir?: string, baseurl?: string, url?: string, native_srcset?: string|false} $media Overrides for the srcset inputs.
 	 * @param int[]                                                                                                $related_ids Product ids that resolve as their own post (the related-cards case).
+	 * @param int[]                                                                                                $imageless  Product ids whose featured image resolves to nothing.
+	 * @param string                                                                                               $best_fit   The best-fit field.
+	 * @param bool                                                                                                 $with_series Whether the product carries a product_cat term.
 	 */
-	private function mock_product( array $gallery = array(), bool $with_thumb = true, string $open_area = '58', string $post_type = 'product', array $dimensions = array( 400, 800 ), ?\stdClass $counter = null, array $media = array(), array $related_ids = array() ): void {
+	private function mock_product( array $gallery = array(), bool $with_thumb = true, string $open_area = '58', string $post_type = 'product', array $dimensions = array( 400, 800 ), ?\stdClass $counter = null, array $media = array(), array $related_ids = array(), array $imageless = array(), string $best_fit = 'architectural-screening', bool $with_series = true ): void {
 		$related          = array_fill_keys( array_map( 'intval', $related_ids ), true );
 		$post             = new \WP_Post( (object) array() );
 		$post->ID         = max( 0, self::PRODUCT );
@@ -1282,8 +1331,11 @@ final class CardsTest extends TestCase {
 			}
 		);
 		WP_Mock::userFunction( 'get_the_post_thumbnail_url' )->andReturnUsing(
-			static function ( $id, string $size ) use ( $related ): string {
+			static function ( $id, string $size ) use ( $related, $imageless ) {
 				$id = $id instanceof \WP_Post ? (int) $id->ID : (int) $id;
+				if ( in_array( $id, $imageless, true ) ) {
+					return false;
+				}
 				return isset( $related[ $id ] )
 					? 'https://site.test/uploads/' . $id . '-' . $size . '.webp'
 					: 'https://site.test/uploads/mandala-' . $size . '.webp';
@@ -1353,7 +1405,7 @@ final class CardsTest extends TestCase {
 			}
 		);
 		WP_Mock::userFunction( 'get_post_meta' )->andReturnUsing(
-			static function ( int $id, string $key ) use ( $gallery, $open_area, $counter ) {
+			static function ( int $id, string $key ) use ( $gallery, $open_area, $counter, $best_fit ) {
 				unset( $id );
 				if ( '_product_image_gallery' === $key ) {
 					if ( null !== $counter ) {
@@ -1365,13 +1417,16 @@ final class CardsTest extends TestCase {
 					return $open_area;
 				}
 				if ( 'best_fit' === $key ) {
-					return 'architectural-screening';
+					return $best_fit;
 				}
 				return '';
 			}
 		);
 		WP_Mock::userFunction( 'get_the_terms' )->andReturnUsing(
-			static function () {
+			static function () use ( $with_series ) {
+				if ( ! $with_series ) {
+					return array();
+				}
 				$term              = new \WP_Term( (object) array() );
 				$term->name        = 'Moroccan & Arabic';
 				$term->slug        = 'pattern-moroccan-arabic';

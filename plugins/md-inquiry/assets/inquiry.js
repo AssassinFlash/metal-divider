@@ -83,6 +83,23 @@
 			}
 		}
 
+		function describedBy(control, errorId) {
+			var wrapper = control.closest('.md-inquiry-field');
+			var ids = [];
+			var hint = wrapper ? wrapper.querySelector('.md-inquiry-field__hint') : null;
+			if (hint && hint.id) {
+				ids.push(hint.id);
+			}
+			if (errorId) {
+				ids.push(errorId);
+			}
+			if (ids.length) {
+				control.setAttribute('aria-describedby', ids.join(' '));
+			} else {
+				control.removeAttribute('aria-describedby');
+			}
+		}
+
 		function fieldError(key, message) {
 			var control = field(key);
 			var wrapper = control ? control.closest('.md-inquiry-field') : null;
@@ -96,7 +113,7 @@
 					existing.remove();
 				}
 				control.removeAttribute('aria-invalid');
-				control.removeAttribute('aria-describedby');
+				describedBy(control, '');
 				return;
 			}
 			wrapper.classList.add('md-inquiry-field--invalid');
@@ -105,11 +122,61 @@
 				error = document.createElement('span');
 				error.className = 'md-inquiry-field__error';
 				error.id = control.id ? control.id + '-error' : 'md-inquiry-' + key + '-error';
+				error.setAttribute('role', 'alert');
 				wrapper.appendChild(error);
 			}
+			error.setAttribute('role', 'alert');
 			error.textContent = message;
 			control.setAttribute('aria-invalid', 'true');
-			control.setAttribute('aria-describedby', error.id);
+			describedBy(control, error.id);
+		}
+
+		var requiredKeys = ['name', 'email', 'country', 'scope', 'route', 'quantity', 'message', 'confirm'];
+
+		function messageFor(key) {
+			var i18n = cfg.i18n || {};
+			var map = {
+				name: i18n.errorName || 'Please enter your name.',
+				email: i18n.errorEmail || 'Please enter a valid email address.',
+				country: i18n.errorCountry || 'Please choose your country.',
+				scope: i18n.errorScope || 'Please choose the project scope.',
+				route: i18n.errorRoute || 'Please choose an inquiry route.',
+				quantity: i18n.errorQuantity || 'Please choose a quantity range.',
+				message: i18n.errorMessage || 'Please add a short message.',
+				confirm: i18n.errorConfirm || 'Please confirm this inquiry is for an architectural or commercial project.'
+			};
+			return map[key] || 'Please complete this field.';
+		}
+
+		function isMissing(key) {
+			var control = field(key);
+			if (!control) {
+				return false;
+			}
+			if ('confirm' === key) {
+				return !control.checked;
+			}
+			if ('email' === key) {
+				return !emailLooksValid(value('email'));
+			}
+			if ('message' === key && !control.required) {
+				return false;
+			}
+			return '' === value(key);
+		}
+
+		function setNotice(message) {
+			var notice = form.querySelector('.md-inquiry-notice');
+			if (!notice) {
+				return;
+			}
+			if (message) {
+				notice.textContent = message;
+				notice.classList.add('md-inquiry-notice--error');
+			} else {
+				notice.textContent = '';
+				notice.classList.remove('md-inquiry-notice--error');
+			}
 		}
 
 		function emailLooksValid(email) {
@@ -149,17 +216,42 @@
 			}
 		});
 
+		function keyFrom(control) {
+			var name = control.getAttribute('name') || '';
+			return name.indexOf('md_inquiry_') === 0 ? name.slice('md_inquiry_'.length) : '';
+		}
+
+		function clearIfValid(event) {
+			var key = keyFrom(event.target);
+			if (key && requiredKeys.indexOf(key) !== -1 && !isMissing(key)) {
+				fieldError(key, '');
+			}
+		}
+
+		form.addEventListener('input', clearIfValid);
+		form.addEventListener('change', clearIfValid);
+		form.addEventListener('invalid', function (event) {
+			var key = keyFrom(event.target);
+			if (requiredKeys.indexOf(key) === -1) {
+				return;
+			}
+			fieldError(key, messageFor(key));
+			setNotice((cfg.i18n && cfg.i18n.errorSummary) || 'Please complete the highlighted fields.');
+		}, true);
+
 		form.addEventListener('submit', function (event) {
-			var badName = '' === value('name');
-			var badEmail = !emailLooksValid(value('email'));
-			fieldError('name', badName ? ((cfg.i18n && cfg.i18n.errorName) || 'Please enter your name.') : '');
-			fieldError('email', badEmail ? ((cfg.i18n && cfg.i18n.errorEmail) || 'Please enter a valid email address.') : '');
-			if (badName || badEmail) {
-				event.preventDefault();
-				var first = form.querySelector('.md-inquiry-field--invalid .md-inquiry-field__input');
-				if (first) {
-					first.focus();
+			var first = null;
+			requiredKeys.forEach(function (key) {
+				var bad = isMissing(key);
+				fieldError(key, bad ? messageFor(key) : '');
+				if (bad && !first) {
+					first = field(key);
 				}
+			});
+			if (first) {
+				event.preventDefault();
+				setNotice((cfg.i18n && cfg.i18n.errorSummary) || 'Please complete the highlighted fields.');
+				first.focus();
 			}
 		});
 

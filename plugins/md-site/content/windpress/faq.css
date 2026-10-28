@@ -243,8 +243,8 @@ font-size: 0.95em;
 #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer ul, #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
 #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer li { margin-bottom: 8px; line-height: 1.6; }
 #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
-#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer th { text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
-#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); vertical-align: top; }
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer th { text-align: left; padding: 14px 16px; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+#home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); vertical-align: top; }
 @media (max-width: 749px) { #home-faq-template--21844031930621__faq_v1_wQVCUV .home-faq-answer table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; } }
 #laser-cut-faq-template--21873710563581__laser_cut_faq {
 padding-top: 60px;
@@ -271,12 +271,12 @@ font-size: 0.95em;
 #laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
 #laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
 #laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer th {
-text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04);
+text-align: left; padding: 14px 16px; background: rgba(255,255,255,0.04);
 border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9);
 font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
 }
 #laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer td {
-padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
 color: rgba(255,255,255,0.85); vertical-align: top;
 }
 #laser-cut-faq-template--21873710563581__laser_cut_faq .lcfaq-answer tr:last-child td { border-bottom: none; }
@@ -313,12 +313,12 @@ font-size: 0.95em;
 #glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
 #glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
 #glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer th {
-text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04);
+text-align: left; padding: 14px 16px; background: rgba(255,255,255,0.04);
 border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
 font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
 }
 #glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer td {
-padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
 color: rgba(255,255,255,0.8); vertical-align: top;
 }
 #glass-hybrid-faq-template--21873710530813__interior_room_partitions_faq .ghfaq-answer tr:last-child td { border-bottom: none; }
@@ -355,12 +355,12 @@ font-size: 0.95em;
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer li { margin-bottom: 8px; line-height: 1.6; }
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer th {
-text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04);
+text-align: left; padding: 14px 16px; background: rgba(255,255,255,0.04);
 border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9);
 font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
 }
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer td {
-padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
 color: rgba(255,255,255,0.85); vertical-align: top;
 }
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer tr:last-child td { border-bottom: none; }
@@ -397,12 +397,12 @@ font-size: 0.95em;
 #chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
 #chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
 #chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer th {
-text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04);
+text-align: left; padding: 14px 16px; background: rgba(255,255,255,0.04);
 border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9);
 font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
 }
 #chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer td {
-padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
 color: rgba(255,255,255,0.85); vertical-align: top;
 }
 #chinese-faq-template--21873710498045__chinese_faq .cnfaq-answer tr:last-child td { border-bottom: none; }
@@ -439,12 +439,12 @@ font-size: 0.95em;
 #stainless-faq-template--21844035043581__stainless-faq .sfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
 #stainless-faq-template--21844035043581__stainless-faq .sfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
 #stainless-faq-template--21844035043581__stainless-faq .sfaq-answer th {
-text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04);
+text-align: left; padding: 14px 16px; background: rgba(255,255,255,0.04);
 border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9);
 font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
 }
 #stainless-faq-template--21844035043581__stainless-faq .sfaq-answer td {
-padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
 color: rgba(255,255,255,0.85); vertical-align: top;
 }
 #stainless-faq-template--21844035043581__stainless-faq .sfaq-answer tr:last-child td { border-bottom: none; }
@@ -494,7 +494,7 @@ margin: 1.25rem 0; font-size: inherit; scrollbar-width: none;
 #laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer th,
 #laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer td {
 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-padding: 0.85rem 1rem; text-align: left; white-space: nowrap;
+padding: 14px 16px; text-align: left; white-space: nowrap;
 }
 #laser-cut-panels-faq-template--21844033995005__laser-cut-panels-faq .answer th {
 color: #c9a962; font-weight: 700;
@@ -524,12 +524,12 @@ font-size: 0.95em;
 #perforated-faq-template--21844034814205__perforated_faq .ofaq-answer li { margin-bottom: 8px; line-height: 1.6; }
 #perforated-faq-template--21844034814205__perforated_faq .ofaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
 #perforated-faq-template--21844034814205__perforated_faq .ofaq-answer th {
-text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04);
+text-align: left; padding: 14px 16px; background: rgba(255,255,255,0.04);
 border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9);
 font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
 }
 #perforated-faq-template--21844034814205__perforated_faq .ofaq-answer td {
-padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
 color: rgba(255,255,255,0.85); vertical-align: top;
 }
 #perforated-faq-template--21844034814205__perforated_faq .ofaq-answer tr:last-child td { border-bottom: none; }
@@ -566,12 +566,12 @@ font-size: 0.95em;
 #expanded-faq-template--22084675240189__expanded-faq .emfaq-answer li { margin-bottom: 8px; line-height: 1.6; }
 #expanded-faq-template--22084675240189__expanded-faq .emfaq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
 #expanded-faq-template--22084675240189__expanded-faq .emfaq-answer th {
-text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04);
+text-align: left; padding: 14px 16px; background: rgba(255,255,255,0.04);
 border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9);
 font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
 }
 #expanded-faq-template--22084675240189__expanded-faq .emfaq-answer td {
-padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
 color: rgba(255,255,255,0.85); vertical-align: top;
 }
 #expanded-faq-template--22084675240189__expanded-faq .emfaq-answer tr:last-child td { border-bottom: none; }
@@ -598,8 +598,8 @@ font-size: 0.95em;
 #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer ul, #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer ol { margin: 10px 0 14px; padding-left: 20px; }
 #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer li { margin-bottom: 8px; line-height: 1.6; }
 #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: inherit; }
-#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer th { text-align: left; padding: 0.85rem 1rem; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
-#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); vertical-align: top; }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer th { text-align: left; padding: 14px 16px; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+#mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); vertical-align: top; }
 @media (max-width: 749px) { #mfg-faq-template--21844034879741__manufacturing_faq .mfg-faq-answer table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; } }
 html.md-js #faqs-download-template--21844278411517__faqs_download [x-cloak] { display: none !important; }
 #faqs-download-template--21844278411517__faqs_download .fd-answer p { margin: 0 0 1rem; }
@@ -630,7 +630,7 @@ scrollbar-width: none;
 #faqs-download-template--21844278411517__faqs_download .fd-answer th,
 #faqs-download-template--21844278411517__faqs_download .fd-answer td {
 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-padding: 0.85rem 1rem;
+padding: 14px 16px;
 text-align: left;
 white-space: nowrap;
 }

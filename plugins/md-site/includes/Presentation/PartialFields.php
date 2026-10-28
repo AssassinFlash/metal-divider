@@ -302,6 +302,34 @@ final class PartialFields {
 	}
 
 	/**
+	 * A scalar fact about the product this render is drawing.
+	 *
+	 * `[md_if fact="family"]` asks this, and the value shortcode inside that
+	 * row asks the same `PatternFacts` method, so a row is omitted only when
+	 * the text it would print is empty. An unknown name is empty: a typo
+	 * hides the row rather than printing a blank cell.
+	 *
+	 * @param string $name series, family, or best_fit.
+	 * @return string The fact, '' when it is absent or the name is unknown.
+	 */
+	public function fact( string $name ): string {
+		$id = $this->current();
+		if ( $id <= 0 ) {
+			return '';
+		}
+		if ( 'series' === $name ) {
+			return PatternFacts::series( $id );
+		}
+		if ( 'family' === $name ) {
+			return PatternFacts::series_name( $id );
+		}
+		if ( 'best_fit' === $name ) {
+			return PatternFacts::best_fit( $id );
+		}
+		return '';
+	}
+
+	/**
 	 * The newest frame's value for a key.
 	 *
 	 * @param string $key The scope key.

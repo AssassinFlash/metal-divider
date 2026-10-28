@@ -756,8 +756,10 @@ final class Shortcodes {
 	 * from the hub on the next request, with no command and no list to
 	 * maintain.
 	 *
-	 * A term with no `thumbnail_id` renders the empty media box the card
-	 * CSS already styles — no placeholder image, no invented picture.
+	 * A term with no `thumbnail_id` renders no `<img>` — no placeholder
+	 * image, no invented picture. The card's media box still carries the
+	 * series-name fallback its CSS already styles, hidden when an image
+	 * is present.
 	 *
 	 * @param array<string, mixed>|string $atts    Shortcode attributes (unused).
 	 * @param string|null                 $content Enclosed content (unused).

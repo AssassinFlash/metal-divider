@@ -81,6 +81,14 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'id="md-inquiry-source-button" name="md_inquiry_source_button" value="request_quote"', $html );
 		$this->assertStringContainsString( 'name="md_inquiry_name"', $html );
 		$this->assertStringContainsString( 'maxlength="120"', $html );
+		$this->assertStringContainsString( 'name="md_inquiry_phone"', $html );
+		$this->assertStringContainsString( 'maxlength="40"', $html, 'phone is capped at PHONE_MAX, not NAME_MAX' );
+		$this->assertStringContainsString( 'name="md_inquiry_confirm"', $html );
+		$this->assertStringContainsString( 'I confirm this inquiry is for an architectural or commercial project.', $html );
+		$this->assertStringContainsString( '<div class="md-inquiry-notice" role="alert" aria-live="polite"></div>', $html );
+		$this->assertStringContainsString( 'id="md-inquiry-message-hint"', $html );
+		$this->assertStringContainsString( 'aria-describedby="md-inquiry-message-hint"', $html );
+		$this->assertStringContainsString( '%0A', $html, 'the WhatsApp href keeps the encoded line break' );
 		$this->assertStringContainsString( 'name="website"', $html, 'the honeypot' );
 		$this->assertStringContainsString( 'class="md-inquiry-submit"', $html );
 		$this->assertStringContainsString( 'class="md-inquiry-fields"', $html, 'fields scroll independently of the sticky actions' );
@@ -203,6 +211,29 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'class="md-inquiry-pattern__name">Apiary<', $html );
 		$this->assertStringContainsString( 'name="md_inquiry_pattern_slug" value="apiary"', $html );
 		$this->assertStringContainsString( '"module":"pattern-actions"', $html, 'the config JSON carries the source for the behavior file' );
+	}
+
+
+	/**
+	 * Without a pattern the form must not claim one is attached, and the
+	 * inquiry page's source triple is the contact hub, not a pattern action.
+	 */
+	public function test_a_form_without_a_pattern_does_not_claim_one(): void {
+		$config = new Config(
+			array(
+				'MD_INQUIRY_TURNSTILE_SITEKEY' => '',
+				'MD_INQUIRY_TURNSTILE_SECRET'  => '',
+			)
+		);
+		$html   = ( new Form( $config, new Pattern(), new FormState() ) )->render( '', 'inquiry', 'contact-hub', 'send-inquiry' );
+
+		$this->assertStringNotContainsString( 'this pattern', $html );
+		$this->assertStringNotContainsString( 'md-inquiry-pattern', $html );
+		$this->assertStringContainsString( 'pre-filled with your details.', $html );
+		$this->assertStringContainsString( 'value="inquiry"', $html );
+		$this->assertStringContainsString( 'value="contact-hub"', $html );
+		$this->assertStringContainsString( 'value="send-inquiry"', $html );
+		$this->assertStringContainsString( 'inquiry%2Fcontact-hub%2Fwhatsapp', $html );
 	}
 
 	/**

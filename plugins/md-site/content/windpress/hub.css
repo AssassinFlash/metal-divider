@@ -132,6 +132,9 @@ justify-content: center;
 padding: 20px;
 text-align: center;
 }
+#collections-pattern-hub-template--21844031701245__collections-pattern-hub .cph__media:has(img) .cph__media-fallback {
+display: none;
+}
 #collections-pattern-hub-template--21844031701245__collections-pattern-hub .cph__body {
 display: grid;
 gap: 10px;

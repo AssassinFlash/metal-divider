@@ -1,29 +1,32 @@
 <!-- The inquiry face (spec 07 D2, spec 19 §2.2 R2): one page, one
-     step, the site's only form. The form itself is the inquiry
-     plugin's assembly — [md_inquiry_form] renders the prototype's
-     fields (name*, email*, company, message), the Turnstile slot and
-     the WhatsApp switch (ticket #33); this template owns the page
+     step. The form itself is the inquiry plugin's assembly — the
+     md_inquiry_form shortcode renders the fields, the Turnstile slot
+     and the WhatsApp switch (ticket #33); this template owns the page
      around it: the heading, the reply promise and the reassurance
      copy, per the approved prototype docs/prototypes/2026-10-24-inquiry/.
-     Chrome: the site partials. Styles: content/windpress/inquiry.css. -->
+     Chrome: the site partials. Styles: content/windpress/inquiry.css.
+     Keep this comment free of square-bracket shortcode syntax. WordPress
+     expands shortcodes before it treats the comment as a comment, so a
+     bracketed name here renders a second, hidden form and suffixes every
+     id on the visible one. -->
 <section class="md-inquiry" id="md-inquiry">
   <div class="container-narrow">
     <div class="inquiry-head">
       <p class="inquiry-eyebrow">Inquiry</p>
       <h1>Request your quote</h1>
-      <p class="inquiry-lede">One business day, one reply. Tell us what the project needs; the patterns you attach travel with the message.</p>
+      <p class="inquiry-lede">One business day, one reply. Write what the project needs.</p>
     </div>
     <div class="quote-panel" id="quotePanel">
       <div class="quote-inner">
-        [md_inquiry_form]
-        <p class="form-note">Prefer chat? The WhatsApp button in the form opens a message pre-filled with your details and your pattern list — nothing is submitted through this page.</p>
+        [md_inquiry_form source_page="inquiry" source_module="contact-hub" source_button="send-inquiry"]
+        <p class="form-note">Prefer chat? The WhatsApp button in the form opens a message pre-filled with your details. Nothing is submitted through this page.</p>
       </div>
     </div>
     <div class="inquiry-side">
       <div class="inquiry-side-card">
         <h2>What happens next</h2>
         <ol class="inquiry-steps">
-          <li>We read the inquiry and the attached patterns.</li>
+          <li>We read the project details in your inquiry.</li>
           <li>A person replies within one business day — with questions, or with a quote.</li>
           <li>Everything after that happens directly with the team.</li>
         </ol>
@@ -41,7 +44,7 @@
           <li>Opening width, height, and installation zone</li>
           <li>Material and finish target</li>
           <li>Quantity band and target delivery date</li>
-          <li>Drawings or site photos, if you have them</li>
+          <li>Drawings or site photos, sent in reply to the confirmation email</li>
         </ul>
       </div>
     </div>
@@ -78,7 +81,7 @@
       <h2 id="inquiry-faq-title">Questions before you submit a project brief.</h2>
       <p class="inquiry-faq-lede">Use these answers to prepare your files and shorten the quote cycle.</p>
       <div class="inquiry-faq-list">
-        <details class="inquiry-faq-item"><summary>What files should I send first?</summary><p>Drawings, elevations, or clear site photos with the opening dimensions. A material and finish target helps, even if it is only a reference image.</p></details>
+        <details class="inquiry-faq-item"><summary>What files should I send first?</summary><p>Opening dimensions, plus drawings or site photos if you have them. This form does not take a file — reply to the confirmation email and it reaches the same person.</p></details>
         <details class="inquiry-faq-item"><summary>Can I ask for grade and thickness advice if details are not final?</summary><p>Yes. Send the application and the exposure conditions; we come back with the grade and thickness that fit, and say what would change the answer.</p></details>
         <details class="inquiry-faq-item"><summary>Do you support phased shipments for large projects?</summary><p>Yes, when the project breaks into zones or phases. Say which zone is needed first and the site schedule; the quote route follows that.</p></details>
         <details class="inquiry-faq-item"><summary>How fast can I get a first response?</summary><p>Within 24 hours, and often the same day. A brief with dimensions and a finish target gets a substantive reply instead of a question list.</p></details>

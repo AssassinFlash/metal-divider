@@ -102,6 +102,7 @@ final class ValidatorTest extends TestCase {
 				'scope'         => 'Single zone',
 				'route'         => 'Facade screening',
 				'quantity'      => '10-50 sqm',
+				'confirm'       => '1',
 				'message'       => '',
 				'pattern_slug'  => 'apiary',
 				'source_page'   => 'pattern-pdp',
@@ -173,6 +174,45 @@ final class ValidatorTest extends TestCase {
 		$this->assertSame( Validator::NAME_MAX, \strlen( $checked['values']['name'] ) );
 		$this->assertSame( Validator::COMPANY_MAX, \strlen( $checked['values']['company'] ) );
 		$this->assertSame( Validator::MESSAGE_MAX, \strlen( $checked['values']['message'] ) );
+	}
+
+
+	/**
+	 * The confirmation is required. An unchecked box posts nothing, and a
+	 * value other than the checkbox's own "1" is not a confirmation.
+	 */
+	public function test_an_unconfirmed_inquiry_is_an_error(): void {
+		$checked = ( new Validator() )->validate(
+			array(
+				'name'     => 'Jane Chan',
+				'email'    => 'jane@studio.com',
+				'country'  => 'Hong Kong',
+				'scope'    => 'Single zone',
+				'route'    => 'Facade screening',
+				'quantity' => '10-50 sqm',
+				'message'  => 'A brief.',
+				'confirm'  => '',
+			),
+			true
+		);
+
+		$this->assertArrayHasKey( 'confirm', $checked['errors'] );
+		$this->assertSame( '', $checked['values']['confirm'] );
+
+		$tampered = ( new Validator() )->validate(
+			array(
+				'name'     => 'Jane Chan',
+				'email'    => 'jane@studio.com',
+				'country'  => 'Hong Kong',
+				'scope'    => 'Single zone',
+				'route'    => 'Facade screening',
+				'quantity' => '10-50 sqm',
+				'message'  => 'A brief.',
+				'confirm'  => 'on',
+			),
+			true
+		);
+		$this->assertArrayHasKey( 'confirm', $tampered['errors'] );
 	}
 
 	/**

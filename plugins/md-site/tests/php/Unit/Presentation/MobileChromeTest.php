@@ -31,8 +31,8 @@ final class MobileChromeTest extends TestCase {
 		$css    = $this->volume( 'chrome.css' );
 
 		$this->assertStringNotContainsString( 'menu-hamburger-style1-top__brand', $header, 'the drawer must not repeat the header brand' );
-		$this->assertSame( 8, substr_count( $header, "aria-label='Close menu'" ), 'every drawer panel has a close control' );
-		$this->assertSame( 8, substr_count( $header, "class='md-drawer-cta'" ), 'every drawer panel keeps the quote that left the top bar' );
+		$this->assertSame( 5, substr_count( $header, "aria-label='Close menu'" ), 'the drawer and its four submenus each have a close control' );
+		$this->assertSame( 5, substr_count( $header, "class='md-drawer-cta'" ), 'every drawer panel keeps the quote that left the top bar' );
 		$this->assertStringContainsString( "href='#open-quote'", $header );
 		$this->assertStringContainsString( "data-quote-source='mobile-drawer'", $header );
 		$this->assertStringContainsString( 'width: 100%', $css, 'the drawer content is full width' );
@@ -40,6 +40,32 @@ final class MobileChromeTest extends TestCase {
 		$this->assertStringContainsString( '.xo-header-actions > .xo-btn-quote', $css, 'the top-bar quote is the one the mobile rule hides' );
 		$this->assertStringContainsString( 'display: none', $css );
 		$this->assertStringContainsString( 'class="xo-btn-quote"', $header, 'desktop still has the quote in the actions row' );
+		$this->assertStringNotContainsString( '/project-gallery/', $header, 'gallery stays in the footer, not the main nav' );
+		$this->assertStringContainsString( "href='/collections/'", $header );
+		$this->assertStringContainsString( '>Inquiry<', $header );
+	}
+
+	/**
+	 * The search sheet is a dark panel under the header, not a full-viewport
+	 * white card, and the quote dialog scrolls its fields instead of pinning
+	 * the buttons over them.
+	 */
+	public function test_search_and_quote_sheets_do_not_cover_their_own_content(): void {
+		$header = $this->template( 'partials/header.html' );
+		$css    = $this->volume( 'chrome.css' );
+		$js     = (string) file_get_contents( dirname( __DIR__, 4 ) . '/assets/js/md-chrome.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+		$this->assertStringNotContainsString( 'data-locales', $header );
+		$this->assertStringContainsString( '[md_partial name="search-series-tile"]', $header );
+		$this->assertStringContainsString( 'id=\'md-search-hit\'', $header );
+		$this->assertStringNotContainsString( "min-height: 100dvh;\n    margin: 0;\n    padding: 80px 20px 24px;", $css );
+		$this->assertStringContainsString( 'max-height:calc(100dvh - var(--md-header-h, 113px) - 24px)', $css );
+		$this->assertStringContainsString( 'background:#141414', $css );
+		$this->assertStringContainsString( '.md-quote-modal__card .md-inquiry-fields{', $css );
+		$this->assertStringContainsString( 'position: static;', $css );
+		$this->assertStringContainsString( '/wp-json/wc/store/v1/products?per_page=6', $js );
+		$this->assertStringNotContainsString( '/wp-json/wp/v2/product', $js );
+		$this->assertStringContainsString( "panel.classList.contains('xo-menu-hamburger-style1__mega-menu')", $js );
 	}
 
 	/**
@@ -386,18 +412,28 @@ final class MobileChromeTest extends TestCase {
 	 * line, and one manufacturing paragraph measured 1,320px at 14px — around
 	 * 189 characters. A line that long loses the reader.
 	 *
-	 * The cap has to state the property that wins: a Tailwind utility sits in
-	 * the utilities layer and outranks anything this volume writes from
-	 * `components`, so the first attempt (`max-width: 40em` alone) changed
-	 * nothing and only the measurement revealed it.
+	 * The first attempt wrote `max-width: 40em !important` on `main p`, and the
+	 * measurement showed the opposite failure: `!important` from `components`
+	 * outranks the utility layer, so it *replaced* every template cap instead of
+	 * deferring to the smaller one. Copy landed at exactly 40em — 640px at 16px,
+	 * 44% of a 1440 viewport — and the hero's `max-w-[620px]` lede was stretched
+	 * to 720px. The measure must therefore cap only what has no cap of its own,
+	 * and must not use `!important`, which is what this asserts.
 	 */
 	public function test_body_copy_keeps_a_readable_measure(): void {
 		$css = (string) file_get_contents( $this->volume_dir() . '/base.css' ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
+		$css = (string) preg_replace( '/\/\*.*?\*\//s', '', $css );
+
+		$this->assertDoesNotMatchRegularExpression(
+			'/max-width:\s*[\d.]+(?:em|px)\s*!important/',
+			$css,
+			'a body-copy cap must not use !important: it outranks the utility layer and replaces every template cap instead of deferring to the narrower one'
+		);
 
 		$this->assertMatchesRegularExpression(
-			'/main p\[class\*="max-w-"\][^{]*\{[^}]*max-width:\s*40em\s*!important/s',
+			'/main p:not\(\[class\*="max-w-"\]\)[^{]*\{[^}]*max-width:\s*\d+px/s',
 			$css,
-			'body copy needs a measure cap that outranks the utility layer'
+			'uncapped body copy needs an explicit pixel measure, since a narrow parent container alone lets a 14px paragraph run 1,320px wide'
 		);
 	}
 
@@ -612,8 +648,8 @@ final class MobileChromeTest extends TestCase {
 			dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../assets/js/md-chrome.js'
 		);
 
-		$this->assertStringContainsString( '/wp-json/wp/v2/product', $script, 'suggestions come from the same collection the catalog reads' );
-		$this->assertStringContainsString( 'xo-predictive-search__hit', $script, 'the result region is filled, not merely revealed' );
+		$this->assertStringContainsString( '/wp-json/wc/store/v1/products', $script, 'suggestions come from the Woo catalogue, with images' );
+		$this->assertStringContainsString( 'md-search-hit', $script, 'the result region is filled from the hit template, not merely revealed' );
 		$this->assertStringContainsString( 'AbortController', $script, 'a superseded query is cancelled instead of racing the newer one' );
 		$this->assertStringContainsString( "'[data-predictive-search-result=\"'", $script, 'the region is looked up by the name the markup carries' );
 	}

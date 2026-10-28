@@ -83,7 +83,7 @@ class="xo-container--box"
     <div class="pdp-container pdp-hero-inner">
       <div class="pdp-hero-grid-cols">
         <div class="pdp-hero-text gs-reveal">
-          <span class="pdp-eyebrow">[lc_wp_func func="md_pdp_style"] pattern</span>
+          [lc_if condition="md_pdp_has_style"]<span class="pdp-eyebrow">[lc_wp_func func="md_pdp_style"] pattern</span>[/lc_if]
           <h1>
             [lc_wc_product get="sku"]
             <span class="pdp-h1-sub">Architectural Metal Screen Pattern</span>
@@ -174,6 +174,7 @@ class="xo-container--box"
 
   
   
+  [lc_if condition="md_pdp_has_related"]
     <section class="pdp-panel" id="related">
       <div class="pdp-container">
         <div class="pdp-related-head gs-reveal">
@@ -181,7 +182,9 @@ class="xo-container--box"
           <a href="/shop/" class="pdp-textlink">View the full catalog</a>
         </div>
         <div class="pdp-related-grid">[md_pdp_related]</div>
+      </div>
     </section>
+  [/lc_if]
   
 
   

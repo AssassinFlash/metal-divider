@@ -86,7 +86,7 @@ final class Partials {
 	public const EACH = 'md_each';
 
 	/**
-	 * The enclosing conditional (`[md_if items="…"] … [/md_if]`).
+	 * The enclosing conditional (`[md_if items="…"]` or `[md_if fact="…"]`).
 	 */
 	public const IF = 'md_if';
 
@@ -240,7 +240,8 @@ final class Partials {
 
 	/**
 	 * `[md_if items="gallery"] … [/md_if]`: the enclosed markup only when the
-	 * scope list is non-empty.
+	 * scope list is non-empty. `[md_if fact="family"] … [/md_if]`: the enclosed
+	 * markup only when that scalar fact is non-empty.
 	 *
 	 * The wrapper a loop needs and a partial cannot express: the tile's thumb
 	 * strip is a two-slot frame, and the converted markup printed no frame at
@@ -248,12 +249,33 @@ final class Partials {
 	 * empty grid with its gap. Asking the same list the loop walks means the
 	 * frame and its items can never disagree.
 	 *
-	 * @param array<string, mixed>|string $atts    Shortcode attributes: items (required).
+	 * A scalar fact is the same question for a single value: the catalog card's
+	 * Family row prints `[md_pattern_family]`, and an empty family is a padded
+	 * blank cell. `fact` asks `PartialFields::fact()`, which reads the same
+	 * `PatternFacts` method the value shortcode prints, so the row and its
+	 * text can never disagree. An unknown fact name is empty, and the row is
+	 * left out.
+	 *
+	 * @param array<string, mixed>|string $atts    Shortcode attributes: items, or fact.
 	 * @param string|null                 $content The enclosed markup.
-	 * @return string The content, or '' when the list is empty.
+	 * @return string The content, or '' when the list or the fact is empty.
 	 */
 	public function if_items( $atts = array(), ?string $content = null ): string {
-		$atts  = \shortcode_atts( array( 'items' => '' ), (array) $atts, self::IF );
+		$atts = \shortcode_atts(
+			array(
+				'items' => '',
+				'fact'  => '',
+			),
+			(array) $atts,
+			self::IF
+		);
+		$fact = (string) $atts['fact'];
+		if ( '' !== $fact ) {
+			if ( '' === $this->fields->fact( $fact ) ) {
+				return '';
+			}
+			return \do_shortcode( (string) $content );
+		}
 		$items = $this->fields->items( (string) $atts['items'] );
 		if ( array() === $items ) {
 			return '';

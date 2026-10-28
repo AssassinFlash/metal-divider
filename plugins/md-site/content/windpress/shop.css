@@ -47,7 +47,7 @@ font-family: "Playfair Display", serif;
 font-size: clamp(34px, 4.6vw, 62px);
 font-weight: 700;
 letter-spacing: 0;
-line-height: 1.05;
+line-height: 1.2;
 margin: 0;
 max-width: 860px;
 text-wrap: balance;
@@ -172,7 +172,7 @@ color: #ffffff;
 font-family: "Playfair Display", serif;
 font-size: clamp(26px, 3.2vw, 42px);
 font-weight: 700;
-line-height: 1.08;
+line-height: 1.2;
 margin: 0;
 text-wrap: balance;
 }
@@ -377,7 +377,7 @@ font-family: "Playfair Display", serif;
 font-size: clamp(34px, 4.8vw, 66px);
 font-weight: 700;
 letter-spacing: 0;
-line-height: 1.05;
+line-height: 1.2;
 margin: 0;
 text-wrap: balance;
 }
@@ -495,7 +495,7 @@ color: #ffffff;
 font-family: "Playfair Display", serif;
 font-size: clamp(28px, 3.6vw, 48px);
 font-weight: 700;
-line-height: 1.06;
+line-height: 1.2;
 margin: 0;
 text-wrap: balance;
 }

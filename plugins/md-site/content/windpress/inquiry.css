@@ -14,7 +14,7 @@
   padding: 56px 0 88px;
 }
 .md-inquiry .container-narrow {
-  max-width: 1040px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -54,6 +54,16 @@
 }
 .quote-inner { padding: 28px; }
 @media (min-width: 750px) { .quote-inner { padding: 40px; } }
+
+/* The page section (#md-inquiry) and the form Form.php prints both carry
+   .md-inquiry. The page frame's padding must not also apply inside
+   .quote-inner, or the card gains 56px above the first field and 88px
+   under the submit button. The modal clears the same frame in chrome.css;
+   this is the page's own id, so the modal rule is left alone. */
+#md-inquiry .quote-inner .md-inquiry {
+  background: none;
+  padding: 0;
+}
 
 /* --- the form's semantic classes (the plugin renders them; the volume
        styles them — AGENTS.md: plugins carry zero CSS). Selectors follow
@@ -204,6 +214,40 @@
   border: 1px solid rgba(224, 139, 139, 0.4);
   color: #f0b4b4;
 }
+/* The notice is always in the markup so a failure has a live region.
+   Empty, it must not add a padded band above the first field. */
+.md-inquiry .md-inquiry-notice:empty {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.md-inquiry .md-inquiry-confirm {
+  align-items: flex-start;
+  color: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  font-weight: 400;
+  gap: 12px;
+  line-height: 1.5;
+  min-height: 44px;
+}
+.md-inquiry .md-inquiry-confirm__input {
+  accent-color: var(--md-gold, #c9a962);
+  flex: 0 0 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  width: 20px;
+}
+.md-inquiry .md-inquiry-confirm__input:focus-visible,
+.md-inquiry .md-inquiry-field--invalid .md-inquiry-confirm__input {
+  outline: 2px solid var(--md-gold, #c9a962);
+  outline-offset: 2px;
+}
+.md-inquiry .md-inquiry-field--invalid .md-inquiry-confirm__input {
+  outline-color: #e08b8b;
+}
 .md-inquiry .md-inquiry-pattern {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
@@ -242,6 +286,14 @@
 }
 @media (min-width: 750px) {
   .md-inquiry .inquiry-side { grid-template-columns: 1fr 1fr; }
+  /* Three cards in two columns leave the third alone and an empty cell
+     beside it (one column, about 470px inside the old 1040px container).
+     Span the last card until the row is wide enough for three. */
+  .md-inquiry .inquiry-side-card:last-child { grid-column: 1 / -1; }
+}
+@media (min-width: 1024px) {
+  .md-inquiry .inquiry-side { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .md-inquiry .inquiry-side-card:last-child { grid-column: auto; }
 }
 .md-inquiry .inquiry-side-card {
   background: rgba(255, 255, 255, 0.03);
@@ -285,7 +337,10 @@
   font-weight: 400;
 }
 @media (max-width: 640px) {
-  .md-inquiry {
+  /* Page frame only. The nested form also carries .md-inquiry; giving
+     every one of them this padding put a second 88px band under the
+     submit button. #md-inquiry is the page section's id. */
+  #md-inquiry {
     padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
   .md-inquiry .container-narrow {

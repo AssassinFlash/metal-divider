@@ -80,14 +80,11 @@ final class Validator {
 	);
 
 	/**
-	 * Estimated quantity, from the old contact form's own select.
+	 * Quantity bands the form requires before a quote can be priced.
 	 *
-	 * The old shop asked this of every visitor and required it; the rebuild
-	 * dropped it while adding scope and route. Volume decides the price band and
-	 * whether the job is a sample or a production run, so a quote cannot be
-	 * prepared without it — the sales inbox was receiving briefs it had to
-	 * answer with a follow-up question. The bands are the old page's wording
-	 * (data/shopify-public/pages-content.md, the contact form block).
+	 * Volume decides the price band and whether the job is a sample or a
+	 * production run. The list is the contract the select and this validator
+	 * share. It is not a record of a control on the old contact page.
 	 *
 	 * @var list<string>
 	 */
@@ -152,6 +149,7 @@ final class Validator {
 			'scope'         => $this->choice( $input, 'scope', self::SCOPES ),
 			'route'         => $this->choice( $input, 'route', self::ROUTES ),
 			'quantity'      => $this->choice( $input, 'quantity', self::QUANTITIES ),
+			'confirm'       => '1' === $this->text( $input, 'confirm', 8 ) ? '1' : '',
 			'message'       => $this->text( $input, 'message', self::MESSAGE_MAX ),
 			'pattern_slug'  => $this->slug( $input ),
 			'source_page'   => self::source_token( (string) ( $input['source_page'] ?? '' ) ),
@@ -177,6 +175,9 @@ final class Validator {
 		}
 		if ( '' === $values['quantity'] ) {
 			$errors['quantity'] = __( 'Please choose a quantity range.', 'md-inquiry' );
+		}
+		if ( '1' !== $values['confirm'] ) {
+			$errors['confirm'] = __( 'Please confirm this inquiry is for an architectural or commercial project.', 'md-inquiry' );
 		}
 		if ( '' === $values['message'] && ! $has_pattern ) {
 			$errors['message'] = __( 'Please add a short message.', 'md-inquiry' );

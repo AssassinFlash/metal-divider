@@ -240,8 +240,11 @@ final class LandingControlsTest extends TestCase {
 			$this->assertStringContainsString( 'function ' . $pass . '(', $source, $pass . ' is defined' );
 		}
 
-		foreach ( array( 'data-app-lightbox', 'data-mobile-thumb', 'data-section-modal-close', 'data-mobile-menu-close', 'id="landing-nav"', 'id="mobile-toggle"' ) as $hook ) {
+		foreach ( array( 'data-app-lightbox', 'data-mobile-thumb', 'data-section-modal-close' ) as $hook ) {
 			$this->assertStringContainsString( $hook, $html, 'the markup carries ' . $hook );
+		}
+		foreach ( array( 'id="landing-nav"', 'id="mobile-toggle"', 'data-mobile-menu-close', 'STEEL SCREENS' ) as $gone ) {
+			$this->assertStringNotContainsString( $gone, $html, 'the second brand nav is gone: ' . $gone );
 		}
 	}
 
@@ -256,8 +259,8 @@ final class LandingControlsTest extends TestCase {
 	public function test_get_quote_uses_the_shared_quote_channel(): void {
 		$html = $this->markup( 'custom-screens' );
 
-		$this->assertStringContainsString( 'data-quote-source="header-landing"', $html, 'the desktop button names its source' );
-		$this->assertStringContainsString( 'data-quote-source="header-landing-mobile"', $html, 'and the mobile one' );
+		$this->assertStringContainsString( 'data-quote-source="hero-landing"', $html, 'the hero button names its source' );
+		$this->assertStringNotContainsString( 'header-landing', $html, 'the second nav no longer carries its own quote button' );
 		$this->assertStringContainsString( 'x-data="quoteModal()"', $html, 'the face carries the shared quote component' );
 		$this->assertStringContainsString( 'aria-haspopup="dialog"', $html, 'the buttons announce that they open a dialog' );
 	}
@@ -332,39 +335,32 @@ final class LandingControlsTest extends TestCase {
 	}
 
 	/**
-	 * The mobile menu states its state and takes a closed drawer out of reach.
+	 * The page no longer carries a second brand nav or its drawer.
+	 *
+	 * `setupLandingNav()` still runs — the shared runtime is not this face's
+	 * to delete — and returns immediately when #landing-nav is absent, so a
+	 * missing bar cannot throw.
 	 */
-	public function test_the_mobile_menu_states_and_hides_its_drawer(): void {
+	public function test_the_second_brand_nav_is_gone_and_the_runtime_no_ops(): void {
 		$html = $this->markup( 'custom-screens' );
 		$body = $this->pass( 'setupLandingNav' );
 
-		$this->assertStringContainsString( 'id="mobile-toggle"', $html, 'the toggle exists' );
-		$this->assertStringContainsString( 'aria-expanded="false"', $html, 'and ships collapsed' );
-		$this->assertStringContainsString( 'aria-controls="mobile-menu-drawer"', $html, 'and names what it controls' );
-
-		$this->assertStringContainsString( "setAttribute('aria-expanded'", $body, 'the toggle states the drawer' );
-		$this->assertStringContainsString( "drawer.setAttribute('inert', '')", $body, 'a closed drawer is inert' );
-		$this->assertStringContainsString( "removeAttribute('inert')", $body, 'an open one is not' );
-		$this->assertStringContainsString( "event.key === 'Escape'", $body, 'Escape closes it' );
+		$this->assertStringNotContainsString( 'id="landing-nav"', $html );
+		$this->assertStringNotContainsString( 'id="mobile-toggle"', $html );
+		$this->assertStringNotContainsString( 'id="mobile-menu-drawer"', $html );
+		$this->assertStringContainsString( 'class="page-jumps"', $html, 'section jumps stay in the page, not in a fixed bar' );
+		$this->assertStringContainsString( 'if (!nav)', $body, 'the pass returns when the second nav is absent' );
 	}
 
 	/**
-	 * The landing nav clears the site's sticky header.
-	 *
-	 * Both boxes are fixed to the top of the viewport: the site header at
-	 * z-index 100 and this nav at 40. Without an offset they occupy the same
-	 * pixels and the header wins, so the face's own navigation disappeared
-	 * under it.
+	 * The stylesheet no longer positions a second fixed nav under the header.
 	 */
-	public function test_the_landing_nav_clears_the_sticky_header(): void {
-		$body = $this->pass( 'setupLandingNav' );
-		$css  = $this->volume( 'custom-screens.css' );
+	public function test_the_second_nav_offset_is_not_in_the_stylesheet(): void {
+		$css = $this->volume( 'custom-screens.css' );
 
-		$this->assertStringContainsString( '--landing-nav-offset', $body, 'the runtime measures the band' );
-		$this->assertStringContainsString( 'header#lc-header', $body, 'from the site header itself' );
-		$this->assertStringContainsString( 'var(--landing-nav-offset', $css, 'and the stylesheet consumes it' );
-		// Both the floating and the locked states have to clear the band.
-		$this->assertSame( 2, substr_count( $css, 'var(--landing-nav-offset' ), 'the floating and scrolled states both use the offset' );
+		$this->assertStringNotContainsString( '#landing-nav', $css );
+		$this->assertStringNotContainsString( '--landing-nav-offset', $css );
+		$this->assertStringContainsString( '.page-jumps', $css, 'the in-page jump list has its own rule' );
 	}
 
 	/**

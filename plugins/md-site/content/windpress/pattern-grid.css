@@ -130,7 +130,7 @@ font-family: "Playfair Display", serif;
 font-size: clamp(34px, 4vw, 56px);
 font-weight: 700;
 letter-spacing: 0;
-line-height: 1.05;
+line-height: 1.2;
 margin: 0;
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__intro {
@@ -327,7 +327,7 @@ width: 100%;
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__body {
 display: grid;
-gap: 14px;
+gap: 16px;
 padding: 14px;
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-card__specs {
@@ -461,7 +461,7 @@ color: #ffffff;
 font-family: "Playfair Display", serif;
 font-size: clamp(24px, 3vw, 34px);
 font-weight: 700;
-line-height: 1.12;
+line-height: 1.2;
 margin: 0;
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__cluster-copy {
@@ -503,7 +503,7 @@ display: none;
 padding: 72px 40px 112px;
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__container {
-grid-template-columns: 280px minmax(0, 1fr);
+grid-template-columns: 240px minmax(0, 1fr);
 }
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sidebar {
 position: sticky;
@@ -518,21 +518,24 @@ grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
    the size of a card) even though the loop had printed 24 cards. 1fr fills
    the row, so a row with patterns has no empty track.
 
-   The 300px floor is measured, not chosen: at a 1384px viewport the sidebar
-   takes 280px and the 32px gap takes 32, leaving the grid 977px. With a
-   320 floor that fits two tracks of 476px — cards so large that a whole
-   catalogue row shows two patterns, which is the "viewing area too narrow"
-   the owner reported. At 300 it fits three tracks of 310px, and the same
-   floor still yields four at 1400px and more above the 1600 breakpoint. */
+   The column was narrow because of the sidebar, not the card floor.
+   At 1440 the section pads 40px a side, so the container is
+   min(1360px, 1400px) = 1360px. A 280px sidebar plus the 32px gap left
+   the pattern column 1048px (72.8% of the viewport). At 240px the
+   column is 1088px (75.6%), three tracks of 347px. The old 320px floor
+   on a 977px column fit only two tracks of 476px — the "viewing area
+   too narrow" the owner reported — and lowering the floor did not
+   widen the column. */
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__products {
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 gap: 24px;
 }
 }
-/* The 1400px cap kept the content well at three columns on a wide monitor
-   (1088px beside the sidebar). Opening it lets the same 320px minimum
-   land on five filling columns around 2256px — (1864 + 24) / 344 = 5 —
-   instead of three cards and a blank. */
+/* Beside a 240px sidebar the 1400px container cap leaves a 1128px
+   column (1400 - 240 - 32). Above 1600px the cap opens to 2200px. A
+   2256px viewport pads 40px a side, so the container is 2176px and the
+   column is 1904px: (1904 + 24) / 324 = 5 filling tracks at the 300px
+   floor, instead of three cards and a blank. */
 @media (min-width: 1600px) {
 #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__container {
 width: min(100%, 2200px);

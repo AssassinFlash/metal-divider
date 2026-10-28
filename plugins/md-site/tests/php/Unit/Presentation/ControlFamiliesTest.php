@@ -390,7 +390,14 @@ final class ControlFamiliesTest extends TestCase {
 
 		$this->assertStringContainsString( "input.value = ''", $body, 'the reset clears the query' );
 		$this->assertStringContainsString( 'input.focus()', $body, 'focus returns to the field' );
-		$this->assertStringContainsString( 'results.innerHTML', $body, 'the result region is emptied' );
+		// The outcome is an empty result region; `innerHTML = ''` and
+		// `textContent = ''` both remove every child, and the latter cannot
+		// create nodes, so the assertion names the effect, not one spelling.
+		$this->assertMatchesRegularExpression(
+			'/results\.(?:innerHTML|textContent)\s*=\s*\'\'/',
+			$body,
+			'the result region is emptied'
+		);
 	}
 
 	/**

@@ -99,4 +99,26 @@ final class TemplateFunctionsTest extends TestCase {
 
 		$this->assertFalse( \md_pdp_slot_has_image( 'plate' ) );
 	}
+
+	/**
+	 * The related-section guard is global, like the other [lc_if] predicates,
+	 * and false outside a product so the heading is not printed on other faces.
+	 */
+	public function test_the_related_predicate_is_false_outside_a_product(): void {
+		$this->assertTrue( function_exists( 'md_pdp_has_related' ) );
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( null );
+
+		$this->assertFalse( \md_pdp_has_related() );
+	}
+
+	/**
+	 * The eyebrow guard is global, and false when there is no series word
+	 * to lead the word "pattern".
+	 */
+	public function test_the_style_predicate_is_false_outside_a_product(): void {
+		$this->assertTrue( function_exists( 'md_pdp_has_style' ) );
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( null );
+
+		$this->assertFalse( \md_pdp_has_style() );
+	}
 }

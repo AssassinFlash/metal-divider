@@ -1017,6 +1017,12 @@
     });
 
     each(document.querySelectorAll('xo-mega-menu'), function (panel) {
+      // The drawer lists the same destinations as text links. Cloning the
+      // desktop image grid into it hid those links (the sibling rule in
+      // chrome.css) and left leaf items pointing at an empty modal.
+      if (panel.classList.contains('xo-menu-hamburger-style1__mega-menu')) {
+        return;
+      }
       if (panel.children.length) {
         return;
       }
@@ -1129,6 +1135,20 @@
         closeAll(panel);
         setOpen(true);
       });
+      // A coarse pointer synthesises mouseenter and then still follows the
+      // parent link. Toggle the panel instead of navigating; the hub link
+      // inside the panel is how that pointer reaches the parent page.
+      if (link && link.tagName === 'A') {
+        link.addEventListener('click', function (event) {
+          if (!window.matchMedia('(hover: none), (pointer: coarse)').matches) {
+            return;
+          }
+          event.preventDefault();
+          var open = !item.classList.contains('md-mega-open');
+          closeAll(open ? panel : null);
+          setOpen(open);
+        });
+      }
       item.addEventListener('focusout', function (event) {
         if (!item.contains(event.relatedTarget)) {
           setOpen(false);
@@ -1149,6 +1169,44 @@
           setOpen(false);
           closeAll(null);
         }
+      });
+    });
+
+    // Every top-level item closes a panel it does not own. The loop above
+    // only listens on items whose mega menu already has children, so moving
+    // onto Patterns, About, or Inquiry left the previous panel open.
+    // Resources keeps its own CSS :hover menu; this only clears the mega panel.
+    each(document.querySelectorAll('nav.xo-header-nav > ul > li'), function (item) {
+      item.addEventListener('mouseenter', function () {
+        if (!item.classList.contains('md-mega-open')) {
+          closeAll(null);
+        }
+      });
+    });
+
+    // A text submenu with no image panel (Patterns) is hover-only too. On a
+    // coarse pointer the click toggles the same disclosure class Resources
+    // uses, and the first row of the submenu is the hub link.
+    var coarseNav = window.matchMedia('(hover: none), (pointer: coarse)');
+    each(document.querySelectorAll('nav.xo-header-nav > ul > li'), function (item) {
+      var parentLink = item.querySelector('.xo-menu-horizontal-v1__link');
+      var submenu = item.querySelector('.xo-menu-horizontal-v1__sub-menu');
+      var mega = item.querySelector('.xo-menu-horizontal-v1__mega-menu');
+      if (!parentLink || parentLink.tagName !== 'A' || !submenu) {
+        return;
+      }
+      if (mega && mega.firstElementChild) {
+        return;
+      }
+      parentLink.addEventListener('click', function (event) {
+        if (!coarseNav.matches) {
+          return;
+        }
+        event.preventDefault();
+        closeAll(null);
+        var open = !item.classList.contains('is-disclosure-open');
+        item.classList.toggle('is-disclosure-open', open);
+        parentLink.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
     });
 
@@ -3059,17 +3117,11 @@
     window.setTimeout(step, 16);
   }
 
-  // The header's predictive search: a text field, a clear control and a result
-  // container. The field is a real form input, so submitting works; the reset
-  // clears the query and the result region.
-  //
-  // The result region used to be revealed on every keystroke and never
-  // filled — a promise of suggestions that always came back empty (measured
-  // 2026-10-27: typing "leaf" opened a zero-height box, zero requests). It now
-  // asks this site's own REST collection: `/wp-json/wp/v2/product?search=`,
-  // which is the same corpus the catalog reads, so a suggestion can never
-  // name a pattern the catalog does not have. One request per settled query,
-  // cancelled when a newer one supersedes it.
+  // The header's predictive search. Empty state lists the nine product_cat
+  // series from the Woo Store API. A query lists up to six pattern tiles from
+  // the same API. Both faces clone a template already in the header — the
+  // series tile is the search-series-tile partial — so this function fills
+  // values and never assembles card markup.
   function setupPredictiveSearchReset() {
     each(document.querySelectorAll('[data-predictive-search-input]'), function (input) {
       var name = input.getAttribute('data-predictive-search-input');
@@ -3079,28 +3131,58 @@
         return;
       }
 
-      // The template already carries its own vocabulary on `data-locales`
-      // (pages/collections/products/articles), put there by the conversion.
-      // Reading it beat adding a fourth hard-coded string set to this file.
-      var locales = {};
-      var scope = document.querySelector('.xo-predictive-search[data-locales]');
-      if (scope) {
-        try {
-          locales = JSON.parse(scope.getAttribute('data-locales')) || {};
-        } catch (error) {
-          locales = {};
-        }
-      }
+      var series = document.querySelector('[data-md-search-series]');
+      var seriesTemplate = document.getElementById('md-search-series-tile');
+      var hitTemplate = document.getElementById('md-search-hit');
+      var seeAll = document.querySelector('[data-md-search-all]');
+      var emptyNote = document.querySelector('[data-md-search-empty]');
+      var emptyQuery = document.querySelector('[data-md-search-empty-query]');
+      var prompt = document.querySelector('[data-md-search-prompt]');
       var timer = null;
       var inflight = null;
-      var empty = false;
+      var seriesLoaded = false;
+
+      var decodeText = function (value) {
+        var box = document.createElement('textarea');
+        box.innerHTML = value || '';
+        return box.value;
+      };
+
+      var fillTile = function (node, href, src, alt, label) {
+        var link = node.querySelector('a') || (node.tagName === 'A' ? node : null);
+        var image = node.querySelector('img');
+        var name = node.querySelector('.md-search-tile__name, .md-search-hit__name');
+        if (link && href) {
+          link.href = href;
+        }
+        if (image && src) {
+          image.src = src;
+          image.alt = alt || '';
+        }
+        if (name) {
+          name.textContent = decodeText(label);
+        }
+      };
 
       var sync = function () {
-        // The clear control only exists while there is something to clear.
         var hasValue = !!(input.value || '').trim();
         reset.hidden = !hasValue;
+        if (series) {
+          series.hidden = hasValue;
+        }
+        if (prompt) {
+          prompt.hidden = hasValue;
+        }
         if (results) {
           results.hidden = !hasValue;
+        }
+        if (!hasValue) {
+          if (seeAll) {
+            seeAll.hidden = true;
+          }
+          if (emptyNote) {
+            emptyNote.hidden = true;
+          }
         }
       };
 
@@ -3110,14 +3192,15 @@
           inflight = null;
         }
         if (!query) {
-          results.innerHTML = '';
-          empty = false;
+          if (results) {
+            results.textContent = '';
+          }
           return;
         }
 
         var controller = typeof AbortController === 'function' ? new AbortController() : null;
         inflight = controller;
-        var url = '/wp-json/wp/v2/product?per_page=5&_fields=title,link,slug&search=' + encodeURIComponent(query);
+        var url = '/wp-json/wc/store/v1/products?per_page=6&search=' + encodeURIComponent(query);
 
         fetch(url, controller ? { signal: controller.signal } : undefined)
           .then(function (response) {
@@ -3143,66 +3226,104 @@
             }
             if (inflight === controller) {
               inflight = null;
-              results.innerHTML = '';
-              empty = false;
+              if (results) {
+                results.textContent = '';
+              }
             }
           });
       };
 
       var paint = function (rows, query) {
-        results.innerHTML = '';
-
-        if (!rows || !rows.length) {
-          if (!empty) {
-            empty = true;
-            var none = document.createElement('p');
-            none.className = 'xo-predictive-search__empty';
-            none.textContent = (locales.empty || 'No patterns match') + ' "' + query + '".';
-            results.appendChild(none);
+        if (results) {
+          results.textContent = '';
+        }
+        if (seeAll) {
+          seeAll.href = '/shop/?pattern_search=' + encodeURIComponent(query);
+          seeAll.hidden = false;
+        }
+        if (!rows || !rows.length || !hitTemplate || !hitTemplate.content) {
+          if (emptyNote) {
+            emptyNote.hidden = false;
+          }
+          if (emptyQuery) {
+            emptyQuery.textContent = '"' + query + '"';
           }
           return;
         }
+        if (emptyNote) {
+          emptyNote.hidden = true;
+        }
 
-        empty = false;
-
-        // WordPress ranks search hits by relevance across every field, so a
-        // pattern whose body happens to mention the word can outrank one named
-        // after it — typing "leaf" put three content matches above Leaf Vines
-        // (measured 2026-10-27). A suggestion row is read as a title, so the
-        // rows whose title carries the query lead; the rest keep their order.
+        // Store API already ranked "leaf" with Leaf Vines first. Keep a
+        // name-first sort so a body mention cannot outrank a pattern named
+        // for the query inside the six rows this panel shows.
         var needle = query.toLowerCase();
         var score = function (row) {
-          var title = (row.title && row.title.rendered ? row.title.rendered : row.slug).toLowerCase();
-          var head = title.split('|')[0];
-          if (head.indexOf(needle) === 0) {
+          var title = (row.name || row.slug || '').toLowerCase();
+          if (title.indexOf(needle) === 0) {
             return 0;
           }
-          return head.indexOf(needle) === -1 ? 2 : 1;
+          return title.indexOf(needle) === -1 ? 2 : 1;
         };
-        var ranked = rows.slice().sort(function (a, b) {
+        rows.slice().sort(function (a, b) {
           return score(a) - score(b);
+        }).slice(0, 6).forEach(function (row) {
+          var node = hitTemplate.content.firstElementChild.cloneNode(true);
+          var image = row.images && row.images[0] ? row.images[0] : {};
+          fillTile(node, row.permalink, image.thumbnail || image.src, image.alt || row.name, row.name || row.slug);
+          results.appendChild(node);
         });
+      };
 
-        var list = document.createElement('ul');
-        list.className = 'xo-predictive-search__list';
-
-        ranked.forEach(function (row) {
-          var item = document.createElement('li');
-          var link = document.createElement('a');
-          link.className = 'xo-predictive-search__hit';
-          link.href = row.link;
-          // The stored title is an SEO title: "Leaf Vines Laser Cut |
-          // Architectural Metal Screen Pattern". The suffix repeats on every
-          // row and spends the width a suggestion needs on its own words, so
-          // the row shows the part before the first pipe. The full title is
-          // still what the destination page announces.
-          var title = row.title && row.title.rendered ? row.title.rendered : row.slug;
-          link.textContent = title.split('|')[0].replace(/\s+$/, '');
-          item.appendChild(link);
-          list.appendChild(item);
-        });
-
-        results.appendChild(list);
+      var loadSeries = function () {
+        if (seriesLoaded || !series || !seriesTemplate || !seriesTemplate.content) {
+          return;
+        }
+        seriesLoaded = true;
+        fetch('/wp-json/wc/store/v1/products/categories?per_page=20')
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error('series ' + response.status);
+            }
+            return response.json();
+          })
+          .then(function (rows) {
+            var order = [
+              'pattern-perforated',
+              'pattern-geometric',
+              'pattern-gradient',
+              'pattern-abstract',
+              'pattern-organic',
+              'pattern-landscape',
+              'pattern-vintage-retro',
+              'pattern-asian',
+              'pattern-moroccan-arabic'
+            ];
+            var tiles = (rows || []).filter(function (row) {
+              return row && row.slug && row.slug.indexOf('pattern-') === 0 && row.permalink;
+            });
+            tiles.sort(function (a, b) {
+              var ai = order.indexOf(a.slug);
+              var bi = order.indexOf(b.slug);
+              return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+            });
+            var seed = seriesTemplate.content.firstElementChild;
+            if (!seed) {
+              return;
+            }
+            tiles.forEach(function (row) {
+              var node = seed.cloneNode(true);
+              var image = row.image || {};
+              fillTile(node, row.permalink, image.thumbnail || image.src, image.alt || row.name, row.name);
+              series.appendChild(node);
+            });
+            if (tiles.length) {
+              series.hidden = !!(input.value || '').trim();
+            }
+          })
+          .catch(function () {
+            seriesLoaded = false;
+          });
       };
 
       reset.addEventListener('click', function (event) {
@@ -3213,9 +3334,8 @@
           inflight = null;
         }
         if (results) {
-          results.innerHTML = '';
+          results.textContent = '';
         }
-        empty = false;
         sync();
         input.focus();
       });
@@ -3240,6 +3360,7 @@
         }
       });
 
+      loadSeries();
       sync();
     });
   }

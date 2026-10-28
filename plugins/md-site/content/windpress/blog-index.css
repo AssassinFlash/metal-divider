@@ -134,6 +134,12 @@
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-empty h3 { font-size: 18px; font-weight: 600; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-empty p { margin-block: 12px; color: #5a6363; font-size: 15px; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-empty a { color: var(--md-gold-ink); text-decoration: underline; }
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-empty-links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 16px 0 0; padding: 0; list-style: none; }
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-empty-links a { display: inline-flex; align-items: center; min-height: 44px; }
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-topics ul:empty,
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-topics ul:not(:has(a)) { display: none; }
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-feed:not(:has(.journal-card)) > h2 { display: none; }
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-suggestions:not(:has(.journal-suggestion)) { display: none; }
 /* Existing site wide-layout band; keep the approved three-column composition. */
 @media (min-width:1280px) {
   :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-content-with-rail { grid-template-columns: minmax(0,1fr) var(--journal-reading-rail); }

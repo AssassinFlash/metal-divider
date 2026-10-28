@@ -522,9 +522,9 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
-	 * A term with no `thumbnail_id` renders the empty media box the card
-	 * CSS styles, and the term name stands in for a missing attachment
-	 * alt — no placeholder image is invented.
+	 * A term with no `thumbnail_id` renders no image. The media box carries
+	 * the series-name fallback instead of an empty frame, and no placeholder
+	 * image is invented.
 	 */
 	public function test_series_grid_without_a_thumbnail_renders_no_image(): void {
 		$term              = new \WP_Term( (object) array() );
@@ -540,7 +540,7 @@ final class ShortcodesTest extends TestCase {
 
 		$cards = ( new Shortcodes() )->series_grid();
 
-		$this->assertStringContainsString( '<div class="cph__media"></div>', $cards );
+		$this->assertStringContainsString( '<span class="cph__media-fallback">Asian Inspired</span>', $cards );
 		$this->assertStringNotContainsString( '<img', $cards );
 	}
 
@@ -592,7 +592,7 @@ final class ShortcodesTest extends TestCase {
 
 		$cards = ( new Shortcodes() )->series_grid();
 
-		$this->assertStringContainsString( '<div class="cph__media"></div>', $cards );
+		$this->assertStringContainsString( '<span class="cph__media-fallback">Landscape</span>', $cards );
 		$this->assertStringNotContainsString( 'src=""', $cards );
 		$this->assertStringContainsString( '<h3 class="cph__card-title">Landscape</h3>', $cards, 'the card still carries its title' );
 	}

@@ -29,11 +29,12 @@ namespace MetalDivider\Site\Presentation;
  * not as WooCommerce reads: the section owns its wording.
  *
  * Every card is skipped, never half-drawn, when the product has no image to
- * show: `PatternFacts::image()` resolves to an empty URL and the method
- * returns '' for that product, so no `<img src="">` ever reaches a browser.
- * The rule is the same for all three faces — `editorial()`, `catalog()` and
- * `tile()` — because a card without its image is an empty frame whatever grid
- * it sits in.
+ * show, so no `<img src="">` ever reaches a browser. `editorial()`,
+ * `catalog()` and `tile()` ask `PatternFacts::image()` and return '' when
+ * that URL is empty. `related()` asks `get_the_post_thumbnail_url()` — the
+ * URL the card will print — and skips the product when that cast is empty
+ * (`false` from a missing thumbnail becomes `''`). A card without its image
+ * is an empty frame whatever grid it sits in.
  */
 final class Cards {
 
@@ -329,13 +330,14 @@ final class Cards {
 	 * than through `[md_pattern_permalink]`/`[md_pattern_code]` (those read the
 	 * post being rendered, and the PDP renders one post and lists others).
 	 *
-	 * An empty `$related` renders nothing because the loop runs zero times —
-	 * there is deliberately no separate empty-list branch to keep in step with
-	 * it.
+	 * An empty `$related` renders nothing because the loop runs zero times.
+	 * A related product whose thumbnail URL is empty is skipped the same way:
+	 * the partial prints `src` unconditionally, and a missing thumbnail is
+	 * `false`, which would otherwise become `src=""`.
 	 *
 	 * @param int   $post_id The product whose related patterns to list.
 	 * @param int[] $related The related product ids, in WooCommerce's order.
-	 * @return string The cards, empty when there are none.
+	 * @return string The cards, empty when none of them can be drawn.
 	 */
 	public function related( int $post_id, array $related ): string {
 		if ( ! $this->is_product( $post_id ) ) {
@@ -347,11 +349,17 @@ final class Cards {
 			if ( $id <= 0 ) {
 				continue;
 			}
+			// The URL the partial will print. Casting `false` (no thumbnail)
+			// yields '', and that card is not drawn.
+			$url = (string) \get_the_post_thumbnail_url( $id, 'large' );
+			if ( '' === $url ) {
+				continue;
+			}
 			$out .= $this->partials->render(
 				self::RELATED,
 				array(
 					'link' => (string) \get_permalink( $id ),
-					'url'  => (string) \get_the_post_thumbnail_url( $id, 'large' ),
+					'url'  => $url,
 					'alt'  => (string) \get_the_title( $id ),
 					'name' => PatternFacts::code( $id ),
 				)
@@ -369,10 +377,10 @@ final class Cards {
 	 *
 	 * The image is the term's `thumbnail_id` (the field WooCommerce's own
 	 * category screen writes), drawn at its full size with the attachment's own
-	 * metadata, and its alt falls back to the term name; a term without a
-	 * thumbnail carries an empty `image` list, so the partial prints the media
-	 * box without an `<img>` — the case the card CSS styles and the previous
-	 * renderer produced.
+	 * metadata, and its alt falls back to the term name. A term without a
+	 * thumbnail carries an empty `image` list, so the partial prints no
+	 * `<img>` — never `src=""`. The media box still holds the series-name
+	 * fallback the card CSS already styles; an image hides that fallback.
 	 *
 	 * @param array{term_id: int, name: string, description: string, link: string} $series The series to draw.
 	 * @return string The card.

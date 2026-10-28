@@ -215,28 +215,20 @@ xo-container[xo-fluid]:not([xo-fluid=false]) {
 }
 
 /* ---------------------------------------------------------------- *
- * Reading measure for body copy.
+ * Reading measure for body copy the templates did not cap.
  *
- * The migrated templates cap their paragraphs with `max-w-[980px]` or leave
- * them uncapped inside a 1400px container. At 18px that is ~109 characters
- * per line and at 14px up to ~189 — measured across the family faces,
- * manufacturing and the catalog (2026-10-27). Lines that long lose the
- * reader: the eye cannot find the next line's start, which is what "the text
- * feels cramped and the field of view is wrong" describes.
+ * A previous rule set `max-width: 40em !important` on every `main p`,
+ * including paragraphs that already carried `max-w-*`. A winning
+ * max-width replaces the other declaration; it does not keep the smaller
+ * one. Under the 10px root that forced 640px at 16px body (44.4% of 1440)
+ * over `max-w-[980px]`, 720px at text-lg (18px) over the hero's
+ * `max-w-[620px]`, and 560px at text-sm (14px).
  *
- * A single cap per font size fixes it everywhere at once, without touching
- * 35 template classes: `max-width: 40em` at 18px is 720px (~72 characters),
- * at 15px 600px, at 14px 560px. Paragraphs narrower than that (the ones the
- * templates already cap) keep their own width, because `max-width` only
- * ever narrows.
- *
- * Scoped to `main p` so headings, tables, cards and the reading rail are
- * untouched; the type scale and the container rhythm do not change.
+ * Utilities sit in the utilities layer and beat this components rule, so
+ * a paragraph that already has `max-w-*` keeps that cap. Uncapped copy
+ * gets 980px, the widest body cap the templates already use. No
+ * !important, so a more specific cap can still narrow.
  * ---------------------------------------------------------------- */
-/* A utility class cannot be outranked from this layer, so the cap states the
-   property that has to win rather than relying on specificity. */
-main p[class*="max-w-"] ,
-main p[class*="text-"],
 main p:not([class*="max-w-"]) {
-  max-width: 40em !important;
+  max-width: 980px;
 }

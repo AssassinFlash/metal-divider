@@ -231,9 +231,7 @@ final class Form {
 		if ( null !== $pattern ) {
 			$out .= $this->pattern_row( $pattern );
 		}
-		if ( $this->state->has_failed() ) {
-			$out .= '<p class="md-inquiry-notice md-inquiry-notice--error" role="alert">' . \esc_html( $this->notice( $this->state->notice_key() ) ) . '</p>';
-		}
+		$out .= $this->notice_markup();
 		$out .= $this->field( 'name', __( 'Name', 'md-inquiry' ), 'text', true, 'name', __( 'Jane Chan', 'md-inquiry' ) );
 		$out .= $this->field( 'email', __( 'Email', 'md-inquiry' ), 'email', true, 'email', __( 'jane@studio.com', 'md-inquiry' ) );
 		$out .= $this->field( 'company', __( 'Company (optional)', 'md-inquiry' ), 'text', false, 'organization', __( 'Chan Design Studio', 'md-inquiry' ) );
@@ -243,21 +241,24 @@ final class Form {
 		$out .= $this->select_field( 'route', __( 'Inquiry route', 'md-inquiry' ), Validator::ROUTES, __( 'Select inquiry route', 'md-inquiry' ), true, 'off' );
 		$out .= $this->select_field( 'quantity', __( 'Estimated quantity', 'md-inquiry' ), Validator::QUANTITIES, __( 'Select quantity range', 'md-inquiry' ), true, 'off' );
 		$out .= $this->message_field( null !== $pattern );
+		$out .= $this->confirm_field();
 
 		$out .= $this->honeypot();
 		$out .= $this->turnstile( $source );
 		$out .= '<p class="md-inquiry-promise">' . \esc_html__( 'We reply within 24 hours on business days. Your details are used only to answer this inquiry — we do not share them.', 'md-inquiry' ) . '</p>';
-		$out .= '<p class="md-inquiry-note">' . \esc_html__( 'The WhatsApp button opens a chat pre-filled with your details and this pattern. Choosing WhatsApp does not submit this form.', 'md-inquiry' ) . '</p>';
+		$note = null !== $pattern
+			? __( 'The WhatsApp button opens a chat pre-filled with your details and this pattern. Choosing WhatsApp does not submit this form.', 'md-inquiry' )
+			: __( 'The WhatsApp button opens a chat pre-filled with your details. Choosing WhatsApp does not submit this form.', 'md-inquiry' );
+		$out .= '<p class="md-inquiry-note">' . \esc_html( $note ) . '</p>';
 		$out .= '</div>';
 
-		$whatsapp = WhatsApp::url( WhatsApp::cta_text( $source['module'], $pattern, $source['page'] ) );
-		$out     .= '<div class="md-inquiry-actions">';
-		$out     .= '<button type="submit" class="md-inquiry-submit"' . ( $this->config->turnstile_is_configured() ? ' disabled' : '' ) . '>' . \esc_html__( 'Send inquiry', 'md-inquiry' ) . '</button>';
-		$out     .= '<a class="md-inquiry-whatsapp" href="' . \esc_url( $whatsapp ) . '" target="_blank" rel="noopener">' . \esc_html__( 'Send via WhatsApp instead', 'md-inquiry' ) . '</a>';
-		$out     .= '</div>';
-		$out     .= '</form>';
-		$out     .= '</div>';
-		$out     .= '</div>';
+		$out .= '<div class="md-inquiry-actions">';
+		$out .= '<button type="submit" class="md-inquiry-submit"' . ( $this->config->turnstile_is_configured() ? ' disabled' : '' ) . '>' . \esc_html__( 'Send inquiry', 'md-inquiry' ) . '</button>';
+		$out .= '<a class="md-inquiry-whatsapp" href="' . $this->whatsapp_href( WhatsApp::cta_text( $source['module'], $pattern, $source['page'] ) ) . '" target="_blank" rel="noopener">' . \esc_html__( 'Send via WhatsApp instead', 'md-inquiry' ) . '</a>';
+		$out .= '</div>';
+		$out .= '</form>';
+		$out .= '</div>';
+		$out .= '</div>';
 		return $out;
 	}
 
@@ -317,15 +318,13 @@ final class Form {
 
 		$out  = '<p class="md-inquiry-field' . $invalid . '">';
 		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '">' . \esc_html( $label ) . '</label>';
-		$out .= '<select class="md-inquiry-field__input md-inquiry-field__select" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '"' . ( $required ? ' required' : '' ) . '>';
+		$out .= '<select class="md-inquiry-field__input md-inquiry-field__select" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '"' . ( $required ? ' required' : '' ) . $this->invalid_attrs( $key, $error ) . '>';
 		$out .= '<option value="">' . \esc_html( $placeholder ) . '</option>';
 		foreach ( $options as $option ) {
 			$out .= '<option value="' . \esc_attr( $option ) . '"' . ( $value === $option ? ' selected' : '' ) . '>' . \esc_html( $option ) . '</option>';
 		}
 		$out .= '</select>';
-		if ( '' !== $error ) {
-			$out .= '<span class="md-inquiry-field__error" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key . '-error' ) ) . '">' . \esc_html( $error ) . '</span>';
-		}
+		$out .= $this->error_span( $key, $error );
 		$out .= '</p>';
 		return $out;
 	}
@@ -345,17 +344,17 @@ final class Form {
 		$value   = $this->state->value( $key );
 		$error   = $this->state->error( $key );
 		$invalid = '' !== $error ? ' md-inquiry-field--invalid' : '';
-		$max     = 'email' === $key ? (string) Validator::EMAIL_MAX : (string) Validator::NAME_MAX;
-		if ( 'company' === $key ) {
-			$max = (string) Validator::COMPANY_MAX;
-		}
+		$max     = (string) match ( $key ) {
+			'email'   => Validator::EMAIL_MAX,
+			'company' => Validator::COMPANY_MAX,
+			'phone'   => Validator::PHONE_MAX,
+			default   => Validator::NAME_MAX,
+		};
 
 		$out  = '<p class="md-inquiry-field' . $invalid . '">';
 		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '">' . \esc_html( $label ) . '</label>';
-		$out .= '<input class="md-inquiry-field__input" type="' . \esc_attr( $type ) . '" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" value="' . \esc_attr( $value ) . '" maxlength="' . \esc_attr( $max ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '" placeholder="' . \esc_attr( $placeholder ) . '"' . ( $required ? ' required' : '' ) . '>';
-		if ( '' !== $error ) {
-			$out .= '<span class="md-inquiry-field__error" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key . '-error' ) ) . '">' . \esc_html( $error ) . '</span>';
-		}
+		$out .= '<input class="md-inquiry-field__input" type="' . \esc_attr( $type ) . '" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" value="' . \esc_attr( $value ) . '" maxlength="' . \esc_attr( $max ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '" placeholder="' . \esc_attr( $placeholder ) . '"' . ( $required ? ' required' : '' ) . $this->invalid_attrs( $key, $error ) . '>';
+		$out .= $this->error_span( $key, $error );
 		$out .= '</p>';
 		return $out;
 	}
@@ -376,21 +375,111 @@ final class Form {
 
 		$out  = '<p class="md-inquiry-field md-inquiry-field--message' . $invalid . '">';
 		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '">' . \esc_html( $label ) . '</label>';
-		$out .= '<textarea class="md-inquiry-field__input" id="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '" name="md_inquiry_message" maxlength="' . \esc_attr( (string) Validator::MESSAGE_MAX ) . '" rows="5"' . ( $has_pattern ? '' : ' required' ) . '>' . \esc_textarea( $value ) . '</textarea>';
+		$out .= '<textarea class="md-inquiry-field__input" id="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '" name="md_inquiry_message" maxlength="' . \esc_attr( (string) Validator::MESSAGE_MAX ) . '" rows="5"' . ( $has_pattern ? '' : ' required' ) . $this->invalid_attrs( 'message', $error, $this->id_of( 'md-inquiry-message-hint' ) ) . '>' . \esc_textarea( $value ) . '</textarea>';
 		// The pages ask for drawings by name ("Send your DXF, DWG, or PDF"), so
 		// the form has to say how a drawing reaches us. It cannot take a file:
 		// there is no file input and no upload handler, and the old shop's
 		// panel form had both. Until that exists, the honest instruction is the
 		// reply — which is also how the internal mail already frames it
 		// ("attaching them to your reply helps us quote faster").
-		$out .= '<span class="md-inquiry-field__hint">'
+		$out .= '<span class="md-inquiry-field__hint" id="' . \esc_attr( $this->id_of( 'md-inquiry-message-hint' ) ) . '">'
 			. \esc_html__( 'Quantities, dimensions, timeline, finish preferences — anything you already have. Have a drawing, DXF, DWG or PDF? Send it in reply to the confirmation email and it reaches the same engineer.', 'md-inquiry' )
 			. '</span>';
-		if ( '' !== $error ) {
-			$out .= '<span class="md-inquiry-field__error" id="' . \esc_attr( $this->id_of( 'md-inquiry-message-error' ) ) . '">' . \esc_html( $error ) . '</span>';
-		}
+		$out .= $this->error_span( 'message', $error );
 		$out .= '</p>';
 		return $out;
+	}
+
+
+	/**
+	 * The form-level notice. Always rendered, so a failure has a live region
+	 * to write into. Empty until a submission fails, and the stylesheet
+	 * collapses that empty state so it does not add a band above the fields.
+	 *
+	 * @return string
+	 */
+	private function notice_markup(): string {
+		$class = 'md-inquiry-notice';
+		$text  = '';
+		if ( $this->state->has_failed() ) {
+			$class .= ' md-inquiry-notice--error';
+			$text   = \esc_html( $this->notice( $this->state->notice_key() ) );
+		}
+		return '<div class="' . \esc_attr( $class ) . '" role="alert" aria-live="polite">' . $text . '</div>';
+	}
+
+	/**
+	 * The required confirmation that this inquiry is for an architectural or
+	 * commercial project. It sits before the honeypot.
+	 *
+	 * @return string
+	 */
+	private function confirm_field(): string {
+		$error   = $this->state->error( 'confirm' );
+		$checked = '1' === $this->state->value( 'confirm' ) ? ' checked' : '';
+		$invalid = '' !== $error ? ' md-inquiry-field--invalid' : '';
+		$id      = $this->id_of( 'md-inquiry-confirm' );
+
+		$out  = '<p class="md-inquiry-field md-inquiry-field--confirm' . $invalid . '">';
+		$out .= '<label class="md-inquiry-confirm" for="' . \esc_attr( $id ) . '">';
+		$out .= '<input class="md-inquiry-confirm__input" type="checkbox" id="' . \esc_attr( $id ) . '" name="md_inquiry_confirm" value="1"' . $checked . ' required' . $this->invalid_attrs( 'confirm', $error ) . '>';
+		$out .= '<span class="md-inquiry-confirm__text">' . \esc_html__( 'I confirm this inquiry is for an architectural or commercial project.', 'md-inquiry' ) . '</span>';
+		$out .= '</label>';
+		$out .= $this->error_span( 'confirm', $error );
+		$out .= '</p>';
+		return $out;
+	}
+
+	/**
+	 * A wa.me href that keeps the prefilled text's line breaks.
+	 *
+	 * WordPress deletes %0A and %0D inside esc_url(). Passing the whole URL
+	 * through it glues the Ref line onto the greeting. Escape the base, then
+	 * append the already-encoded text.
+	 *
+	 * @param string $text The prefilled message.
+	 * @return string
+	 */
+	private function whatsapp_href( string $text ): string {
+		return \esc_url( 'https://wa.me/' . WhatsApp::NUMBER ) . '?text=' . \rawurlencode( $text );
+	}
+
+	/**
+	 * Attributes that mark a control invalid and point at its description.
+	 *
+	 * @param string $key               The field key.
+	 * @param string $error             The field's error, or ''.
+	 * @param string $extra_describedby An id that always describes the control, such as a hint.
+	 * @return string
+	 */
+	private function invalid_attrs( string $key, string $error, string $extra_describedby = '' ): string {
+		$ids   = array();
+		$attrs = '';
+		if ( '' !== $extra_describedby ) {
+			$ids[] = $extra_describedby;
+		}
+		if ( '' !== $error ) {
+			$attrs .= ' aria-invalid="true"';
+			$ids[]  = $this->id_of( 'md-inquiry-' . $key . '-error' );
+		}
+		if ( array() !== $ids ) {
+			$attrs .= ' aria-describedby="' . \esc_attr( implode( ' ', $ids ) ) . '"';
+		}
+		return $attrs;
+	}
+
+	/**
+	 * A field error, associated by id and announced as an alert.
+	 *
+	 * @param string $key   The field key.
+	 * @param string $error The error, or '' when the field is clean.
+	 * @return string
+	 */
+	private function error_span( string $key, string $error ): string {
+		if ( '' === $error ) {
+			return '';
+		}
+		return '<span class="md-inquiry-field__error" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key . '-error' ) ) . '" role="alert">' . \esc_html( $error ) . '</span>';
 	}
 
 	/**
@@ -501,6 +590,13 @@ final class Form {
 				'turnstileError'   => __( 'Verification could not run. Please refresh the page and try again.', 'md-inquiry' ),
 				'errorName'        => __( 'Please enter your name.', 'md-inquiry' ),
 				'errorEmail'       => __( 'Please enter a valid email address.', 'md-inquiry' ),
+				'errorCountry'     => __( 'Please choose your country.', 'md-inquiry' ),
+				'errorScope'       => __( 'Please choose the project scope.', 'md-inquiry' ),
+				'errorRoute'       => __( 'Please choose an inquiry route.', 'md-inquiry' ),
+				'errorQuantity'    => __( 'Please choose a quantity range.', 'md-inquiry' ),
+				'errorMessage'     => __( 'Please add a short message.', 'md-inquiry' ),
+				'errorConfirm'     => __( 'Please confirm this inquiry is for an architectural or commercial project.', 'md-inquiry' ),
+				'errorSummary'     => __( 'Please complete the highlighted fields.', 'md-inquiry' ),
 			),
 		);
 	}

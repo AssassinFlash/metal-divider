@@ -161,6 +161,19 @@ display: grid;
 grid-template-columns: repeat(4, 1fr);
 gap: 12px;
 }
+#patterns-template--22465876033789__patterns_marquee_hqqfqz .panel-empty {
+grid-column: 1 / -1;
+margin: 0;
+color: rgba(255, 255, 255, 0.72);
+font-size: 14px;
+line-height: 1.6;
+}
+#patterns-template--22465876033789__patterns_marquee_hqqfqz .panel-empty a {
+color: #d4af37;
+}
+#patterns-template--22465876033789__patterns_marquee_hqqfqz .panel-grid:has(.pattern-item) .panel-empty {
+display: none;
+}
 #patterns-template--22465876033789__patterns_marquee_hqqfqz .pattern-item {
 display: flex;
 flex-direction: column;

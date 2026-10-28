@@ -13,19 +13,46 @@
  * 0.625x small: the footer logo box 30px against the old site's 48px, the
  * hero `h1` box 293x297 against 469x178.
  *
- * Scoped by `#landing-nav`, which only this face's template emits; the
- * WindPress cache is one stylesheet for the whole site, so the guard is
+ * Scoped by the hero section, which only this face's template emits. The
+ * second brand nav used to be the guard and has been removed; the hero is
+ * the marker that remains. The WindPress cache is one stylesheet for the
+ * whole site, so the guard is
  * what keeps the other faces on their 62.5% root. `body` is pinned to 1rem
  * because base.css sizes it in rem (1.6rem) — without the pin the root
  * change would inflate body text to 25.6px, while the old landing page's
  * body computed 16px. Verified against the old page: text sizes are
  * unchanged by this block; the `h1` box and the footer height land exactly
  * on the old values. */
-html:has(#landing-nav) {
+html:has(#hero-section-template--22465876033789__hero_landing_yPiYEt) {
 font-size: 100%;
 }
-html:has(#landing-nav) body {
+html:has(#hero-section-template--22465876033789__hero_landing_yPiYEt) body {
 font-size: 1rem;
+}
+
+#hero-section-template--22465876033789__hero_landing_yPiYEt .page-jumps {
+display: flex;
+flex-wrap: wrap;
+gap: 8px 16px;
+justify-content: center;
+margin-top: 28px;
+}
+@media (min-width: 1024px) {
+#hero-section-template--22465876033789__hero_landing_yPiYEt .page-jumps {
+justify-content: flex-start;
+}
+}
+#hero-section-template--22465876033789__hero_landing_yPiYEt .page-jumps a {
+color: rgba(255, 255, 255, 0.82);
+display: inline-flex;
+align-items: center;
+font-size: 14px;
+min-height: 44px;
+text-decoration: none;
+}
+#hero-section-template--22465876033789__hero_landing_yPiYEt .page-jumps a:hover,
+#hero-section-template--22465876033789__hero_landing_yPiYEt .page-jumps a:focus-visible {
+color: #c9a962;
 }
 
 .-top-20 { top:-80px }
@@ -162,108 +189,6 @@ padding-right: 8px }
 .w-auto { width: auto }
 .z-50 { z-index:50 }
 .z-50 { z-index: 50 }
-/* --- 导航栏基础样式 --- */
-#landing-nav {
-background-color: #1a1a1a;
-box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-height: auto;
-}
-/* 初始悬浮状态 (Desktop) */
-@media (min-width: 1024px) {
-#landing-nav.initial-state {
-/* 站点 sticky header 在 z-index 100 占据视口顶部；本页 nav 是 fixed 且
-   z-index 40，若仍用 top:40px 两者会重叠并被站点 header 盖住。偏移量由
-   setupLandingNav() 写入 --landing-nav-offset（实测 band 高度），未测得时
-   回落到 40px，与原设计一致。 */
-top: calc(var(--landing-nav-offset, 0px) + 40px);
-left: 40px;
-right: 40px;
-border-radius: 9999px;
-padding: 12px 30px;
-max-width: 1400px;
-margin: 0 auto;
-border: 1px solid rgba(255,255,255,0.08);
-}
-}
-/* 滚动锁定状态。锁定到视口顶部时同样要让开 sticky band，否则玻璃条会
-   钻到站点 header 底下。 */
-#landing-nav.scrolled,
-#landing-nav.mobile-view {
-top: var(--landing-nav-offset, 0px);
-left: 0;
-right: 0;
-border-radius: 0;
-padding: 15px 20px;
-border: none;
-border-bottom: 1px solid rgba(255,255,255,0.05);
-background-color: rgba(26, 26, 26, 0.95);
-backdrop-filter: blur(10px);
-}
-/* 导航链接 */
-.nav-link {
-color: rgba(255, 255, 255, 0.7);
-font-size: 0.9rem;
-font-weight: 500;
-text-decoration: none;
-transition: color 0.3s ease;
-position: relative;
-padding: 0.5rem 0;
-cursor: pointer;
-}
-.nav-link:hover, .nav-link.active { color: #c9a962; }
-.nav-link.active::after {
-content: '';
-position: absolute;
-bottom: 0;
-left: 0;
-right: 0;
-height: 2px;
-background: #c9a962;
-border-radius: 2px;
-}
-/* 移动端菜单 Drawer */
-#mobile-menu-drawer {
-position: fixed;
-top: 0;
-right: -100%;
-width: 85%;
-max-width: 400px;
-height: 100vh;
-background: #1a1a1a;
-z-index: 50;
-transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-padding: 80px 40px;
-display: flex;
-flex-direction: column;
-gap: 20px;
-box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-}
-#mobile-menu-drawer.open { right: 0; }
-#mobile-menu-overlay {
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.7);
-backdrop-filter: blur(4px);
-z-index: 40;
-opacity: 0;
-pointer-events: none;
-transition: opacity 0.4s ease;
-}
-#mobile-menu-overlay.open { opacity: 1; pointer-events: auto; }
-.mobile-nav-link {
-font-size: 24px;
-font-family: 'Playfair Display', serif;
-color: #fff;
-border-bottom: 1px solid rgba(255,255,255,0.1);
-padding-bottom: 15px;
-}
-.mobile-nav-link.active { color: #c9a962; border-color: #c9a962; }
-/* 汉堡按钮动画 */
-.hamburger-line { transition: all 0.3s ease; }
-.hamburger-open .line-1 { transform: rotate(45deg) translate(5px, 5px); }
-.hamburger-open .line-2 { opacity: 0; }
-.hamburger-open .line-3 { transform: rotate(-45deg) translate(5px, -5px); }
 html.md-js [x-cloak] { display: none !important; }
 /* Mic pulse — no Tailwind equivalent for keyframes */
 .mic-pulse { animation: micPulse 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
@@ -1807,13 +1732,9 @@ border: 1px solid rgba(255, 255, 255, 0.08);
 .md-t9ffc9811 { background-color: rgba(255,255,255,0.05);border-color: rgba(255,255,255,0.1) }
 .md-t6940f047 { background-color: #c9a962;color: #000 }
 
-/* Mobile app pass. The site header is the one header; the page's own
-   bar is the duplicate. Utilities live in a later layer, so a few
-   display/size overrides are !important. */
+/* Mobile app pass. The site header is the one header. Utilities live in a
+   later layer, so a few display/size overrides are !important. */
 @media (max-width: 1023px) {
-#landing-nav {
-display: none !important;
-}
 #applications-template--22465876033789__applications_section_mQDDtL .app-slide {
 min-height: 0;
 padding: 28px 0 24px;
@@ -1995,7 +1916,7 @@ min-height: 44px;
 display: inline-flex;
 align-items: center;
 }
-html:has(#landing-nav) a[href="https://wa.me/85264731687"] {
+html:has(#hero-section-template--22465876033789__hero_landing_yPiYEt) a[href="https://wa.me/85264731687"] {
 min-height: 44px;
 display: inline-flex;
 align-items: center;

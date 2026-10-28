@@ -63,4 +63,37 @@ if ( ! function_exists( 'md_pdp_has_design_intent' ) ) {
 		return ( new \MetalDivider\Site\Presentation\Shortcodes() )->has_design_intent( (string) $slot );
 	}
 }
+
+if ( ! function_exists( 'md_pdp_has_related' ) ) {
+	/**
+	 * Whether the PDP has at least one related pattern that can be drawn.
+	 *
+	 * The template's `[lc_if condition="md_pdp_has_related"]` asks this
+	 * before it prints the "Adjacent patterns" heading. It calls
+	 * `Shortcodes::related()` itself — the same WooCommerce selection, the
+	 * same count, and the same imageless skip — so the section and the
+	 * cards inside it can never disagree.
+	 *
+	 * @return bool
+	 */
+	function md_pdp_has_related(): bool {
+		return '' !== ( new \MetalDivider\Site\Presentation\Shortcodes() )->related();
+	}
+}
+
+if ( ! function_exists( 'md_pdp_has_style' ) ) {
+	/**
+	 * Whether the PDP eyebrow has a series word to lead with.
+	 *
+	 * The eyebrow is the series word plus "pattern". With no series that
+	 * renders a leading space and the word "pattern" on its own. The
+	 * template asks this before it prints the eyebrow, and the predicate
+	 * is `md_pdp_style()` itself, so the span and its text can never disagree.
+	 *
+	 * @return bool
+	 */
+	function md_pdp_has_style(): bool {
+		return '' !== md_pdp_style();
+	}
+}
 // phpcs:enable
