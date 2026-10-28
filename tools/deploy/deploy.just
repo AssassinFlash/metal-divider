@@ -120,6 +120,29 @@ maintenance *args:
 drill *args:
     PHP={{ php }} {{ md_deploy }} drill "$@"
 
+# Pull the sanitized chat seed from the golden host (staging) into
+# ~/metal-divider-local/chat-seed/. Dry run unless --write is passed.
+# --target is pinned to staging: the seed exports from the golden host only
+# (md-deploy rejects any other --target with exit 2; forwarding a passed one
+# would only duplicate the guard).
+[positional-arguments]
+chat-seed *args:
+    PHP={{ php }} {{ md_deploy }} chat-seed --target staging "$@"
+
+# Deploy the chat plane: relay the golden /chat/ tree and Rapls plugin, ship
+# the two LHC extensions and the five chat mu-plugins from the repository, and
+# apply the sanitized seed (SQL import + option rows). The caller must
+# pass --target explicitly (a bare call would deploy to the local dev
+# instance); the golden host is staging.
+[positional-arguments]
+chat-push *args:
+    PHP={{ php }} {{ md_deploy }} chat-push "$@"
+
+# The read-only chat probes against the target's base URL. No --write needed.
+[positional-arguments]
+chat-verify *args:
+    PHP={{ php }} {{ md_deploy }} chat-verify "$@"
+
 # Recompile an instance's WindPress cache through its admin — the only
 # compile that exists (Tailwind v4 has no server-side build): one-time login,
 # WindPress → Settings → Performance → Generate, the stored cache must be

@@ -12,6 +12,9 @@
     md-deploy maintenance      the maintenance window on|off
     md-deploy contract         read the target's versions back, against the local pins
     md-deploy windpress-check  the checks after a WindPress compile (mtime, anchors)
+    md-deploy chat-seed        pull the sanitized chat seed from the golden host
+    md-deploy chat-push        deploy the chat plane (golden relay + repo code + seed)
+    md-deploy chat-verify      the read-only chat probes
     md-deploy drill            rehearse switch → rollback → switch on a local instance
 
 `--target` names one of the three configured targets: `dev` (the local
@@ -27,6 +30,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from md_deploy import backup as backup_module
+from md_deploy import chat as chat_module
 from md_deploy import drill as drill_module
 from md_deploy import media as media_module
 from md_deploy import plan, steps
@@ -116,6 +120,13 @@ def _parser() -> argparse.ArgumentParser:
     rehearsal.add_argument(
         "--instance", default="dev", help="the local instance to rehearse on"
     )
+    sub.add_parser(
+        "chat-seed", parents=[common], help="pull the sanitized chat seed from staging"
+    )
+    sub.add_parser(
+        "chat-push", parents=[common], help="deploy the chat plane to the target"
+    )
+    sub.add_parser("chat-verify", parents=[common], help="the read-only chat probes")
     return parser
 
 
@@ -253,6 +264,38 @@ def main(argv: list[str] | None = None) -> int:
                 return 0
             _print(steps.maintenance(target, on=args.state == "on"))
             return 0
+        if args.command == "chat-seed":
+            # The export only makes sense from the golden host: a different
+            # --target would be accepted and silently ignored by chat_seed.
+            if args.target != chat_module.GOLDEN_TARGET:
+                print(
+                    f"chat-seed: the seed exports from the golden host only "
+                    f"({chat_module.GOLDEN_TARGET}), not {args.target}",
+                    file=sys.stderr,
+                )
+                return 2
+            if not args.write:
+                for step in chat_module.chat_seed_plan(DATA_HOME):
+                    print(f"chat-seed: would {step}")
+                return 0
+            seeded = chat_module.chat_seed(repository=repository, home=DATA_HOME)
+            _print(seeded)
+            return 1 if seeded.notes else 0
+        if args.command == "chat-push":
+            if not args.write:
+                for step in chat_module.chat_push_plan():
+                    print(f"chat-push: would {step}")
+                print(f"chat-push: the target is {target.label}")
+                return 0
+            pushed = chat_module.chat_push(
+                target, repository=repository, home=DATA_HOME
+            )
+            _print(pushed)
+            return 1 if pushed.notes else 0
+        if args.command == "chat-verify":
+            result = chat_module.chat_verify(target, cache_buster=_cache_buster())
+            _print(result)
+            return 1 if result.notes else 0
         if args.command == "drill":
             return _drill(args, repository)
     except DeployError as error:
