@@ -59,11 +59,18 @@ namespace {
 	/**
 	 * parse_url() in WordPress's shape.
 	 *
-	 * @param string $url The URL.
-	 * @return array<string, mixed>|false The parts, or false.
+	 * The `$component` parameter is not optional decoration: the launcher
+	 * passes `PHP_URL_PATH`, and a stub without it made PHPStan report the
+	 * call as `invoked with 2 parameters, 1 required` — a stub defect
+	 * reported as a production one. The bootstrap's runtime double carries
+	 * the same signature; these two must stay in step.
+	 *
+	 * @param string $url       The URL.
+	 * @param int    $component One of PHP's URL component constants, or -1.
+	 * @return array<string, mixed>|string|int|false|null The parts, a part, or false.
 	 */
-	function wp_parse_url( string $url ): array|false {
-		unset( $url );
+	function wp_parse_url( string $url, int $component = -1 ): array|string|int|false|null {
+		unset( $url, $component );
 		return false;
 	}
 

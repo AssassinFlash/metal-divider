@@ -177,8 +177,21 @@ final class ChatDeleteTest extends TestCase {
 
 		self::assertSame( array( 11 => 555 ), get_option( 'md_wecom_notify_chats', array() ) );
 
+		// "Leaves the store untouched" is a statement about writes, not about
+		// the value: an unknown id must return before update_option runs. The
+		// value comparison that used to sit here was the same literal on both
+		// sides, so PHPStan read it as always true and it could not have
+		// caught a write either way. Counting the writes catches the actual
+		// regression — an id check that stops guarding the write. The write
+		// log is not reset in setUp(), so the comparison is a delta.
+		$writes = is_array( $GLOBALS['md_mu_test_option_writes'] ?? null )
+			? count( $GLOBALS['md_mu_test_option_writes'] )
+			: 0;
 		md_chat_delete_forget_wecom_card( 404 );
-
+		$after = is_array( $GLOBALS['md_mu_test_option_writes'] ?? null )
+			? count( $GLOBALS['md_mu_test_option_writes'] )
+			: 0;
+		self::assertSame( $writes, $after, 'an unknown chat id writes nothing' );
 		self::assertSame( array( 11 => 555 ), get_option( 'md_wecom_notify_chats', array() ) );
 
 		$GLOBALS['md_mu_test_options']['md_wecom_notify_chats'] = 'not-a-map';
@@ -241,14 +254,23 @@ final class ChatDeleteTest extends TestCase {
 	 * @return \WP_REST_Response The response.
 	 */
 	private function delete_request( int $chat_id, string $hash ): \WP_REST_Response {
-		return md_chat_delete_respond(
-			new \WP_REST_Request(
-				array(
-					'chat_id' => $chat_id,
-					'hash'    => $hash,
-				)
-			)
+		$body = array(
+			'chat_id' => $chat_id,
+			'hash'    => $hash,
 		);
+		/**
+		 * The suite's WP_REST_Request double takes the decoded body as its
+		 * first parameter; WordPress's own class takes a method string
+		 * there. The double is what runs, so the call is right at runtime
+		 * and only the analysis signature differs. Rewriting the double to
+		 * WordPress's shape would change what every other test passes — a
+		 * larger change than this defect warrants, so the exception is
+		 * pinned to this line.
+		 *
+		 * @phpstan-ignore-next-line
+		 */
+		$request = new \WP_REST_Request( $body );
+		return md_chat_delete_respond( $request );
 	}
 
 	/**
@@ -297,10 +319,10 @@ final class ChatDeleteTest extends TestCase {
 	public function test_a_wrong_hash_is_recorded_as_a_guess(): void {
 		$this->answer_row_with(
 			array(
-				'id'     => 7,
-				'hash'   => $this->stored_hash(),
+				'id'      => 7,
+				'hash'    => $this->stored_hash(),
 				'user_id' => 0,
-				'dep_id' => 0,
+				'dep_id'  => 0,
 			)
 		);
 
