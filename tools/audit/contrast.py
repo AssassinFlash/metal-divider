@@ -45,11 +45,34 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from narrow_viewport import PAGES, reclaim_profiles  # noqa: E402
 
 PROBE = r"""() => {
+  // Chrome reports Tailwind 4's `oklch()` colours verbatim: `getComputedStyle`
+  // and `ctx.fillStyle` both hand back the source string, and a regex over
+  // `rgba?()` returns null for it. A null backdrop is not "no colour" — the
+  // walk skips that layer and lands on an ancestor, which turned a light-green
+  // button with dark-green text into "dark green on near-black, 1.24:1"
+  // (measured 2026-10-29). Painting one pixel and reading it back is the only
+  // route that gives real numbers, because it is the renderer doing the
+  // conversion.
+  const pixelCtx = (() => {
+    const cv = document.createElement('canvas');
+    cv.width = 1;
+    cv.height = 1;
+    return cv.getContext('2d', { willReadFrequently: true });
+  })();
   const parse = (c) => {
-    const m = String(c || '').match(/rgba?\(([^)]+)\)/);
-    if (!m) return null;
-    const p = m[1].split(',').map(Number);
-    return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+    const text = String(c || '');
+    const m = text.match(/rgba?\(([^)]+)\)/);
+    if (m) {
+      const p = m[1].split(',').map(Number);
+      return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+    }
+    if (!pixelCtx || !/oklch|oklab|color\(|hsl/.test(text)) return null;
+    pixelCtx.clearRect(0, 0, 1, 1);
+    pixelCtx.fillStyle = text;
+    pixelCtx.fillRect(0, 0, 1, 1);
+    const d = pixelCtx.getImageData(0, 0, 1, 1).data;
+    if (0 === d[3]) return null;
+    return { r: d[0], g: d[1], b: d[2], a: d[3] / 255 };
   };
   const lum = ({ r, g, b }) => {
     const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
