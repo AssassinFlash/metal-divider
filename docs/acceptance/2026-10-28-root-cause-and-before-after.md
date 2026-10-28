@@ -323,3 +323,48 @@ WindPress 是 Tailwind v4，**没有服务端构建**：`cache/store` 只接收�
 2. **样式**：同一 `<a>` 叠了 Shopify 与新版两套类，`height:215px` 压掉 `aspect-ratio:16/10`、
    `contain`+`padding` 把方图缩进灰底、`::after` 画半截下划线 → 已修（标记读回
    `object-fit: contain` 0 处、`cover` 2 处）。
+
+## 十三、询盘表单校验：生产前台实测（2026-10-28）
+
+本轮的 `inquiry.css`、`Form.php`、`Validator.php` 改动刚部署，需要证明表单**在线上真的能用**，
+不只是"字段都在"。在**前台窗口**（`visibilityState: visible`、`innerWidth: 1440`、访客态）实测。
+
+### 字段与标记
+
+线上可见表单 16 个具名控件：`md_inquiry_nonce`、`md_inquiry_action`、`md_inquiry_locale`、
+三个来源字段、`name`/`email`/`company`/`phone`/`country`/`scope`/`route`/`quantity`/`message`、
+`md_inquiry_confirm`、蜜罐 `website`。`required` 8 个。
+
+确认勾选的实测：
+
+| 项 | 实测值 |
+|---|---|
+| label 尺寸 | **44 × 980**（点击区达标） |
+| 勾选框 | 20 × 20，`accent-color: #c9a962` |
+| 文案 | `I confirm this inquiry is for an architectural or commercial project.` |
+| `cursor` | `pointer` |
+| `required` | `true` |
+
+### 浏览器原生校验实测
+
+填好其余七个字段（含三个 select）后：
+
+```
+validBefore: false
+invalid: ["md_inquiry_confirm"]     ← 只有确认框
+```
+
+勾选后再读：
+
+```
+validNow: true
+invalid: []
+```
+
+**说明**：新加的确认勾选是真的在拦、也真的能放行，不是装饰。同时 `[role=alert][aria-live]`
+常驻容器存在，`errSpans: 0`（无残留错误）。
+
+### 未覆盖的一项
+
+`turnstile: false` —— Turnstile 未配置（无 sitekey/secret），代码走"未配置就不渲染、不锁提交"
+的既定路径。这是**配置缺失，不是本轮代码缺陷**；要挂上需要业主提供 Cloudflare Turnstile 密钥。
