@@ -801,9 +801,15 @@
       if (event.key === 'Escape' && openStack.length) {
         // The topmost surface owns Escape; the surfaces below it stay open.
         // Their own close functions restore focus where it came from.
+        // stopImmediatePropagation is the ownership: a later document listener
+        // (the nav disclosure, the landing menu, the catalog sheet) would
+        // otherwise close too and move focus off the opener this close just
+        // restored. The catalog sheet checks md-modal-open, but closeModal
+        // clears that class before those listeners run.
+        event.preventDefault();
+        event.stopImmediatePropagation();
         var top = openStack[openStack.length - 1];
         if (typeof top.__mdClose === 'function') {
-          event.preventDefault();
           top.__mdClose();
         } else {
           closeModal(top);
@@ -3381,11 +3387,50 @@
         }, 250);
       });
 
-      input.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && results && !results.hidden) {
+      // Suggestions are a layer inside the dialog, not the dialog itself.
+      // The first Escape dismisses them and stays in the field; the next one
+      // belongs to the shared stack, which closes the sheet and restores the
+      // opener. stopPropagation is the layer: the stack listener is on
+      // document and would otherwise close the sheet on the same key. The
+      // listener is on the modal, not the field — a result link and "See all
+      // matches" are tab stops, and Escape from either has to dismiss the
+      // list too. Focus returns to the field because hiding the link that
+      // held it would otherwise leave it in a hidden subtree.
+      var suggestionsOpen = function () {
+        return (results && !results.hidden)
+          || (seeAll && !seeAll.hidden)
+          || (emptyNote && !emptyNote.hidden);
+      };
+      var dismissSuggestions = function () {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        if (inflight) {
+          inflight.abort();
+          inflight = null;
+        }
+        if (results) {
           results.hidden = true;
         }
-      });
+        if (seeAll) {
+          seeAll.hidden = true;
+        }
+        if (emptyNote) {
+          emptyNote.hidden = true;
+        }
+      };
+      if (seriesModal) {
+        seriesModal.addEventListener('keydown', function (event) {
+          if (event.key !== 'Escape' || !suggestionsOpen()) {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          dismissSuggestions();
+          input.focus({ preventScroll: true });
+        });
+      }
 
       sync();
     });

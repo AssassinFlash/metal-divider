@@ -401,6 +401,80 @@ final class ControlFamiliesTest extends TestCase {
 	}
 
 	/**
+	 * Escape inside the search sheet dismisses suggestions before the sheet.
+	 *
+	 * The field used to hide the result list and let the key bubble, so the
+	 * shared stack handler closed the dialog on the same press. A keyboard
+	 * user could not clear the list and keep typing. The listener has to sit
+	 * on the modal — a result link is a tab stop — stop the event so the
+	 * dialog stays open, and hand focus back to the field, because the link
+	 * just hidden would otherwise keep it.
+	 */
+	public function test_search_escape_dismisses_suggestions_before_the_dialog(): void {
+		$body  = $this->pass( 'setupPredictiveSearchReset' );
+		$start = strpos( $body, "seriesModal.addEventListener('keydown'" );
+		$this->assertNotFalse( $start, 'Escape is handled on the search modal, not only the field' );
+		$end = strpos( $body, "\n        });", (int) $start );
+		$this->assertNotFalse( $end, 'the modal Escape handler terminates' );
+		$handler = substr( $body, (int) $start, (int) $end - (int) $start );
+
+		$this->assertStringContainsString(
+			"if (event.key !== 'Escape' || !suggestionsOpen())",
+			$handler,
+			'a closed suggestion list does not consume Escape — that key belongs to the dialog'
+		);
+		$this->assertStringContainsString(
+			'event.stopPropagation()',
+			$handler,
+			'the first Escape must not reach the stack handler that closes the dialog'
+		);
+		$this->assertStringNotContainsString(
+			'closeModal',
+			$handler,
+			'dismissing suggestions does not close the sheet'
+		);
+		$this->assertStringContainsString(
+			'input.focus(',
+			$handler,
+			'focus returns to the field when the list that held it is hidden'
+		);
+		$this->assertDoesNotMatchRegularExpression(
+			"/input\\.addEventListener\\(\\s*'keydown'/",
+			$body,
+			'the field must not hide the list and let the same key close the dialog'
+		);
+
+		$dismiss = strpos( $body, 'var dismissSuggestions = function () {' );
+		$this->assertNotFalse( $dismiss, 'suggestion dismissal is one function' );
+		$dismiss_end = strpos( $body, "\n      };", (int) $dismiss );
+		$this->assertNotFalse( $dismiss_end, 'dismissSuggestions terminates' );
+		$dismiss_body = substr( $body, (int) $dismiss, (int) $dismiss_end - (int) $dismiss );
+		$this->assertStringContainsString( 'results.hidden = true', $dismiss_body, 'the result list is the suggestion layer' );
+		$this->assertStringContainsString( 'seeAll.hidden = true', $dismiss_body, 'See all matches is part of the same layer' );
+		$this->assertStringContainsString( 'emptyNote.hidden = true', $dismiss_body, 'the empty note is part of the same layer' );
+		$this->assertStringContainsString( 'inflight.abort()', $dismiss_body, 'a late response must not reopen the list' );
+
+		$open = strpos( $body, 'var suggestionsOpen = function () {' );
+		$this->assertNotFalse( $open, 'the suggestion layer has one predicate' );
+		$open_end = strpos( $body, "\n      };", (int) $open );
+		$this->assertNotFalse( $open_end, 'suggestionsOpen terminates' );
+		$open_body = substr( $body, (int) $open, (int) $open_end - (int) $open );
+		$this->assertStringContainsString( '!results.hidden', $open_body );
+		$this->assertStringContainsString( '!seeAll.hidden', $open_body, 'a visible See all link is still the suggestion layer' );
+		$this->assertStringContainsString( '!emptyNote.hidden', $open_body );
+
+		// The sheet's own close is the stack's. That handler has to consume
+		// the key, or a later document listener moves focus off the opener
+		// closeModal just restored.
+		$modals = $this->pass( 'setupModals' );
+		$this->assertMatchesRegularExpression(
+			"/if \\(event\\.key === 'Escape' && openStack\\.length\\) \\{[\\s\\S]*?event\\.stopImmediatePropagation\\(\\);[\\s\\S]*?closeModal\\(top\\)/",
+			$modals,
+			'the top surface owns Escape, so the search opener keeps the focus this close restored'
+		);
+	}
+
+	/**
 	 * The quality deck states the shown document and hides the rest.
 	 *
 	 * The four cards carry a deck vocabulary (is-active / is-next / is-prev /
