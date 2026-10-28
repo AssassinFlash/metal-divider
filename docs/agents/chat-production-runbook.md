@@ -302,3 +302,28 @@ Listed here instead of invented. Do not fill these gaps with a guessed command.
 - The operator-password set command is not in the repo.
 - No real-Chrome chat-chain script path is in the grounding files.
 - Issue #148 and #161 were not re-fetched in this session; the roles above are the ones this runbook was told to cite.
+
+## Production bring-up executed (2026-10-28)
+
+Executed in one owner window. Sequence as run, for the next fresh target:
+
+1. Pre-check (read-only): target has zero `lh_`/`lhc_`/rapls tables, no `/chat`, prefix read live (`wp config get table_prefix`).
+2. Rollback snapshot: `md-deploy snapshot --target prod --write`.
+3. Full schema PRE step (host-side script, no repo path): dump ALL `lh_`/`lhc_`/`stg_raplsaich_%` tables `--no-data --skip-triggers` from golden, `sed s/stg_raplsaich_/wp_raplsaich_/` the rapls names, `wp db import` on target. This replaces the LHC web installer: same version, no wizard, no secrets through a browser. The seed's schema file stays local-only (22 seed tables, not a full schema).
+4. Fresh `settings/settings.ini.php` written host-side from the staging template: target DB credentials parsed from the target `wp-config.php`, fresh 80-char `secrethash`, `site_address` kept empty (parity with golden; LHC derives from request). Extensions need no settings key (auto-discovered from `extension/`).
+5. Pre-created `chat/cache/{compiledtemplates,cacheconfig,translations,userinfo}` and the `chat/var/*` storage dirs.
+6. `md-deploy chat-push --target prod --write` — first run imports the sanitized credential files, sets the bring-up marker.
+7. `wp plugin activate rapls-ai-chatbot` (activation did not touch the imported knowledge rows: 10 kept).
+8. Secrets relay host-side (script on host `/tmp`, deleted after): fresh bearers for wecom + kb and a fresh 48-char `lhc_api_key` coupled into BOTH `lh_abstract_rest_api_key` and `md_wecom_notify`; copied from staging (same host, never printed): `deepseek_api_key`, `wecom_secret`, `wecom_callback_token`, `wecom_callback_aes_key`; operator bcrypt copied so the staging password works (deliberate deviation from the fresh-password step: no new credential reaches a human); `customer_site_url`/`customer_company_name` rewritten explicitly (the seed ships stock values, hostname replace never touches them); `md_chat_launcher_hosts` = production hosts; `auto_accept_mail` restored.
+9. `md-site-guards.php` with `frame-src 'self'` deployed in the same window; `wp litespeed-purge all`.
+
+### The bearer that is actually sent (lesson, cost one probe cycle)
+
+`lh_generic_bot_rest_api.configuration` carries the bearer TWICE: a top-level `auth_bearer` mirror AND `parameters[i].auth_bearer` — LHC sends the PARAMETER one. The seed strike empties both; a relay that only sets the top-level mirror still yields `{"error":{"code":"unauthorized"}` in the chat. The relay must set `parameters[*].auth_bearer` on every parameter of every REST row, then reset `chat/cache/{compiledtemplates,cacheconfig}` (the module cache otherwise serves the blanked bearer read between push and relay).
+
+### Verification (all green, 2026-10-28)
+
+- chat-verify 5/5 on prod; independent curl cross-check 4/4 + desk login form present.
+- Real Chrome chain: homepage launcher -> pattern page card (iframe through CSP `frame-src 'self'`) -> question -> answer "The Agave pattern has an open area of 17%. Based on: Pattern Agave" (live prod Woo lookup + DeepSeek) -> widget self-service delete -> start page.
+- All probe chats erased (1 via widget control, 2 via the endpoint); final baseline `lh_chat=0`, `lh_msg=0`, online_users=0.
+- Known open: the WeCom card send was not exercised end-to-end on prod tonight (no transfer was triggered); the connector code, bearer pairing (hash-verified), and webhook rows are live — first real inquiry exercises it. The rapls 146-row index ships empty by design (live Woo lookup does not use it).
