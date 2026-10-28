@@ -91,6 +91,10 @@ button{cursor:pointer}
 .md-resume:hover{border-color:#b99b5f;background:#f3ead4}
 .md-resume:focus-visible{outline:2px solid #c9a962;outline-offset:2px}
 .md-resume[hidden]{display:none}
+.md-resume-reset{display:block;margin:-4px 0 12px;padding:0 2px;border:0;background:none;color:#8a7b5d;font-size:10.5px;text-align:left;text-decoration:underline;cursor:pointer}
+.md-resume-reset:hover{color:#3e3526}
+.md-resume-reset:focus-visible{outline:2px solid #c9a962;outline-offset:2px}
+.md-resume-reset[hidden]{display:none}
 .md-resume-icon{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:9px;background:#eee2c8;color:#7c6235;font-size:15px}
 .md-resume-copy{display:flex;flex-direction:column;gap:1px;min-width:0}
 .md-resume-copy b{font-size:12px;font-weight:650;line-height:1.3}

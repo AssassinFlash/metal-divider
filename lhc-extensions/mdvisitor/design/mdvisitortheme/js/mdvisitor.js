@@ -135,7 +135,27 @@
       link.href = saved.url;
       link.hidden = false;
     });
+    Array.prototype.forEach.call(card.querySelectorAll('.md-resume-reset'), function (button) {
+      button.hidden = false;
+    });
   }
+
+  function resetResume() {
+    try { window.localStorage.removeItem('mdv:lastChat'); } catch (err) {}
+    Array.prototype.forEach.call(card.querySelectorAll('.md-resume'), function (link) {
+      link.hidden = true;
+      link.removeAttribute('href');
+    });
+    Array.prototype.forEach.call(card.querySelectorAll('.md-resume-reset'), function (button) {
+      button.hidden = true;
+    });
+    var first = card.querySelector('.md-action');
+    if (first) { first.focus(); }
+  }
+
+  Array.prototype.forEach.call(card.querySelectorAll('.md-resume-reset'), function (button) {
+    button.addEventListener('click', resetResume);
+  });
 
   initResume();
 
