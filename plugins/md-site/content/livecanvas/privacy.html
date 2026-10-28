@@ -1,10 +1,10 @@
 <!-- The privacy face (spec 08 §7, spec 19 §2.2 R3): the one policy
      page that replaces the old site's eight Consentmo shells (none of
-     that generated text is carried over — the owner's ruling). Copy is
-     the outline's first draft, marked for the T1 adversarial review
-     (spec 08 §4.1); the data-center region is the host's measured one
-     (Frankfurt, ticket #25) and retention is spec 08's 5-year default
-     (O3 — the owner may set another period). Styles: privacy.css. -->
+     that generated text is carried over — the owner's ruling). Copy
+     reviewed against the current implementation. The data-center region
+     is the host's measured one (Frankfurt, ticket #25). Retention is
+     still spec 08's 5-year default (O3) and has not been changed into
+     an owner ruling. Styles: privacy.css. -->
 <section class="md-privacy" id="md-privacy">
   <div class="container-narrow">
     <header class="privacy-head">
@@ -17,7 +17,7 @@
       <a href="#md-privacy-scope">Who we are and scope</a>
       <a href="#md-privacy-what">What we collect</a>
       <a href="#md-privacy-why">Why and legal basis</a>
-      <a href="#md-privacy-cookies">Cookies and local storage</a>
+      <a href="#md-privacy-cookies">Cookies</a>
       <a href="#md-privacy-sharing">Sharing and processors</a>
       <a href="#md-privacy-retention">Retention</a>
       <a href="#md-privacy-transfers">Cross-border transfers</a>
@@ -33,42 +33,41 @@
     <section id="md-privacy-what">
       <h2>2. What we collect</h2>
       <ul>
-        <li><strong>Inquiry form</strong> — name, email, company (optional), your message, and any pattern-list entries attached at submit.</li>
-        <li><strong>Pattern list</strong> — the list you build while browsing stays in your browser's local storage; it never leaves your device except when the form submits it as part of your inquiry.</li>
-        <li><strong>Server logs</strong> — standard hosting records (IP address, timestamps, requested pages) kept for security and operation.</li>
-        <li><strong>Consent records</strong> — if the cookie banner asks for a choice, the record of that choice.</li>
-        <li><strong>WhatsApp</strong> — a conversation you start on WhatsApp happens on WhatsApp, under WhatsApp's own policies.</li>
+        <li><strong>Inquiry form</strong> — name and email; country, project scope, inquiry route, and estimated quantity, each chosen from the form's list; company and phone, both optional; and a message, required only when no pattern is attached. Sending the form also requires a confirmation that the inquiry is for an architectural or commercial project. That confirmation is not stored.</li>
+        <li><strong>Pattern</strong> — one pattern at most, taken from the page where the form is opened. The record stores that pattern's name, code, and slug, and a link to the pattern.</li>
+        <li><strong>Inquiry record</strong> — a successful submission also stores the UTC submission time, the page, module, and button the form came from, the IP address, a User-Agent summary of at most 300 characters, a language marker fixed to English, and a Turnstile status of verified or not configured. The Turnstile token is not stored. A failed check does not create an inquiry record. A ten-minute rate-limit counter stores timestamps under a hash of the IP address, not the address itself.</li>
+        <li><strong>Mail copies</strong> — the same successful inquiry is copied into two queued emails: an internal notification with the form fields, the pattern, the source, and the verification status, and a confirmation sent to the email address entered. Those copies do not include the IP address or the User-Agent.</li>
+        <li><strong>Server logs</strong> — Hostinger keeps ordinary request logs (IP address, time, and the page requested) for operating the site.</li>
+        <li><strong>WhatsApp</strong> — choosing WhatsApp does not submit the form and does not create an inquiry record. It opens a chat to +852 6473 1687. The prefilled message can include a short greeting, the pattern name and code, and a source reference. After the name, company, or message is typed, the form's WhatsApp link can also include those three. Email, phone, country, project scope, inquiry route, and quantity are not included.</li>
       </ul>
     </section>
 
     <section id="md-privacy-why">
       <h2>3. Why we process it, and the legal basis</h2>
-      <p>We process inquiry data to answer your inquiry and prepare quotes — steps preceding a possible contract (GDPR Art. 6(1)(b)). Server logs run on our legitimate interest in operating a secure site (Art. 6(1)(f)). Where a choice is genuinely yours (non-essential cookies), we ask for consent (Art. 6(1)(a)). Equivalent bases apply in the other jurisdictions listed in section 8.</p>
+      <p>We process inquiry data to answer your inquiry and prepare quotes — steps preceding a possible contract (GDPR Art. 6(1)(b)). Server logs and the inquiry form's spam check — Turnstile verification and the rate-limit counter — run on our legitimate interest in operating a secure site (Art. 6(1)(f)). Equivalent bases apply in the other jurisdictions listed in section 8.</p>
     </section>
 
     <section id="md-privacy-cookies">
-      <h2>4. Cookies and local storage</h2>
-      <p>At launch the site sets only strictly necessary cookies and storage:</p>
+      <h2>4. Cookies</h2>
+      <p>Public pages do not set a session cookie, and the site does not use local storage. The only cookie is set on the login page:</p>
       <table class="privacy-table">
         <thead><tr><th>Name</th><th>Purpose</th><th>Category</th><th>Lifetime</th></tr></thead>
         <tbody>
-          <tr><td>Cloudflare Turnstile</td><td>Spam protection on the inquiry form</td><td>Strictly necessary</td><td>Session / short-lived</td></tr>
-          <tr><td>Session cookie</td><td>Maintains your browsing session</td><td>Strictly necessary</td><td>Session</td></tr>
-          <tr><td>Pattern list (local storage)</td><td>Keeps your pattern list between visits; never leaves your browser except with your inquiry</td><td>Strictly necessary</td><td>Until you clear it</td></tr>
-          <tr><td>CookieYes consent record</td><td>Remembers your cookie choice</td><td>Strictly necessary</td><td>Up to 12 months</td></tr>
+          <tr><td>wordpress_test_cookie</td><td>Checks that the browser accepts cookies. Set on the login page only.</td><td>Strictly necessary</td><td>Session</td></tr>
         </tbody>
       </table>
+      <p>The inquiry form's spam check uses Cloudflare Turnstile. Turnstile's default is a one-time token. When the check runs, that token and, if known, the IP address are sent to Cloudflare's siteverify endpoint. The token is not stored.</p>
       <p>There are no analytics or advertising cookies on this site.</p>
     </section>
 
     <section id="md-privacy-sharing">
       <h2>5. Sharing and processors</h2>
-      <p>We do not sell data and run no tracking pixels. Three processors see what they need to keep the site working: our hosting provider (Hostinger), our CDN/WAF (Cloudflare), and the mail infrastructure that delivers inquiry notifications. Nothing else is shared with anyone.</p>
+      <p>We do not sell data and run no tracking pixels. Hostinger hosts the site and serves it through its CDN. Cloudflare is not that CDN: when the inquiry form's spam check runs, Cloudflare receives only a one-time Turnstile token and, if known, the IP address. Inquiry mail is sent by wp_mail on the server. No other processor is used for the inquiry form.</p>
     </section>
 
     <section id="md-privacy-retention">
       <h2>6. Retention</h2>
-      <p>Inquiry records are kept for 5 years — the tracking cycle of a B2B project — then deleted or anonymized. Server logs rotate on the host's standard schedule. The pattern list in your browser stays until you clear it.</p>
+      <p>Inquiry records are kept for 5 years — the tracking cycle of a B2B project — then deleted or anonymized. Server logs rotate on the host's standard schedule.</p>
     </section>
 
     <section id="md-privacy-transfers">
