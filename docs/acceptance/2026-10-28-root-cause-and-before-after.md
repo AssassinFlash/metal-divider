@@ -761,3 +761,14 @@ WindPress 重编译 626156→626458 字节，mtime 1793178261，anchors 通过�
 `overflowPx=0`。此次挑战内容未绘制，因此只确认裁切根因与几何修复，不把
 Privacy/logo 可见性列为已验证。证据 `inquiry-turnstile-after-slot.png` 与
 `inquiry-turnstile-after.json`。
+
+## 二十九、FAQ 第三方下载来源标注
+
+8 个 Brilliant/Zahner 外链原样保留，新增可见说明：这些是第三方参考文件，
+不是 Metal Divider 规格、证书或项目文件。每张卡标题旁加入来源标签：
+Brilliant×1、Zahner×7，不再只把来源藏在 URL。守卫要求 8 个 URL 与按钮原文不丢，
+完整门禁通过，部署 `20261028T092131466771Z-5e7dc04` 已归档。
+
+规范 `/faqs/` 两次匿名请求均 200，缓存 miss→hit；来源说明、1+7 标签与 8 个
+外链全部在。证据 `/tmp/md-faq-source-readback.json`。是否继续使用这些链接仍需
+业主决定，本次只解决来源透明，不视为授权确认。
