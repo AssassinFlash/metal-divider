@@ -279,7 +279,6 @@ def main() -> int:
             return 1 if failed else 0
 
         results = []
-        total = 0
         for path in args.pages:
             url = f"{args.base}{path}?mdaudit={__import__('time').time_ns()}"
             entry: dict = {"path": path}
@@ -292,21 +291,42 @@ def main() -> int:
                     " setTimeout(s, 40); else { scrollTo(0, 0);"
                     " setTimeout(d, 250); } }; s(); })"
                 )
+                # Record the width the page actually laid out at. Without it a
+                # report cannot prove which viewport produced it, and a stale
+                # file from another width looks perfectly valid (measured
+                # 2026-10-29: the 320 report was byte-identical to the 390 one).
+                entry["innerWidth"] = page.evaluate("() => innerWidth")
                 data = json.loads(page.evaluate(PROBE))
                 entry.update(data)
             except Exception as exc:  # noqa: BLE001 - a page that fails is data
                 entry["error"] = str(exc)
             results.append(entry)
             n = len(entry.get("findings", []))
-            total += n
             mark = "" if n == 0 else f"  {n} low-contrast"
-            print(f"{path:56} skipped-gradient={entry.get('skippedGradientText', '?')}{mark}", flush=True)
+            print(f"{path:28} {entry.get('skippedGradientText', '?'):>3} skipped-gradient {mark}", flush=True)
         context.close()
         browser.close()
 
     reclaim_profiles()
     (out / "contrast.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
-    print(f"\n{total} low-contrast text run(s) across {len(results)} page(s)")
+
+    # A shared footer repeats on every page. Counting it once per page turned 4
+    # real footer items into 128 "findings" (32 pages x 4) and buried the 45
+    # that were actually in page bodies (measured 2026-10-29). Report distinct
+    # problems, and say how many pages each one appears on.
+    distinct: dict[tuple, dict] = {}
+    for entry in results:
+        for f in entry.get("findings", []):
+            key = (f.get("zone"), f.get("color"), f.get("backdrop"), f.get("size"), f.get("cls"), f.get("text"))
+            if key not in distinct:
+                distinct[key] = dict(f, pages=[])
+            distinct[key]["pages"].append(entry["path"])
+
+    total = sum(len(e.get("findings", [])) for e in results)
+    print(f"\n{total} run(s) across {len(results)} page(s); {len(distinct)} distinct problem(s)")
+    for d in sorted(distinct.values(), key=lambda x: -len(x["pages"]))[:12]:
+        where = f"{len(d['pages'])} page(s)" if len(d["pages"]) > 1 else d["pages"][0]
+        print(f"  [{d.get('zone')}] {d['ratio']}/{d['need']} {d['size']}px {d['color'][:26]} {d.get('text','')[:26]}  {where}")
     print(f"wrote {out / 'contrast.json'}")
     return 0
 
