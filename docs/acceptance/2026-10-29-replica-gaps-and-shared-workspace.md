@@ -1327,7 +1327,7 @@ sort all-sitemap-urls | uniq -d   →  https://metal-divider.com/blog/
 另外记一条并发风险：`deploy6` 与 `deploy7` 同时存在时，`deploy7` 被静默拒绝；
 若两次改动不同，线上会停在前一个版本而日志看起来「有过部署」。本项目应避免并发部署。
 
-#### 9.25.2 最终读回：索引 4 → 3，跨 sitemap 零重复
+#### 9.25.2 最终读回：索引 4 → 3，跨 sitemap 零重复（部署 `20261028T223210409080Z-d5d9ae9`）
 
 部署前的实况是索引 **4 条**（`post` 已在上一次移除），其中 `category` 是空项。
 
