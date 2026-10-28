@@ -86,6 +86,26 @@
 
 **待业主提供原图**:`ripples`(480w)、`pebble-creek`(480w)、`naughts-x-plus`、`coconut-dreaming`、上述两张配图。
 
+### 2026-10-28 SEO 结构审计:14 页 JSON-LD + 补目录页 ItemList
+
+**审计结果(生产实测)**
+
+| 页型 | JSON-LD 类型 |
+|---|---|
+| 全部 14 页 | `WebPage` + `BreadcrumbList` |
+| 首页 | `Organization` + `WebSite` + `SearchAction` + `ContactPoint` |
+| FAQ | `FAQPage`,40 个 `Question` |
+| PDP | `Product` + `Brand` + `PropertyValue` + `QuoteAction` |
+| 博客 | `WebSite` + `SearchAction` |
+
+**缺口与修复**:`/shop/` 是 146 个图案的目录,却只有 `WebPage`、无 `ItemList`。SEOPress 无法表达——它的 `Product` 逐产品、`CollectionPage` 只用于 Woo 归档,而 `/shop/` 虽是 `post-type-archive-product woocommerce-shop`,却**没有对应 page**,`is_page('shop')` 永远 false。
+
+**第一版静默失效**:钩子注册、方法存在、语法正确、`php-check` 全绿,页面却什么都不输出——**守卫条件本身就是缺陷**。靠"页面里 ItemList 计数仍为 0"才发现。
+
+修复后:`/shop/` 输出 `ItemList`(24 项、字母序、URL 有效、`numberOfItems` 与实际一致),其余四页为 0。测试新增两条:「列出页面实际渲染的项」「别处静默」。
+
+**环境事实**:dev 未装 SEOPress,生产装有 `wp-seopress` + `wp-seopress-pro`。**SEO 类改动必须直接对生产验证**,dev 的通过不可代表线上。
+
 ### 2026-10-28 图片来源穷尽:三套,不是两套
 
 此前两轮分别修了产品特色图与分类 term 缩略图,以为覆盖完整。第三轮发现 `/shop/` 仍报 3 张 soft,追下去是**模板里硬编码的绝对路径**:
