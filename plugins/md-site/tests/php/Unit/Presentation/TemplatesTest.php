@@ -504,7 +504,24 @@ final class TemplatesTest extends TestCase {
 			'country count'              => '/\b\d{2}\+\s*(?:countries|Countries)\b/i',
 			'floor area'                 => '/\b\d{1,2},\d{3}\s*m2\b|\b\d{1,2},\d{3}\+\s*sqm\b/i',
 			'mockups in 24 hours'        => '/mockups?\s+in\s+24\s*hours?/i',
-			'salt-spray or life figures' => '/\b\d[\d,]*\+\s*hours\b|\b\d{1,2}–\d{2}\s*years\b/i',
+			// Test hours and service life are the two figures the owner struck
+			// for want of a source. The first pass matched only `1,000+ hours`
+			// and `25–30 years`, so the pages kept `4,000hr+`, `4,000hr`,
+			// `500hr`, `1,000 hrs`, `3–5 years`, `10–20 year warranty` and
+			// `25+ Year Finish Life` — seven claims the guard was written to
+			// stop. Support hours (`24 hours`, `48 hours`, `72 Hours`) and
+			// working hours (`4 hours`) stay legal, which is why the hour
+			// branch needs either four digits or an explicit `+`.
+			//
+			// The `/u` flag is load-bearing: every range on these pages uses
+			// an en dash (U+2013). Without it PCRE walks the three bytes of
+			// the dash individually, no range ever matches, and the guard is
+			// silently blind to the exact claims it was written for.
+			'salt-spray or life figures' => '/\b\d[\d,]*\s*\+\s*(?:hrs?|hours?)\b'
+				. '|\b\d[\d,]{2,}\s*(?:hrs?|hours?)\b'
+				. '|\b\d{1,2}\s*[–—-]\s*\d{1,2}\s*years?\b'
+				. '|\b\d{1,2}\+\s*years?\b'
+				. '|\b(?:holds?|lasts?)\s+\d{1,2}\s*[–—-]\s*\d{1,2}\b/iu',
 		);
 		$found = array();
 		foreach ( $files as $file ) {

@@ -622,6 +622,76 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
+	 * WooCommerce is asked for four related patterns: the old site's samples
+	 * carried three and four side by side, and four is the widest row
+	 * `pdp.css` lays out (Shortcodes::RELATED_LIMIT).
+	 *
+	 * The limit is recorded from the call rather than pinned with `->with()`:
+	 * a wrong limit then fails as an assertion naming the number that was
+	 * actually asked for, instead of as a Mockery "no matching handler", which
+	 * says the mock was wrong rather than that the page is.
+	 */
+	public function test_related_asks_woocommerce_for_at_most_four(): void {
+		$asked = array();
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $this->product_post() );
+		WP_Mock::userFunction( 'get_the_title' )->andReturn( 'Akira | Architectural Metal Screen Pattern' );
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturn( array() );
+		WP_Mock::userFunction( 'get_permalink' )->andReturn( 'https://site.test/pattern/akira/' );
+		WP_Mock::userFunction( 'get_the_post_thumbnail_url' )->andReturn( 'https://site.test/uploads/akira.jpg' );
+		WP_Mock::userFunction( 'wc_get_related_products' )
+			->once()
+			->andReturnUsing(
+				static function ( int $id, int $limit ) use ( &$asked ): array {
+					$asked[] = $limit;
+					return array( 11, 12, 13, 14 );
+				}
+			);
+
+		$cards = ( new Shortcodes() )->related();
+
+		$this->assertSame( array( 4 ), $asked, 'the PDP asks WooCommerce for four adjacent patterns, not three' );
+		$this->assertSame( 4, Shortcodes::RELATED_LIMIT, 'the ceiling the related grid draws four tracks for' );
+		$this->assertSame(
+			4,
+			substr_count( $cards, 'class="pdp-related-card gs-reveal"' ),
+			'and four related patterns render four cards'
+		);
+	}
+
+	/**
+	 * Four is a ceiling and not a quota: a pattern with three neighbours
+	 * renders three cards, not three cards stretched or a fourth invented.
+	 *
+	 * The old site's own samples ran 3 and 4, so the grid follows the cards
+	 * rather than the cards being padded to the grid.
+	 */
+	public function test_related_draws_a_short_list_as_it_is(): void {
+		$asked = array();
+		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $this->product_post() );
+		WP_Mock::userFunction( 'get_the_title' )->andReturn( 'Akira | Architectural Metal Screen Pattern' );
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturn( array() );
+		WP_Mock::userFunction( 'get_permalink' )->andReturn( 'https://site.test/pattern/akira/' );
+		WP_Mock::userFunction( 'get_the_post_thumbnail_url' )->andReturn( 'https://site.test/uploads/akira.jpg' );
+		WP_Mock::userFunction( 'wc_get_related_products' )
+			->once()
+			->andReturnUsing(
+				static function ( int $id, int $limit ) use ( &$asked ): array {
+					$asked[] = $limit;
+					return array( 11, 12, 13 );
+				}
+			);
+
+		$cards = ( new Shortcodes() )->related();
+
+		$this->assertSame( array( 4 ), $asked, 'WooCommerce is asked for up to four; it is the catalogue that answers three' );
+		$this->assertSame(
+			3,
+			substr_count( $cards, 'class="pdp-related-card gs-reveal"' ),
+			'three neighbours draw three cards: no fourth card is invented to fill the row'
+		);
+	}
+
+	/**
 	 * The hero background is the first scene, with the attachment's real
 	 * dimensions and the decorative empty alt the old theme used.
 	 */
@@ -728,6 +798,185 @@ final class ShortcodesTest extends TestCase {
 		$image = ( new Shortcodes() )->image( array( 'slot' => 'plate' ) );
 
 		$this->assertStringContainsString( 'src="https://site.test/uploads/102.webp"', $image );
+	}
+
+	/**
+	 * A pattern with no detail and no finish takes the **second** accent for
+	 * its plate, because the first accent is the wide band's.
+	 *
+	 * This is the class the catalogue actually carries: measured on the dev
+	 * instance 2026-10-29 (151 published patterns), `detail` appears in 3
+	 * product galleries and `finish` in 2, while `accent` appears in 96 —
+	 * four to six per product. The old two-class order therefore resolved a
+	 * plate on 5 patterns and left 141 hero sections with no plate at all,
+	 * silently (`.pdp-hero-plate:empty` hides the frame and the hero grid
+	 * collapses to one column, so nothing looked broken).
+	 *
+	 * Taking `accent[0]` instead would fill the plate and empty the wide band
+	 * on every one of those patterns; that is why the pool is sliced.
+	 */
+	public function test_image_plate_takes_the_second_accent_and_leaves_the_first_for_the_wide_band(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render',
+				),
+				103 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render 2',
+				),
+				104 => array(
+					'role' => 'official installation scene',
+					'alt'  => 'Akira official installation scene',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$plate = $shortcodes->image( array( 'slot' => 'plate' ) );
+		$this->assertStringContainsString( 'src="https://site.test/uploads/103.webp"', $plate, 'the plate takes the second accent, not the first' );
+		$this->assertStringContainsString( 'alt="Akira accent render 2"', $plate );
+
+		$this->assertStringContainsString(
+			'src="https://site.test/uploads/102.webp"',
+			$shortcodes->image( array( 'slot' => 'wide' ) ),
+			'the first accent stays free for the wide band'
+		);
+		$this->assertStringContainsString(
+			'src="https://site.test/uploads/104.webp"',
+			$shortcodes->image( array( 'slot' => 'square' ) ),
+			'the square keeps the second scene, which is what leaves the first accent free'
+		);
+		$this->assertTrue( $shortcodes->has_image( 'plate' ), 'and the guard agrees, so the plate frame is drawn' );
+	}
+
+	/**
+	 * Without a second scene the square takes the first accent, and the wide
+	 * band is empty: one image never fills two slots.
+	 *
+	 * This is the catalogue's commonest shape (146 patterns hold one scene,
+	 * 55 of them with no accent at all), and it is why the wide band draws on
+	 * four patterns and not ninety-six. Asserted so the trade is explicit: a
+	 * later change that made the wide band "always show something" would have
+	 * to reuse the square's image and would fail here.
+	 */
+	public function test_image_wide_stays_empty_when_the_square_took_the_first_accent(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render',
+				),
+				103 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render 2',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/102.webp"', $shortcodes->image( array( 'slot' => 'square' ) ) );
+		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'wide' ) ) );
+		$this->assertFalse( $shortcodes->has_image( 'wide' ), 'and the guard agrees, so no empty 21:9 frame is drawn' );
+	}
+
+	/**
+	 * With the accents spent on the square, the plate takes a scene.
+	 *
+	 * The hero holds the first scene; the second one is the square's by
+	 * right, so the plate gets the third — and when there is no third the
+	 * plate is simply absent rather than borrowing a used image.
+	 */
+	public function test_image_plate_falls_back_to_a_scene_when_the_accents_are_spent(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'accent render',
+					'alt'  => 'Akira accent render',
+				),
+				103 => array(
+					'role' => 'official installation scene',
+					'alt'  => 'Akira official installation scene',
+				),
+				104 => array(
+					'role' => 'local installation scene',
+					'alt'  => 'Akira local installation scene',
+				),
+			)
+		);
+
+		$image = ( new Shortcodes() )->image( array( 'slot' => 'plate' ) );
+
+		$this->assertStringContainsString( 'src="https://site.test/uploads/103.webp"', $image, 'the second scene, because the only accent is the wide band' );
+	}
+
+	/**
+	 * A pattern whose only non-scene pictures are unnamed keeps its hero solo:
+	 * the residual class is the migrator's bucket, not a slot candidate.
+	 *
+	 * `other` holds the `pattern render` and `reference image` roles, six
+	 * `unknown` and one `qc photo` across the catalogue's product media
+	 * (measured 2026-10-29). ROLE_CLASSES documents that bucket as filling the
+	 * first position only, and a flat render or a workshop photograph is not
+	 * what the old page put in its 3:4 hero frame.
+	 */
+	public function test_image_plate_does_not_reach_into_the_unnamed_residual(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'pattern render',
+					'alt'  => 'Akira pattern render',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'plate' ) ) );
+		$this->assertFalse( $shortcodes->has_image( 'plate' ), 'no frame is drawn around an unnamed residual image' );
+	}
+
+	/**
+	 * A pattern whose only non-scene image is a cut sheet still gets no
+	 * plate: a CAD drawing in a 3:4 hero portrait is not the pattern.
+	 *
+	 * The catalogue's cut sheets are 96 of them and every one is portrait
+	 * (median 0.77), so the ratio alone would not exclude them — the class
+	 * does.
+	 */
+	public function test_image_plate_does_not_take_a_cut_sheet(): void {
+		$this->mock_media_product(
+			array(
+				101 => array(
+					'role' => 'installed screen scene',
+					'alt'  => 'Akira installed screen scene',
+				),
+				102 => array(
+					'role' => 'cut sheet',
+					'alt'  => 'Akira cut sheet',
+				),
+			)
+		);
+		$shortcodes = new Shortcodes();
+
+		$this->assertSame( '', $shortcodes->image( array( 'slot' => 'plate' ) ) );
+		$this->assertFalse( $shortcodes->has_image( 'plate' ), 'no frame is drawn around a cut sheet' );
 	}
 
 	/**

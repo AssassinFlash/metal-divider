@@ -18,16 +18,22 @@ padding-bottom: 96px;
 html.md-js #chinese-space-applications-template--21873710498045__chinese_space_applications [x-cloak] {
 display: none !important;
 }
+/* Panel gallery. The stack was a fixed 520px box with an absolutely positioned
+ * gallery inside it, and every panel hides its overflow — so the bottom
+ * overlay, which is the text, could only ever be clipped: nothing in the box
+ * responded to a longer title or a larger type scale. Height now follows the
+ * content. 520px stays as the floor that keeps the intended band, the image
+ * moves behind the text as a fill layer, and the overlay sits in flow at the
+ * bottom of the panel so its own height is what grows the gallery. */
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery-stack {
 position: relative;
-height: 520px;
+min-height: 520px;
 }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery {
-position: absolute;
-inset: 0;
+position: relative;
 display: flex;
 gap: 12px;
-height: 100%;
+min-height: 520px;
 }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel {
 flex: 1;
@@ -37,6 +43,9 @@ overflow: hidden;
 cursor: pointer;
 transition: flex 0.6s cubic-bezier(0.25, 1, 0.5, 1);
 position: relative;
+display: flex;
+flex-direction: column;
+justify-content: flex-end;
 border: 1px solid rgba(255, 255, 255, 0.08);
 background: #0a0a0a;
 }
@@ -45,6 +54,8 @@ flex: 2.5;
 border-color: rgba(201, 169, 98, 0.4);
 }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-img {
+position: absolute;
+inset: 0;
 width: 100%;
 height: 100%;
 object-fit: cover;
@@ -96,10 +107,7 @@ border-radius: 50%;
 background: #c9a962;
 }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-overlay {
-position: absolute;
-bottom: 0;
-left: 0;
-right: 0;
+position: relative;
 padding: 20px;
 background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
 z-index: 2;
@@ -133,10 +141,10 @@ font-size: 14px;
 }
 @media (max-width: 749px) {
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery-stack {
-height: 380px;
+min-height: 380px;
 }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery {
-height: 100%;
+min-height: 380px;
 overflow-x: auto;
 scroll-snap-type: x mandatory;
 -webkit-overflow-scrolling: touch;
@@ -359,12 +367,21 @@ grid-column: 1 / -1;
 margin-top: 6px;
 }
 [id*="21873710498045"] .lcm-stats-container + .mb-10 { display: none !important; }
-#chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery-stack { height: auto; }
+/* Phone: the first mobile block above sizes the gallery as a horizontal snap
+ * scroller, and this block then supersedes it into a full-width vertical
+ * stack (flex-direction: column, overflow visible). Nothing here is a box any
+ * more, so there is no height to clip against: min-height is only the floor
+ * that keeps the band, and a panel grows past 260px whenever its own title and
+ * description need the room. The panel's overflow:hidden now clips nothing but
+ * the fill-layer image, which takes its height from the panel that the text
+ * already sized. */
+#chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery-stack { height: auto; min-height: 0; }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-gallery {
 position: relative;
 display: flex;
 flex-direction: column;
 height: auto;
+min-height: 0;
 overflow: visible;
 gap: 12px;
 scroll-snap-type: none;
@@ -374,7 +391,7 @@ scroll-snap-type: none;
 position: relative;
 flex: none;
 width: 100%;
-height: 260px;
+min-height: 260px;
 border-radius: 16px;
 }
 #chinese-space-applications-template--21873710498045__chinese_space_applications .csa-panel-overlay { padding: 16px; }

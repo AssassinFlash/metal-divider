@@ -2243,13 +2243,24 @@
 
     // Stainless: the story rows below the panel are their own accordion — the
     // trigger opens its row and the matching scene image, 0-based.
+    //
+    // The third group is the panels themselves. Rows keep their trigger
+    // visible, so `announce` cannot ride on the row: marking a row
+    // `aria-hidden` would hide the button that opens it. The panel is the
+    // element that is actually collapsed (grid-template-rows 0fr, overflow
+    // hidden by gallery.css), and the markup ships `aria-hidden="false"` on
+    // the open row only — so without this group every panel kept whatever
+    // the template said, and a screen reader was told an expanded panel was
+    // still hidden (measured 2026-10-29: row 3 open, 250px tall, panel still
+    // `aria-hidden="true"`).
     bindIndexedGroups(
       document.querySelectorAll('[data-sps-trigger]'),
       'data-sps-trigger',
       'is-active',
       [
         { items: document.querySelectorAll('[data-sps-row]'), attr: 'data-sps-row', activeClass: 'is-active' },
-        { items: document.querySelectorAll('[data-sps-scene]'), attr: 'data-sps-scene', activeClass: 'is-active' }
+        { items: document.querySelectorAll('[data-sps-scene]'), attr: 'data-sps-scene', activeClass: 'is-active' },
+        { items: document.querySelectorAll('[data-sps-story-panel]'), attr: 'data-sps-story-panel', announce: true }
       ]
     );
 

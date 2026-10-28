@@ -121,7 +121,7 @@ overflow-x: hidden;
 /* Panel 5 */
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 32px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-head h2 { margin-bottom: 0; }
-#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-card { display: block; text-decoration: none; border: 1px solid var(--cp-border); border-radius: 16px; overflow: hidden; background: rgba(255, 255, 255, 0.03); transition: transform 0.3s, border-color 0.3s; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-card:hover { transform: translateY(-4px); border-color: rgba(201, 169, 98, 0.3); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-card figure { aspect-ratio: 1 / 1; overflow: hidden; background: var(--cp-panel); }
@@ -154,12 +154,30 @@ overflow-x: hidden;
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip > div { border-right: 0; margin-right: 0; border-top: 1px solid var(--cp-border); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip { border-top: 0; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-wide { grid-column: 1 / -1; }
-#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-grid { grid-template-columns: 1fr; }
+}
+/* The related row carries up to four cards (Shortcodes::RELATED_LIMIT), so
+ * the grid holds four tracks and steps down as the container narrows. The
+ * card's own content sets the floor: a 19px serif heading with 20px of side
+ * padding needs roughly 220px of inner width to stay readable. The 1400px
+ * container at 40px side padding leaves 1320px, which is 312px per card at
+ * four tracks — comfortably over. At 1023 the same four tracks would be
+ * 178px of inner width, so the step to three sits there; the step to two
+ * sits at 750 and the step to one below it, where the container's padding
+ * also drops. A three-card page keeps the same card size in the same
+ * four-track row rather than stretching three cards across it. */
+@media (max-width: 1199px) {
+#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1023px) {
+#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-quote-bar { display: none; }
 @media (max-width: 749px) {
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-container { padding: 0 16px; }
+/* One card per row: two tracks at 320 leave 132px each, and the card's
+   20px side padding would take a third of that from a 19px heading. */
+#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-grid { grid-template-columns: 1fr; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero { padding-top: 24px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-grid-cols { padding: 16px 0 24px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-alt { scroll-margin-bottom: calc(96px + env(safe-area-inset-bottom)); }

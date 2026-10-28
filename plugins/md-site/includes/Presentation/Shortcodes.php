@@ -48,10 +48,11 @@ namespace MetalDivider\Site\Presentation;
  *   ``lc_get_cf`` prints the raw meta, an empty string when the value
  *   is absent, and has no conditional fallback of its own.
  * - ``[md_pdp_image slot=…]`` — the old theme's media slots (hero = the
- *   first scene, plate = the first detail else finish, square = the second
- *   scene else accent, wide = the first accent when unused); LiveCanvas has
- *   ``lc_the_thumbnail_url`` for the featured image and no tag for the
- *   alt-role algorithm the old PDP derived its slots from.
+ *   first scene, plate = the first detail, else finish, else the second
+ *   accent, else a scene, square = the second scene else accent, wide = the
+ *   first accent when unused); LiveCanvas has ``lc_the_thumbnail_url`` for
+ *   the featured image and no tag for the alt-role algorithm the old PDP
+ *   derived its slots from.
  * - ``[md_pdp_related]`` — the adjacent-patterns cards;
  *   ``lc_wc_related`` and Woo's own shortcodes render the WooCommerce
  *   card template, not the replica's card, so the selection is read here
@@ -116,6 +117,15 @@ final class Shortcodes {
 	 * The slots md_pdp_image resolves.
 	 */
 	public const SLOTS = array( 'hero-bg', 'plate', 'square', 'wide' );
+
+	/**
+	 * The most adjacent-pattern cards a PDP draws.
+	 *
+	 * The old site's samples carried three and four side by side, so this is
+	 * the ceiling `wc_get_related_products()` is asked for and not a count to
+	 * pad up to: a pattern with fewer neighbours draws fewer cards.
+	 */
+	public const RELATED_LIMIT = 4;
 
 	/**
 	 * Each product's resolved slots, memoized for the request.
@@ -453,8 +463,9 @@ final class Shortcodes {
 	 *
 	 * - hero background: the first scene, else nothing (the old template's
 	 *   gold-grid fallback, which this template does not draw);
-	 * - hero plate: the first detail that is not the hero, else the first
-	 *   finish that is not the hero, else nothing;
+	 * - hero plate: the first detail, else the first finish, else the second
+	 *   accent, else a scene (never a cut sheet and never the unnamed
+	 *   residual — the order and its measurements are in slot_map());
 	 * - identity square: the second scene, else the first accent that is
 	 *   not the plate, else nothing;
 	 * - wide: the first accent, only when no other slot took it.
@@ -569,10 +580,50 @@ final class Shortcodes {
 		$hero = isset( $by_class['scene'][0] ) ? (int) $by_class['scene'][0] : null;
 
 		if ( null !== $hero ) {
-			$plate = $this->first_unused( $by_class['detail'] ?? array(), array( $hero ) );
-			if ( null === $plate ) {
-				$plate = $this->first_unused( $by_class['finish'] ?? array(), array( $hero ) );
-			}
+			// The plate is the hero's companion frame — a 3:4 portrait box —
+			// so the old theme's order (a detail close-up, then a finish) is
+			// kept first and continued into the classes this catalogue really
+			// carries. Measured on the dev instance 2026-10-29 over its 151
+			// published patterns: `detail` sits in 3 of their galleries and
+			// `finish` in 2, so the two-class rule resolved a plate on 5
+			// products and left the other 141 heroes without one. Nothing
+			// reported that: `.pdp-hero-plate:empty` hides the frame and
+			// `.pdp-hero-grid-cols:not(:has(.pdp-hero-plate))` collapses the
+			// hero to one column, so every page looked deliberate.
+			//
+			// The order that follows resolves 136 of the 151 (90%), against 5
+			// (3%) before. What is left over is the pattern whose media holds
+			// no portrait-friendly picture at all — the five `apiary-smoke`
+			// products carry no image, and ten patterns show only scenes plus
+			// a flat render.
+			//
+			// `accent` (96 galleries) comes next, from its SECOND image: the
+			// first accent is the wide slot's, the one image the old template
+			// reserved for it, and every accent is a landscape pattern render
+			// (479 of 479, median 1.76) — a uniform field that survives a
+			// portrait crop, unlike a composed photograph.
+			//
+			// `scene` (146 galleries) follows. It is usually a single image
+			// and the hero already took it, so this pool needs a second scene
+			// to give the plate anything at all.
+			//
+			// The chain stops there. `other` is the migrator's residual — the
+			// `pattern render` and `reference image` roles, plus `unknown` and
+			// a `qc photo`, which are workshop photographs and not the pattern
+			// — and ROLE_CLASSES documents that residual as filling the first
+			// position only. A cut sheet and an unnamed workshop photo are
+			// both the wrong picture for a 3:4 hero frame, so a pattern whose
+			// media holds only those keeps its hero solo, as do the two-image
+			// patterns whose second image is a flat pattern render.
+			$plate = $this->first_in_order(
+				array(
+					$by_class['detail'] ?? array(),
+					$by_class['finish'] ?? array(),
+					array_slice( $by_class['accent'] ?? array(), 1 ),
+					$by_class['scene'],
+				),
+				array( $hero )
+			);
 		} else {
 			$plate = $this->first_non_cutsheet( $ids );
 		}
@@ -594,6 +645,16 @@ final class Shortcodes {
 
 		// The old template offers the first accent only, and only when no
 		// other slot already took it (context_media, liquid lines 154–169).
+		//
+		// Measured on the dev instance 2026-10-29: this resolves on the four
+		// patterns whose square has a scene of its own to take (winter-branches,
+		// white-sands, shattered, quiet-wood — the same four the old page drew
+		// the 21:9 band for), and on no others. Where the product has no second
+		// scene the square falls back to `accent[0]`, which is the definition
+		// working: one image never fills two slots. The plate taking
+		// `accent[1:]` above is what keeps the band alive here — taking
+		// `accent[0]` for the plate emptied it on all 96 accent-carrying
+		// patterns instead of these four.
 		$accent = isset( $by_class['accent'][0] ) ? (int) $by_class['accent'][0] : null;
 		$wide   = null;
 		if ( null !== $accent ) {
@@ -696,6 +757,29 @@ final class Shortcodes {
 	}
 
 	/**
+	 * The first id in a class order, skipping the ids another slot holds.
+	 *
+	 * The plate is chosen across several media classes rather than from one
+	 * (the order and its measurements are in slot_map()), so this walks the
+	 * classes in order and returns the first candidate the earlier slots did
+	 * not take. Each class keeps its own media order, which is what makes the
+	 * pick stable across requests.
+	 *
+	 * @param array<int, int[]> $pools The candidate ids per class, in priority order.
+	 * @param int[]             $used  Ids another slot already holds.
+	 * @return int|null
+	 */
+	private function first_in_order( array $pools, array $used ): ?int {
+		foreach ( $pools as $ids ) {
+			$id = $this->first_unused( $ids, $used );
+			if ( null !== $id ) {
+				return $id;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * The first media item that is not a cut sheet (the old pos0).
 	 *
 	 * @param int[] $ids The media ids in order.
@@ -716,6 +800,16 @@ final class Shortcodes {
 	 * proof is the class docblock — the native related mechanisms render
 	 * Woo's own card template, not this one).
 	 *
+	 * Four is a ceiling, not a quota: `wc_get_related_products()` is asked for
+	 * RELATED_LIMIT and returns however many the catalogue has for this
+	 * pattern — the old site's own samples ran 3 and 4 side by side, and the
+	 * grid draws one track per card (see `pdp.css`), so a pattern with three
+	 * neighbours shows three cards in a four-track row rather than three
+	 * cards stretched across it. No product is padded in or invented to reach
+	 * four, and `Cards::related()` still drops any card whose product has no
+	 * thumbnail, which is the one case where the count can fall below what
+	 * WooCommerce returned.
+	 *
 	 * @param array<string, mixed>|string $atts    Shortcode attributes (unused).
 	 * @param string|null                 $content Enclosed content (unused).
 	 * @return string The cards, empty when Woo is absent or has no related products.
@@ -726,7 +820,7 @@ final class Shortcodes {
 		if ( null === $post || 'product' !== $post->post_type || ! function_exists( 'wc_get_related_products' ) ) {
 			return '';
 		}
-		return $this->cards->related( (int) $post->ID, wc_get_related_products( $post->ID, 3 ) );
+		return $this->cards->related( (int) $post->ID, wc_get_related_products( $post->ID, self::RELATED_LIMIT ) );
 	}
 
 	/**

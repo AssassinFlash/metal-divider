@@ -248,6 +248,17 @@ transition: filter 0.2s;
 border-radius: 0.5rem 0.5rem 0 0;
 border-bottom-color: transparent;
 }
+/* The `+` turns into an `×` while its answer is open. The old page did this in
+   its own script (`icon.style.transform = 'rotate(45deg)'` on the .emt-faq-icon
+   element, '' on close) — an inline write that the conversion dropped, leaving
+   the class `emt-faq-icon-…` on five svgs with no rule behind it anywhere in
+   the volumes or in the old site's <style> blocks. The button's aria-expanded
+   is already the state both our FAQ handler and the rule above key on, so the
+   rotation hangs off it instead of needing the script to touch the icon. The
+   0.3s transition is the `md-tf4f8deb9` utility the svg already carries. */
+.emt-faq-btn-template--22084675240189__expanded-mesh-types[aria-expanded="true"] .emt-faq-icon-template--22084675240189__expanded-mesh-types {
+transform: rotate(45deg);
+}
 /* ── Nav ── */
 .emt-nav-template--22084675240189__expanded-mesh-types {
 position: absolute;
@@ -347,15 +358,44 @@ gap: 80px;
 .emf-content-col-template--22084675240189__expanded-material-finish { order: 1; }
 .emf-img-col-template--22084675240189__expanded-material-finish     { order: 2; position: sticky; top: calc(var(--md-header-h, 113px) + 16px); }
 }
-/* ── Image stack ── */
+/* ── Image stack ──
+   The stack is a cropping window: every panel is inset:0 and its image is
+   `object-fit: cover`, so the box alone decides what the visitor sees. A fixed
+   height decided it by pixel budget, and the budget matched none of the files.
+   The 580 was the old site's own number (`metalpartition.com/pages/
+   expanded-metal-panels`, the only `.emf-img-stack…{height:580px}` rule in its
+   <style>) — carried over, never derived from the images.
+
+   The ratio now comes from the media, measured on `data/media-final` rather
+   than read off the markup's width/height attributes: panels 0 and 1 are
+   1024 × 1024, panel 2 is 1024 × 674 (every srcset variant agrees — the
+   1024/1536/2048w files hold 1.0000, 1.0000 and 1.5193). Panel 0 is the one
+   open by default, so the box takes the 1 / 1 the two hero shots are shot for.
+
+   Being a ratio, the box is width-driven and tracks the column: 560 × 560 on
+   desktop (container max-width 1320, minus 2 × 60px padding = 1200, minus the
+   80px gap, halved), 358 × 358 at a 390 viewport, 288 × 288 at the 320 floor
+   (100vw − the container's 2 × 16px). For panels 0 and 1 the box and the file
+   now share one aspect, so `object-fit: cover` has nothing left to crop and
+   `overflow: hidden` has nothing to clip: the 288px phone render is the same
+   1:1 image as the 560px desktop one, only smaller. What the old heights did to
+   those two squares: at 390 the 358 × 320 box scaled cover to 358 × 358 and cut
+   38px off the height; at 320 the 288 × 320 box scaled to 320 × 320 and cut
+   32px off the width. Neither was a ratio anyone chose.
+
+   Panel 2 (1.519) keeps a 34% sideways crop because it is wider than a square
+   box — but that is a ratio mismatch, identical at 320 and at 1440, not
+   something the viewport changes.
+
+   The overlays still fit the smallest box: the rings start at top 30px and the
+   outer one is 80px tall, so they end at 110px; the caption sits at bottom
+   24px. In the 288px floor box that leaves 288 − 110 − 24 = 154px of clearance
+   for the caption, which is two text lines (12px label + 16px title). */
 .emf-img-stack-template--22084675240189__expanded-material-finish {
 position: relative;
-height: 320px;
+aspect-ratio: 1 / 1;
 border-radius: 16px;
 overflow: hidden;
-}
-@media (min-width: 768px) {
-.emf-img-stack-template--22084675240189__expanded-material-finish { height: 580px; }
 }
 /* ── Image panels ── */
 .emf-img-panel-template--22084675240189__expanded-material-finish {
@@ -384,13 +424,44 @@ repeating-linear-gradient(0deg, transparent 0, transparent 14px, rgba(255,255,25
 repeating-linear-gradient(90deg, transparent 0, transparent 14px, rgba(255,255,255,0.032) 14px, rgba(255,255,255,0.032) 15px),
 #1a1a1a;
 }
-/* ── Accordion ── */
+/* ── Accordion ──
+   The open/closed state lives on the item's `emf-acc-open` class — the one
+   md-chrome.js toggles (assets/js/md-chrome.js:2161) — so CSS and script agree
+   on a single source of truth. The body is a grid whose one row travels
+   0fr → 1fr: height comes from the panel's own content, so a material block
+   that runs long simply makes the row taller.
+
+   That replaces the old `max-height: 640px` ceiling, which was a pixel budget
+   and therefore a lie the moment the swatch row reflowed: on a phone the
+   default-open 304 panel is taller than 640px, and the part below the cap was
+   silently gone. The chrome script worked around it at runtime by writing
+   `max-height: none` (md-chrome.js:2166-2172); without the script there was no
+   workaround and the tail of the panel never appeared. A `1fr` row has no
+   ceiling to hit, so the script no longer has to patch anything and the markup
+   alone renders every word of the open panel.
+
+   `min-height: 0` + `overflow: hidden` on the row's single child is what lets
+   the row actually reach zero — an `fr` track is `minmax(auto, …)`, and
+   without them the automatic minimum would pin it at content height.
+
+   With scripting off there is no way to reach the two collapsed panels, so the
+   media query below hands them their content instead of leaving it stranded
+   behind a button that cannot answer. */
 .emf-acc-body {
-max-height: 0;
-overflow: hidden;
-transition: max-height 0.38s ease;
+display: grid;
+grid-template-rows: 0fr;
+transition: grid-template-rows 0.38s ease;
 }
-.emf-acc-body-open { max-height: 640px; }
+.emf-acc-body > * {
+min-height: 0;
+overflow: hidden;
+}
+.emf-acc-item.emf-acc-open .emf-acc-body {
+grid-template-rows: 1fr;
+}
+@media (scripting: none) {
+.emf-acc-body { grid-template-rows: 1fr; }
+}
 .emf-acc-item.emf-acc-open .emf-chevron { transform: rotate(180deg); }
 .emf-acc-trigger:focus-visible { outline: 2px solid rgba(201,169,98,0.5); outline-offset: 2px; }
 /* ── Finish swatches ── */
