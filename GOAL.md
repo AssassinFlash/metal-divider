@@ -86,6 +86,27 @@
 
 **待业主提供原图**:`ripples`(480w)、`pebble-creek`(480w)、`naughts-x-plus`、`coconut-dreaming`、上述两张配图。
 
+### 2026-10-28 meta description:页面 9/11 缺、产品 103/146 缺
+
+**实测规模**
+
+```
+页面类  11 个 page 的 excerpt 全为空
+        → 5 页完全没有 meta description
+        → 4 页退回标题(8–25 字符:「About Us」「Project Gallery」「FAQs & Downloads」「Manufacturing Process Hub」)
+        → 仅 /shop/ 正常(163 字符,来自 archive 模板)
+产品类  146 个产品中 103 个 excerpt 为空
+        → 103 个 PDP 同样没有描述(模板同为 %%post_excerpt%%)
+```
+
+**根因不是配置错,是内容从未写过**:`Config.php` 的 `page` 与 `product` 描述模板都是 `%%post_excerpt%%`,模板本身正确;缺的是 113 段摘要。
+
+**已起草 10 个页面的描述**(`docs/copy/2026-10-28-meta-descriptions.md`,131–158 字符,全部基于各页真实 H1 与正文,不编造),并列出 5 个待业主确认的问题。**按 AGENTS.md「客户可见文案走对抗评审」,草案未上站。**
+
+**103 个 PDP 描述有三个选项**,需业主定调:①逐页撰写 ②模板生成(只拼装已有事实字段 `open_area`/`visual_density`/图案名) ③保持现状让搜索引擎自抽。倾向 ②+抽查,但影响 103 页且属客户可见文案。
+
+**同时修复的 `og:image`**:`logo_url()` 只查媒体库附件 `metal-divider-primary-logo--120w`,而该附件**从未存在于生产**;品牌标志一直在插件 `assets/brand/`(模板已引用)。改为优先媒体库、回退插件资源。
+
 ### 2026-10-28 SEO 结构审计:14 页 JSON-LD + 补目录页 ItemList
 
 **审计结果(生产实测)**
