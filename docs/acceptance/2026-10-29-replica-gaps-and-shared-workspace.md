@@ -1249,3 +1249,54 @@ checking 814 references against https://metal-divider.com
 
 `GOAL.md:987` 记过首轮曾报 146 个「canonical 不符」，那是**脚本缺陷**（basename 去尾斜杠后
 比较值缺 `/`）。本轮直接按「canonical 是否等于 URL 本身」判定，0 不符——与那条记录一致。
+
+### 9.25 sitemap 去重：一次做窄、一次做过头的完整过程
+
+这一项走了三步，每一步都有读数，记下来因为教训比结果重要。
+
+#### 第一步：只修 `/shop/`（范围太窄）
+
+`SitemapDedupe` 首版把规则限定在 `post_type === 'product'`，修好了
+`product-sitemap1.xml` 的 147 → 146。但当轮之后做 sitemap 交叉检查时发现：
+
+```
+sort all-sitemap-urls | uniq -d   →  https://metal-divider.com/blog/
+```
+
+**`/blog/` 也被列了两次**，形态与 `/shop/` 完全相同：它是真实页面（ID 1542），
+`page_for_posts` = 1542，于是 SEOPress 既当页面写进 `page-sitemap1.xml`，又当 `post`
+类型的 archive link 写进 `post-sitemap1.xml`。
+
+首版测试把 `product` 写成唯一场景 —— 这正是漏掉 blog 的原因。
+
+#### 第二步：改成去掉所有 archive link（过头了）
+
+规则改为无条件返回 `''`，依据是「本站所有 archive 背后都是页面」。部署后读回：
+
+| 文件 | 部署前 | 部署后 |
+|---|---|---|
+| `page-sitemap1.xml` | 19 条，含 `/blog/` | **19 条，含 `/blog/`**（对） |
+| `post-sitemap1.xml` | 1 条（`/blog/`） | **0 条（完全空）** |
+| `sitemaps.xml` 索引 | 列着 `post-sitemap1.xml` | **仍然列着** |
+
+一条重复 URL 换成了**一个死索引项**：爬虫会持续抓一个永远没有 URL 的文件。
+
+#### 第三步：空类型不进索引
+
+读 SEOPress 源码 `template-xml-sitemaps.php` 确认：索引循环算出 `$count_posts`，
+但它**只用于算分页**——计数为 0 时 `$max_loop = 1`，条目照印，且没有「计数为 0 就跳过」
+的过滤器。所以改在 `seopress_sitemaps_xml_index` 上过滤组装好的索引，移除无已发布条目的
+类型的 `<sitemap>` 元素。
+
+规则**读状态而非名单**：博客今天是空的（`GOAL.md:104` 与 `AGENTS.md` 都记「博客未开始，
+无内容来源」），第一篇文章发布后该条目会自动回来。测试覆盖两个方向。
+
+#### 这一节真正要记的
+
+两次都不是「没测」，而是**测了但测的范围与判据跟着上一次的结论走**：
+
+- 第一步：判据写死在测试里（`product` 是唯一场景），于是它不会报出第二种形态；
+- 第二步：判断「所有 archive 都是页面」是正确的，但没预料到**去掉之后文件会空**——
+  修一个问题的动作制造了另一个问题。读回时先看的正是「索引里还有没有它」。
+
+教训：**改一处数据缺失时，要同时问「删掉之后这份容器还剩下什么」**。
