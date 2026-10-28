@@ -1007,3 +1007,57 @@ chinese / stainless / panels / perforated / expanded）、`faqs`、`about-us`、
 `collections/all` 那条记录匹配的是 basename `all`，而不是完整路径——这也是为什么
 `/collections/all` 的 301 实际由 WordPress 核心完成，SEOPress 那条记录并未生效。
 `^/products/(.+)$` 能工作，是因为它是**正则**（`enabled_regex=yes`）。
+
+### 9.17 交互状态复验（业主 2026-10-29）
+
+今天改过 CSS 并多次部署，`GOAL.md` 里「hover / 键盘焦点 / 禁用 JS / 未登录访客」四条都是
+早前的验证。本轮用当前生产重测。
+
+#### 9.17.1 键盘焦点：42/42 有可见焦点环
+
+`/`、`/inquiry/`、`/faqs/` 三页各 Tab 14 次，共 **42 个焦点站全部有可见环**
+（`outline` 非 `none` 且宽度 > 0，或 `box-shadow` 非 `none`）。**无一个无环站。**
+
+#### 9.17.2 禁用 JS：13 页正文完整，门控按设计
+
+`java_script_enabled=False` 下实测 13 页，`md-js` 类正确缺席：
+
+| 页面 | 正文字符 | 图片 |
+|---|---:|---:|
+| `/` | 17,697 | 99 |
+| `/faqs/` | 30,377 | 1 |
+| `/laser-cut-geometric-metal-screens/` | 16,127 | 52 |
+| `/custom-metal-divider-screens/` | 8,864 | 230 |
+| 其余 9 页 | 2,025–9,853 | 6–40 |
+
+无 JS 时 `[x-cloak]` 元素可见（首页 8 个、几何页 17 个）——实测这些是 **FAQ 答案正文**，
+全部展开正是设计意图（内容不丢），不是缺陷。
+
+#### 9.17.3 面板切换：三档视口全部工作
+
+`data-pag-tab` / `data-pag-panel` 契约：点第 2 个 tab 后 `data-active` 正确转移、
+可见面板 `1 → 2`。1440 / 390 / 320 三档都验证通过，两列在窄屏正确叠为单列
+（`grid-template-columns` 333px / 263px）。
+
+四个面板的配图**逐个滚到位后全部加载**（`naturalWidth=348`）：
+
+| 面板 | currentSrc |
+|---|---|
+| 1 | `ext-pp-lobby-feature-screens-768w.webp` |
+| 2 | `ext-gold-black-grille-screen-lineup-550w.webp` |
+| 3 | `ext-expanded-gold-mesh-balcony-facade-768w.webp` |
+| 4 | `outdoor-black-leaf-garden-privacy-screen-01-550w.webp` |
+
+#### 9.17.4 一次必须记下的自我纠正
+
+我先报过「3/4 的面板配图 550w 变体 404，是真缺陷」。**那是错的，两个错误叠加**：
+
+1. **文件名是我自己拼的**。我按 `<name>-550w.webp` 去请求，而模板实际引用的是
+   `<name>-01-550w.webp`，磁盘上存在。凭猜测拼 URL 得到的 404 不构成缺陷证据。
+2. **惰性加载的测量方法错**。那几张图在文档 y≈18811 处，`loading="lazy"` 在进入加载
+   提前量前根本不发请求（网络面板里对该文件 **0 请求**），于是 `currentSrc` 为空、
+   `naturalWidth` 为 0。我一度改用「超高视口」，但该页高度远超视口，仍不生效。
+   按 `AGENTS.md` 记录的正确方法——**滚到元素位置**——之后全部加载。
+
+教训与本仓库记录的「判据要测目标量，不要测代理」同型：`naturalWidth === 0` 不代表文件坏了，
+它同时是「还没请求」的正常状态。**判断资源是否可用，要直接请求那个 URL，不要读页面上的加载状态。**
