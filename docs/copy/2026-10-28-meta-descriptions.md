@@ -95,7 +95,15 @@ How metal-divider.com handles inquiry data: what we collect, why, how long we ke
 
    这是两个不同的工程指标，不是同一事实的两个数值；两者并存合理，
    且新旧站完全一致。提出该问题会浪费业主时间。
-5. ~~是否需要为 146 个 PDP 各写描述~~ —— **不需要，已撤回。**
+5. ~~画廊里有没有任何真实项目？~~ —— **已自行查明，不再需要业主回答。**
+   23 个项目卡中 **18 个**的图片 alt 明确写着 `visualization`（效果图）；
+   另 **5 个**未标注，但文件名全部以 `ext-` 开头（外部素材），而唯一明确的
+   真实项目 `Park Hyatt Shenzhen` 用 `our-` 前缀、alt 为「— project image 1」。
+   命名约定：`our-` = 自有项目，`ext-` = 外部素材。
+   **结论：画廊页不得使用 "Installed"**，应基于页面 H1
+   「Selected Interior Partition Projects」与 lede 表述。
+
+6. ~~是否需要为 146 个 PDP 各写描述~~ —— **不需要，已撤回。**
    实测 146/146 个产品的 `_seopress_titles_desc` 均已设置且 ≥100 字符
    （抽查五个实测 155–162 字符）。产品 excerpt 为空是无关的：SEOPress
    读专用 meta，`%%post_excerpt%%` 只是它的回退。
