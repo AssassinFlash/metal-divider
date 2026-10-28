@@ -80,6 +80,28 @@
     if (norm(el.textContent).length > 0) return;
     const cs = getComputedStyle(el);
     if (cs.backgroundImage !== 'none') return;
+    // A wrapper is not empty when what it wraps is painted. The perforated
+    // page's pattern switcher is `div.absolute.inset-0` with a transparent
+    // background over two children that each carry a gradient — four such
+    // wrappers were reported as unpainted 375x380 blocks at 390
+    // (measured 2026-10-29). Ink one level down is ink.
+    const paintedChild = [...el.children].some((kid) => {
+      const ks = getComputedStyle(kid);
+      if (ks.backgroundImage !== 'none') return true;
+      const colour = ks.backgroundColor || '';
+      const rgb = /rgba?\([^)]*,\s*([0-9.]+)\s*\)/.exec(colour);
+      return rgb ? parseFloat(rgb[1]) > 0.05 : false;
+    });
+    if (paintedChild) return;
+    // A scrim is paint, and this check only knew `background-image`: a
+    // `bg-black/55` overlay has `backgroundColor: oklab(0 0 0 / .55)` and
+    // `backgroundImage: none`, so it was reported as an unpainted block.
+    // Measured 2026-10-29 at 390: three of the perforated page's findings
+    // were scrims exactly like that. Any colour with real alpha is paint.
+    const bg = cs.backgroundColor || '';
+    const alpha = /rgba?\([^)]*,\s*([0-9.]+)\s*\)/.exec(bg);
+    if (alpha && parseFloat(alpha[1]) > 0.05) return;
+    if (/\/\s*0?\.\d+\)/.test(bg)) return;
     add('empty-block', 'high', el, Math.round(r.width) + 'x' + Math.round(r.height) + ' with no text, no image, no paint');
   });
 
@@ -229,7 +251,16 @@
   };
   [...document.querySelectorAll('main section, main > div')].forEach((el) => {
     if (!shown(el)) return;
-    const kids = [...el.children].filter(shown);
+    // A fixed element is not in the flow: its rect is a viewport position, so
+    // the vertical distance to a flow sibling is not a gap in the document.
+    // Measured 2026-10-29 at 390: the pattern catalogue's mobile quote bar is
+    // `position: fixed; 375x69`, and comparing it with its flow neighbours
+    // produced a 576px "gap" on both the shop and the series page.
+    const inFlow = (node) => {
+      const position = getComputedStyle(node).position;
+      return position !== 'fixed' && position !== 'sticky';
+    };
+    const kids = [...el.children].filter((kid) => shown(kid) && inFlow(kid));
     if (kids.length < 2) return;
     for (let i = 1; i < kids.length; i++) {
       const a = kids[i - 1];

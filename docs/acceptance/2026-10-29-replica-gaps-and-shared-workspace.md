@@ -379,3 +379,64 @@ bottom:32px`）压住主图右下角约 160px。
 
 GOAL.md:666 明确写着 AI 客服票 #86/#102/#147 不在本 GOAL 范围，所以本轮不修改
 它，仅记录位置与实测数据供该工作流处理。
+
+## 九、真 390 视口复验（2026-10-29）
+
+上一份 390 报告是 `10-28 23:05`，早于本日全部改动（图集挂回 785 张、主图兜底、
+搜索端点替换、多处 CSS 卷），按纪律重跑而不是引用旧数据。
+
+### 9.1 通道：为什么必须是 Playwright
+
+| 路径 | 结果 |
+|---|---|
+| `opencli chrome call Emulation.setDeviceMetricsOverride` | `unsupported_chrome_method` |
+| `tools/audit/capture_narrow.py --width 390` | 其自身文档写明是"578px 布局压进 390"，不是真重排 |
+| `playwright` + `channel="chrome"` | **`innerWidth` 实测 390** |
+
+本机 Chrome 打不开窄于约 578px 的窗口，所以前两条都给不出真 390。GOAL.md §39 允许
+Playwright 补这个缺口，并禁止自带 Chromium；`channel="chrome"` 用的是业主自己的
+安装。`tools/audit/narrow_viewport.py` 每页回读 `innerWidth` 并写进报告，没真重排
+的页会在输出里暴露，而不是靠假设。
+
+Python 版 Playwright 在 `/opt/homebrew/opt/python@3.12`（`/opt/homebrew/bin/playwright`
+是 Python wrapper，不是 Node 包）。`defects.js` 返回 JSON **字符串**而非对象，
+直接当 dict 会崩。
+
+一次运行只开一个窗口，跑完关闭——业主两次要求不要频繁新建浏览器。
+
+### 9.2 结果：24 个页型全部 `innerWidth=390`
+
+修复前报告 19 个缺陷，逐个回浏览器核实后，**17 个是 `defects.js` 的判据缺陷**：
+
+| 判据 | 缺陷 | 证据 |
+|---|---|---|
+| `empty-block` | 只查 `background-image`，漏 `bg-black/55` 这类半透明底色（`oklab(0 0 0/.55)`） | 遮罩层被判为空块 |
+| `empty-block` | 没考虑"自身透明、子元素有渐变"的装饰包裹 | perforated 图案切换层 4 个误报 |
+| `dead-gap` | 把 `position:fixed` 元素当文档流兄弟比纵向间距 | `.pattern-catalog__quote-bar` 实测 `fixed 375x69`，算出 576px 假空白 |
+
+另外"每页 7 张坏图（PDP 8 张）"也是误报：它们是 `is='xo-lazyload'` 的图，真实地址在
+`xo-src`，位于 mega-menu 默认隐藏容器内，`0×0` 且未赋值，属懒加载预期行为。
+
+三处判据修好后：19 → 14 → 6。
+
+### 9.3 剩下 6 个，核实为设计而非缺陷
+
+| 页 | 类型 | 核实 |
+|---|---|---|
+| geometric / outdoor / chinese / stainless | `tiny-type` 11px ×4 | 全站 98 处 `text-[11px] md:text-[13px]`；旧站同页 `text-[11px]` **50 处**，是原设计 |
+| perforated | `tiny-type` 11px ×5 | 同上 |
+| custom / pdp-white-sands | `img-ratio` | `object-fit: cover` 背景图层，裁切是设计意图（判据自身注释亦如此说明） |
+
+`pdp-white-sands` 那个正是本日修好的 hero 背景（`…-08-`，390×278 铺满 375×1111 竖屏
+hero），`cover` 用法正确。
+
+### 9.4 结论
+
+390 视口下**无页面级布局缺陷**：24/24 页 `innerWidth=390`，无横向溢出、无可见空卡、
+无空容器、无贴边、无坏图。11px 与 cover 裁切属设计决策，不擅自改，列为待裁定项。
+
+本节的净产出是修好了**三处判据缺陷**——它们此前会把 17 个设计意图报成缺陷，比修页面
+更要紧：否则后续每次验收都在噪声里判断。
+
+证据 `/tmp/md-390-v3/report.json`（判据修复后）与 `/tmp/md-390-final/report.json`
+（修复前，留作对照）、各页截图。
