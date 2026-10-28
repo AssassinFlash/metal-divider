@@ -81,30 +81,40 @@ How metal-divider.com handles inquiry data: what we collect, why, how long we ke
 
 ## 待评审的问题
 
-1. **`/inquiry/` 的 "one business day"** —— 与页面正文一致，但请确认对外承诺仍是这个时限。
-2. **`/about-us/` 说 "Laser-cut and perforated"** —— 该页是否覆盖全部六个家族？
-   若只讲激光切割，应改为更窄的表述。
-3. **`/blog/` 的 "what to send for an accurate quote"** —— 该页实际文章是否覆盖这个主题？
-4. **`/privacy/` 未提 GDPR/LGPD 等具体法域** —— 站点是 B2B 全球站，
-   刻意不写死法域，请确认这是想要的口径。
+**只有 2 条必须由业主回答**（其余已由我以证据查明，附查法）。
 
-   **勘误（2026-10-28）**：本条原本还问了「±0.1mm 还是 ±0.03mm，哪个真」，
-   **已撤回**。复核两个数字的修饰语：
-   - `±0.03mm` 跟的是 **"repeat accuracy"**（板与板之间的一致性）
-   - `±0.1mm` 跟的是 **"tolerance"**（单件切割公差）
+### 必须问业主
 
-   这是两个不同的工程指标，不是同一事实的两个数值；两者并存合理，
-   且新旧站完全一致。提出该问题会浪费业主时间。
-5. ~~画廊里有没有任何真实项目？~~ —— **已自行查明，不再需要业主回答。**
-   23 个项目卡中 **18 个**的图片 alt 明确写着 `visualization`（效果图）；
-   另 **5 个**未标注，但文件名全部以 `ext-` 开头（外部素材），而唯一明确的
-   真实项目 `Park Hyatt Shenzhen` 用 `our-` 前缀、alt 为「— project image 1」。
-   命名约定：`our-` = 自有项目，`ext-` = 外部素材。
-   **结论：画廊页不得使用 "Installed"**，应基于页面 H1
-   「Selected Interior Partition Projects」与 lede 表述。
+**Q1. FAQ 下载的 Zahner / Brilliant Architectural 文件是否获准使用？**
 
-6. ~~是否需要为 146 个 PDP 各写描述~~ —— **不需要，已撤回。**
-   实测 146/146 个产品的 `_seopress_titles_desc` 均已设置且 ≥100 字符
-   （抽查五个实测 155–162 字符）。产品 excerpt 为空是无关的：SEOPress
-   读专用 meta，`%%post_excerpt%%` 只是它的回退。
-   此处曾误判为「103 个 PDP 无描述」，原因是查错了字段。
+这是唯一无法从仓库或站点推断的事实。全仓库无授权记录
+（`grep -rn "zahner|brilliant" docs/ AGENTS.md GOAL.md` 除本文件与 GOAL 的记录外为空；
+`faqs.html` 里的 `data-source-*` 是询盘归因字段，无关）。旧站与本站指向同样 8 个外部 URL，
+`Zahner` 字样出现 8 次但**全部只在 URL 里、无可读署名**。
+
+**在业主回答前，描述里不得暗示这些是本站的技术文件。**
+
+**Q2. `/inquiry/` 对外承诺的回复时限是哪个？**
+
+同一页面存在三种表述，我无法判断哪个是对外承诺：
+
+```
+lede            "One business day, one reply."
+contact card    "Within 24 hours"
+flow step       "same day"
+FAQ             "Within 24 hours, and often the same day"
+```
+
+选哪个决定摘要的写法，也决定页面本身是否要收敛成一种说法。
+
+### 已由我查明，无需业主回答
+
+| 原问题 | 结论与证据 |
+|---|---|
+| 画廊有无真实项目？ | **23 个里 18 个 alt 明写 `visualization`（效果图）**；另 5 个未标注但文件名全为 `ext-`（外部素材），而唯一明确的自有项目 `Park Hyatt Shenzhen` 用 `our-` 前缀、alt 为「— project image 1」。**画廊页不得写 "Installed"。** |
+| `design` 是否禁用词？ | **不是。**`GLOSSARY.md` 禁令只有「款式」「花型」「订单」与客户可见面的 `product/products`；`design`/`style` 不在清单内，旧站同为 `design 6 / style 2`，守卫 `test_no_customer_template_calls_a_pattern_a_product` 通过（41 断言）。 |
+| ±0.1mm 还是 ±0.03mm？ | **不是矛盾。**`±0.03mm` 跟 "repeat accuracy"（板间一致性），`±0.1mm` 跟 "tolerance"（单件切割公差），两个不同工程指标，新旧站一致。 |
+| 是否需要为 146 个 PDP 各写描述？ | **不需要。**实测 146/146 个产品的 `_seopress_titles_desc` 均已设置且 ≥100 字符（抽查五个 155–162 字符）。产品 `post_excerpt` 为空是无关的。 |
+| `/about-us/` 是否覆盖全部六个家族？ | **不覆盖。**该页只讲 laser-cut（hero 写 ±0.1mm、PVD、QC），未提 perforated。摘要须限定为 laser-cut。 |
+| `/blog/` 的文章主题是什么？ | **没有文章。**页面实测返回 "No matching posts"。摘要不得列举任何主题。 |
+| `/privacy/` 是否要写死法域？ | 页面第 8 节已列 GDPR、LGPD、POPIA、PDPA、APPI 等。摘要里省略是**写法选择**，不是事实缺失。 |
