@@ -632,10 +632,19 @@ class Target:
         return result.strip() == "yes"
 
     def tree(self, relative: str) -> list[str]:
-        """Every file under a WordPress-root-relative path, as `<path> <sha256>`."""
+        """Every file under a WordPress-root-relative path, as `<digest>  <path>`.
+
+        The deploy host (Linux) has sha256sum but not shasum; local dev
+        targets (macOS) the reverse — the first available form wins.
+        """
+        tool = (
+            "shasum -a 256"
+            if "shasum" in self.shell("command -v shasum || true")
+            else "sha256sum"
+        )
         listing = self.shell(
             f"cd {shlex.quote(self.path_of(relative))} && find . -type f -print0 "
-            "| sort -z | xargs -0 shasum -a 256"
+            f"| sort -z | xargs -0 {tool}"
         )
         return [line.strip() for line in listing.splitlines() if line.strip()]
 
