@@ -479,6 +479,49 @@ final class TemplatesTest extends TestCase {
 	}
 
 	/**
+	 * No unverified averaged claim reaches a customer-visible face.
+	 *
+	 * The site once carried the same facts in several contradictory versions
+	 * (countries as 15+/20+/30+/40+, PVD finishes as 10+/18/20+, floor area as
+	 * 12,000m2 and 15,000+ sqm) and promises no source supported: an ISO
+	 * certification, 500 tons of sheet stock, 200+ designs against a catalogue
+	 * of 146 patterns, and pattern mockups inside 24 hours. They are averages
+	 * and assumptions, not measured facts, so they stay out until the owner
+	 * supplies the real figure. The catalogue count is checked against the
+	 * published 146 so a new number cannot be invented by typing it.
+	 */
+	public function test_no_unverified_numeric_claims_on_customer_faces(): void {
+		$dir   = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
+		$rules = array(
+			// "certified curtain wall teams" is a real third-party credential and
+			// stays legal; an ISO claim about this facility is not sourced.
+			'ISO certification'          => "/\\bISO\\b|\\bISO[\\s-]?9001\\b|\\bwe(?:'re| are)\\s+certified\\b|\\bcertified facility\\b/i",
+			'invented sheet stock'       => '/\b\d{3}\s*tons\b/i',
+			'catalogue count'            => '/\b(?!146\b)\d{2,3}\+\s*(?:Ready\s+)?(?:Patterns?|designs?)\b/i',
+			'PVD finish count'           => '/\b\d{1,2}\+\s*PVD|\bPVD\s*\(\s*\d{1,2}\+|\b\d{1,2}\s+PVD\s+finishes/i',
+			'finish count'               => '/\b\d{1,2}\+\s*finishes\b/i',
+			'country count'              => '/\b\d{2}\+\s*(?:countries|Countries)\b/i',
+			'floor area'                 => '/\b\d{1,2},\d{3}\s*m2\b|\b\d{1,2},\d{3}\+\s*sqm\b/i',
+			'mockups in 24 hours'        => '/mockups?\s+in\s+24\s*hours?/i',
+			'salt-spray or life figures' => '/\b\d[\d,]*\+\s*hours\b|\b\d{1,2}–\d{2}\s*years\b/i',
+		);
+		$found = array();
+		foreach ( $files as $file ) {
+			$source   = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$relative = str_replace( $dir . '/', '', (string) $file );
+			$source   = (string) preg_replace( '/<!--.*?-->/s', "\n", $source );
+			$source   = (string) preg_replace( '/<[^>]*>/s', "\n", $source );
+			foreach ( $rules as $label => $pattern ) {
+				if ( preg_match( $pattern, $source, $hit ) ) {
+					$found[] = "{$relative}: {$label} ({$hit[0]})";
+				}
+			}
+		}
+		$this->assertSame( array(), $found, 'unverified numeric claims on customer faces: ' . implode( '; ', $found ) );
+	}
+
+	/**
 	 * The four blog faces render their design source, not the source text:
 	 * every Tangible loop/field sits inside the <tangible> processing
 	 * boundary LiveCanvas renders, no de-linker plugin shortcode survives,
