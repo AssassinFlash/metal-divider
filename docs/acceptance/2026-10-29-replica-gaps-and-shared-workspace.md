@@ -329,3 +329,53 @@ filled=142  empty=4
 
 同时更新了 `test_image_two_image_pattern_*`：`pebble-creek` 正是"一场景 + 一
 样张"的真实形状，主图现在取自样张，`square` 与 `wide` 仍为空。
+
+### 8.8 线上验证（2026-10-29，部署 `20261028T174730302265Z-4b466be`）
+
+代码 md5 与仓库一致（`Shortcodes.php` = `ed1215c9…`）。
+
+**服务端全量审计**（逐产品调用 `[md_pdp_image slot="plate"]`）：
+
+```
+修复前：filled=142  empty=4   （poseidon / pebble-creek / funk / alhambra）
+修复后：filled=146  empty=0
+```
+
+**HTTP 抽样**：`/shop/` 取 24 个真实产品链接，24/24 命中 `pdp-hero-plate`，零缺失。
+
+**实际渲染的是哪张图**（说明选图逻辑选对了，不只是"有元素"）：
+
+| 产品 | plate 图 |
+|---|---|
+| poseidon | `…-03-500w.webp`（样张） |
+| pebble-creek | `…-02-500w.webp`（样张） |
+| funk | `…-02-499w.webp`（样张） |
+| alhambra | `…-04-500w.webp`（样张） |
+| white-sands | `…-01-400w.webp`（竖版 `finish preview`） |
+
+**真 Chrome 实测**（alhambra）：主图框 420×561，比例正好 0.75；图 `428×855` 已加载
+（`complete: true`）；`object-fit: cover`；可见。视觉复核确认框内是图案样张、不是
+房间照片，已露出的约 85% 高度里没有 "ALHAMBRA" 标题条。
+
+**图集落库核对**：全站图集挂载 1062 张，逐张检查 `get_attached_file()` 与
+`file_exists()`，**缺失文件 0 个**——挂回的是真实文件，不是空引用。
+
+### 8.9 必须说清的一件事：挂回不等于页面出现图集
+
+PDP 模板只有四个媒体槽位（`hero-bg` / `hero-plate` / `square` / `wide`），
+**没有图集组件**；旧站同样没有（抓 white-sands 老页面，`pdp-gallery` 与
+`pdp-thumb` 计数均为 0）。
+
+所以 785 张挂回图的直接收益是：主图/方图/宽图的候选池变充足（这是四个空主图得以
+修好的原因）、`SchemaFilters.php:306` 的结构化数据 `image` 数组更完整、
+`ThumbnailCommand` 有更多素材。它**不会**让页面多出一个画廊——那是新增功能，
+需业主决定，本轮未做。
+
+### 8.10 交叉缺陷（不属于本 GOAL，移交）
+
+真 Chrome 首屏复核实测：聊天挂件 `.md-launcher`
+（`lhc-extensions/mdvisitor/.../mdvisitor.css:44`，`position:fixed; right:32px;
+bottom:32px`）压住主图右下角约 160px。
+
+GOAL.md:666 明确写着 AI 客服票 #86/#102/#147 不在本 GOAL 范围，所以本轮不修改
+它，仅记录位置与实测数据供该工作流处理。
