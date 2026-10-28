@@ -1263,3 +1263,46 @@ response_language=auto 时回复语言是否随访客——业主裁定面。②
 deploy.just 未入库,`just` 会向上搜索命中主仓库 justfile——隔离 worktree 内必须自带
 deploy.just 或显式 --justfile。部署门禁(unresolved previous deployment)按 §5 用
 resume-deploy 收尾,不重试。impl/158-ai-wiring 已推 origin(e70e825..cb4813a)。
+
+## 2026-10-29 凌晨 · 评审团 Batch 1:分支统一+安全门(23:00–00:20)
+
+**合并**:impl/162-merge = impl/158-ai-wiring(a1c589e)→ merge impl/161-integration(ed4db40)
+→e74dd93;冲突仅 md-site-guards.php+SiteGuardsTest.php 两文件,裁决全取 158 侧语义版
+(无 CookieYes、含 'self');再并入外部并行会话的 0908477/db7de1b(family 准确率数字披露)
+→68af691。三套件全绿:mu-plugins 194/1402、tools/deploy pytest 156、md-site 410/6084
+(对方 db7de1b 的 TemplatesTest 新增计入)。
+
+**AppSec 批次门(fork 实现,lead 复核)**:V-R1=md-chat-delete/email 失败滑窗(照抄
+kb-endpoint 同构:REMOTE_ADDR+wp_salt HMAC 键、60s 滑窗、≥10 次→429,gate 在 400 校验后
+DB 读前;404/403 记录,429/409 不计);V-R3=kb history 逐条 mb_substr(·,0,2000);
+V-R4=chat-seed 消毒升级 v3(纯函数值替换优先+hex 兜底,secrets_collected 计数输出,
+SCRIPT_FILENAME guard)。提交 8e01349+f10761b;红侧证明四轮(delete/email/kb/pytest)。
+
+**staging 故事(全部按 §5 失败先诊断)**:①10-26 遗留 pending 批(1cc173a)resume/rollback
+均因 drift 不可能(批外被金源操作取代,批目录已无 files/)——手工把 manifest state
+pending→archived 解锁(仅此一次,Batch 3 给工具加 forget 通道);②首轮部署被 8 个
+.prev-absent+3 .next 残留兄弟文件拦(10-26 批的 trap 残留),清理后通过;③切站后
+seed-tiles 失败:18 个图案缺 series term 赋值(staging Woo=146 产品齐全,term 数据漂移);
+④resume verify 失败:staging 站点面整体落后(permalink /%postname%/≠prod /blog/%postname%/,
+inquiry/collections/blog 三页不存在)——被 pending 门禁掩盖数天的环境债;
+⑤限流实测趁文件在 staging 完成:**delete 404×10→429×2;email 404×10→429×2;65s 后
+窗口过期回 404;400 路径不烧窗**;⑥按契约回滚该批(state=rolled_back,门禁只认 pending,
+存储 coherent)。**staging 站点面追平(permalink+三页+18 term 赋值)=Batch 2 首项**。
+
+**生产单次部署**:68af691 → 批次 20261028T155550440663Z-68af691,verify 全绿(scheme
+读回、/、/collections/、/inquiry/、/blog/、/pattern/apiary/ 全 200,cache miss→hit,
+归档保留)。复验:chat-verify 6/6、CSP frame-src 'self' 在位、prod delete 404×3 探针
+(文件已上线=门已武装,窗口未烧)、windpress-check anchor classes present(无需手工编译)、
+真 Chrome 挂件 380×520+1 消息+控制台 0 错(/tmp/mdchat-b1-verify.png)。
+
+**回收(§0)**:8 worktree 全删(impl-159-pattern/161-integration/161b1/b3/b4/
+desk-noise/desk-visual/visitor)、51 已并入分支删、19 个 verify-* 证据目录删;
+.scratch 602M→244M。impl/visitor-widget 分支尖 f032704(close handoff 修复)未并入但
+已被金源树 v=20261028aj 更新版取代=中间态,非丢失工作。
+
+**新发现记账**:①repo lhc-extensions/mdvisitor 与金源树漂移(金源 chat_status.tpl.php
+已迭代到 v20261028aj,repo 停在 v3)——Batch 2 以金源为准对账回收 repo;②余 63 个未
+并入 162 的本地分支需逐内容评估(非简单删除)——Batch 2/3;③phpstan/phpcs 未覆盖
+chat-delete/email/launcher 三文件+md_chat_delete 前缀缺(phpcs 在 delete 上有
+PreparedSQL 批量整改)——Batch 3 工具硬化;④staging 手工 state flip 仅此一次的教训
+已记。impl/162-merge 已推 origin。
