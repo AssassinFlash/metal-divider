@@ -87,6 +87,14 @@ How metal-divider.com handles inquiry data: what we collect, why, how long we ke
 3. **`/blog/` 的 "what to send for an accurate quote"** —— 该页实际文章是否覆盖这个主题？
 4. **`/privacy/` 未提 GDPR/LGPD 等具体法域** —— 站点是 B2B 全球站，
    刻意不写死法域，请确认这是想要的口径。
+
+   **勘误（2026-10-28）**：本条原本还问了「±0.1mm 还是 ±0.03mm，哪个真」，
+   **已撤回**。复核两个数字的修饰语：
+   - `±0.03mm` 跟的是 **"repeat accuracy"**（板与板之间的一致性）
+   - `±0.1mm` 跟的是 **"tolerance"**（单件切割公差）
+
+   这是两个不同的工程指标，不是同一事实的两个数值；两者并存合理，
+   且新旧站完全一致。提出该问题会浪费业主时间。
 5. ~~是否需要为 146 个 PDP 各写描述~~ —— **不需要，已撤回。**
    实测 146/146 个产品的 `_seopress_titles_desc` 均已设置且 ≥100 字符
    （抽查五个实测 155–162 字符）。产品 excerpt 为空是无关的：SEOPress
