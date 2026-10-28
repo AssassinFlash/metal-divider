@@ -82,17 +82,30 @@
     if (cs.backgroundImage !== 'none') return;
     // A wrapper is not empty when what it wraps is painted. The perforated
     // page's pattern switcher is `div.absolute.inset-0` with a transparent
-    // background over two children that each carry a gradient — four such
-    // wrappers were reported as unpainted 375x380 blocks at 390
-    // (measured 2026-10-29). Ink one level down is ink.
-    const paintedChild = [...el.children].some((kid) => {
-      const ks = getComputedStyle(kid);
-      if (ks.backgroundImage !== 'none') return true;
-      const colour = ks.backgroundColor || '';
-      const rgb = /rgba?\([^)]*,\s*([0-9.]+)\s*\)/.exec(colour);
-      return rgb ? parseFloat(rgb[1]) > 0.05 : false;
+    // background over children that carry the gradient — four such wrappers
+    // were reported as unpainted 375x380 blocks at 390 (measured 2026-10-29).
+    //
+    // One level was still too shallow: at 320 the same page's mask overlay
+    // (`div.absolute.inset-0[data-pa-mask]`) holds `…_masked-left` (50% wide,
+    // itself unpainted) and only its *grandchild* paints — a radial-gradient
+    // hole pattern, 320x380 inside a 305x380 box (measured 2026-10-29). So
+    // walk all descendants, but require the painted one to cover half the box:
+    // accepting any deep descendant would let a single small dot excuse a real
+    // void, which is the failure this check exists to catch.
+    const area = r.width * r.height;
+    const paintedBelow = [...el.querySelectorAll('*')].some((node) => {
+      const ks = getComputedStyle(node);
+      let paints = ks.backgroundImage !== 'none';
+      if (!paints) {
+        const colour = ks.backgroundColor || '';
+        const rgb = /rgba?\([^)]*,\s*([0-9.]+)\s*\)/.exec(colour);
+        paints = (rgb ? parseFloat(rgb[1]) > 0.05 : false) || /\/\s*0?\.\d+\)/.test(colour);
+      }
+      if (!paints) return false;
+      const kr = node.getBoundingClientRect();
+      return kr.width * kr.height >= area * 0.5;
     });
-    if (paintedChild) return;
+    if (paintedBelow) return;
     // A scrim is paint, and this check only knew `background-image`: a
     // `bg-black/55` overlay has `backgroundColor: oklab(0 0 0 / .55)` and
     // `backgroundImage: none`, so it was reported as an unpainted block.

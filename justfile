@@ -116,6 +116,15 @@ present name="dev": php-install
 readback *args:
     python3 "{{ justfile_directory() }}/tools/audit/marker_readback.py" {{ args }}
 
+# Sweep the live site at a true narrow viewport in the owner's own Chrome. Only
+# Playwright can set device metrics and Chrome refuses windows under ~578px, so
+# this is the one place the browser rule allows it (AGENTS.md §8). Always run
+# `--self-check` first: it plants three known boxes and fails if the empty-block
+# rule stops telling a void from a painted wrapper.
+[positional-arguments]
+narrow *args:
+    cd "{{ justfile_directory() }}" && /opt/homebrew/opt/python@3.12/bin/python3.12 tools/audit/narrow_viewport.py {{ args }}
+
 # Install the SEOPress configuration plane into the instance (spec 22,
 # ticket #34: title/description templates, noindex faces, sitemap, robots.txt,
 # knowledge graph, schema builder posts, /pages redirect, page metas). With

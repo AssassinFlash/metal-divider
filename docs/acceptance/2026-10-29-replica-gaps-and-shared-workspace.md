@@ -442,14 +442,59 @@ hero），`cover` 用法正确。
 与各页截图。被它取代的三轮中间扫描（`md-390`、`md-390-final`、`md-390-v2`、
 `md-390-v3`）已按 §0 保留边界删除，仅保留这一份。
 
-### 9.5 回收（业主 2026-10-29 重申后执行）
+### 9.5 320 视口复验（业主 2026-10-29 要求）
+
+320 是真窄视口，opencli 够不到（Chrome 窗口最小 ~578px），按铁律的窄例外用
+Playwright 驱动业主本机 Chrome，`innerWidth` 断言每页都是 320 才计入。
+
+首轮 24 页报 17 条，逐条查实后**只有一条是新发现，且是判据自身的缺陷**：
+
+| 项 | 实测 | 判定 |
+|---|---|---|
+| `div.absolute.inset-0[data-pa-mask]` 305×380（`/perforated-panels/`） | 直系子层透明，但孙子层是 `radial-gradient` 圆孔图案，320×380 盖满全框 | **误报**：判据只往下看一层 |
+
+`left-panel` 是 `overflow: hidden`，越界的 320px 宽渐变被裁掉，`documentElement.scrollWidth` = 305 = `clientWidth`，**无横向溢出**。
+
+判据已改为递归遍历全部后代，但要求上色元素**覆盖 ≥50% 盒面积**才豁免——否则深处一个
+10×10 的圆点就能把一个真空洞洗白，那正是这条检查存在的理由。三组夹具固化为
+`just narrow --self-check`，且**双向证过**：退回旧的一层规则 → 退出码 **1**（第三组翻车），
+换回新规则 → 退出码 **0**。
+
+| 视口 | 页数 | `empty-block` | `tiny-type` | `img-ratio` |
+|---|---:|---:|---:|---:|
+| 390（`/tmp/md-390b`） | 24 | 0 | 9 | 2 |
+| 320（`/tmp/md-320b`） | 24 | 0 | 9 | 5 |
+
+`tiny-type` 9 条两档相同，是同一批 11px 胶囊文字（全站 98 处
+`text-[11px] md:text-[13px]`，旧站同类页面也有 50 处 11px），属设计。
+`img-ratio` 是 `object-cover` 把横图裁进竖框，比值 >4.0 才报，属设计；但见 §9.6。
+
+### 9.6 移动端真实放大率（新查，属待裁定）
+
+`naturalWidth` 对 `srcset` 图返回的是**按 DPR 折算后的显示尺寸**，不是文件真实像素——
+我据此先报过“292×188 图被放大 1.58 倍”，**该结论作废**。改用文件名里的 `-768w`
+后缀取真实宽度重测 14 页：**56 处**真实放大，比值 1.02–3.64。
+
+成因统一：`<img class="object-cover">` 之类把 768×432 的横图铺进 305×771 的竖框
+（`object-cover` 按 `max(sx, sy)` 缩放，竖屏必然放大）。最重的三处：
+`leaf-skeleton-…-01-` ×3.57、`ext-pp-hero-perforated-facade` ×3.02、
+`kirra-balcony-screen-design` ×2.68。
+
+这不是裁切（裁切已判定为设计），是**同一张图在竖屏下被放大后发虚**。修法有二：给这些位置
+补竖版源图，或在移动端改用 `object-contain`／限制框高。两者都改变视觉，属设计裁定，
+不擅自改。
+
+证据 `/tmp/md-320b/report.json` 与 `/tmp/md-390b/report.json`（两档各一份权威扫描，
+`md-320`、`md-390-evidence`、`md-390` 等被取代的旧目录已按 §0 删除）。
+
+### 9.7 回收（业主 2026-10-29 重申后执行）
 
 | 对象 | 处理 |
 |---|---|
 | opencli 会话 `mdacc` / `mdsearch` / `mdwp` | 全部 `close`，租约 `released` |
 | Playwright 临时 profile ×4 | `lsof +D` 确认无占用后删除，残留读回 **0** |
-| `/tmp` 扫描产物 5 个目录（约 802MB 峰值） | 删除被取代的 4 个，保留 `md-390-evidence` |
+| `/tmp` 扫描产物 | 删除被取代的旧目录，每档只留一份权威报告 |
 
-`tools/audit/narrow_viewport.py` 已把回收写进代码：跑完自动扫
+`tools/audit/narrow_viewport.py` 已把回收写进代码（`reclaim_profiles()`），跑完自动扫
 `playwright_chromiumdev_profile-*`，确认无进程持有才删，并打印
 `reclaimed N stale playwright profile(s)`——不依赖人记得清。
