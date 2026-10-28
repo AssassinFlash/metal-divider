@@ -438,5 +438,18 @@ hero），`cover` 用法正确。
 本节的净产出是修好了**三处判据缺陷**——它们此前会把 17 个设计意图报成缺陷，比修页面
 更要紧：否则后续每次验收都在噪声里判断。
 
-证据 `/tmp/md-390-v3/report.json`（判据修复后）与 `/tmp/md-390-final/report.json`
-（修复前，留作对照）、各页截图。
+证据 `/tmp/md-390-evidence/report.json`（24 页 × 真 390，三处判据修复后的权威扫描）
+与各页截图。被它取代的三轮中间扫描（`md-390`、`md-390-final`、`md-390-v2`、
+`md-390-v3`）已按 §0 保留边界删除，仅保留这一份。
+
+### 9.5 回收（业主 2026-10-29 重申后执行）
+
+| 对象 | 处理 |
+|---|---|
+| opencli 会话 `mdacc` / `mdsearch` / `mdwp` | 全部 `close`，租约 `released` |
+| Playwright 临时 profile ×4 | `lsof +D` 确认无占用后删除，残留读回 **0** |
+| `/tmp` 扫描产物 5 个目录（约 802MB 峰值） | 删除被取代的 4 个，保留 `md-390-evidence` |
+
+`tools/audit/narrow_viewport.py` 已把回收写进代码：跑完自动扫
+`playwright_chromiumdev_profile-*`，确认无进程持有才删，并打印
+`reclaimed N stale playwright profile(s)`——不依赖人记得清。

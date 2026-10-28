@@ -24,7 +24,10 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 
 from playwright.sync_api import sync_playwright
@@ -133,10 +136,32 @@ def main() -> int:
             page.remove_listener("console", on_console)
             results.append(entry)
             count = len(entry.get("defects", {}).get("items", []))
-            print(f"{name:20} {entry.get('innerWidth', '?'):>5} {count:>3} defects", flush=True)
+            print(
+                f"{name:20} {entry.get('innerWidth', '?'):>5} {count:>3} defects",
+                flush=True,
+            )
 
         context.close()
         browser.close()
+
+    # Every launch leaves a `playwright_chromiumdev_profile-*` in $TMPDIR, and
+    # a run that dies mid-page leaves it behind even though context.close()
+    # ran. The owner asked on 2026-10-29 for instances to be reclaimed after
+    # use: four such profiles had accumulated here. Sweep only the ones no
+    # process holds.
+    swept = 0
+    for leftover in pathlib.Path(tempfile.gettempdir()).glob(
+        "playwright_chromiumdev_profile-*"
+    ):
+        held = subprocess.run(
+            ["lsof", "+D", str(leftover)], capture_output=True, text=True, check=False
+        )
+        if held.returncode == 0 and held.stdout.strip():
+            continue
+        shutil.rmtree(leftover, ignore_errors=True)
+        swept += 1
+    if swept:
+        print(f"reclaimed {swept} stale playwright profile(s)")
 
     (out / "report.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"\nwrote {out / 'report.json'}")
