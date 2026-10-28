@@ -603,6 +603,8 @@ def chat_verify(target: Target, *, cache_buster: str | None = None) -> steps.Res
     """The read-only HTTP probes, each one PASS/FAIL with its URL.
 
     A note per failed probe; the CLI returns non-zero when any note is set.
+    One probe beyond the body markers: the homepage CSP must carry
+    frame-src 'self' — the hard prerequisite the widget iframe loads on.
     """
     base = target.base_url.rstrip("/")
     actions: list[str] = []
@@ -614,6 +616,23 @@ def chat_verify(target: Target, *, cache_buster: str | None = None) -> steps.Res
         actions.append(f"{name} {url} -> {status} {'PASS' if passed else 'FAIL'}")
         if not passed:
             notes.append(f"{name} failed: {url} answered {status} without {marker!r}")
+    # The sixth probe reads a response header, not a body marker: the widget
+    # opens as a same-origin iframe, so a homepage CSP without frame-src
+    # 'self' kills the chat card while every body probe still passes — the
+    # 2026-10-28 regression, unnoticed until now. Browsers enforce every
+    # CSP header, so the marker may sit in any of them.
+    csp_name = "home-csp-allows-widget-frame"
+    csp_url = f"{base}/"
+    csp_marker = "frame-src 'self'"
+    status, headers, _csp_body = target.fetch("/", cache_buster=cache_buster)
+    csp_values = headers.get_all("Content-Security-Policy") or []
+    csp_pass = status == 200 and any(csp_marker in value for value in csp_values)
+    actions.append(f"{csp_name} {csp_url} -> {status} {'PASS' if csp_pass else 'FAIL'}")
+    if not csp_pass:
+        notes.append(
+            f"{csp_name} failed: {csp_url} answered {status} without "
+            f"{csp_marker!r} in Content-Security-Policy"
+        )
     return steps.Result("chat-verify", actions, notes)
 
 
