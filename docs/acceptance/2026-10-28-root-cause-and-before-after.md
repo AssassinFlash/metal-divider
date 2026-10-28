@@ -285,3 +285,41 @@ WindPress 是 Tailwind v4，**没有服务端构建**：`cache/store` 只接收�
 - 修复前（访客态）：`/tmp/visual-audit/*-1440.png`、`*-390.png`，66 张
 - 修复后（访客态，同条件）：`/tmp/visual-after2/*-1440.png`、`*-390.png`
 - 中间批次（登录态，**不作为对照依据**）：`/tmp/visual-after/`
+
+## 十二、导航下拉叠层：前台窗口实证（2026-10-28）
+
+此前这条修复只在**后台窗口**测过，而 `--window background` 下 Chrome 冻结 CSS transition、
+元素停在过渡起点（`document.visibilityState: hidden`），测不出「面板是否真的关了」。
+必须在**前台窗口**测：本次断言 `innerWidth: 1440 / visibilityState: visible / logged: false`。
+
+### 判据（第一版错了，记下）
+
+第一版用 `display !== 'none' && height > 50` 判面板是否打开，得到「两个子菜单常驻打开」的
+假结论。实际那两个 200×118 的盒子 **`opacity: 0` 且 `pointer-events: none`**，
+`elementFromPoint` 命中的是页面内容而非菜单——不可见、不拦截点击。
+**必须同时排除 `opacity ≤ 0.5`**，否则 `display:block` 会被当成可见。
+
+### 实测结果
+
+| hover 项 | 可见面板数 | 是哪个 |
+|---|---|---|
+| Screens | 1 | Screens |
+| Processes | 1 | Processes |
+| Patterns | 1 | Patterns |
+| About | 0 | 无子菜单（正确） |
+| Resources | 1 | Resources |
+| Inquiry | 0 | 无子菜单（正确） |
+
+**任何时刻只有 0 或 1 个可见面板，且必属当前项。** 修复前在这一步会残留上一个面板
+（Screens 大面板 1425×333 在移到 Patterns 后仍 `opacity: 1`），现在不会。
+
+面板表面实测 `rgb(15, 15, 15)`、1425×266、`inert: false`（打开时进入 tab 序），
+关闭时恢复 `inert`——键盘路径与视觉一致。
+
+### 这一条改变了什么
+
+业主点名的「导航下拉菜单样式异常」由两个独立缺陷组成，现在都有实证：
+1. **叠层**：`closeAll()` 只挂在「面板已有子节点」的项上，空面板直接 `return` → 已修，本表为证。
+2. **样式**：同一 `<a>` 叠了 Shopify 与新版两套类，`height:215px` 压掉 `aspect-ratio:16/10`、
+   `contain`+`padding` 把方图缩进灰底、`::after` 画半截下划线 → 已修（标记读回
+   `object-fit: contain` 0 处、`cover` 2 处）。

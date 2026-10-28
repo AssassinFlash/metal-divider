@@ -1091,3 +1091,49 @@ GOAL 覆盖矩阵的硬项"完整询盘线上实走"此前只验过 dev,本轮�
 **2026-10-27 生产编译卡死(第二次)与恢复**:生产 WindPress 编译在 Generate 后无输出 6 分钟(CPU 0%),期间 `tailwind.css` 返回 **404**——**删除缓存即让生产进入无样式状态**,这是本流程的真实风险。恢复:把 dev 刚编译好的 `tailwind.css`(592568B,零 dev URL)直接 scp 到生产缓存路径 + `litespeed-purge all`,200 恢复、hover 修复同步生效。**教训:生产编译前应先备好 dev 编译产物作回滚,而不是先删生产缓存再赌编译成功。**
 
 **生产验收**:hover 法务 rgba(255,255,255,0.42) → rgb(212,184,120);导航/CTA hover 本就正常;生产矩阵 21 页 × 3 视口 **63/63**,零控制台错误。部署批次 `d912cea` 已归档,一次性登录插件已清除。
+
+### 2026-10-28 根因收口:一条 `!important` 压死全站正文,并连带六类缺陷
+
+业主判定上一轮「验收成功」不成立,列出六类问题(大面积空白、下拉异常、表单空带、空卡槽、
+搜索弹层空白、贴边/间距/过窄/复刻不全)。本轮不做逐处补丁,先找共同根因。
+
+**根因**:`plugins/md-site/content/windpress/base.css` 的
+`main p[class*="max-w-"],main p[class*="text-"],main p:not([class*="max-w-"]){max-width:40em!important}`
+在 `components` 层带 `!important`,压过模板 `utilities` 层的 `max-w-[980px]`。
+层叠是「赢的替换另一条」不是取小值,于是**每段正文都恰好 40em**:16px→640px(1440 的 44.4%),
+英雄区 `max-w-[620px]` 的导语反被撑到 720px。这就是业主反复说的「可视范围过窄」。
+改为 `main p:not([class*="max-w-"]){max-width:980px}`(无 `!important`),
+模板上限恢复生效:**实测带 `max-w-[980px]` 的段落真的渲染成 980px(68.1%)**。
+
+**同一形态在六类里重复出现**:能力已经存在,只是没有接上——
+搜索弹层有 `max-height` 方案但手机写的是 `min-height:100dvh`;Woo Store API 本就返回
+`images[0]` 但脚本查的是 `wp/v2/product`;`.cph__media-fallback` 样式早写好但全库没用这个类;
+`editorial()`/`catalog()` 有无图守卫而 `related()` 没有;弹层清过 `.md-inquiry` 的双重 padding
+而页面没清;`closeAll()` 存在但只挂在「面板已有子节点」的项上。
+
+**生产读回**(`tailwind.css?ver=1793152247`,626,010 字节):`40em` 0、搜索 `100dvh` 0、
+下拉 `contain` 0、侧栏 `280px` 0、卡片 `gap:14px` 0、无上限段落 980px、`cover` 2、`gap:16px` 1。
+工具已固化:`just readback` 读生产,`just readback --self-check <旧CSS>` 先自证判据能区分前后。
+
+**导航叠层前台实证**(必须前台:`--window background` 会冻结 transition 测不出真状态):
+六项逐一 hover,**任何时刻只有 0 或 1 个可见面板且必属当前项**;About/Inquiry 无子菜单为 0。
+判据修正:`display:block` 不等于可见,两个 200×118 子菜单 `opacity:0`+`pointer-events:none`,
+不排除 alpha 会误报「两个菜单常驻打开」。
+
+**同条件前后对照**:初次对照的基线与对照批登录态不同(管理栏使顶部 32px 每页 99% 变化),
+已登出重拍,**18 页零错配、破图 0、横向溢出项逐页完全相同**。
+`/about-us/` 0.17%、`/faqs/` 0.08%、`/` 0.49% —— 这些页本有显式上限,解禁后按自己的上限渲染,
+差别本就小;`/shop/` 29.76% 与页高 +182、`/inquiry/` 页高 −530 均对应已知机制。
+
+**内容搬运**:产品 146/146 双向差集为空;集合 9/9 对齐;旧站 5 篇 `test blog N` 正文 56 词是
+测试垃圾不搬;`/pages/metal-divider` 与 `/custom-metal-divider-screens` 是同一模板的两个实例,
+10 个区块新站都在。
+
+**未解决项(外部限制,不是仓库可修)**:生产网页登录被 Hostinger 平台防护拦截
+(`ERROR: Stop guessing!`,该字符串不在仓库任何代码中),应用密码走 REST 因 `Authorization`
+被剥而 401。本轮靠 WP-CLI 生成 `logged_in`/`secure_auth` cookie 注入 Chrome 才跑成 WindPress
+编译(cookie 名需 `wordpress_logged_in_<COOKIEHASH>`,值里的 `|` **不可** URL 编码),
+并须移除压在 Generate 上的 9 个 Hostinger 聊天节点。**下次改模板重编译 CSS 仍需走这条路。**
+
+证据:`docs/acceptance/2026-10-28-root-cause-and-before-after.md`;
+截图 `/tmp/visual-audit/`(前,访客态)与 `/tmp/visual-after2/`(后,访客态,同条件)。
