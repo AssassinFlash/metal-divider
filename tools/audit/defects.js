@@ -58,6 +58,19 @@
     // it exists to darken what is behind it, not to hold content.
     if (/\bbg-(?:\[[^\]]+\]|[a-z]+)\/\d+/.test(cls)) return true;
     if (/\bbg-\[[^\]]+\]\/\d+/.test(cls)) return true;
+    // A layer placed BEHIND its content cannot make a hole. The breadcrumb band
+    // on shop, gallery, perforated and the series archives carries a converted
+    // `xo-section-bg-image` wrapper at `position: absolute; inset: 0;
+    // z-index: -2` whose image is never set — and the old site is byte-for-byte
+    // the same (measured 2026-10-29 on metalpartition.com/collections/all:
+    // white band, `z-index: -2`, `backgroundImage: none` on both wrappers). The
+    // band is white by spec #65, so nothing is lost; four 1425x124 blocks were
+    // being reported as holes. Scoped to negative z-index on purpose: an
+    // absolutely positioned layer with a normal or positive z-index sits OVER
+    // content, and an unpainted one there really is a hole.
+    const position = getComputedStyle(el).position;
+    if ((position === 'absolute' || position === 'fixed') &&
+        parseInt(getComputedStyle(el).zIndex, 10) < 0) return true;
     return false;
   };
   [...document.querySelectorAll('main section, main article, main figure, main div')].forEach((el) => {

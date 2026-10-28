@@ -56,7 +56,21 @@ PAGES = [
     ("family-perforated", "/perforated-panels/"),
     ("family-expanded", "/expanded-metal-panels/"),
     ("custom", "/custom-metal-divider-screens/"),
+    # All nine series archives. One was swept and eight were not (measured
+    # 2026-10-29: the page sitemap has 19 pages and all were covered, but the
+    # product_cat sitemap has nine archives and only `pattern-geometric` was on
+    # this list). They are the same template rendering different term data, so
+    # they can break independently — a series with no thumbnail or no products
+    # renders an empty grid that no page-level sweep would see.
+    ("series-abstract", "/collections/pattern-abstract/"),
+    ("series-asian", "/collections/pattern-asian/"),
     ("series-geometric", "/collections/pattern-geometric/"),
+    ("series-gradient", "/collections/pattern-gradient/"),
+    ("series-landscape", "/collections/pattern-landscape/"),
+    ("series-moroccan-arabic", "/collections/pattern-moroccan-arabic/"),
+    ("series-organic", "/collections/pattern-organic/"),
+    ("series-perforated", "/collections/pattern-perforated/"),
+    ("series-vintage-retro", "/collections/pattern-vintage-retro/"),
     ("pdp-agave", "/pattern/agave-architectural-metal-screen-pattern/"),
     ("pdp-alhambra", "/pattern/alhambra-architectural-metal-screen-pattern/"),
     ("pdp-white-sands", "/pattern/white-sands-architectural-metal-screen-pattern/"),
@@ -147,6 +161,26 @@ FIXTURES = """() => {
   fullInk.style.cssText = 'position:absolute;inset:0;background-image:radial-gradient(circle, rgba(201,169,98,.4) 1.5px, transparent 1.5px)';
   fullWrap.appendChild(fullInk);
   full.appendChild(fullWrap);
+  //   behind   — an unpainted absolute layer at z-index -2, the shape four
+  //              breadcrumb bands present; it sits behind painted content, so it
+  //              is not a hole. The layer is the box itself, which is how the
+  //              live one is built (`div.xo-section-bg-image` carries the
+  //              position and the z-index, it does not wrap a layer).
+  //   in-front — the same box at z-index 1, which DOES sit over the content.
+  //              That one is still a real hole, and must stay reported.
+  const stacked = (id, z) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;width:300px;height:260px;';
+    const layer = document.createElement('div');
+    layer.id = id;
+    layer.style.cssText =
+      'position:absolute;inset:0;z-index:' + z + ';';
+    wrap.appendChild(layer);
+    document.querySelector('main').appendChild(wrap);
+    return layer;
+  };
+  stacked('md-fixture-behind', -2);
+  stacked('md-fixture-infront', 1);
   return true;
 }"""
 
@@ -169,6 +203,8 @@ def self_check(page, probe: str, base: str) -> int:
         ("div#md-fixture-empty", True, "a box nothing paints"),
         ("div#md-fixture-dot", True, "a 10x10 dot cannot excuse a 300x260 void"),
         ("div#md-fixture-painted", False, "a descendant that covers the box is paint"),
+        ("div#md-fixture-behind", False, "an unpainted layer behind content is not a hole"),
+        ("div#md-fixture-infront", True, "the same layer in front of content is a hole"),
     ]
     failed = 0
     for sel, want, why in cases:
