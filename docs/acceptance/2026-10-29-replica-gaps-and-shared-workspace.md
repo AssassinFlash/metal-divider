@@ -443,7 +443,6 @@ hero），`cover` 用法正确。
 `md-390-v3`）已按 §0 保留边界删除，仅保留这一份。
 
 ### 9.5 320 视口复验（业主 2026-10-29 要求）
-
 320 是真窄视口，opencli 够不到（Chrome 窗口最小 ~578px），按铁律的窄例外用
 Playwright 驱动业主本机 Chrome，`innerWidth` 断言每页都是 320 才计入。
 
@@ -498,3 +497,31 @@ Playwright 驱动业主本机 Chrome，`innerWidth` 断言每页都是 320 才�
 `tools/audit/narrow_viewport.py` 已把回收写进代码（`reclaim_profiles()`），跑完自动扫
 `playwright_chromiumdev_profile-*`，确认无进程持有才删，并打印
 `reclaimed N stale playwright profile(s)`——不依赖人记得清。
+
+### 9.8 「贴边 / 间距贴死」的量化（业主点名的全局问题类别）
+
+这两条没法靠截图判定：一张通栏照片和一段真的贴到边上的正文，在图里都是「顶到边」。
+所以新建 `tools/audit/spacing.py` 读 DOM，量三件事：
+
+| 判据 | 定义 | 为什么 |
+|---|---|---|
+| `edge-touch` | 文字盒到视口左右任一边 **< 8px** | 文字需要留白；通栏背景不需要，因此只量含文字的元素 |
+| `tight-leading` | **20px 以下**正文、≥2 行、行高/字号 **< 1.25** | Tailwind 最紧的一档 `leading-tight` 就是 1.25；更大的字号另属排版 |
+| `narrow-column` | 最宽文字行占视口比例 | 只报不判——72 字符的行宽是排版规则，不是缺陷 |
+
+判定过程中纠掉了我自己的**四类假阳性**，每一条都留下了为什么：
+
+| 假阳性 | 实际原因 | 判据修正 |
+|---|---|---|
+| 首页 89 处贴边 | 折叠 FAQ 面板里 40px 宽的隐藏副本，`display`/`opacity` 都显示"可见" | 宽度 <80px 不算正文；候选再经 `scrollIntoView` + `elementFromPoint` 确认在最上层 |
+| 剩 6 处负间距（-266px 等） | 轮播项停在视口外，`scrollIntoView` 把它拉进来后仍报**滚动前**的坐标 | 滚动后**重新测量**再判定 |
+| `/shop/` 8 处行高 1.0 | `pag__badge`/`ppp__badge` 是 `display:flex` 单词徽章，`height/lineHeight` 把 padding 算成 3 行 | 改用 Range 数**真实行盒**，不再用元素高度推算 |
+| 首页剩 2 处 -0.7px | `mfg-projects-marquee-track` 是 `translateX(-442px)` 跑马灯动画 | 排除滚动容器、非零位移变换、运行中动画三类"会移动"的父级 |
+
+另有一类属**设计**而非缺陷，已改为不报：26–36px 的展示级标题行高 1.06–1.20。旧站同批
+标题同样是 1.06–1.10，这是大字号排版惯例；把标题当正文报，等于每页都报旧站的设计。
+
+`just spacing --self-check` 会植入一段 1px 贴边正文和一段两行行高 1.0 的 16px 正文，
+两者都必须被抓到；**双向证过**：`--min-gutter -100 --min-leading 0.5` 关掉判据 → 两项
+FAIL、退出码 **1**；判据开启 → 两项 ok、退出码 **0**。自检期间它当场抓到了我自己的
+一个 bug：报告把每行文本截到 50 字符，而断言要找的句子正好被截掉，已放宽到 120。

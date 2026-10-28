@@ -125,6 +125,15 @@ readback *args:
 narrow *args:
     cd "{{ justfile_directory() }}" && /opt/homebrew/opt/python@3.12/bin/python3.12 tools/audit/narrow_viewport.py {{ args }}
 
+# Measure the two complaints a screenshot cannot settle: text touching the edge
+# and body text whose lines are packed tighter than they can breathe. Both are
+# read off the DOM, not off pixels, so a full-bleed photo is never mistaken for
+# a layout gap. `--self-check` plants a 1px-gutter paragraph and a line-height
+# 1.0 paragraph and fails unless both are caught.
+[positional-arguments]
+spacing *args:
+    cd "{{ justfile_directory() }}" && /opt/homebrew/opt/python@3.12/bin/python3.12 tools/audit/spacing.py {{ args }}
+
 # Install the SEOPress configuration plane into the instance (spec 22,
 # ticket #34: title/description templates, noindex faces, sitemap, robots.txt,
 # knowledge graph, schema builder posts, /pages redirect, page metas). With
