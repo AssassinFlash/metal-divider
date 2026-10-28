@@ -785,3 +785,35 @@ Chrome profile 里。这正是 `AGENTS.md` 记过的陷阱：登录态下 WordPr
 这是懒加载的正常行为，但也意味着**任何不滚动的测量都不是整页重量**。基线口径同样如此，
 所以两者可比；但若要把「整页重量」当指标，必须先滚动或放大视口——`AGENTS.md` 已记
 「验懒加载图用超高视口，不要靠滚动」，此处沿用它即可。
+
+### 9.12 完整询盘链：走到了 Turnstile 门禁，把门禁本身验实（业主 2026-10-29）
+
+完成标准点名「完整询盘链路」，此前只验过「缺字段被拒」。这一轮按业主路径实走，结论是
+**链路在门禁处正确拦住了自动化，而门禁本身是通的**——不是缺陷，但也没走到提交成功，
+所以如实记录，不算验收通过。
+
+#### 9.12.1 已验的部分
+
+| 环节 | 实测 |
+|---|---|
+| PDP 表单结构 | `form.md-inquiry-form`，18 个字段，含 `md_inquiry_pattern_slug=agave-architectural-metal-screen-pattern`、`source_page=pattern-pdp`、`source_module=quote-modal`、`source_button=request_quote` + nonce |
+| 弹层打开路径 | 点 `Request a Quote` → 表单从 `0×0` 变为 **362×735**，确实由 CTA 打开 |
+| 测试模式 | `e2e@example.invalid`（RFC 2606 保留域，永不可达真人）开启后读回 `on`，验证完 `--off` 读回 `off` |
+| Turnstile 挂件 | **已正确渲染**：`window.turnstile` 是 object、`render` 是 function、槽内为 `div > div + input[name=cf-turnstile-response]`、`cf-chl-widget-*` id 存在 |
+| 提交门禁 | `submit.disabled === true`，`statusText` 为空——`appearance="interaction-only"` 下未完成挑战不解锁，这是设计 |
+| 服务端门禁 | `Submission.php`：`turnstile_is_configured()` 为真时，空 token 直接 `fail(..., 'turnstile')` 并 `return`，不会落库 |
+
+#### 9.12.2 未完成的环节与原因
+
+自动化没有真实挑战令牌，`submit` 保持禁用。**没有绕行**：不伪造 token、不在服务端关掉
+Turnstile 冒充成功——那会产出一条假的验收结论。整个过程中**零询盘落库**（`wp post list`
+计数前后都是 0），所以也没有留下冒烟垃圾。
+
+#### 9.12.3 这一轮实际得到的东西
+
+`GOAL.md:710` 记过一次生产真实提交成功（`verified`、队列两行路由正确），说明门禁能放行
+真人。本轮的价值不是重复它，而是**把门禁的可测状态固化成线上读数**：挂件在、render 在、
+门禁真的锁着提交、服务端真的拒空 token。这四项此前都没有对应读数。
+
+要真正完成「实走」，需要一次**真人完成 Turnstile 挑战**——这属于必须业主动手的动作，
+按 §7 只问业主知道的事，记在待办里。
