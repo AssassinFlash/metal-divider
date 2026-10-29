@@ -16,8 +16,18 @@ from __future__ import annotations
 # WordPress: the version api.wordpress.org offers (core/version-check/1.7) and
 # the SHA-1 published next to the archive (wordpress.org/wordpress-<v>.zip.sha1).
 # A new version needs its own SHA-1.
-WORDPRESS_VERSION = "7.1.3"
-WORDPRESS_SHA1 = "13eb1d042b1ca39224e44906cd84fe203112210c"
+#
+# 7.1.4 on 2026-10-29, because the contract flipped: this module's own rule is
+# "host first, local follows" once the host is up, and the host is up. Evidence,
+# all read the same day: production reports 7.1.4 while every plugin still
+# matches this file exactly; api.wordpress.org/core/version-check/1.7/ answers
+# `response=upgrade, current=7.1.4` (and offers 7.1.4 as an autoupdate), so
+# 7.1.4 is the release WordPress itself publishes, not a local drift; and
+# wordpress.org/wordpress-7.1.4.zip.sha1 returns the hash below. 7.1.3 -> 7.1.4
+# is a minor release, which WordPress applies unattended, so holding the older
+# pin would only mean the contract fails every future deploy.
+WORDPRESS_VERSION = "7.1.4"
+WORDPRESS_SHA1 = "b552c39cd95d89895b4e7a55af53a03687aff4f6"
 
 # The wp.org plugins, each installed from downloads.wordpress.org and verified
 # file by file with `wp plugin verify-checksums` (wp.org publishes no archive
