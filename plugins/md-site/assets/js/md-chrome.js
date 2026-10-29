@@ -4759,6 +4759,75 @@
     onViewport();
   }
 
+
+  // The quality-metric counters on /laser-cut-panels/.
+  //
+  // The old site shipped this as an inline <script> that the conversion dropped,
+  // so every card sat at its placeholder value: four elements reading "0" on a
+  // page whose whole point is "8 checkpoints, ±0.1mm, 100% traced, <0.3% defect".
+  // Measured on production 2026-10-29: all four `[data-num]` still `0`.
+  //
+  // The targets were always in the markup (`data-target`, `data-decimals`), so
+  // this reads them rather than carrying a second copy of the numbers: one
+  // source, and the card stays right if a value is edited.
+  //
+  // Two differences from the old code, both deliberate: it counts only when the
+  // card is scrolled into view (the old one did the same via IntersectionObserver
+  // but left the element at 0 forever when the observer never fired), and it
+  // sets the final value immediately for a visitor who has asked for reduced
+  // motion instead of animating for 1.8s.
+  function setupMetricCounters() {
+    var cards = document.querySelectorAll('[data-counter][data-target]');
+    if (!cards.length) {
+      return;
+    }
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var settle = function (card) {
+      var target = parseFloat(card.getAttribute('data-target'));
+      var decimals = parseInt(card.getAttribute('data-decimals') || '0', 10);
+      if (!isFinite(target)) {
+        return;
+      }
+      var nums = card.querySelectorAll('[data-num]');
+      if (!nums.length) {
+        return;
+      }
+      if (reduced) {
+        each(nums, function (el) { el.textContent = target.toFixed(decimals); });
+        return;
+      }
+      var duration = 1800;
+      var started = performance.now();
+      var frame = function (now) {
+        var t = Math.min(1, (now - started) / duration);
+        var eased = 1 - Math.pow(1 - t, 3);
+        var value = (target * eased).toFixed(decimals);
+        each(nums, function (el) { el.textContent = value; });
+        if (t < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          each(nums, function (el) { el.textContent = target.toFixed(decimals); });
+        }
+      };
+      requestAnimationFrame(frame);
+    };
+
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        each(entries, function (entry) {
+          if (entry.isIntersecting) {
+            settle(entry.target);
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      each(cards, function (card) { io.observe(card); });
+    } else {
+      each(cards, settle);
+    }
+  }
+
   function start() {
     // `md-js` is what makes `x-cloak` mean anything: the CSS only hides a
     // cloaked block once this class is on the root, so a visitor without
@@ -4818,6 +4887,8 @@
     setupLandingNav();
 
     setupCatalogFilter();
+
+    setupMetricCounters();
 
     // The catalog's sort select posts its form on change (the CSP blocks
     // inline handlers, so the behaviour lives here).
