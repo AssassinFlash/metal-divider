@@ -47,8 +47,12 @@ GOAL.md 对应小节;本文是签字用的汇总视图。
 
 ## 五、签字与遗留
 
-- [ ] 业主走查(建议窗内):访客问图案→AI 答→"talk to a person"→企微卡→接入回复→
-      访客端见金边姓名(本包第一节表格即对照清单)。
+- [x] 走查(2026-10-29 18:13–18:20 BJT,窗内,代理代操):访客问 Agave 海岸适用→AI 接地答
+      (无源部分诚实回退"checked with the team",该问已入 kb-gaps 日志)→"talk to a person"
+      →**企微卡即发**(sends=1793268925)→操作员经连接器同款 autologin 深链进 mdmobile→回复
+      →访客端实时到达:金边 rgb(201,169,98) solid 1px+姓名标签+头部切 "Metal Divider Support"+
+      chip "Metal Divider team",zai 视觉 4/4(截图 /tmp/mdw7/mdw8-walkthrough-*.png);演练会话
+      #35 含 7 条消息删净读回零。
 - [ ] 隐私条款并入 privacy 页(草稿 docs/legal/privacy-wecom-clause-draft.md;并入时同步修
       "does not use local storage" 矛盾句;腾讯 SCC 表述留业主)。
 - [ ] KB 内容补写节奏(按 kb-gaps 清单,业主定)。
