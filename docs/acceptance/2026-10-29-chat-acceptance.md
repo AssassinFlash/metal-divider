@@ -49,7 +49,7 @@ GOAL.md 对应小节;本文是签字用的汇总视图。
 
 - [ ] 业主走查(建议窗内):访客问图案→AI 答→"talk to a person"→企微卡→接入回复→
       访客端见金边姓名(本包第一节表格即对照清单)。
-- [ ] 隐私条款并入 privacy 页(草稿 docs/chat/privacy-wecom-clause-draft.md;并入时同步修
+- [ ] 隐私条款并入 privacy 页(草稿 docs/legal/privacy-wecom-clause-draft.md;并入时同步修
       "does not use local storage" 矛盾句;腾讯 SCC 表述留业主)。
 - [ ] KB 内容补写节奏(按 kb-gaps 清单,业主定)。
 - [ ] 63 个历史未并分支的内容评估(非客服面,站点线)。
