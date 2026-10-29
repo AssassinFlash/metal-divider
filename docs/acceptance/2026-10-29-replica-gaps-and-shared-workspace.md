@@ -2283,3 +2283,69 @@ mdvl-launcher : 207×54  位于 (152, 570)
 
 严重性已经不是「右角叠压」。但修改挂件仍属客服工作流，按范围纪律**不动手**，
 把这三个数交给业主裁决。
+
+### 9.48 目录筛选、排序、分页逐项实测（业主 2026-10-29）
+
+`GOAL.md:1110` 记过「目录搜索/排序/分页及空态」已实测，但那是多轮部署之前的读数。
+本轮用当前部署复验，并且**验证的是「它真的改变了结果」，不是「参数被接受」**。
+
+#### 9.48.1 排序：三个值各自产生不同顺序
+
+| `sort_by` | 前三个产品 |
+|---|---|
+| 默认（无参数） | `agave` / `akira` / `alhambra` |
+| `title-ascending` | `agave` / `akira` / `alhambra`（与默认一致，默认就是它） |
+| `title-descending` | **`zelda`** / `winter-branches` / `winderoo` |
+| `created-descending` | **`white-sands`** / `wild-spinach` / `winter-branches` |
+
+三者两两不同，说明排序真的作用在查询上。
+
+#### 9.48.2 搜索：结果集真的被收窄
+
+| `pattern_search` | 结果数 |
+|---|---:|
+| （无） | 24（第一页） |
+| `leaf` | **5** |
+| `agave` | **1** |
+| `zzzznotfound` | **0** |
+
+零结果时页面仍是 **200**、搜索表单仍在、空态元素存在（`md-catalog-empty`），不是 404 也不是空白页。
+
+#### 9.48.3 排序跨页延续
+
+`/shop/?sort_by=title-descending` 的分页链接自己带上了参数：
+
+```
+/shop/page/2/?sort_by=title-descending
+```
+
+翻到第 2 页后首项是 **`spinnaker`**（接着 `zelda`/`winter-branches` 的字母序往下），
+而默认顺序的第 2 页首项是 `casablanca`。**排序没有被翻页丢掉。**
+
+#### 9.48.4 筛选 + 排序可以叠加
+
+同一 `q=a`：升序从 `agave` 起，降序从 `zelda` 起。两个参数同时生效。
+
+#### 9.48.5 noindex 恰好落在该落的地方
+
+| URL | robots |
+|---|---|
+| `/shop/` | **`index, follow`** |
+| `/shop/?pattern_search=leaf` | **`follow, noindex`** |
+| `/shop/?sort_by=title-descending` | **`follow, noindex`** |
+| `/shop/page/2/` | **`index, follow`** |
+| `/collections/pattern-abstract/` | **`index, follow`** |
+
+这正是 `CatalogRobots` 注释里写的设计：**纯目录与分页保持可索引**（分页是标准做法），
+**只有带筛选/排序参数的视图 noindex**——那些是有界的多份重复视图，会耗尽抓取预算。
+`/shop/` 同时在 page sitemap 里（1 条），与 `index` 一致，不矛盾。
+
+#### 9.48.6 一处我自己的脚本缺陷，差点报成产品缺陷
+
+第一次测 noindex 时我得到「`/shop/` 本身也是 `noindex`」，看着像主目录失去索引资格。
+查下去是**我的 URL 拼接写错了**：对 `/shop/` 我硬接 `&mdaudit=`，请求变成了
+`/shop/&mdaudit=…`，那是一个不同的路径，命中了错误的规则。
+
+改成「先判断 URL 里有没有 `?`，再决定用 `?` 还是 `&`」之后，五个 URL 全部落在正确值上。
+
+**教训**：拼测试 URL 也要按真实规则拼。用一个错的 URL 去问对的规则，得到的是第三种答案。
