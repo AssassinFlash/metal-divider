@@ -771,7 +771,13 @@ final class ShortcodesTest extends TestCase {
 		$this->assertStringContainsString( 'src="https://site.test/uploads/103.webp"', $image );
 		$this->assertStringContainsString( 'alt="Akira pattern detail reference"', $image );
 		$this->assertStringContainsString( 'width="1000" height="1998"', $image );
-		$this->assertStringContainsString( 'loading="lazy"', $image );
+		// The plate is the pattern preview on the first screen. It used to be
+		// asserted lazy, which wrote the defect into the contract: the hero came
+		// out eager only because it happens to be decorative, and the plate —
+		// decorative or not — came out lazy and stayed blank until the visitor
+		// scrolled (measured on production 2026-10-29, all 146 pattern pages).
+		$this->assertStringContainsString( 'loading="eager"', $image, 'the plate is above the fold' );
+		$this->assertStringContainsString( 'fetchpriority="high"', $image, 'and it is the first paint' );
 	}
 
 	/**

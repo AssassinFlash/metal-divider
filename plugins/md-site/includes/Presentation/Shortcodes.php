@@ -496,7 +496,23 @@ final class Shortcodes {
 		if ( '' === $alt && ! $decorative ) {
 			$alt = $fallback;
 		}
-		return $this->cards->slot_image( $id, $alt, $decorative, $slot );
+		// The loading tier is decided by WHERE the slot sits, not by whether the
+		// image is decorative.
+		//
+		// This call used to pass `$decorative` into the `$eager` parameter. The
+		// two facts are unrelated, and the coincidence that the hero background
+		// is decorative hid the mistake: the hero came out eager (right, by
+		// accident) while the plate — the pattern preview the page exists to
+		// show, sitting in the same first screen — came out `loading="lazy"`.
+		// Measured on production 2026-10-29: the plate stayed blank until the
+		// page was scrolled, and the first screen read as a black box on all 146
+		// pattern pages.
+		//
+		// hero-bg and plate are above the fold at every breakpoint; square and
+		// wide are further down the page. `$decorative` still decides the alt
+		// text, which is what it actually means.
+		$above_the_fold = in_array( $slot, array( 'hero-bg', 'plate' ), true );
+		return $this->cards->slot_image( $id, $alt, $above_the_fold, $slot );
 	}
 
 	/**
