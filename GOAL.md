@@ -1379,3 +1379,44 @@ mdvisitor 主题给 operator 消息加身份标识(姓名标签/头像/头部状
 
 **测试清理**:lh_chat #34(含消息)待业主收尾后删;挂件会话回收;被导航占用的事先
 存在的标签页(GitHub de-linker PR 页)恢复原址。
+
+## Batch 3(2026-10-29,四子代理并行)
+
+**交付(全部已验证)**:
+- **A·deploy 四项**(8f55f8d+d4dd558+2c13157+c82ea85):①chat-push 补 autologin
+  secret_hash 目标侧重生成(seed/regen-autologin-hash.php+chat.py,readback 必须
+  present;W2 prod 断卡根因永不再现);②seed-tiles 前置 lookup 探针(空表→
+  DeployError 点名 wc_product_meta_lookup+给修复命令;Batch 2 staging 追平的根因
+  变成部署期显式报错);③`just deploy forget` 通道(非 pending 拒/files/ 拒→
+  指向 resume/rollback;backup siblings 只报不删——10-26 手工 archive 的事故通道
+  变合规命令);④chat-seed manifest 钉 LHC 版本(lhupdate.php LHC_RELEASE=497,
+  push 时比对,不一致 note 不阻断)。
+- **B·静态覆盖+kb-gaps**(8037ee6+d73f8dd):phpstan paths 补三 chat 文件(此前
+  75 错全因未扫);phpcs 加 md-chat-delete.php+md_chat_delete 前缀;8 处
+  PreparedSQL 整改=常量模板+runner 统一经 $wpdb->prepare;`wp md-chat kb-gaps`
+  落地(md-kb-endpoint.php:1906)。**staging 实测:37 条真缺口打印,格式全对**——
+  open area/CAD 文件/showroom 参观/304 vs 316 等真实客户问题,即知识内容待补清单。
+- **C·runbook+隐私条款**(877db8d):Future changes/Rollback 两节入 runbook(forget
+  落地后补真命令名);企微出境隐私条款 EN 草稿(136 词,privacy.html:52 "does not
+  use local storage" 与挂件 localStorage 冲突已标记=落地时同步修;SCC 是否延伸
+  腾讯留业主)。
+- **D·操作员身份标识**(f1ce973):W1 发现的"真人=AI 同款"修复——lh_msg.user_id
+  →data-op-id(>0 真人/-2 bot/0 访客);真人消息金描边 #c9a962+姓名标签
+  #7a6438(现有色板);头部标题切 name_support(业主设 chat_nickname 即显名);
+  ACTIVE 芯片 'Team online'→'Metal Divider team';旧 sync() 泛名死滤器删除。
+  **staging 实测**:DB 造三行会话(访客/bot/操作员)→DOM 三行 op-id 正确、仅真人
+  带昵称、计算样式金边 solid 1px、bot 行中性边排除生效;zai 视觉四点全确认
+  (头部名/三气泡/金边区分/无破版);演练数据删净读回零。
+- **版本合同**:WP 7.1.4(WP 自身次版本自动更新,双环境同晨生效)——pin 三处
+  同步(versions.py/checklist/README),venv 重装读回 7.1.4。
+
+**合并**:158→162 二次合并(五冲突全语义解:guards 取 158 语义版/测试取对方更强
+  断言/kb docblock 并集/product-stubs 取对方修复+保留我方注释/test_steps 双测试
+  并存);merge 270798c+runbook forget 命令名+pin 提交;合并树全门禁绿
+  (PHPUnit 200/1431、phpcs 0、phpstan 0、pytest 181、ruff/mypy 净;md-site 与
+  158 尖零差异继承其门禁)。
+
+**部署**:staging 批 20261029T065136158642Z-ede86bb 归档(5 URL 200);
+mdvisitor rsync 双环境+LHC 编译缓存清;prod 批 20261029T071421491010Z-ede86bb
+归档(cache miss→hit);prod 复验:chat-verify 6/6、CSP frame-src 'self' 在位、
+挂件 400×680 离线表单态正常(07:25 UTC 窗外)、金边 CSS 12 处线上命中。
