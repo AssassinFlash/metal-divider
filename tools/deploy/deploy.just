@@ -58,6 +58,12 @@ rollback *args:
 resume-deploy *args:
     PHP={{ php }} {{ md_deploy }} resume-deploy "$@"
 
+# Last resort for a pending batch whose rollback content is already gone
+# (2026-10-26): archives the manifest so the gate opens again. Refuses a
+# batch that still holds content — use resume-deploy or rollback there.
+forget *args:
+    PHP={{ php }} {{ md_deploy }} forget "$@"
+
 # A database snapshot streamed to this Mac (~/metal-divider-local/snapshots/;
 # a deploy takes one itself before the switch).
 [positional-arguments]

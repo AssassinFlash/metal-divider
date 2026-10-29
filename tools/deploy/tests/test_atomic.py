@@ -382,3 +382,92 @@ def test_archiving_prunes_only_this_projects_store(
     assert (legacy.parent / "latest").read_text() == their_batch.name
     assert not old_batch.exists(), "our own superseded batch is pruned as before"
     assert (new / receipt.deploy_id / "manifest.json").is_file()
+
+
+def _pending_batch(target: Target, tmp_path: Path, *, live_first: bool) -> atomic.Receipt:
+    """Publish one plugin batch onto the target, left in the pending state."""
+    source = tmp_path / "release"
+    source.mkdir(exist_ok=True)
+    (source / "plugin.php").write_text("new")
+    relative = "wp-content/plugins/first"
+    if live_first:
+        live = Path(target.path_of(relative))
+        live.mkdir(parents=True)
+        (live / "plugin.php").write_text("old")
+    return atomic.publish(
+        target,
+        [atomic.Artifact(source, relative)],
+        deploy_id="20261026T000000Z-leftover",
+    )
+
+
+def test_forget_archives_a_contentless_pending_batch(tmp_path: Path) -> None:
+    """The 2026-10-26 shape: pending, nothing left to roll back, gate stuck.
+
+    The batch's backup sibling is gone, so resume and rollback would both
+    refuse on drift — forget archives the manifest, reads it back, and
+    the publish gate opens again.
+    """
+    import shutil
+
+    target = target_at(tmp_path / "site")
+    receipt = _pending_batch(target, tmp_path, live_first=True)
+    shutil.rmtree(Path(target.path_of(atomic._siblings("wp-content/plugins/first").previous)))
+
+    deploy_id, directory, leftovers = atomic.forget(target)
+
+    assert deploy_id == receipt.deploy_id
+    assert directory == receipt.backup_directory
+    assert leftovers == []
+    _, readback = atomic.latest_manifest(target)
+    assert readback.state == "archived", "the manifest must read back archived"
+    # The gate is open again: a fresh publish is no longer blocked by name.
+    source = tmp_path / "release2"
+    source.mkdir()
+    (source / "plugin.php").write_text("newer")
+    atomic.publish(
+        target,
+        [atomic.Artifact(source, "wp-content/plugins/first")],
+        deploy_id="20261026T000001Z-fresh",
+    )
+
+
+def test_forget_refuses_a_batch_that_still_holds_content(tmp_path: Path) -> None:
+    """A `files/` directory means the batch can still be finished or undone."""
+    target = target_at(tmp_path / "site")
+    _pending_batch(target, tmp_path, live_first=True)
+    (Path(atomic.latest_manifest(target)[0]) / "files").mkdir()
+
+    with pytest.raises(RuntimeError, match="resume-deploy.*rollback"):
+        atomic.forget(target)
+
+    _, readback = atomic.latest_manifest(target)
+    assert readback.state == "pending", "a refused forget changes nothing"
+
+
+def test_forget_refuses_a_non_pending_batch(tmp_path: Path) -> None:
+    """An archived or rolled-back batch has nothing to forget."""
+    target = target_at(tmp_path / "site")
+    receipt = _pending_batch(target, tmp_path, live_first=True)
+    atomic.archive(target, receipt)
+
+    with pytest.raises(RuntimeError, match="not pending"):
+        atomic.forget(target)
+
+
+def test_forget_reports_siblings_left_in_the_web_root(tmp_path: Path) -> None:
+    """A pending batch with its backup intact is forgettable but reported.
+
+    The gate opens (the incident's manual fix did exactly this), and the
+    leftover sibling is named rather than silently stranded: it will
+    block the next publish until an operator removes it.
+    """
+    target = target_at(tmp_path / "site")
+    _pending_batch(target, tmp_path, live_first=True)
+
+    _deploy_id, _directory, leftovers = atomic.forget(target)
+
+    sibling = target.path_of(atomic._siblings("wp-content/plugins/first").previous)
+    assert [Path(path).name for path in leftovers] == [Path(sibling).name]
+    _, readback = atomic.latest_manifest(target)
+    assert readback.state == "archived"

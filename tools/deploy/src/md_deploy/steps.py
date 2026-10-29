@@ -1095,6 +1095,26 @@ def rollback_deploy(target: Target, *, repository: Path) -> Result:
     return Result("rollback-deploy", actions + checked.actions, notes + checked.notes)
 
 
+def forget_deploy(target: Target) -> Result:
+    """Archive a pending batch whose rollback content is already gone.
+
+    The escape hatch of last resort (see `atomic.forget`): the 2026-10-26
+    leftover batch blocked every later deploy with the pending gate while
+    resume and rollback both refused on drift. Refuses anything that
+    still has content to lose; leftover web-root siblings are reported,
+    never removed.
+    """
+    deploy_id, _directory, leftovers = atomic.forget(target)
+    actions = [f"deploy id: {deploy_id}", "manifest state: archived"]
+    notes: list[str] = []
+    if leftovers:
+        notes.append(
+            "these backup siblings still sit in the web root and will block "
+            "the next publish until removed by hand: " + ", ".join(sorted(leftovers))
+        )
+    return Result("forget", actions, notes)
+
+
 def plugin_face(target: Target) -> list[str]:
     """The target's plugin list, one `name<TAB>status` row each (drill evidence)."""
     listed = target.wp_json("plugin", "list", "--fields=name,status")

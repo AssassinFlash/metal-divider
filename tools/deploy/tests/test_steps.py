@@ -1024,3 +1024,29 @@ def test_verify_fails_a_page_cache_that_never_serves(
 def _no_sleep(seconds: float) -> None:
     """The poll's pause, without the pause: the deadline is the code's, not the test's."""
     del seconds
+
+
+def test_forget_deploy_wraps_the_archive_with_its_leftover_note(
+    tmp_path: Path,
+) -> None:
+    """The CLI surface of atomic.forget: the id, the archived state, and the
+    note that names any sibling the incident's manual fix would strand."""
+    target = Target("fixture", str(tmp_path / "site"), "http://127.0.0.1", (), None, None)
+    source = tmp_path / "release"
+    source.mkdir()
+    (source / "plugin.php").write_text("new")
+    relative = "wp-content/plugins/first"
+    atomic.publish(
+        target,
+        [atomic.Artifact(source, relative)],
+        deploy_id="20261026T000000Z-leftover",
+    )
+
+    result = steps.forget_deploy(target)
+
+    assert result.step == "forget"
+    assert "deploy id: 20261026T000000Z-leftover" in result.actions
+    assert "manifest state: archived" in result.actions
+    assert result.notes and "block the next publish" in result.notes[0], (
+        "a surviving sibling must be named, never silently stranded"
+    )

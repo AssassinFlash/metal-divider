@@ -719,3 +719,62 @@ def rollback(target: Target, relatives: list[str]) -> Receipt:
         tuple(relatives),
         tuple(readbacks),
     )
+
+
+def forget(target: Target) -> tuple[str, str, list[str]]:
+    """Close out a pending batch that no longer holds anything to roll back.
+
+    2026-10-26 left exactly that: a pending batch whose rollback content
+    was already gone, so both resume and rollback failed their drift
+    checks and the only way through was hand-editing the manifest to
+    archived. This is that repair with the guard the hand edit lacked:
+    a batch that still carries a `files/` directory has content to
+    finish or undo the honest way (resume-deploy / rollback) and is
+    refused; only a pending batch with no `files/` is rewritten to
+    archived. Backup siblings that still sit in the web root are
+    reported rather than removed — they block the next publish until
+    cleared by hand, exactly as in the incident, so the operator keeps
+    the decision. Returns (deploy id, batch directory, leftover sibling
+    paths).
+    """
+    directory, manifest = latest_manifest(target)
+    if manifest.state != "pending":
+        raise DeployError(
+            f"deployment {manifest.deploy_id} is {manifest.state}, not pending — "
+            "there is nothing to forget"
+        )
+    files_directory = shlex.quote(str(Path(directory) / "files"))
+    answer = target.shell(
+        f"if [ -e {files_directory} ] || [ -L {files_directory} ]; "
+        "then echo present; else echo absent; fi"
+    )
+    if answer.strip() == "present":
+        raise DeployError(
+            f"deployment {manifest.deploy_id} still holds rollback content "
+            f"({files_directory} exists) — finish it with resume-deploy or "
+            "undo it with rollback; forget is only for a batch with nothing "
+            "left to roll back"
+        )
+    leftovers: list[str] = []
+    sibling_paths: list[str] = []
+    for entry in manifest.backups:
+        for name in asdict(_siblings(entry.relative)).values():
+            sibling_paths.append(target.path_of(name))
+    if sibling_paths:
+        for path, identity in identities(target, sibling_paths).items():
+            if identity != "-":
+                leftovers.append(path)
+    target.shell(
+        "set -eu\n"
+        + _write_manifest(
+            Manifest(manifest.deploy_id, "archived", manifest.backups), directory
+        )
+    )
+    _, readback = _manifest_at(target, _batch_root(target, directory), required=True)
+    assert readback is not None
+    if readback.deploy_id != manifest.deploy_id or readback.state != "archived":
+        raise DeployError(
+            f"forget readback: deployment {manifest.deploy_id} did not read "
+            f"back archived (got {readback.state!r})"
+        )
+    return manifest.deploy_id, directory, leftovers

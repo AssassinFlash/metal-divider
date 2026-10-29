@@ -3,6 +3,7 @@
     md-deploy deploy           snapshot → build → upload → atomic switch → present
     md-deploy rollback-deploy  restore the previous deployed files by rename
     md-deploy resume-deploy    verify/archive a pending batch after an interruption
+    md-deploy forget           archive a pending batch whose rollback content is gone
     md-deploy snapshot         a database snapshot to this Mac (deploy takes one itself)
     md-deploy snapshots        list the snapshots on this Mac
     md-deploy restore-snapshot put a database snapshot back
@@ -83,6 +84,11 @@ def _parser() -> argparse.ArgumentParser:
     )
     sub.add_parser(
         "resume-deploy", parents=[common], help="verify/archive a pending batch"
+    )
+    sub.add_parser(
+        "forget",
+        parents=[common],
+        help="archive a pending batch whose rollback content is already gone",
     )
     sub.add_parser("snapshot", parents=[common], help="database snapshot to this Mac")
     sub.add_parser("snapshots", parents=[common], help="list the snapshots on this Mac")
@@ -195,6 +201,16 @@ def main(argv: list[str] | None = None) -> int:
             )
             _print(resumed)
             return 1 if resumed.notes else 0
+        if args.command == "forget":
+            if not args.write:
+                print(
+                    "forget: would archive the pending deployment manifest "
+                    "if the batch holds nothing to roll back"
+                )
+                return 0
+            forgotten = steps.forget_deploy(target)
+            _print(forgotten)
+            return 1 if forgotten.notes else 0
         if args.command == "snapshot":
             taken = snapshot_module.take(target, DATA_HOME)
             print(
