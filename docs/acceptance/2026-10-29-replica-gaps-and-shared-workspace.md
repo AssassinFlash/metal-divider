@@ -2349,3 +2349,53 @@ mdvl-launcher : 207×54  位于 (152, 570)
 改成「先判断 URL 里有没有 `?`，再决定用 `?` 还是 `&`」之后，五个 URL 全部落在正确值上。
 
 **教训**：拼测试 URL 也要按真实规则拼。用一个错的 URL 去问对的规则，得到的是第三种答案。
+
+### 9.49 无障碍基础审计（业主 2026-10-29，此前未验）
+
+七个页型逐项检查：`lang`、地标数量、跳转链接、表单标签关联、控件的可访问名称。
+
+| 项 | 结果 |
+|---|---|
+| `lang` | 7 页全部 `en-US` |
+| 跳转链接（skip link） | 7 页全部存在 |
+| 表单控件无标签 | **0**（`label[for]` / 包裹 / `aria-label` 三者之一） |
+| **`<main>` 数量** | `/shop/` 与 9 个系列归档 **各 2 个**；其余页 1 个 |
+
+#### 9.49.1 真缺陷：10 个页面有嵌套 `<main>`
+
+```
+MAIN#theme-main                  1425×10192  ← 主题骨架自带
+  └ MAIN.pattern-catalog__content 1073×5253  ← 模板里又开了一个
+```
+
+HTML 规范禁止 `main` 嵌套 `main`。屏幕阅读器与爬虫都靠 main 地标跳过导航，
+两个会让这件事在**图案买家最常落地的页面上**变得含糊。
+
+来源是 `shop.html` 与 `series-archive.html` 各写了一个
+`<main class="pattern-catalog__content">`，而主题骨架已经在外层渲染 `<main id="theme-main">`。
+
+改法是**把内层换成同 class 的 `<div>`**，不是重写：外层 `main` 继续提供
+`base.css` 里 `main p` 的行宽上限（实测目录段落 **720px** 仍生效），
+而 `pattern-grid.css` 认的是 class，不是标签名。
+
+守卫 `SingleMainTest` 两条断言：模板里不得出现 `<main>`、wrapper 的 class 必须保留
+（第二条防的是「为了改语义把布局也改了」）。**双向证过**：把 `<main>` 放回去，
+测试报 `shop.html: the theme already renders <main id="theme-main"> around this template`。
+
+#### 9.49.2 两次我自己的误报，都不是产品问题
+
+**第一次**：「每页 6 个链接没有可访问名称」。查 HTML 源码，
+`mmv2__hub-link` 与 `mmv2__link` 内部都有完整文字
+（`Stainless steel screens`、`Laser-Cut & Geometric Metal Screens`）。
+它们处在**折叠的 mega menu 里**，`innerText` 对未渲染内容返回空——
+**被折叠的元素的 `innerText` 是空的，这不等于它没有名字。**
+
+**第二次**：改成检查只含图片的 `mmv2__img` 链接时，我报「7 个全部无 alt」。
+再查源码，每个都有 `alt='Gold laser-cut stainless steel partition screens in four
+decorative patterns'` 这样的描述。我的正则写成 `alt="..."`，而源码里 `alt` 在换行、
+带前导空格、且用的是单引号附近的结构，没匹配上。
+
+正确的计数是 **7/7 都有 alt**。
+
+**这两次和之前几次是同一个形态**：我用自己拼的字符串或选择器去问页面，
+拿不到就当「不存在」。判据必须能证明自己看得见正常情况，否则它只会报告缺陷。
