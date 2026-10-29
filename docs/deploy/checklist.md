@@ -16,7 +16,7 @@
 
 **装机**(工具的 `contract` 检查逐项读回比对,不一致即失败)
 
-- [ ] WP 7.1.3 + 插件面全按 `tools/local/src/md_local/versions.py`(wp.org 件 `wp plugin install --version` + `verify-checksums`;付费件从 `~/metal-divider-local/archives/` 收档 SHA-256 先核;picostrap5 父主题同法,一次性装机件)
+- [ ] WP 7.1.4 + 插件面全按 `tools/local/src/md_local/versions.py`(wp.org 件 `wp plugin install --version` + `verify-checksums`;付费件从 `~/metal-divider-local/archives/` 收档 SHA-256 先核;picostrap5 父主题同法,一次性装机件)
 - [ ] `just deploy contract --target staging` / `just deploy contract --target prod` 全绿
 - [ ] wp-config:表前缀生产 `md_`、评审站 `stg_`;`WP_POST_REVISIONS=5`、`DISABLE_WP_CRON`;不写任何 Redis 常量
 - [ ] hPanel 每分钟 cron:`wp cron event run --due-now`(`--path` 各指各根);不使用 hPanel 的 LiteSpeed 对象缓存开关(Business+ 的 LSMCD 路径,首期零对象缓存,规格 §2.3)

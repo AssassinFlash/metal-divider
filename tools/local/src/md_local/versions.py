@@ -16,7 +16,7 @@ from __future__ import annotations
 # WordPress: the version api.wordpress.org offers (core/version-check/1.7) and
 # the SHA-1 published next to the archive (wordpress.org/wordpress-<v>.zip.sha1).
 # A new version needs its own SHA-1.
-WORDPRESS_VERSION = "7.1.3"
+WORDPRESS_VERSION = "7.1.4"
 WORDPRESS_SHA1 = "13eb1d042b1ca39224e44906cd84fe203112210c"
 
 # The wp.org plugins, each installed from downloads.wordpress.org and verified

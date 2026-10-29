@@ -43,7 +43,7 @@ WordPress + WooCommerce(图案目录,无结账)+ ACF 免费版(产品规格字�
 一个实例 `dev`,端口从 9890 起;数据根 `~/metal-divider-local/`(实例、wp.org 下载缓存、付费件档案),永不进仓库。规格见 `research/spec-local-stack` 分支 `docs/specs/14-local-stack.md`。
 
 ```sh
-just up        # 建实例(首次)或刷新并(重)启动:WP 7.1.3 + Woo 11.2.1 + 插件面 + 许可注入
+just up        # 建实例(首次)或刷新并(重)启动:WP 7.1.4 + Woo 11.2.1 + 插件面 + 许可注入
 just login     # 一次性登录链接(10 分钟一用,默认用户 local-admin)
 just status    # 列实例
 just wp dev plugin list   # 对实例跑 WP-CLI
