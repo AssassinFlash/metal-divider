@@ -550,8 +550,19 @@ final class Form {
 			return '';
 		}
 		$sitekey = \esc_attr( $this->config->turnstile_sitekey() );
-		$out     = '<div class="md-inquiry-turnstile" data-sitekey="' . $sitekey . '" data-appearance="interaction-only" data-theme="auto" data-retry="auto"></div>';
-		$out    .= '<p class="md-inquiry-turnstile-status" role="status" hidden></p>';
+		// The widget's own language, stated rather than inferred. Cloudflare falls
+		// back to the browser's locale, so a visitor on a Chinese-locale machine
+		// saw "请验证您是真人 / 隐私 · 帮助" inside an otherwise English page — the
+		// first and only interactive control in the inquiry chain, in a language
+		// the site never uses. Measured on production 2026-10-29.
+		//
+		// Site language, not visitor language: this site ships English only
+		// (owner ruling: multilingual is phase 2), and a control that switches
+		// language between the label beside it and the widget itself reads as a
+		// defect, not as personalisation.
+		$lang = \esc_attr( substr( (string) \get_locale(), 0, 2 ) );
+		$out  = '<div class="md-inquiry-turnstile" data-sitekey="' . $sitekey . '" data-language="' . $lang . '" data-appearance="interaction-only" data-theme="auto" data-retry="auto"></div>';
+		$out .= '<p class="md-inquiry-turnstile-status" role="status" hidden></p>';
 		return $out;
 	}
 

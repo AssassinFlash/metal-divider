@@ -314,6 +314,11 @@
 			rendering = true;
 			var id = window.turnstile.render(container, {
 				sitekey: sitekey,
+				// Stated, never inferred: without this Cloudflare follows the
+				// browser's locale, which put a Chinese challenge inside an English
+				// page on a Chinese-locale machine (measured on production
+				// 2026-10-29). The markup carries the site's language.
+				language: container.getAttribute('data-language') || 'en',
 				appearance: container.getAttribute('data-appearance') || 'interaction-only',
 				theme: container.getAttribute('data-theme') || 'auto',
 				retry: container.getAttribute('data-retry') || 'auto',

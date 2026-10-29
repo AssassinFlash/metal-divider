@@ -75,6 +75,9 @@ final class FormTest extends TestCase {
 		);
 		WP_Mock::userFunction( 'wp_enqueue_script' )->andReturn( null );
 		WP_Mock::userFunction( 'plugin_dir_url' )->andReturn( 'https://metal-divider.com/wp-content/plugins/md-inquiry/' );
+		// The Turnstile widget states its language instead of letting Cloudflare
+		// infer one from the browser; the site's locale is where that comes from.
+		WP_Mock::userFunction( 'get_locale' )->andReturn( 'en_US' );
 	}
 
 	/**
@@ -173,8 +176,21 @@ final class FormTest extends TestCase {
 		);
 		$html   = $this->render( 'apiary-architectural-metal-screen-pattern', array(), $config );
 
-		$this->assertStringContainsString( 'class="md-inquiry-turnstile" data-sitekey="the-sitekey" data-appearance="interaction-only"', $html );
-		$this->assertStringContainsString( 'data-theme="auto" data-retry="auto"', $html );
+		// Asserted as the facts the widget needs, not as one attribute run: an
+		// assertion pinned to attribute order fails on markup that is correct,
+		// and this one did when data-language joined the list.
+		$this->assertStringContainsString( 'class="md-inquiry-turnstile"', $html );
+		$this->assertStringContainsString( 'data-sitekey="the-sitekey"', $html );
+		$this->assertStringContainsString( 'data-appearance="interaction-only"', $html );
+		$this->assertStringContainsString( 'data-theme="auto"', $html );
+		$this->assertStringContainsString( 'data-retry="auto"', $html );
+		// The widget's language is stated, not inferred from the browser: without
+		// it Cloudflare served a Chinese challenge inside an English page.
+		$this->assertMatchesRegularExpression(
+			'/data-language="[a-z]{2}"/',
+			$html,
+			'the Turnstile widget is told which language to speak'
+		);
 		$this->assertStringNotContainsString( 'cf-turnstile', $html, 'implicit rendering would also challenge the hidden quote dialog' );
 		$this->assertStringNotContainsString( 'data-callback=', $html, 'a data-callback name is one function for every form' );
 		$this->assertStringNotContainsString( 'mdInquiryTurnstileCallback', $html );
