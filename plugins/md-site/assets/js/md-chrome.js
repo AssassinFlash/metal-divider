@@ -4828,6 +4828,57 @@
     }
   }
 
+
+  // The skip link must actually move the reader, not only the viewport.
+  //
+  // A plain `href="#theme-main"` scrolls, and that is all it does: the browser
+  // leaves focus on the link. Measured on production 2026-10-29 with a real
+  // keyboard — Tab lands on the skip link ("Skip to content", clip auto, 139x44,
+  // fixed at 8,8), Enter fires, and document.activeElement is STILL the link;
+  // the next Tab goes to the header logo, so a keyboard reader has to walk the
+  // whole navigation anyway. The link was decoration.
+  //
+  // The fix is the standard one: after the jump, move focus to the target. The
+  // target needs tabindex="-1" to be focusable — set here rather than in the
+  // theme skeleton, because the skeleton is picostrap's file and this behaviour
+  // belongs to this repository.
+  function setupSkipLink() {
+    var link = document.querySelector('a.md-skip-link');
+    if (!link) {
+      return;
+    }
+    link.addEventListener('click', function (event) {
+      var id = (link.getAttribute('href') || '').replace(/^#/, '');
+      if (!id) {
+        return;
+      }
+      var target = document.getElementById(id);
+      if (!target) {
+        return;
+      }
+      // Let the browser do its own jump (history, scroll-into-view), then take
+      // the focus. preventDefault would break the URL fragment and the back
+      // button, so the click is not cancelled.
+      event.preventDefault();
+      if (history && typeof history.pushState === 'function') {
+        history.pushState(null, '', '#' + id);
+      }
+      target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+      if (typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ block: 'start' });
+      }
+      // A focus ring on a whole page region is noise; the reader can see where
+      // they are from the content itself.
+      target.style.outline = 'none';
+      target.addEventListener('blur', function once() {
+        target.removeAttribute('tabindex');
+        target.style.outline = '';
+        target.removeEventListener('blur', once);
+      });
+    });
+  }
+
   function start() {
     // `md-js` is what makes `x-cloak` mean anything: the CSS only hides a
     // cloaked block once this class is on the root, so a visitor without
@@ -4889,6 +4940,8 @@
     setupCatalogFilter();
 
     setupMetricCounters();
+
+    setupSkipLink();
 
     // The catalog's sort select posts its form on change (the CSP blocks
     // inline handlers, so the behaviour lives here).

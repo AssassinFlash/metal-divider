@@ -230,4 +230,53 @@ final class SkipLinkTest extends TestCase {
 		}
 		return null;
 	}
+	/**
+	 * The link must move the reader, not only the viewport.
+	 *
+	 * Measured with a real keyboard on production 2026-10-29: Tab reached the
+	 * link, Enter fired, and document.activeElement was still the link; the next
+	 * Tab went to the header logo. A skip link that leaves focus where it was has
+	 * not skipped anything.
+	 *
+	 * The behaviour lives in md-chrome.js and must: move focus to the target,
+	 * make the target focusable first (it is <main>, tabIndex -1), and keep the
+	 * URL fragment so the back button still works.
+	 */
+	public function test_the_skip_link_moves_focus_into_the_target(): void {
+		$js = $this->chrome_js();
+
+		$this->assertStringContainsString( 'function setupSkipLink', $js, 'the focus behaviour exists' );
+		$this->assertStringContainsString( 'setupSkipLink();', $js, 'and it is called from start()' );
+		$this->assertStringContainsString(
+			"setAttribute('tabindex', '-1')",
+			$js,
+			'the target is made focusable; <main> is not focusable by default'
+		);
+		$this->assertMatchesRegularExpression(
+			'/target\.focus\(/',
+			$js,
+			'focus actually moves to the target'
+		);
+		$this->assertMatchesRegularExpression(
+			'/history\.pushState/',
+			$js,
+			'the fragment is kept without a full navigation'
+		);
+		// preventDefault plus a manual jump must not lose the URL fragment; the
+		// pair below is what keeps the back button working.
+		$this->assertMatchesRegularExpression(
+			'/preventDefault\(\)/',
+			$js,
+			'the default jump is replaced, not duplicated'
+		);
+	}
+
+	/**
+	 * The behaviour file.
+	 */
+	private function chrome_js(): string {
+		$path = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../assets/js/md-chrome.js';
+		$this->assertFileExists( $path, 'the behaviour file is part of the plugin' );
+		return (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+	}
 }
