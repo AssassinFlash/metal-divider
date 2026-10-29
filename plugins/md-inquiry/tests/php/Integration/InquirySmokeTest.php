@@ -225,7 +225,7 @@ final class InquirySmokeTest extends TestCase {
 		self::assertSame( array( 'sales@sunriverinverter.com', 'info@metal-divider.com' ), \json_decode( $by_type['internal_notification']['recipients'], true ) );
 		self::assertSame( array( 'jane@studio.example' ), \json_decode( $by_type['customer_confirmation']['recipients'], true ) );
 		self::assertStringContainsString( 'From: MetalDivider <info@metal-divider.com>', (string) $by_type['customer_confirmation']['headers'] );
-		self::assertStringContainsString( 'Reply-To: sales@sunriverinverter.com', (string) $by_type['customer_confirmation']['headers'] );
+		self::assertStringContainsString( 'Reply-To: info@metal-divider.com', (string) $by_type['customer_confirmation']['headers'] );
 		self::assertStringContainsString( 'Apiary', (string) $by_type['internal_notification']['subject'] );
 		self::assertSame( 'pending', $by_type['internal_notification']['status'] );
 		self::assertSame( 'pending', $by_type['customer_confirmation']['status'] );

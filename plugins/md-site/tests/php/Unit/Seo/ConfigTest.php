@@ -228,7 +228,7 @@ final class ConfigTest extends TestCase {
 				'glass-hybrid-screens'              => 'Glass and hybrid screens pairing stainless steel frames with glass for zoning and privacy in premium interiors. Send the opening and glass direction for a spec.',
 				'outdoor-privacy-landscape-screens' => 'Outdoor privacy and landscape screens in 304 and 316 stainless steel, specified for coastal, alpine and courtyard conditions. Send the site and dimensions.',
 				'expanded-metal-panels'             => 'Expanded stainless steel mesh panels for facades, partitions and ceilings. Compare diamond, hexagonal and fine patterns, then send the panel schedule.',
-				'laser-cut-panels'                  => 'Laser-cut stainless steel panels cut to your drawing in 304 or 316, brushed or PVD finish. Send a DXF for a manufacturability review and quote.',
+				'laser-cut-panels'                  => 'Laser-cut stainless steel panels in 304 or 316, brushed or PVD finish. Send the panel size and pattern direction to request a quote.',
 				'perforated-panels'                 => 'Perforated stainless steel panels in 304 or 316, punched to your pattern and open area. Send the hole pattern, open area and panel size for a quote.',
 				'stainless-steel-screens'           => 'Stainless steel screen systems for facades, partitions and outdoor privacy. Compare laser-cut, perforated, expanded and hybrid directions, then send the brief.',
 			),

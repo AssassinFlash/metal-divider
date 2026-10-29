@@ -589,6 +589,38 @@
 	opacity: 0.5;
 }
 
+/* ── Social ──────────────────────────────────────────────────────────── */
+
+/* The eight competitor sites all carry social links in the footer; this is
+   ours, one platform at a time as the owner confirms each account. The
+   Facebook account is the only confirmed one (2026-10-30). */
+.md-footer__social {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18px;
+}
+
+/* Same 44px floor as the legal links, for the same reason: a footer control
+   is a control. The label is visible text, so the accessible name comes from
+   it as well as the aria-label. */
+.md-footer__social-link {
+	align-items: center;
+	color: inherit;
+	display: inline-flex;
+	gap: 8px;
+	min-height: 44px;
+	padding: 0 14px;
+}
+
+.md-footer__social-link svg {
+	flex-shrink: 0;
+}
+
+#md-footer .md-footer__social-link:hover,
+#md-footer .md-footer__social-link:focus-visible {
+	color: var(--md-gold-light, #d4b878);
+}
+
 .md-footer__sr-only {
 	clip-path: inset(50%);
 	height: 1px;
@@ -782,6 +814,11 @@
 	}
 
 	.md-footer__bar-legal {
+		gap: 5px 13px;
+		justify-content: center;
+	}
+
+	.md-footer__social {
 		gap: 5px 13px;
 		justify-content: center;
 	}

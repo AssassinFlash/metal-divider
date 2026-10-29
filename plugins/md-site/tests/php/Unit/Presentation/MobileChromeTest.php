@@ -799,6 +799,47 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * The footer's social block: one confirmed account, named, and safe.
+	 *
+	 * The eight competitor sites all carry social links in the footer and the
+	 * owner's 2026-10-30 ruling follows that. Only one account is confirmed
+	 * (Facebook, stainlesssteeleverywhere), so the block holds exactly that
+	 * one and grows as accounts are confirmed. What a later addition must not
+	 * lose: a new-tab link that says so to the browser (`rel="noopener"`), an
+	 * accessible name, and no inline style — styles live in `footer.css`
+	 * (AGENTS §5: the presentation layer is LiveCanvas markup plus a WindPress
+	 * volume, never a `style` attribute).
+	 */
+	public function test_the_footer_social_block_carries_the_confirmed_account_only(): void {
+		$footer = (string) file_get_contents( dirname( __DIR__, 4 ) . '/content/livecanvas/partials/footer.html' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+
+		$this->assertMatchesRegularExpression(
+			'/<nav[^>]*aria-label="Social"[^>]*>/',
+			$footer,
+			'the social links are a labelled navigation landmark'
+		);
+		$this->assertSame(
+			1,
+			preg_match_all( '/class="md-footer__social-link"/', $footer ),
+			'only confirmed accounts ship; a second one arrives with its own confirmation'
+		);
+		$this->assertStringContainsString(
+			'href="https://www.facebook.com/stainlesssteeleverywhere"',
+			$footer,
+			'the Facebook URL is the confirmed account'
+		);
+		$this->assertStringContainsString( 'aria-label="Metal Divider on Facebook"', $footer, 'the icon link has an accessible name' );
+		$this->assertStringContainsString( 'rel="noopener"', $footer, 'the external link opens safely' );
+		$this->assertStringNotContainsString( 'style="', $footer, 'no inline style: the presentation rule keeps styling in WindPress' );
+
+		$this->assertMatchesRegularExpression(
+			'/\.md-footer__social-link\s*\{[^}]*display:\s*inline-flex/',
+			$this->volume( 'footer.css' ),
+			'the social link is styled from the footer volume'
+		);
+	}
+
+	/**
 	 * The footer's tap floor applies at every width, not just on phones.
 	 *
 	 * This is the failure the footer produced twice. The `min-height: 44px`
@@ -819,7 +860,7 @@ final class MobileChromeTest extends TestCase {
 		$base = substr( $css, 0, (int) strpos( $css, '@media' ) );
 		$this->assertNotSame( '', $base, 'the sheet has a base layer before its media queries' );
 
-		foreach ( array( '.md-footer__identity-node', '.md-footer__copy', '.md-footer__bar-legal a' ) as $selector ) {
+		foreach ( array( '.md-footer__identity-node', '.md-footer__copy', '.md-footer__bar-legal a', '.md-footer__social-link' ) as $selector ) {
 			// `min-height` for rows that must grow, `height` for the fixed-size
 			// icon button: either satisfies the floor.
 			$pattern = '/' . preg_quote( $selector, '/' ) . '\s*\{[^}]*(?:min-)?height:\s*4[0-9]px/';

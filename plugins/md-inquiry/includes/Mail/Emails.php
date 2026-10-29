@@ -33,10 +33,12 @@ final class Emails {
 	public const CONFIRMATION = 'customer_confirmation';
 
 	/**
-	 * The confirmation's reply-to: the customer's answer lands in the owner's
-	 * primary sales mailbox (spec 07 §5).
+	 * The confirmation's reply-to: the customer's answer lands in the site's
+	 * own mailbox, so the address a customer sees is on the domain they wrote
+	 * to. The internal notification still goes to the owner's sales mailbox
+	 * (`Config::internal_recipients()`), which is routing, not identity.
 	 */
-	public const REPLY_TO = 'sales@sunriverinverter.com';
+	public const REPLY_TO = 'info@metal-divider.com';
 
 	/**
 	 * The configuration.

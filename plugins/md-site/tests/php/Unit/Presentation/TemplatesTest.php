@@ -656,6 +656,99 @@ final class TemplatesTest extends TestCase {
 	}
 
 	/**
+	 * The inquiry reply promise reads 24 hours everywhere it is made.
+	 *
+	 * Three of the eight competitor sites state a reply time; converted to one
+	 * clock the average and the median are both 24 hours, so that is the
+	 * promise the owner's 2026-10-30 ruling adopts
+	 * (.scratch/competitor-2026-10-30/inquiry-response-time.md).
+	 *
+	 * The clock is pinned by banning the two other wordings outright rather
+	 * than by scanning around the word "reply": every case that shipped wrong
+	 * here dressed the promise as something else — a button label ("Get a
+	 * same-day quote"), a confirmation ("confirms the configuration within
+	 * one business day"), a flow table's value cell ("Response Window" on one
+	 * line, "Same day" on the next). A frame-word scan caught three of those
+	 * four and missed the button, which is how this test failed its own
+	 * self-check the first time.
+	 *
+	 * Two occurrences are legitimately "same day" and are named here, not
+	 * matched loosely: the QC and packing stages' own duration (`Lead — Same
+	 * day`), and one project's production note ("same-day template fit").
+	 * Neither is a reply promise, and both must still exist, so the ban
+	 * cannot be satisfied by deleting the distinction.
+	 */
+	public function test_the_inquiry_reply_promise_is_always_24_hours(): void {
+		$dir       = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files     = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
+		$offenders = array();
+		$allowed   = 0;
+		foreach ( $files as $file ) {
+			$source   = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$relative = str_replace( $dir . '/', '', (string) $file );
+
+			// The sanctioned "same day" uses, counted before they are removed.
+			$allowed += (int) preg_match_all( '/Lead — Same day|same-day template fit/', $source );
+			$scrubbed = (string) preg_replace( '/Lead — Same day|same-day template fit/', "\0", $source );
+
+			if ( ! preg_match_all( '/\b(?:one|1|a)\s+business\s+day|\bsame\s+business\s+day|\bsame[-\s]day\b/i', $scrubbed, $hits, PREG_OFFSET_CAPTURE ) ) {
+				continue;
+			}
+			foreach ( $hits[0] as list( $hit, $offset ) ) {
+				// A bare "Same day" is the value under a process card's
+				// `Lead Time` label — the QC or packing stage's own duration.
+				// The same markup shape carries the reply window, so the label
+				// above it is what decides; "Response Window" is not exempt.
+				$before = substr( $scrubbed, max( 0, $offset - 300 ), min( 300, $offset ) );
+				if ( preg_match( '/Lead Time/i', $before ) && ! preg_match( '/Response/i', $before ) ) {
+					++$allowed;
+					continue;
+				}
+				$offenders[] = "{$relative}: {$hit}";
+			}
+		}
+		$this->assertSame( array(), $offenders, 'wordings that promise a reply clock other than 24 hours: ' . implode( '; ', $offenders ) );
+		$this->assertGreaterThan( 0, $allowed, 'the QC/packing lead labels this ban deliberately excludes still exist' );
+	}
+
+	/**
+	 * The privacy page states no retention period in numbers.
+	 *
+	 * Seven of the eight competitor policies give no numeric retention period
+	 * for inquiry data; the one that does states 60 days after service
+	 * termination, a single sample that cannot be averaged into a figure
+	 * (.scratch/competitor-2026-10-30/privacy-inquiry-retention.md). The
+	 * owner's 2026-10-30 ruling takes the competitor position as ours, so the
+	 * page says how long in words and never in a count of years or days.
+	 */
+	public function test_the_privacy_page_states_no_numeric_retention_period(): void {
+		$source = (string) file_get_contents( Templates::path( 'privacy' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+		$text   = (string) preg_replace( '/<!--.*?-->/s', "\n", $source );
+		$text   = html_entity_decode( (string) preg_replace( '/<[^>]*>/s', "\n", $text ) );
+
+		$pattern = '/\d+\s*(?:years?|months?|days?)\b/i';
+
+		// The detector fires on the wording this page used to carry. Without
+		// this half the test would pass on any page that merely omits the
+		// sentence, which is not the contract.
+		$this->assertMatchesRegularExpression(
+			$pattern,
+			'Inquiry records are kept for 5 years — the tracking cycle of a B2B project — then deleted or anonymized.',
+			'the detector recognises a numeric retention period'
+		);
+
+		preg_match_all( '/inquiry records[^.]*\./i', $text, $sentences );
+		$this->assertNotEmpty( $sentences[0], 'the retention section names the inquiry records' );
+		foreach ( $sentences[0] as $sentence ) {
+			$this->assertDoesNotMatchRegularExpression(
+				$pattern,
+				$sentence,
+				'the inquiry-record sentence states a number of years, months or days: ' . trim( $sentence )
+			);
+		}
+	}
+
+	/**
 	 * A page that shows both accuracy figures explains what each one measures.
 	 *
 	 * ±0.03 mm is panel-to-panel repeat accuracy and ±0.1 mm is single-part

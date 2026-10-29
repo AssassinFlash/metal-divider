@@ -326,7 +326,7 @@ final class Config {
 				'_seopress_titles_desc' => 'Expanded stainless steel mesh panels for facades, partitions and ceilings. Compare diamond, hexagonal and fine patterns, then send the panel schedule.',
 			),
 			'laser-cut-panels'                  => array(
-				'_seopress_titles_desc' => 'Laser-cut stainless steel panels cut to your drawing in 304 or 316, brushed or PVD finish. Send a DXF for a manufacturability review and quote.',
+				'_seopress_titles_desc' => 'Laser-cut stainless steel panels in 304 or 316, brushed or PVD finish. Send the panel size and pattern direction to request a quote.',
 			),
 			'perforated-panels'                 => array(
 				'_seopress_titles_desc' => 'Perforated stainless steel panels in 304 or 316, punched to your pattern and open area. Send the hole pattern, open area and panel size for a quote.',

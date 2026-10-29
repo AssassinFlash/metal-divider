@@ -108,7 +108,9 @@ final class EmailsTest extends TestCase {
 
 	/**
 	 * The confirmation goes to the customer alone, from the site-domain
-	 * address, with the reply routed to the owner's sales mailbox.
+	 * address, and its Reply-To is that same site-domain mailbox: a customer
+	 * who answers the receipt writes to the domain they wrote to, while the
+	 * internal notification keeps its own routing.
 	 */
 	public function test_the_confirmation_reaches_the_customer_from_the_site_address(): void {
 		$mail = ( new Emails( new Config() ) )->confirmation( self::record() );
@@ -116,12 +118,13 @@ final class EmailsTest extends TestCase {
 		$this->assertSame( array( 'jane@studio.com' ), $mail['to'] );
 		$this->assertSame( "We've received your inquiry about Apiary", $mail['subject'] );
 		$this->assertContains( 'From: MetalDivider <info@metal-divider.com>', $mail['headers'] );
-		$this->assertContains( 'Reply-To: sales@sunriverinverter.com', $mail['headers'] );
+		$this->assertContains( 'Reply-To: info@metal-divider.com', $mail['headers'] );
+		$this->assertNotContains( 'Reply-To: sales@sunriverinverter.com', $mail['headers'], 'the customer-facing reply address stays on our own domain' );
 	}
 
 	/**
 	 * The confirmation's wording: the receipt with the pattern named, the
-	 * one-business-day promise, the two faster channels with the number as
+	 * 24-hour promise, the two faster channels with the number as
 	 * people read it, and the reply invitation the Reply-To backs.
 	 */
 	public function test_the_confirmation_carries_the_reviewed_wording(): void {
