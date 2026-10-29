@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028aj', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261029a', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -7,7 +7,7 @@
         $mdvLabel = 'AI assistant';
         $mdvTone = 'ai';
         if ($mdvStatus === erLhcoreClassModelChat::STATUS_PENDING_CHAT) { $mdvLabel = 'Connecting you to the team'; $mdvTone = 'pending'; }
-        elseif ($mdvStatus === erLhcoreClassModelChat::STATUS_ACTIVE_CHAT) { $mdvLabel = 'Team online'; $mdvTone = 'online'; }
+        elseif ($mdvStatus === erLhcoreClassModelChat::STATUS_ACTIVE_CHAT) { $mdvLabel = 'Metal Divider team'; $mdvTone = 'online'; }
         elseif ($mdvStatus === erLhcoreClassModelChat::STATUS_CLOSED_CHAT) { $mdvLabel = 'Chat closed'; $mdvTone = 'closed'; }
 
         $mdvTitle = 'Metal Divider AI';
@@ -107,27 +107,32 @@
     chip.appendChild(dot);
     chip.appendChild(document.createTextNode(label));
   }
-  function operatorName(status) {
+  function operatorRow() {
+    var rows = document.querySelectorAll('#messages .message-row.message-admin[data-op-id]');
+    for (var i = rows.length - 1; i >= 0; i -= 1) {
+      if (/^[1-9][0-9]*$/.test(rows[i].getAttribute('data-op-id'))) { return rows[i]; }
+    }
+    return null;
+  }
+  function operatorName(status, row) {
     var node = status.querySelector('.op-name-widget');
     var name = node ? (node.textContent || '').trim() : '';
-    return /^(ai assistant|metal divider ai|metal divider support|live support)$/i.test(name) ? '' : name;
+    if (!name && row) {
+      node = row.querySelector('.op-nick-title');
+      name = node ? (node.textContent || '').trim() : '';
+    }
+    return name;
   }
   function sync() {
     var status = document.getElementById('status-chat');
     if (!status) { return; }
     var statusText = status.textContent || '';
     if ((status.querySelector('h4') || status.querySelector('h6')) && /closed/i.test(statusText)) { setTitle('Metal Divider Support'); setChip('Chat closed', 'closed'); return; }
+    var row = operatorRow();
+    var name = operatorName(status, row);
+    if (row || name) { setTitle(name || 'Metal Divider Support'); setChip('Metal Divider team', 'online'); return; }
     if (/no logged in support staff|no support staff|no operators/i.test(statusText)) { setTitle('Metal Divider AI'); setChip('AI assistant', 'ai'); return; }
     if (/pending a support staff member|pending confirm|in the queue/i.test(statusText)) { setTitle('Metal Divider AI'); setChip('Connecting you to the team', 'pending'); return; }
-    var name = operatorName(status);
-    if (!name) {
-      var rows = document.querySelectorAll('#messages .message-row.message-admin .op-nick-title');
-      for (var i = rows.length - 1; i >= 0; i -= 1) {
-        var rowName = (rows[i].textContent || '').trim();
-        if (rowName && !/^(ai assistant|metal divider ai|metal divider support|live support)$/i.test(rowName)) { name = rowName; break; }
-      }
-    }
-    if (name) { setTitle(name); setChip('Team online', 'online'); return; }
     setTitle('Metal Divider AI');
     setChip('AI assistant', 'ai');
   }

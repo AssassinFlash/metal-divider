@@ -89,6 +89,25 @@ body.widget-chat #messagesBlock .message-row.message-admin .msg-body{
   border:1px solid #e5dfd1;
   border-radius:16px 16px 16px 4px;
 }
+/* Human operator identity: gold outline + name label.
+   Only human rows match — bot rows render data-op-id="-2", visitor rows carry
+   .response without .message-admin. Name text comes from the native
+   .op-nick-title (lh_msg.name_support), so no name is hardcoded here.
+   These selectors outrank the blanket .usr-tit hide further below. */
+body.widget-chat #messagesBlock .message-row.message-admin[data-op-id]:not([data-op-id="-2"]) .msg-body{
+  border-color:#c9a962;
+}
+body.widget-chat #messagesBlock .message-row.message-admin[data-op-id]:not([data-op-id="-2"]) > .usr-tit.op-tit{
+  display:block!important;
+  margin:0 0 3px;
+  padding:0 2px;
+  color:#7a6438;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.02em;
+}
+body.widget-chat #messagesBlock .message-row.message-admin[data-op-id]:not([data-op-id="-2"]) > .usr-tit.op-tit i,
+body.widget-chat #messagesBlock .message-row.message-admin[data-op-id]:not([data-op-id="-2"]) > .usr-tit.op-tit img{display:none!important}
 body.widget-chat #messagesBlock .message-row .msg-body .mdv-sources{
   display:block;
   max-width:min(78%,320px);
