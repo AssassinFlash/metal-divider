@@ -566,6 +566,46 @@ def contract(target: Target) -> Result:
     return Result("contract", actions, notes)
 
 
+# One wp eval that answers the live row count of WooCommerce's product
+# lookup table. seed-tiles resolves SKUs through it
+# (wc_get_product_id_by_sku); when a direct DB copy leaves the table at
+# 0 rows every lookup answers 0 and seed-tiles dies on a misleading
+# "N patterns missing series term" error instead of the real one.
+LOOKUP_PROBE = (
+    "global $wpdb; var_export((int) $wpdb->get_var("
+    '"SELECT COUNT(*) FROM {$wpdb->prefix}wc_product_meta_lookup"'
+    "));"
+)
+
+
+def _require_lookup_tables(target: Target) -> int:
+    """Refuse to run seed-tiles against an empty product lookup table.
+
+    The staging copy that taught us this (2026-10) was a direct database
+    copy whose wc_product_meta_lookup stayed at 0 rows: every SKU lookup
+    answered 0 and the runbook trail led through "18 patterns missing
+    series term" before anyone looked at the table. The probe costs one
+    eval and names the actual repair command.
+    """
+    answered = target.wp("eval", LOOKUP_PROBE).strip()
+    if not answered.isdigit():
+        raise DeployError(
+            "the wc_product_meta_lookup probe did not answer with a row"
+            f" count (got: {answered!r}); check WP-CLI on the target"
+        )
+    rows = int(answered)
+    if rows == 0:
+        raise DeployError(
+            "the wc_product_meta_lookup table is empty on"
+            f" {target.label}: wc_get_product_id_by_sku answers 0 for"
+            " every SKU, so seed-tiles would fail on a misleading"
+            " patterns-missing-series error. Run `wp wc tool run"
+            " regenerate_product_lookup_tables --user=1` on the target,"
+            " then resume the deploy"
+        )
+    return rows
+
+
 def apply_data_plane(target: Target, actions: list[str]) -> None:
     """Install md-site's data plane: templates, seeds, SEO configuration.
 
@@ -580,13 +620,18 @@ def apply_data_plane(target: Target, actions: list[str]) -> None:
       has as empty WooCommerce term fields.
     * ``seed-tiles`` — the custom-screens panels' order, which is WooCommerce's
       ``menu_order``; a clean target has every product at 0, so the page would
-      render no tiles at all.
+      render no tiles at all. It resolves SKUs through the product lookup
+      tables, so apply_data_plane probes those first and refuses with the
+      repair command when they are empty rather than let seed-tiles fail on
+      the misleading missing-series error.
     * ``seo`` last — it reads the terms the two seeds have just filled.
 
     Both seeds mark what they handled and never touch a maintained record
     again, so deploying onto a site someone has been editing is a no-op.
     """
     for step in (plan.PRESENT, plan.SEED_SERIES, plan.SEED_TILES, plan.SEO):
+        if step is plan.SEED_TILES:
+            _require_lookup_tables(target)
         print(f"deploy: {step[1]}", flush=True)
         started = time.monotonic()
         target.wp(*step, "--user=1")

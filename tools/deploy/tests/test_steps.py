@@ -106,7 +106,14 @@ def _site(tmp_path: Path, **answers: Any) -> _Site:
     object.__setattr__(site, "plugins", answers.get("plugins", {}))
     object.__setattr__(site, "core", answers.get("core", ""))
     object.__setattr__(site, "http_answers", answers.get("http_answers", {}))
-    object.__setattr__(site, "eval_answers", answers.get("eval_answers", {}))
+    # The lookup probe answers a healthy row count unless a test overrides
+    # it — the data plane is expected to pass its pre-flight everywhere the
+    # test does not specifically stage an empty or broken table.
+    object.__setattr__(
+        site,
+        "eval_answers",
+        {steps.LOOKUP_PROBE: "146", **answers.get("eval_answers", {})},
+    )
     object.__setattr__(site, "wp_calls", [])
     object.__setattr__(site, "scheme", answers.get("scheme", list(permalinks.SCHEME)))
     object.__setattr__(site, "stuck", answers.get("stuck", False))
@@ -164,6 +171,7 @@ def test_the_data_plane_runs_every_step_in_order(tmp_path: Path) -> None:
     assert [call[:2] for call in site.wp_calls] == [
         ("md-site", "present"),
         ("md-site", "seed-series"),
+        ("eval", steps.LOOKUP_PROBE),
         ("md-site", "seed-tiles"),
         ("md-site", "seo"),
     ]
@@ -218,11 +226,47 @@ def test_a_failing_seed_fails_the_deploy_instead_of_being_skipped(
     assert [call[:2] for call in site.wp_calls] == [
         ("md-site", "present"),
         ("md-site", "seed-series"),
+        ("eval", steps.LOOKUP_PROBE),
         ("md-site", "seed-tiles"),
     ], "the failing step is the last one attempted; seo never ran"
     assert not any("seo" in action for action in actions), (
         "a failed seed is not reported as a completed step"
     )
+
+
+def test_an_empty_product_lookup_table_stops_the_data_plane_first(
+    tmp_path: Path,
+) -> None:
+    """A 0-row lookup table is reported as itself, not as missing series.
+
+    The staging copy that produced the misleading "18 patterns missing
+    series term" failure had a wc_product_meta_lookup left at 0 rows by a
+    direct database copy: wc_get_product_id_by_sku answered 0 for every
+    SKU. The pre-flight names the table and the repair command before
+    seed-tiles can bury the real cause.
+    """
+    site = _site(tmp_path, eval_answers={steps.LOOKUP_PROBE: "0"})
+    actions: list[str] = []
+
+    with pytest.raises(DeployError, match="regenerate_product_lookup_tables") as raised:
+        steps.apply_data_plane(site, actions)
+
+    assert "wc_product_meta_lookup table is empty" in str(raised.value)
+    assert [call[:2] for call in site.wp_calls] == [
+        ("md-site", "present"),
+        ("md-site", "seed-series"),
+        ("eval", steps.LOOKUP_PROBE),
+    ], "seed-tiles never runs against an empty lookup table"
+    assert not any("seed-tiles" in action for action in actions)
+
+
+def test_an_unreadable_lookup_probe_answer_fails_loudly(tmp_path: Path) -> None:
+    """A probe that answers garbage is a failure, never a pass-by-default."""
+    site = _site(tmp_path, eval_answers={steps.LOOKUP_PROBE: ""})
+    actions: list[str] = []
+
+    with pytest.raises(DeployError, match="did not answer with a row count"):
+        steps.apply_data_plane(site, actions)
 
 
 def test_the_windpress_mtime_reads_the_cache_inside_uploads(tmp_path: Path) -> None:
