@@ -35,14 +35,6 @@ final class SkipLinkTest extends TestCase {
 	 * does not shorten the tab walk. The wording is the old site's, not a rewrite.
 	 */
 	public function test_the_header_opens_with_a_skip_link(): void {
-		// The anchor is deliberately parked while its styles cannot be compiled on
-		// this host (see the comment at the top of partials/header.html): shipped
-		// without them it rendered as a plain visible link on every page. Skip
-		// rather than fail, so the requirement stays recorded and re-arms itself
-		// the moment the anchor returns.
-		if ( ! str_contains( $this->header(), 'md-skip-link' ) ) {
-			$this->markTestSkipped( 'the skip link is parked until WindPress can compile its styles on this host' );
-		}
 
 		$header = $this->header();
 		$link   = $this->skip_link( $header );
@@ -80,14 +72,6 @@ final class SkipLinkTest extends TestCase {
 	 * rem figure at 0.625×.
 	 */
 	public function test_the_skip_link_is_clipped_until_focused_and_then_lands_in_the_viewport(): void {
-		// The anchor is deliberately parked while its styles cannot be compiled on
-		// this host (see the comment at the top of partials/header.html): shipped
-		// without them it rendered as a plain visible link on every page. Skip
-		// rather than fail, so the requirement stays recorded and re-arms itself
-		// the moment the anchor returns.
-		if ( ! str_contains( $this->header(), 'md-skip-link' ) ) {
-			$this->markTestSkipped( 'the skip link is parked until WindPress can compile its styles on this host' );
-		}
 
 		$css   = $this->css();
 		$clean = (string) preg_replace( '/\/\*.*?\*\//s', '', $css );
@@ -131,10 +115,7 @@ final class SkipLinkTest extends TestCase {
 			$this->markTestSkipped( 'picostrap header.php is not on this machine; the skeleton id cannot be read' );
 		}
 
-		$header = $this->header();
-		if ( ! str_contains( $header, 'md-skip-link' ) ) {
-			$this->markTestSkipped( 'the skip link is parked until WindPress can compile its styles on this host' );
-		}
+		$header   = $this->header();
 		$link     = $this->skip_link( $header );
 		$skeleton = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- the theme skeleton, read in a test.
 

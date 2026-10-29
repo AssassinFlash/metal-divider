@@ -1,12 +1,15 @@
 <!-- md-section: header_v1_main -->
-<!-- The skip link is NOT here yet, and this comment is the reason: its styles
-     live in the WindPress volume (chrome.css), which is compiled in the admin's
-     browser by hand on this host. Shipped together with the anchor but before
-     the compile, the anchor rendered as a plain visible "Skip to content" link
-     at the top-left of every page — measured on production 2026-10-29:
-     position static, clip auto, 114x20px, visible. A skip link that everyone
-     sees is worse than no skip link, so the anchor waits for the compile.
-     SkipLinkTest holds the assertions and reports skipped until then. -->
+<!-- The skip link comes first so it is the first thing Tab reaches.
+     It is clipped until focused (`clip: rect(0,0,0,0)`), so it paints nothing
+     until then and the pixel gate sees no change.
+
+     The styles are `.md-skip-link` in the WindPress chrome volume. They must be
+     in the COMPILED stylesheet before this anchor ships: an anchor without its
+     rules rendered as a plain visible "Skip to content" link at the top-left of
+     every page (measured on production 2026-10-29: position static, clip auto,
+     114x20px, visible). The compiled cache was verified to carry the rules on
+     2026-10-29 before this line was restored. -->
+<a class="md-skip-link" href="#theme-main">Skip to content</a>
 <header
   id="HeaderV9-sections--21844031144189__header_v1_main"
   class="xo-header-v9 color-background-1"
