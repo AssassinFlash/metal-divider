@@ -12,6 +12,7 @@ requiring it defines the functions and touches no database.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -141,3 +142,74 @@ class TestPipelineGuard:
         functions and no output of its own."""
         out = _php("")
         assert out == ""
+
+
+REGEN = (Path(__file__).resolve().parents[1] / "seed" / "regen-autologin-hash.php").resolve()
+
+
+def _php_regen(expression: str) -> object:
+    """Run one PHP expression with the regen script required, JSON-decoded."""
+    code = f"require {json.dumps(str(REGEN))}; echo json_encode({expression});"
+    result = subprocess.run(
+        [PHP, "-r", code], capture_output=True, text=True, check=True
+    )
+    return json.loads(result.stdout)
+
+
+class TestRegenAutologin:
+    """The target-side autologin secret_hash regeneration, pure core.
+
+    The sanitized seed ships the hash empty (the exporter blanks it) and
+    LHC's generateautologin REST route answers 400 "Secret hash value is
+    empty" until a 64-hex value exists — production lived with that break
+    until 2026-10-29. The plan function is the whole decision: empty → a
+    fresh 64-hex, present → untouched, unreadable → refused.
+    """
+
+    # The exact sanitized row the seed ships (2026-10-29 incident): the
+    # hash is s:0:"" and everything else is live structure.
+    EMPTY_ROW = 'a:3:{i:0;b:0;s:11:"secret_hash";s:0:"";s:7:"enabled";i:1;}'
+    PRESENT_ROW = 'a:2:{s:11:"secret_hash";s:64:"' + "ab" * 32 + '";s:7:"enabled";i:1;}'
+
+    def _regenerated_row(self, row: str) -> dict[str, object]:
+        planned = _php_regen(f"md_regen_autologin_plan('{row}')")
+        assert isinstance(planned, list) and planned[0] == "empty"
+        assert isinstance(planned[1], str)
+        decoded = _php_regen(f"unserialize('{planned[1]}')")
+        assert isinstance(decoded, dict)
+        return decoded
+
+    def test_an_empty_hash_regenerates_as_64_hex(self) -> None:
+        decoded = self._regenerated_row(self.EMPTY_ROW)
+        assert re.fullmatch(r"[0-9a-f]{64}", str(decoded["secret_hash"])), decoded[
+            "secret_hash"
+        ]
+
+    def test_the_rest_of_the_row_survives_unchanged(self) -> None:
+        decoded = self._regenerated_row(self.EMPTY_ROW)
+        assert set(decoded) == {"0", "secret_hash", "enabled"}, (
+            "no key may appear or vanish; only the hash changes"
+        )
+        assert decoded["0"] is False
+        assert decoded["enabled"] == 1
+
+    def test_two_regenerations_never_share_a_hash(self) -> None:
+        first = self._regenerated_row(self.EMPTY_ROW)["secret_hash"]
+        second = self._regenerated_row(self.EMPTY_ROW)["secret_hash"]
+        assert first != second
+
+    def test_a_present_hash_is_left_alone(self) -> None:
+        planned = _php_regen(f"md_regen_autologin_plan('{self.PRESENT_ROW}')")
+        assert planned == ["present", None], "a live hash is never rewritten"
+
+    def test_an_unreadable_row_is_refused_not_guessed_at(self) -> None:
+        for garbage in ("not serialized at all", 'a:1:{s:3:"foo";s:1:"b";}', "b:0;"):
+            planned = _php_regen(f"md_regen_autologin_plan('{garbage}')")
+            assert planned == ["broken", None], garbage
+
+    def test_requiring_the_regen_file_runs_nothing(self) -> None:
+        code = f"require {json.dumps(str(REGEN))};"
+        result = subprocess.run(
+            [PHP, "-r", code], capture_output=True, text=True, check=True
+        )
+        assert result.stdout == ""
