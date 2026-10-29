@@ -195,16 +195,34 @@ def check_coverage(
 # pattern detail pages, because a stylesheet is only safe if it covers all of
 # them.
 DEFAULT_PAGES = [
-    "/", "/collections/", "/shop/", "/inquiry/", "/inquiry/thank-you/", "/privacy/",
-    "/faqs/", "/about-us/", "/manufacturing-process/", "/project-gallery/", "/blog/",
-    "/laser-cut-geometric-metal-screens/", "/glass-hybrid-screens/",
-    "/outdoor-privacy-landscape-screens/", "/chinese-style-artistic-screens/",
-    "/stainless-steel-screens/", "/laser-cut-panels/", "/perforated-panels/",
-    "/expanded-metal-panels/", "/custom-metal-divider-screens/",
-    "/collections/pattern-abstract/", "/collections/pattern-asian/",
-    "/collections/pattern-geometric/", "/collections/pattern-gradient/",
-    "/collections/pattern-landscape/", "/collections/pattern-moroccan-arabic/",
-    "/collections/pattern-organic/", "/collections/pattern-perforated/",
+    "/",
+    "/collections/",
+    "/shop/",
+    "/inquiry/",
+    "/inquiry/thank-you/",
+    "/privacy/",
+    "/faqs/",
+    "/about-us/",
+    "/manufacturing-process/",
+    "/project-gallery/",
+    "/blog/",
+    "/laser-cut-geometric-metal-screens/",
+    "/glass-hybrid-screens/",
+    "/outdoor-privacy-landscape-screens/",
+    "/chinese-style-artistic-screens/",
+    "/stainless-steel-screens/",
+    "/laser-cut-panels/",
+    "/perforated-panels/",
+    "/expanded-metal-panels/",
+    "/custom-metal-divider-screens/",
+    "/collections/pattern-abstract/",
+    "/collections/pattern-asian/",
+    "/collections/pattern-geometric/",
+    "/collections/pattern-gradient/",
+    "/collections/pattern-landscape/",
+    "/collections/pattern-moroccan-arabic/",
+    "/collections/pattern-organic/",
+    "/collections/pattern-perforated/",
     "/collections/pattern-vintage-retro/",
     "/pattern/agave-architectural-metal-screen-pattern/",
     "/pattern/alhambra-architectural-metal-screen-pattern/",
@@ -268,26 +286,38 @@ def install_cli(target: Any, args: Any, *, write: bool) -> int:
         )
         return 1
 
-    coverage = check_coverage(base, pages, candidate, current, cache_buster=str(int(time.time())))
+    coverage = check_coverage(
+        base, pages, candidate, current, cache_buster=str(int(time.time()))
+    )
     print(
         f"windpress-install: pages {coverage.pages_fetched}/{coverage.pages_attempted}, "
         f"classes {coverage.classes_seen}"
     )
-    print(f"windpress-install: candidate lacks {len(coverage.missing)}, "
-          f"of which the current stylesheet also lacks {len(coverage.missing_from_current)}")
+    print(
+        f"windpress-install: candidate lacks {len(coverage.missing)}, "
+        f"of which the current stylesheet also lacks {len(coverage.missing_from_current)}"
+    )
     print(f"windpress-install: regressions {len(coverage.regressions)}")
 
     if not coverage.passed:
         if coverage.pages_fetched == 0:
-            print("windpress-install: refused — no page could be read, so nothing is verified", file=sys.stderr)
+            print(
+                "windpress-install: refused — no page could be read, so nothing is verified",
+                file=sys.stderr,
+            )
         else:
-            print("windpress-install: refused — these classes are styled today and the candidate drops them:", file=sys.stderr)
+            print(
+                "windpress-install: refused — these classes are styled today and the candidate drops them:",
+                file=sys.stderr,
+            )
             for cls in coverage.regressions[:40]:
                 print(f"  {cls}", file=sys.stderr)
         return 1
 
     if not write:
-        print(f"windpress-install: would install {len(candidate)} bytes to {target.label}")
+        print(
+            f"windpress-install: would install {len(candidate)} bytes to {target.label}"
+        )
         return 0
 
     # Copy the artifact to the target, then install it through the plugin's own
@@ -295,7 +325,10 @@ def install_cli(target: Any, args: Any, *, write: bool) -> int:
     remote_dir = str(Path(target.root) / plan.WINDPRESS_CACHE).rsplit("/", 1)[0]
     remote_css = f"{remote_dir}/md-install-candidate.css"
     script = Path(__file__).resolve().parents[2] / "windpress-install.php"
-    target.copy_file_in(candidate_path, plan.WINDPRESS_CACHE.rsplit("/", 1)[0] + "/md-install-candidate.css")
+    target.copy_file_in(
+        candidate_path,
+        plan.WINDPRESS_CACHE.rsplit("/", 1)[0] + "/md-install-candidate.css",
+    )
     target.copy_file_in(script, "wp-content/mu-plugins-md-windpress-install.php")
     output = target.wp(
         "eval-file",
@@ -310,7 +343,9 @@ def install_cli(target: Any, args: Any, *, write: bool) -> int:
         target.wp(
             "eval",
             'echo (int) @filemtime( wp_upload_dir()["basedir"] . "/windpress/cache/tailwind.css" );',
-        ).strip().splitlines()[-1]
+        )
+        .strip()
+        .splitlines()[-1]
         or 0
     )
     print(f"windpress-install: cache mtime now {after}")

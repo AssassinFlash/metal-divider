@@ -87,7 +87,9 @@ def test_a_class_neither_stylesheet_has_is_not_counted_as_a_regression(
     assert result.passed
 
 
-def test_no_page_fetched_is_not_a_pass(pages: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> None:
+def test_no_page_fetched_is_not_a_pass(
+    pages: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
     """An unreachable site must not read as "nothing is missing"."""
     import urllib.error
 
@@ -98,6 +100,7 @@ def test_no_page_fetched_is_not_a_pass(pages: dict[str, str], monkeypatch: pytes
     result = wi.check_coverage(BASE, list(pages), "", "")
     assert result.pages_fetched == 0
     assert not result.passed
+
 
 def test_a_class_with_regex_metacharacters_does_not_crash_the_matcher() -> None:
     """Real page data carried `[...]` and `-` in a class name.
@@ -111,7 +114,10 @@ def test_a_class_with_regex_metacharacters_does_not_crash_the_matcher() -> None:
     assert wi.has_rule_for(r".w-\[2px\]{width:2px}", awkward)
     assert not wi.has_rule_for(".w-3{width:3px}", awkward)
     # and a dash/range-looking name must not raise either
-    assert wi.has_rule_for(".bg-[linear-gradient(a,b)]{x:1}", "bg-[linear-gradient(a,b)]")
+    assert wi.has_rule_for(
+        ".bg-[linear-gradient(a,b)]{x:1}", "bg-[linear-gradient(a,b)]"
+    )
+
 
 def test_script_contents_are_not_read_as_class_names() -> None:
     """Alpine bindings and template literals produced 395 false missing classes.
@@ -122,8 +128,8 @@ def test_script_contents_are_not_read_as_class_names() -> None:
     """
     html = (
         '<div class="text-sm">ok</div>'
-        '<script>x-data="{ cls: \'md-inquiry-form\' }"</script>'
-        '<style>.a{color:red}</style>'
+        "<script>x-data=\"{ cls: 'md-inquiry-form' }\"</script>"
+        "<style>.a{color:red}</style>"
         '<template><span class="from-template">t</span></template>'
     )
     assert wi.classes_of(html) == {"text-sm"}
@@ -131,5 +137,5 @@ def test_script_contents_are_not_read_as_class_names() -> None:
 
 def test_a_class_attribute_fragment_with_punctuation_is_ignored() -> None:
     """A quoted string inside a class attribute is code, not a class name."""
-    html = '<div class="text-sm \'Care of\' md-inquiry-form">x</div>'
+    html = "<div class=\"text-sm 'Care of' md-inquiry-form\">x</div>"
     assert wi.classes_of(html) == {"text-sm", "md-inquiry-form"}
