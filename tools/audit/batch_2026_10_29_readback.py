@@ -125,12 +125,26 @@ def check_unique_ids(base: str) -> list[tuple[bool, str]]:
 
 
 def check_skip_link(base: str) -> list[tuple[bool, str]]:
-    """The document opens with a skip link that names a real target.
+    """A skip link that ships must also be styled, and styling means the CSS.
 
-    Fails when the header partial was never re-rendered, which leaves the site
-    exactly as it was: 30 Tab presses and no way into main.
+    The check used to demand the anchor be present. That was the wrong shape: an
+    anchor whose `.md-skip-link` rules are not in the compiled stylesheet renders
+    as a plain visible link, which is worse than no skip link at all. Measured on
+    production 2026-10-29: `position: static`, `clip: auto`, 114x20px, visible,
+    top-left of every page.
+
+    So the assertion is the pair, never one half: an anchor is allowed only when
+    the compiled CSS carries `.md-skip-link`. Either both or neither passes; a
+    lone anchor fails, and so does a lone rule with no anchor to apply to.
     """
     results = []
+    try:
+        css_url = _compiled_css_url(base)
+        css = get(css_url, timeout=90) if css_url else ""
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
+        css = ""
+    styled = bool(re.search(r"\.md-skip-link", css))
+
     for path in ("/", "/shop/", "/inquiry/"):
         try:
             html = get(base + path)
@@ -138,14 +152,31 @@ def check_skip_link(base: str) -> list[tuple[bool, str]]:
             results.append((False, f"{path} unreachable: {exc}"))
             continue
         found = re.search(r'<a[^>]*class="[^"]*md-skip-link[^"]*"[^>]*href="#([^"]+)"', html)
-        if not found:
-            results.append((False, f"{path} no skip link"))
+        if found is None:
+            results.append(
+                (not styled, f"{path} no anchor, styled={styled} (want both absent or both present)")
+            )
             continue
         target = found.group(1)
         has_target = f'id="{target}"' in html or f"id='{target}'" in html
-        results.append((ok_marker := has_target, f"{path} skip-link -> #{target} target={has_target}"))
-        del ok_marker
+        ok = bool(has_target and styled)
+        results.append(
+            (ok, f"{path} anchor -> #{target} target={has_target} styled={styled} (both required)")
+        )
     return results
+
+
+def _compiled_css_url(base: str) -> str:
+    """The WindPress cache URL the home page actually links, or ''."""
+    home = get(base + "/")
+    match = re.search(r'href=["\']([^"\']*windpress/cache/tailwind\.css[^"\']*)["\']', home)
+    if not match:
+        return ""
+    url = match.group(1)
+    if url.startswith("/"):
+        root = re.match(r"^(https?://[^/]+)", base)
+        url = (root.group(1) if root else base) + url
+    return url
 
 
 def check_stylesheet(base: str) -> list[tuple[bool, str]]:
@@ -215,8 +246,11 @@ def self_check() -> int:
         "commented page": "<!-- " + ("x" * 900) + " --><main></main>",
         "clean page": "<main id='theme-main'></main>",
         "no skip header": "<header><a href='/shop/'>Shop</a></header>",
-        "skip header": '<header><a class="md-skip-link" href="#theme-main">Skip to content</a>'
+        "anchor without styles": '<header><a class="md-skip-link" href="#theme-main">Skip to content</a>'
         "</header><main id='theme-main'></main>",
+        "skip header": '<header><a class="md-skip-link" href="#theme-main">Skip to content</a>'
+        "</header><main id='theme-main'></main>"
+        "<style>.md-skip-link{clip:rect(0,0,0,0)}</style>",
         "old css": ".md-inquiry{padding:56px 0 88px}",
         "new css": ".md-inquiry-app:not(#md-inquiry *) .md-inquiry{padding:0}.md-skip-link{clip:rect(0,0,0,0)}",
     }
@@ -231,10 +265,18 @@ def self_check() -> int:
         return max((len(c) for c in comments), default=0) <= 64
 
     def skip_ok(html: str) -> bool:
+        """Anchor and styles together, or neither.
+
+        The fixtures below are the three real states: no anchor (old site), an
+        anchor with no styles (what shipped and put a visible link on every
+        page), and the pair.
+        """
         found = re.search(r'<a[^>]*class="[^"]*md-skip-link[^"]*"[^>]*href="#([^"]+)"', html)
+        styled = ".md-skip-link{" in html
         if not found:
-            return False
-        return f'id="{found.group(1)}"' in html or f"id='{found.group(1)}'" in html
+            return not styled
+        has_target = f'id="{found.group(1)}"' in html or f"id='{found.group(1)}'" in html
+        return bool(has_target and styled)
 
     def css_ok(css: str) -> bool:
         return bool(re.search(r"\.md-inquiry-app:not\(#md-inquiry \*\)", css)) and bool(
@@ -258,7 +300,8 @@ def self_check() -> int:
         ("forms", forms_ok, "band card", "form card"),
         ("comments", comments_ok, "commented page", "clean page"),
         ("unique ids", ids_ok, "two forms, same id", "two forms, suffixed"),
-        ("skip link", skip_ok, "no skip header", "skip header"),
+        ("skip link", skip_ok, "anchor without styles", "skip header"),
+        ("skip link (absent)", skip_ok, "anchor without styles", "no skip header"),
         ("stylesheet", css_ok, "old css", "new css"),
     ]
     failures = 0
