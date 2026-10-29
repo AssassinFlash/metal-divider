@@ -1420,3 +1420,16 @@ mdvisitor 主题给 operator 消息加身份标识(姓名标签/头像/头部状
 mdvisitor rsync 双环境+LHC 编译缓存清;prod 批 20261029T071421491010Z-ede86bb
 归档(cache miss→hit);prod 复验:chat-verify 6/6、CSP frame-src 'self' 在位、
 挂件 400×680 离线表单态正常(07:25 UTC 窗外)、金边 CSS 12 处线上命中。
+
+## Batch 4(2026-10-29,进行中)
+
+**3 视口增量抽查 ✅**(18:00-18:10 BJT,营业窗内):home 胶囊 390/768/1440 全可见
+(绿点=在线;390 zai 四点过、768 裁角 zai 确认、1440 DOM rect+开态 zai 过);挂件开态
+390=全幅 sheet(在线态,QUICK CONNECT+输入框)、1440=右下浮板 370×675;无破版无裁切。
+(/tmp/mdw6-*.png,会话已回收。)
+
+**验收包 ✅**:docs/acceptance/2026-10-29-chat-acceptance.md(commit 1606d10+5ae53c8)——
+线上终态八行表、评审团风险→修复对照(K1-K16 全闭环或裁定)、常态化机制、营业语义、
+签字清单四项(走查/隐私并入/KB 节奏/63 分支)。
+
+**待**:业主窗内走查(18:00-21:00 BJT)。
