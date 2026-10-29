@@ -29,7 +29,7 @@ declare( strict_types = 1 );
 add_action( 'rest_api_init', 'md_chat_delete_register' );
 
 /**
- * The chat-domain tables deleted by chat_id in the generic sweep.
+ * The chat-domain sweep statements, deleted by chat_id.
  *
  * Enumerated from information_schema on staging 2026-10-28. Mail-conversation
  * tables (lhc_mailconv_*) are excluded: that is a different id space, and the
@@ -42,42 +42,42 @@ add_action( 'rest_api_init', 'md_chat_delete_register' );
  * lh_transfer (chat_id is shared with mail conversations, which
  * transfer_scope = 0 keeps out).
  *
- * @return string[] Table names, without prefix.
+ * @return string[] Statement templates, each with one %d placeholder.
  */
-function md_chat_delete_tables(): array {
+function md_chat_delete_sweep_sql(): array {
 	return array(
-		'lh_abstract_auto_responder_chat',
-		'lh_abstract_form_collected',
-		'lh_abstract_proactive_chat_campaign_conv',
-		'lh_abstract_subject_chat',
-		'lh_abstract_survey_item',
-		'lh_canned_msg_use',
-		'lh_chatbox',
-		'lh_chat_accept',
-		'lh_chat_action',
-		'lh_chat_blocked_user',
-		'lh_chat_file',
-		'lh_chat_incoming',
-		'lh_chat_online_user',
-		'lh_chat_online_user_footprint',
-		'lh_chat_paid',
-		'lh_chat_participant',
-		'lh_chat_voice_video',
-		'lh_cobrowse',
-		'lh_generic_bot_chat_event',
-		'lh_generic_bot_chat_workflow',
-		'lh_generic_bot_pending_event',
-		'lh_generic_bot_repeat_restrict',
-		'lh_msg',
-		'lh_notification_subscriber',
-		'lh_speech_chat_language',
+		'DELETE FROM lh_abstract_auto_responder_chat WHERE chat_id = %d',
+		'DELETE FROM lh_abstract_form_collected WHERE chat_id = %d',
+		'DELETE FROM lh_abstract_proactive_chat_campaign_conv WHERE chat_id = %d',
+		'DELETE FROM lh_abstract_subject_chat WHERE chat_id = %d',
+		'DELETE FROM lh_abstract_survey_item WHERE chat_id = %d',
+		'DELETE FROM lh_canned_msg_use WHERE chat_id = %d',
+		'DELETE FROM lh_chatbox WHERE chat_id = %d',
+		'DELETE FROM lh_chat_accept WHERE chat_id = %d',
+		'DELETE FROM lh_chat_action WHERE chat_id = %d',
+		'DELETE FROM lh_chat_blocked_user WHERE chat_id = %d',
+		'DELETE FROM lh_chat_file WHERE chat_id = %d',
+		'DELETE FROM lh_chat_incoming WHERE chat_id = %d',
+		'DELETE FROM lh_chat_online_user WHERE chat_id = %d',
+		'DELETE FROM lh_chat_online_user_footprint WHERE chat_id = %d',
+		'DELETE FROM lh_chat_paid WHERE chat_id = %d',
+		'DELETE FROM lh_chat_participant WHERE chat_id = %d',
+		'DELETE FROM lh_chat_voice_video WHERE chat_id = %d',
+		'DELETE FROM lh_cobrowse WHERE chat_id = %d',
+		'DELETE FROM lh_generic_bot_chat_event WHERE chat_id = %d',
+		'DELETE FROM lh_generic_bot_chat_workflow WHERE chat_id = %d',
+		'DELETE FROM lh_generic_bot_pending_event WHERE chat_id = %d',
+		'DELETE FROM lh_generic_bot_repeat_restrict WHERE chat_id = %d',
+		'DELETE FROM lh_msg WHERE chat_id = %d',
+		'DELETE FROM lh_notification_subscriber WHERE chat_id = %d',
+		'DELETE FROM lh_speech_chat_language WHERE chat_id = %d',
 	);
 }
 
 /**
  * The group-chat cleanup statements, keyed by their SQL text.
  *
- * lh_group_chat.chat_id is the visitor chat id, but lh_group_msg.chat_id is
+ * The lh_group_chat.chat_id is the visitor chat id, but lh_group_msg.chat_id is
  * the GROUP id and lh_group_chat_member is keyed by group_id — the native
  * erLhcoreClassModelGroupChat::afterRemove() deletes both through the group
  * row (lib/models/lhchat/erlhcoreclassmodelgroupchat.php), so a bare
@@ -98,7 +98,7 @@ function md_chat_delete_group_cleanup_sql(): array {
 /**
  * The chat transfer delete: chat transfers only, mail stays.
  *
- * lh_transfer.chat_id is shared by chat (transfer_scope 0) and mail
+ * The lh_transfer.chat_id is shared by chat (transfer_scope 0) and mail
  * (transfer_scope 1) conversations; the native beforeRemove filters
  * transfer_scope = 0 (lib/models/lhchat/erlhcoreclassmodelchat.php).
  *
@@ -109,15 +109,52 @@ function md_chat_delete_transfer_sql(): string {
 }
 
 /**
+ * Run one of this file's statement templates against the database.
+ *
+ * Every statement this file executes is a constant template with %d
+ * placeholders only — the sweep list, the group cleanup, transfer, userdep
+ * and department — and ChatDeleteTest asserts each one's exact text. The
+ * integers are bound through $wpdb->prepare() here, never interpolated.
+ *
+ * @param string $sql  One of those templates, never request data.
+ * @param int    ...$ids The integers to bind, in placeholder order.
+ * @return int|bool Rows affected, or false on error.
+ */
+function md_chat_delete_query( string $sql, int ...$ids ) {
+	global $wpdb;
+	return $wpdb->query( $wpdb->prepare( $sql, ...$ids ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $sql is never request data: it is one of this file's constant templates (md_chat_delete_sweep_sql(), md_chat_delete_group_cleanup_sql(), md_chat_delete_transfer_sql(), md_chat_delete_userdep_sql(), md_chat_delete_department_sql()), each asserted in ChatDeleteTest; the values go through $wpdb->prepare().
+}
+
+/**
+ * Read one integer column through one of this file's statement templates.
+ *
+ * @param string $sql  One of the constant templates this file defines, never request data.
+ * @param int    ...$ids The integers to bind, in placeholder order.
+ * @return array<int, string|null> The column values.
+ */
+function md_chat_delete_get_col( string $sql, int ...$ids ): array {
+	global $wpdb;
+	return $wpdb->get_col( $wpdb->prepare( $sql, ...$ids ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $sql is a constant template from md_chat_delete_group_cleanup_sql(), asserted in ChatDeleteTest; the value goes through $wpdb->prepare().
+}
+
+/**
  * The Live Helper Chat filesystem root, where chat file paths resolve.
  *
- * lh_chat_file.file_path is stored relative to that root ('var/storage/…'),
+ * The lh_chat_file.file_path is stored relative to that root ('var/storage/…'),
  * and file_path_server is file_path . name
  * (lib/models/lhchat/erlhcoreclassmodelchatfile.php).
  *
  * @return string Absolute path with a trailing slash.
  */
 function md_chat_delete_lhc_root(): string {
+	/**
+	 * Filters the Live Helper Chat filesystem root, where chat file paths resolve.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $root The default root: ABSPATH . 'chat/', trailingslashed.
+	 * @return string The filtered root, trailingslashed.
+	 */
 	$root = trailingslashit( (string) apply_filters( 'md_chat_delete_lhc_root', trailingslashit( ABSPATH ) . 'chat' ) );
 	$real = wp_normalize_path( $root );
 	return rtrim( $real, '/' ) . '/';
@@ -132,7 +169,7 @@ function md_chat_delete_lhc_root(): string {
  * directory so empty var/storage folders can be removed afterwards.
  *
  * @param array<int, object|array<string, mixed>> $rows Rows with file_path and name.
- * @param string                                    $root The absolute LHC root, normalized.
+ * @param string                                  $root The absolute LHC root, normalized.
  * @return array<int, string> Absolute file paths that stay inside the root.
  */
 function md_chat_delete_file_targets( array $rows, string $root ): array {
@@ -177,16 +214,19 @@ function md_chat_delete_remove_files( array $targets, string $root ): int {
 		if ( false === $real || ! is_file( $real ) || 0 !== strpos( wp_normalize_path( $real ), $base . '/' ) ) {
 			continue;
 		}
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_unlink -- unlink is the primitive this loop needs: its boolean result decides whether the storage prune runs, and wp_delete_file() returns nothing. @ suppresses only the warning for a file that vanished between realpath() and now — the desired end state.
 		if ( ! @unlink( $real ) ) {
 			continue;
 		}
-		$unlinked++;
+		++$unlinked;
 		$dir = dirname( $real );
 		while ( 0 === strpos( $dir, $var_stop ) && $dir !== $var_stop ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- @scandir's false return is handled on the next line; the warning it suppresses is the very vanishing-directory race the loop exists to survive.
 			$entries = @scandir( $dir );
 			if ( false === $entries || count( $entries ) > 2 ) {
 				break;
 			}
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- WP_Filesystem has no directory-prune primitive; rmdir's false return already gates this loop, and @ only silences the warning on the vanished-parent race.
 			if ( ! @rmdir( $dir ) ) {
 				break;
 			}
@@ -282,23 +322,21 @@ function md_chat_delete_record_failure(): void {
 /**
  * The operator counters recompute, mirroring updateActiveChats().
  *
- * inactive uses status_sub IN (9,3,5): SURVEY_COMPLETED, USER_CLOSED_CHAT,
+ * The inactive counter uses status_sub IN (9,3,5): SURVEY_COMPLETED, USER_CLOSED_CHAT,
  * SURVEY_SHOW — updateActiveChats() does not include CONTACT_FORM here,
  * unlike the department variant below. Mail counters share the operator's
  * row set: STATUS_ACTIVE 1, STATUS_PENDING 0.
  *
- * @param int $user_id The operator the deleted chat was assigned to.
- * @return string The UPDATE statement, %d placeholders only.
+ * @return string The UPDATE statement template, %d placeholders only.
  */
-function md_chat_delete_userdep_sql( int $user_id ): string {
-	$uid = (string) (int) $user_id;
-	return "UPDATE lh_userdep ud
-SET ud.active_chats = (SELECT COUNT(*) FROM lh_chat c WHERE c.user_id = $uid AND c.status = 1),
-    ud.pending_chats = (SELECT COUNT(*) FROM lh_chat c WHERE c.user_id = $uid AND c.status = 0),
-    ud.inactive_chats = (SELECT COUNT(*) FROM lh_chat c WHERE c.user_id = $uid AND c.status IN (0,1) AND c.status_sub IN (9,3,5)),
-    ud.active_mails = (SELECT COUNT(*) FROM lhc_mailconv_conversation m WHERE m.user_id = $uid AND m.status = 1),
-    ud.pending_mails = (SELECT COUNT(*) FROM lhc_mailconv_conversation m WHERE m.user_id = $uid AND m.status = 0)
-WHERE ud.user_id = $uid";
+function md_chat_delete_userdep_sql(): string {
+	return 'UPDATE lh_userdep ud
+SET ud.active_chats = (SELECT COUNT(*) FROM lh_chat c WHERE c.user_id = %d AND c.status = 1),
+    ud.pending_chats = (SELECT COUNT(*) FROM lh_chat c WHERE c.user_id = %d AND c.status = 0),
+    ud.inactive_chats = (SELECT COUNT(*) FROM lh_chat c WHERE c.user_id = %d AND c.status IN (0,1) AND c.status_sub IN (9,3,5)),
+    ud.active_mails = (SELECT COUNT(*) FROM lhc_mailconv_conversation m WHERE m.user_id = %d AND m.status = 1),
+    ud.pending_mails = (SELECT COUNT(*) FROM lhc_mailconv_conversation m WHERE m.user_id = %d AND m.status = 0)
+WHERE ud.user_id = %d';
 }
 
 /**
@@ -308,17 +346,15 @@ WHERE ud.user_id = $uid";
  * max_load* columns summarise lh_userdep only, so they stay valid.
  * inactive includes CONTACT_FORM (2) here: status_sub IN (2,9,3,5).
  *
- * @param int $dep_id The department the deleted chat belonged to.
- * @return string The UPDATE statement, integer literals only.
+ * @return string The UPDATE statement template, %d placeholder only.
  */
-function md_chat_delete_department_sql( int $dep_id ): string {
-	$did = (string) (int) $dep_id;
-	return "UPDATE lh_departament d
+function md_chat_delete_department_sql(): string {
+	return 'UPDATE lh_departament d
 SET d.active_chats_counter = (SELECT COUNT(*) FROM lh_chat c WHERE c.dep_id = d.id AND c.status = 1),
     d.pending_chats_counter = (SELECT COUNT(*) FROM lh_chat c WHERE c.dep_id = d.id AND c.status = 0),
     d.bot_chats_counter = (SELECT COUNT(*) FROM lh_chat c WHERE c.dep_id = d.id AND c.status = 5),
     d.inactive_chats_cnt = (SELECT COUNT(*) FROM lh_chat c WHERE c.dep_id = d.id AND c.status IN (0,1) AND c.status_sub IN (2,9,3,5))
-WHERE d.id = $did";
+WHERE d.id = %d';
 }
 
 /**
@@ -423,28 +459,26 @@ function md_chat_delete_respond( $request ) {
 	);
 
 	$group_sql = md_chat_delete_group_cleanup_sql();
-	$group_ids = $wpdb->get_col( $wpdb->prepare( $group_sql['group_ids'], $chat_id ) );
+	$group_ids = md_chat_delete_get_col( $group_sql['group_ids'], $chat_id );
 
 	$committed = true;
 	$wpdb->query( 'START TRANSACTION' );
-	foreach ( md_chat_delete_tables() as $table ) {
-		$deleted = $wpdb->query(
-			$wpdb->prepare( "DELETE FROM {$table} WHERE chat_id = %d", $chat_id )
-		);
+	foreach ( md_chat_delete_sweep_sql() as $sweep ) {
+		$deleted = md_chat_delete_query( $sweep, $chat_id );
 		if ( false === $deleted ) {
 			$committed = false;
 			break;
 		}
 	}
-	if ( $committed && is_array( $group_ids ) ) {
+	if ( $committed ) {
 		foreach ( $group_ids as $group_id ) {
 			$gid = (int) $group_id;
 			if ( $gid < 1 ) {
 				continue;
 			}
-			$deleted = $wpdb->query( $wpdb->prepare( $group_sql['group_msgs'], $gid ) );
+			$deleted = md_chat_delete_query( $group_sql['group_msgs'], $gid );
 			if ( false !== $deleted ) {
-				$deleted = $wpdb->query( $wpdb->prepare( $group_sql['members'], $gid ) );
+				$deleted = md_chat_delete_query( $group_sql['members'], $gid );
 			}
 			if ( false === $deleted ) {
 				$committed = false;
@@ -453,13 +487,9 @@ function md_chat_delete_respond( $request ) {
 		}
 	}
 	if ( $committed ) {
-		$deleted = $wpdb->query(
-			$wpdb->prepare( $group_sql['groups'], $chat_id )
-		);
+		$deleted = md_chat_delete_query( $group_sql['groups'], $chat_id );
 		if ( false !== $deleted ) {
-			$deleted = $wpdb->query(
-				$wpdb->prepare( md_chat_delete_transfer_sql(), $chat_id )
-			);
+			$deleted = md_chat_delete_query( md_chat_delete_transfer_sql(), $chat_id );
 		}
 		if ( false !== $deleted ) {
 			$deleted = $wpdb->query(
@@ -483,10 +513,11 @@ function md_chat_delete_respond( $request ) {
 	md_chat_delete_forget_wecom_card( $chat_id );
 
 	if ( (int) $row->user_id > 0 ) {
-		$wpdb->query( md_chat_delete_userdep_sql( (int) $row->user_id ) );
+		$op_id = (int) $row->user_id;
+		md_chat_delete_query( md_chat_delete_userdep_sql(), $op_id, $op_id, $op_id, $op_id, $op_id, $op_id );
 	}
 	if ( (int) $row->dep_id > 0 ) {
-		$wpdb->query( md_chat_delete_department_sql( (int) $row->dep_id ) );
+		md_chat_delete_query( md_chat_delete_department_sql(), (int) $row->dep_id );
 	}
 
 	return new \WP_REST_Response(

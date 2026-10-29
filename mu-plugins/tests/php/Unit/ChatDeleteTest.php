@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
  * department variants of the inactive set distinct. The deletion itself is
  * exercised against staging with a probe chat.
  *
- * @covers ::md_chat_delete_tables
+ * @covers ::md_chat_delete_sweep_sql
  * @covers ::md_chat_delete_hash_ok
  * @covers ::md_chat_delete_userdep_sql
  * @covers ::md_chat_delete_department_sql
@@ -29,26 +29,27 @@ final class ChatDeleteTest extends TestCase {
 
 	/**
 	 * The generic sweep is the chat-domain satellite tables enumerated from
-	 * information_schema: unique, lh_-prefixed, no mail id space. The three
-	 * tables keyed differently (lh_group_msg, lh_group_chat, lh_transfer)
-	 * travel through their own statements, not this list.
+	 * information_schema: unique, lh_-prefixed DELETE statements with one
+	 * %d each, no mail id space. The three tables keyed differently
+	 * (lh_group_msg, lh_group_chat, lh_transfer) travel through their own
+	 * statements, not this list.
 	 */
-	public function test_tables_are_the_chat_domain_set(): void {
-		$tables = md_chat_delete_tables();
+	public function test_sweep_is_the_chat_domain_set(): void {
+		$sweeps = md_chat_delete_sweep_sql();
 
-		self::assertCount( 25, $tables );
-		self::assertSame( $tables, array_values( array_unique( $tables ) ) );
-		foreach ( $tables as $table ) {
-			self::assertStringStartsWith( 'lh_', $table );
-			self::assertStringNotContainsString( 'mailconv', $table );
+		self::assertCount( 25, $sweeps );
+		self::assertSame( $sweeps, array_values( array_unique( $sweeps ) ) );
+		foreach ( $sweeps as $sweep ) {
+			self::assertMatchesRegularExpression( '/^DELETE FROM lh_[a-z0-9_]+ WHERE chat_id = %d$/', $sweep );
+			self::assertStringNotContainsString( 'mailconv', $sweep );
 		}
-		self::assertContains( 'lh_msg', $tables );
-		self::assertContains( 'lh_chat_online_user', $tables );
-		self::assertContains( 'lh_generic_bot_chat_event', $tables );
-		self::assertContains( 'lh_abstract_form_collected', $tables );
-		self::assertNotContains( 'lh_group_msg', $tables );
-		self::assertNotContains( 'lh_group_chat', $tables );
-		self::assertNotContains( 'lh_transfer', $tables );
+		self::assertContains( 'DELETE FROM lh_msg WHERE chat_id = %d', $sweeps );
+		self::assertContains( 'DELETE FROM lh_chat_online_user WHERE chat_id = %d', $sweeps );
+		self::assertContains( 'DELETE FROM lh_generic_bot_chat_event WHERE chat_id = %d', $sweeps );
+		self::assertContains( 'DELETE FROM lh_abstract_form_collected WHERE chat_id = %d', $sweeps );
+		self::assertNotContains( 'lh_group_msg', $sweeps );
+		self::assertNotContains( 'lh_group_chat', $sweeps );
+		self::assertNotContains( 'lh_transfer', $sweeps );
 	}
 
 	/**
@@ -134,33 +135,62 @@ final class ChatDeleteTest extends TestCase {
 	/**
 	 * The operator recompute mirrors updateActiveChats(): five counters over
 	 * the user's rows, inactive without CONTACT_FORM (no 2 in the sub set).
+	 * The statement is a template — every operator reference is a %d, so no
+	 * id can ever reach the database interpolated.
 	 */
 	public function test_userdep_recompute_mirrors_update_active_chats(): void {
-		$sql = md_chat_delete_userdep_sql( 7 );
+		$sql = md_chat_delete_userdep_sql();
 
-		self::assertStringContainsString( 'UPDATE lh_userdep ud', $sql );
-		self::assertStringContainsString( 'ud.active_chats = (SELECT COUNT(*) FROM lh_chat c WHERE c.user_id = 7 AND c.status = 1)', $sql );
+		self::assertStringStartsWith( 'UPDATE lh_userdep ud', $sql );
+		self::assertSame( 6, substr_count( $sql, '%d' ) );
+		self::assertStringContainsString( 'ud.active_chats = (SELECT COUNT(*) FROM lh_chat c WHERE c.user_id = %d AND c.status = 1)', $sql );
 		self::assertStringContainsString( 'c.status IN (0,1) AND c.status_sub IN (9,3,5)', $sql );
-		self::assertStringContainsString( 'FROM lhc_mailconv_conversation m WHERE m.user_id = 7 AND m.status = 1', $sql );
-		self::assertStringContainsString( 'FROM lhc_mailconv_conversation m WHERE m.user_id = 7 AND m.status = 0', $sql );
+		self::assertStringContainsString( 'FROM lhc_mailconv_conversation m WHERE m.user_id = %d AND m.status = 1', $sql );
+		self::assertStringContainsString( 'FROM lhc_mailconv_conversation m WHERE m.user_id = %d AND m.status = 0', $sql );
 		self::assertStringNotContainsString( '2,9,3,5', $sql );
-		self::assertStringEndsWith( 'WHERE ud.user_id = 7', $sql );
+		self::assertStringEndsWith( 'WHERE ud.user_id = %d', $sql );
 	}
 
 	/**
 	 * The department recompute mirrors updateDepartmentStats(): the four chat
-	 * counters over dep_id, inactive including CONTACT_FORM (2).
+	 * counters over dep_id, inactive including CONTACT_FORM (2). The id is a
+	 * %d placeholder, never an interpolated literal.
 	 */
 	public function test_department_recompute_mirrors_update_department_stats(): void {
-		$sql = md_chat_delete_department_sql( 3 );
+		$sql = md_chat_delete_department_sql();
 
-		self::assertStringContainsString( 'UPDATE lh_departament d', $sql );
+		self::assertStringStartsWith( 'UPDATE lh_departament d', $sql );
+		self::assertSame( 1, substr_count( $sql, '%d' ) );
 		self::assertStringContainsString( 'c.dep_id = d.id AND c.status = 1', $sql );
 		self::assertStringContainsString( 'c.dep_id = d.id AND c.status = 5', $sql );
 		self::assertStringContainsString( 'c.status IN (0,1) AND c.status_sub IN (2,9,3,5)', $sql );
 		self::assertStringNotContainsString( 'c.department', $sql );
 		self::assertStringNotContainsString( 'max_load', $sql );
-		self::assertStringEndsWith( 'WHERE d.id = 3', $sql );
+		self::assertStringEndsWith( 'WHERE d.id = %d', $sql );
+	}
+
+	/**
+	 * The counter recomputes reaches the database only through
+	 * md_chat_delete_query(), and the group-id read only through
+	 * md_chat_delete_get_col(): the templates' %d come back bound to the
+	 * integers, so the logged statements carry ints, never a template.
+	 */
+	public function test_counter_templates_bind_their_ids_through_prepare(): void {
+		md_chat_delete_query( md_chat_delete_userdep_sql(), 7, 7, 7, 7, 7, 7 );
+		md_chat_delete_query( md_chat_delete_department_sql(), 3 );
+		md_chat_delete_get_col( md_chat_delete_group_cleanup_sql()['group_ids'], 12 );
+
+		$statements = implode( "\n", $GLOBALS['wpdb']->queries );
+
+		self::assertStringContainsString( 'UPDATE lh_userdep ud', $statements );
+		self::assertStringContainsString(
+			'ud.active_chats = (SELECT COUNT(*) FROM lh_chat c WHERE c.user_id = 7 AND c.status = 1)',
+			$statements
+		);
+		self::assertStringContainsString( 'WHERE ud.user_id = 7', $statements );
+		self::assertStringContainsString( 'WHERE d.id = 3', $statements );
+		self::assertStringContainsString( 'SELECT id FROM lh_group_chat WHERE chat_id = 12', $statements );
+		self::assertStringNotContainsString( '%d', $statements );
 	}
 
 	/**
@@ -179,7 +209,8 @@ final class ChatDeleteTest extends TestCase {
 
 		md_chat_delete_forget_wecom_card( 404 );
 
-		self::assertSame( array( 11 => 555 ), get_option( 'md_wecom_notify_chats', array() ) );
+		// PHPStan sees through the test-double option store, but this assertion must still catch a regression in which forget_wecom_card() touches chats it must not.
+		self::assertSame( array( 11 => 555 ), get_option( 'md_wecom_notify_chats', array() ) ); // @phpstan-ignore staticMethod.alreadyNarrowedType
 
 		$GLOBALS['md_mu_test_options']['md_wecom_notify_chats'] = 'not-a-map';
 
@@ -241,9 +272,10 @@ final class ChatDeleteTest extends TestCase {
 	 * @return \WP_REST_Response The response.
 	 */
 	private function delete_request( int $chat_id, string $hash ): \WP_REST_Response {
+		// The test double's constructor takes the JSON-params map directly; the production stub signature expects $method.
 		return md_chat_delete_respond(
 			new \WP_REST_Request(
-				array(
+				array( // @phpstan-ignore argument.type
 					'chat_id' => $chat_id,
 					'hash'    => $hash,
 				)
@@ -297,10 +329,10 @@ final class ChatDeleteTest extends TestCase {
 	public function test_a_wrong_hash_is_recorded_as_a_guess(): void {
 		$this->answer_row_with(
 			array(
-				'id'     => 7,
-				'hash'   => $this->stored_hash(),
+				'id'      => 7,
+				'hash'    => $this->stored_hash(),
 				'user_id' => 0,
-				'dep_id' => 0,
+				'dep_id'  => 0,
 			)
 		);
 

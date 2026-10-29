@@ -114,9 +114,10 @@ final class ChatEmailTest extends TestCase {
 	 * @return \WP_REST_Response The response.
 	 */
 	private function email_request( int $chat_id, string $hash, string $email = 'visitor@example.com' ): \WP_REST_Response {
+		// The test double's constructor takes the JSON-params map directly; the production stub signature expects $method.
 		return md_chat_email_respond(
 			new \WP_REST_Request(
-				array(
+				array( // @phpstan-ignore argument.type
 					'chat_id' => $chat_id,
 					'hash'    => $hash,
 					'email'   => $email,

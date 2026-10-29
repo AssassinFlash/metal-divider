@@ -9,6 +9,7 @@
 	<file>md-wecom-notify.php</file>
 	<file>md-kb-endpoint.php</file>
 	<file>md-chat-email.php</file>
+	<file>md-chat-delete.php</file>
 	<file>md-chat-launcher.php</file>
 	<file>tests</file>
 	<exclude-pattern>tests/php/bootstrap.php</exclude-pattern>
@@ -36,6 +37,7 @@
 				<element value="md_wecom_notify"/>
 				<element value="md_kb_endpoint"/>
 				<element value="md_chat_email"/>
+				<element value="md_chat_delete"/>
 				<element value="md_chat_launcher"/>
 			</property>
 		</properties>

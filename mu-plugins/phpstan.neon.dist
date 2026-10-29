@@ -10,6 +10,9 @@ parameters:
 		- md-staging-guards.php
 		- md-wecom-notify.php
 		- md-kb-endpoint.php
+		- md-chat-email.php
+		- md-chat-delete.php
+		- md-chat-launcher.php
 		- tests/php
 	excludePaths:
 		# The bootstrap defines WordPress's own hook functions for the tests;
@@ -25,3 +28,7 @@ parameters:
 		- tests/php/Doubles/rapls-stubs.php
 		# ACF and the product helpers the endpoint reads at answer time.
 		- tests/php/Doubles/product-stubs.php
+		# WP-CLI ships no stubs and is not in the WordPress stubs; the kb
+		# read-back command registers itself on it. Only the surface the
+		# mu-plugins touch is declared.
+		- tests/php/Doubles/wp-cli-stubs.php

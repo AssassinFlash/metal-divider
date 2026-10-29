@@ -57,13 +57,15 @@ namespace {
 	 * @return \WP_Post|null The post, null when none matches.
 	 */
 	/**
-	 * parse_url() in WordPress's shape.
+	 * parse_url() in WordPress's shape: the component form returns that one
+	 * component, the full form (-1) returns every part.
 	 *
 	 * @param string $url The URL.
-	 * @return array<string, mixed>|false The parts, or false.
+	 * @param int    $component One of the PHP_URL_* constants, or -1 for all parts.
+	 * @return array<string, mixed>|string|int|false|null The parts, or the component, or false on a malformed URL.
 	 */
-	function wp_parse_url( string $url ): array|false {
-		unset( $url );
+	function wp_parse_url( string $url, int $component = -1 ): array|string|int|false|null {
+		unset( $url, $component );
 		return false;
 	}
 
