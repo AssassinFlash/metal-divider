@@ -2133,3 +2133,47 @@ P  class="pointer-events-none absolute inset-x-0 top-1/2 -z-0 …"
 出现波动时先问「这个量本身稳不稳」，而不是取其中一次结果。
 
 这与 §9.39 / §9.41 是同一条：数字离开它的波动范围就不是证据。
+
+### 9.45 询盘表单四层防护逐层实战（业主 2026-10-29）
+
+`Submission::process()` 的顺序是 **限流 → nonce → 蜜罐 → 字段校验 → Turnstile**。
+此前只验过「缺字段被拒」，其余三层没有单独证据。本轮用受控 POST 逐层击破：
+每次记录返回的 `role="alert"` 文案与**询盘/队列计数**，证明它确实没落库。
+
+测试前基数：询盘 **0**、队列 **0**。
+
+| # | 条件 | 返回 | 是否落库 |
+|---|---|---|---|
+| 1 | 不带 nonce | `Your form session expired. Please reload the page and try again.` | **否**（0/0） |
+| 2 | 有效 nonce + 蜜罐 `website` 有值 | `We could not accept this submission. If this keeps happening, reach us…` | **否**（0/0） |
+| 3 | 有效 nonce、蜜罐空、字段齐全、**无 Turnstile token** | `Verification failed. Please refresh the page and try again.` | **否**（0/0） |
+
+三次都是 HTTP 200 + 无 303 跳转 + 表单仍在页面上 + 错误用 `role="alert"` 播报，
+说明四条路径都走到 `$this->state->fail()` 而不是静默吞掉。
+
+#### 9.45.1 顺手证实了字段校验实际在卡什么
+
+第 3 次最初两次尝试返回 `Please complete the highlighted fields.`，查下去是我漏了两个必填项：
+
+- `md_inquiry_quantity` 是 **choice 字段**，只接受 `Validator::QUANTITIES` 白名单里的六个值
+  （`Sample / test panel (1-10 sqm)` … `Not decided yet`），我传的 `1` 不合法；
+- `md_inquiry_confirm` 必须正好是 `'1'`。
+
+补上合法值后才走到 Turnstile 层。**这说明字段校验确实按白名单执行，不是摆设。**
+
+#### 9.45.2 限流留下了 5/5，已清理并读回
+
+`RateLimiter::LIMIT = 5` / `WINDOW = 600`。查 transient：
+
+```
+_transient_md_inquiry_rl_bd501ea3… = [1793233196, 1793233216, 1793233231, 1793233248, 1793233267]
+```
+
+**五次全用掉了**——正是我这五次 POST。这本身是限流的实证，但留着会挡住真实访客。
+按测试纪律清理（连同 `_transient_timeout_` 一并删），读回：
+`SELECT COUNT(*) … LIKE '%md_inquiry_rl_%'` = **0**，询盘仍是 **0**。
+
+#### 9.45.3 剩下的只有真人那一层
+
+四层里三层已单独证实。Turnstile 层也证实了会拒绝（第 3 次），但**没有证实它会放行**——
+那需要一次真人在真 Chrome 里完成挑战。这是唯一还需业主动手的环节。
