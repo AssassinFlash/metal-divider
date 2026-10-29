@@ -111,6 +111,28 @@ def _parser() -> argparse.ArgumentParser:
         default=0,
         help="the cache mtime from before the compile (from the deploy's log)",
     )
+    installing = sub.add_parser(
+        "windpress-install",
+        parents=[common],
+        help="install a compiled WindPress cache, behind a coverage gate",
+    )
+    installing.add_argument(
+        "--css",
+        type=Path,
+        required=True,
+        help="the compiled stylesheet to install (e.g. the dev instance's cache)",
+    )
+    installing.add_argument(
+        "--base",
+        default="",
+        help="the URL whose pages the gate reads (default: the target's own)",
+    )
+    installing.add_argument(
+        "--pages",
+        type=Path,
+        default=None,
+        help="a file with one page path per line (default: the sitemap's pages)",
+    )
     window = sub.add_parser(
         "maintenance", parents=[common], help="the maintenance window"
     )
@@ -259,6 +281,10 @@ def main(argv: list[str] | None = None) -> int:
             result = steps.windpress_check(target, before=args.before or None)
             _print(result)
             return 1 if result.notes else 0
+        if args.command == "windpress-install":
+            from md_deploy import windpress_install
+
+            return windpress_install.install_cli(target, args, write=args.write)
         if args.command == "maintenance":
             if not args.write:
                 print(f"maintenance: would turn the maintenance file {args.state}")
