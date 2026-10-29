@@ -59,6 +59,22 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-29 询盘链全要素生产实走 + HTML 7 天浏览器缓存根因修复
+
+**询盘链「第四次提交」完成(真 Chrome/opencli,生产)**。此前三次防护层(无 nonce / 蜜罐有值 / 无令牌)均正确拦截;本次全要素通过:真 Turnstile 令牌自动注入(794 字符,`interaction-only` 无挑战)→ 提交 → 记录 1801(`md_new`,16 字段无损)→ 队列两行均 `sent`(attempts=1,零错误):内部通知 `["sales@sunriverinverter.com","info@metal-divider.com"]`、客户确认发提交邮箱。测试数据已回收(记录与队列行删除,读回 0/0),只发这一封。**接替 10-28「完整提交仍待业主实走」的待决。**
+
+**根因:HTML 在访客浏览器缓存 7 天**。真 Chrome 首开 `/inquiry/` 拿到旧表单(无 quantity/confirm/Turnstile);服务器新鲜渲染完全正常(curl 实证),旧副本来自浏览器缓存。两层修复,均读回验证:
+
+1. `.htaccess` 的 `ExpiresDefault "access plus 1 weeks"` 对 HTML 也生效 → 插入 `ExpiresByType text/html "access plus 0 seconds"`。**全站 12 页型 curl 读回全部 `cache-control: public, max-age=0`**(带 etag 再验证,永不吃旧页面;`x-litespeed-cache: hit` 下同样为 0)。
+2. LiteSpeed `cache-ttl_pub/frontpage/feed` 604800 → 86400(服务器页缓存陈旧窗口同步收窄)。原值与 `.htaccess` 原文件留档本地 `~/metal-divider-local/backups-htaccess/`。
+3. 补齐现代格式长缓存:webp/avif/svg/woff2 → 1 年(webp 实测 31536000;媒体管线保证上传即终稿,安全)。jpg/png/css/js 原规则未动。
+
+**已知脆弱点(记录在案)**:过期规则表在 `# BEGIN WordPress` 标记块内,WP 重写固定链接(保存固定链接设置)会整块重写、连原本的过期规则一起抹掉——这是 Hostinger 模板的既有形状,非本次引入;若未来 HTML 又变 7 天,先查这里。
+
+**DNS 实况核验**:A 直指 Hostinger IP、NS 为 Hostinger 默认区,与 2026-10-25 终版裁定一致;响应头 `server: hcdn` 是 Hostinger 自家边缘层,非外置 CDN,未动。测量教训:扫缓存头必须 grep `^cache-control`,否则 HSTS 的 `max-age=31536000` 会冒充缓存头(本轮虚惊一次)。
+
+**仍待业主**:导航下拉/空卡槽截图指认(全站扫描仍未复现)、Reply-To 跨品牌域是否本意、对比度 40 条裁定、rapls 客服插件处置。总目标仍未验收。
+
 ### 2026-10-28 画廊效果图披露
 
 - 23 个条目中 18 个 alt 写 visualization、1 个 project image,但页面可见文字从未出现;另 5 个连 alt 都无标注。已加页头可见说明并补齐 5 个 alt,现 23/23 有标注。
