@@ -327,3 +327,88 @@ Executed in one owner window. Sequence as run, for the next fresh target:
 - Real Chrome chain: homepage launcher -> pattern page card (iframe through CSP `frame-src 'self'`) -> question -> answer "The Agave pattern has an open area of 17%. Based on: Pattern Agave" (live prod Woo lookup + DeepSeek) -> widget self-service delete -> start page.
 - All probe chats erased (1 via widget control, 2 via the endpoint); final baseline `lh_chat=0`, `lh_msg=0`, online_users=0.
 - Known open: the WeCom card send was not exercised end-to-end on prod tonight (no transfer was triggered); the connector code, bearer pairing (hash-verified), and webhook rows are live — first real inquiry exercises it. The rapls 146-row index ships empty by design (live Woo lookup does not use it).
+
+---
+
+> DRAFT for adversarial review — not yet owner-approved
+>
+> Scope: the two sections below only ("Future changes", "Rollback (per plane)"). The runbook above this banner is the current approved version. Reviewer note: "Rollback (per plane)" is drafted to merge into the existing `## Rollback` section at final approval; the overlapping coverage is deliberate until then.
+
+## Future changes (routine)
+
+Routine changes to a working chat plane. Every sequence below ends on the Verification gates. Nothing here authorizes a production write outside an owner window (Manual-owner-items still applies).
+
+### The four webhook rows, the REST action, and bearer rotation
+
+The WeCom chain hangs on four `lh_webhook` rows (all `trigger_id=1`, `bot_id=1`, `disabled=0`): 1 `chat.genericbot_chat_command_transfer`, 2 `chat.chat_transfered`, 3 `chat.addmsguser`, 4 `chat.chat_offline_request_saved`. The REST action they call is `lh_generic_bot_rest_api` id=1 (`temp1793044775072`, POST, raw, `application/json`, suburl `/wp-json/md/v1/wecom/notify`). The action's body template is database configuration, not a repo file: a connector change and a template change deploy as a pair, never separately.
+
+To change a webhook row or the action:
+
+1. Back up the target (Sequence step 3).
+2. Make the change host-side (LHC back office, or a row write on the host). Webhook rows carry no secrets and may be logged; the REST action's `configuration` carries the bearer and may not.
+3. Reset the LHC compile caches (command under Extension and connector changes) — the module cache keeps serving the previous REST configuration otherwise.
+4. Run `chat-verify`, then one real send read-back (a page marker plus one live card).
+
+To rotate a bearer:
+
+- Connector side: the bearer lives twice inside `lh_generic_bot_rest_api.configuration` — a top-level `auth_bearer` mirror and `parameters[i].auth_bearer`. LHC sends the parameter one (2026-10-28 bring-up lesson, see Production bring-up above). Rotate both, then reset the compile caches; between write and reset the module cache serves the old value. The new value must equal `md_wecom_notify.bearer_token`.
+- Desk side: `lh_abstract_rest_api_key.api_key` and `md_wecom_notify.lhc_api_key` are one value, written once into both places.
+- Every bearer write is host-side only — `wp option` or the LHC back office on the host. Never through the Mac, never into the repo or a log. Seal stdout before executing (AGENTS.md §5: 含密钥命令先封输出再执行) — a command that would echo the value is the wrong command. The log records key name and byte length only.
+
+### Extension and connector changes
+
+Deployment order (source: docs/deploy/lhc-wecom.md):
+
+1. `rsync` the extension to `<LHC root>/extension/<extension>/` (`mdmobile` or `mdvisitor`), without `tests/`.
+2. `scp` the connector to `wp-content/mu-plugins/md-wecom-notify.php`.
+3. Clear the compile cache. Skipping this step silently ignores the changed PHP and templates:
+
+   ```bash
+   rm -f <LHC root>/cache/cacheconfig/moduleCache_*.cache.php \
+         <LHC root>/cache/cacheconfig/templateCache.cache.php
+   ```
+
+   The next request recompiles. No PHP restart needed.
+4. Read back: page markers (`#md-quick`, `data-close-url`) and one real send.
+
+Then run `chat-verify` — all probes, a fresh cache-buster stamp per run (Verification gates). A change without a green verify is not done.
+
+### Duty-hours changes
+
+Department 1 runs `online_hours_active=1`, seven days `start_hour=100` / `end_hour=1300`. The site timezone in `settings/settings.ini.php` is `UTC`, and LHC compares `(int)(date('G').date('i'))`, so the HHMM values are site timezone: 100–1300 UTC = Beijing 09:00–21:00. When you change the timezone or the hours, convert the other side in the same change; skip the conversion and the whole duty window shifts. Semantics beyond the hours (activity signals, `always_on` vs `hide_online`): docs/deploy/lhc-wecom.md, 值班配置; widget states observed in the duty drills: GOAL.md, Batch 2 and the W1 section.
+
+## Rollback (per plane)
+
+The existing `## Rollback` section covers the push-window commands. This is the plane-by-plane view, including what to do outside a push window.
+
+### WordPress plane (mu-plugins, site files)
+
+The five chat mu-plugins ship with the site deployment batch, and the atomic switch keeps the previous version. Rollback is the site recipe (recipe name `rollback`, CLI subcommand `rollback-deploy`; restores files by rename, no database import):
+
+```bash
+just deploy rollback --target <target> --write
+```
+
+### LHC golden-source plane (tables and data)
+
+The recovery point is the DB snapshot taken before `chat-push` (Sequence step 3):
+
+```bash
+just deploy restore-snapshot db-YYYYMMDDTHHMMSSZ.sql.gz --target <target> --write
+```
+
+After any restore, two standing checks:
+
+1. Re-run `chat-verify` (all probes, fresh stamps).
+2. Confirm the four `lh_webhook` rows exist: `SELECT id, event FROM lh_webhook;` must list the four events with `disabled=0` (row contents are non-secret and may be logged).
+
+The second check is standing because of a real incident: on 2026-10-28 the golden-source push washed out all four `lh_webhook` rows on both staging and production — the WeCom chain was broken in both environments until the rows were rebuilt host-side from the recipe in docs/deploy/lhc-wecom.md (GOAL.md, Batch 2, 修的三个真雷 ①). A push that reports clean can still have lost these rows; count them after every restore.
+
+### Staging stuck pending batch
+
+`deployment <id> still needs verify/archive or rollback` is not fixed by retrying the deploy. In order:
+
+1. `just deploy resume-deploy --target <target> --write` — completes the pending verify and archives; or
+2. `just deploy rollback --target <target> --write` — undoes the batch.
+
+`forget` only when the batch directory has no `files/` — it drops the batch record. Detection: `ssh hostinger-metal-divider 'ls -d /home/u388076051/deploy-prev-metal-divider/<site>/2026* | tail -1'`; the latest entry with no archive directory beside it, with `latest` pointing at it, is the un-archived batch (AGENTS.md §5). The `forget` channel itself is being implemented in Batch 3 by another workstream; when it lands, this section names the command instead of the manual condition.
