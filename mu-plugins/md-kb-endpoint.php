@@ -1149,7 +1149,10 @@ const MD_KB_ENDPOINT_PAGE_HOSTS = array(
  * already named a pattern.
  *
  * @param mixed $page_url The request's page_url, untrusted.
- * @return array{context: string, sources?: non-empty-list<string>} The compact facts, or an empty context.
+ * @return array{context: string, sources?: non-empty-list<string>} The compact
+ *         facts and the source the answer cites, or an empty context with no
+ *         source. `sources` is present only when a published pattern resolved,
+ *         which is why the caller tests it with isset() rather than reading it.
  */
 function md_kb_endpoint_page_context( mixed $page_url ): array {
 	$empty = array( 'context' => '' );

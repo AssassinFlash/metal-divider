@@ -560,3 +560,131 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
     mask-image: none;
   }
 }
+
+/* The collaboration section's path vocabulary, 2026-10-29. The conversion
+   brought `ocm-path-row`, `ocm-info-card`, `ocm-path-card`, `ocm-content` and
+   their siblings in as class names with no rule anywhere in the volumes, and
+   the `is-active` binding `mdTierSteps` computes had nothing to switch on —
+   so the section could not say which tier a step applies to, and each info
+   block rendered as bare paragraphs. The values are the old page's own
+   `<style>` block on outdoor-privacy-landscape-screens, read 2026-10-29; none
+   of them are invented here. `ocm-tab-tier` deliberately sets no colour: the
+   markup's `:class` already toggles gold against white/42. */
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-content {
+  padding-top: 6px;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-accent-line {
+  width: 44px;
+  height: 2px;
+  background: #c9a962;
+  margin-bottom: 20px;
+  opacity: 0.9;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-tab-tier {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: color 0.28s ease;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-info-card,
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-path-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 16px;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-info-card {
+  padding: 18px 18px 16px;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-path-card {
+  padding: 16px;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-info-label {
+  margin: 0 0 10px;
+  color: #c9a962;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+/* The path card's heading is `ocm-info-label mb-0` in the markup. The
+   id-scoped label rule above would outrank the bare utility copy and put
+   10px back under it, so the markup's own intent is restated as a compound. */
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-info-label.mb-0 {
+  margin-bottom: 0;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-info-value {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  line-height: 1.42;
+  font-weight: 600;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-path-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.01);
+  transition: border-color 0.28s ease, background-color 0.28s ease, transform 0.28s ease;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-path-row.is-active {
+  border-color: rgba(201, 169, 98, 0.24);
+  background: rgba(201, 169, 98, 0.045);
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-path-name {
+  margin: 0 0 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-path-meta {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 12px;
+  line-height: 1.35;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-path-state {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-path-row.is-active .ocm-path-state {
+  color: #c9a962;
+}
+
+/* Panel height. The old site stacked panels with `position:absolute; inset:0`
+   and propped the container up with fixed 980px / 600px / 0 steps. An absolute
+   stage is stretched to whatever that fixed height says, so a panel taller than
+   the guess overflows it and lands on top of the next section — the number only
+   holds for one viewport and one step's copy length. Here the stack is a
+   one-cell grid instead: the displayed panel is the row, so the container is
+   always exactly as tall as the highest panel on screen and no height is
+   declared at any width — nothing to unset below 749, nothing to overflow.
+   Alpine runs enter (300ms) and leave (180ms) at the same time, so for that
+   180ms two panels share the cell and the row takes the taller one rather than
+   stacking them and shoving the page down. Gated on `html.md-js`: with scripts
+   off no `x-cloak` rule applies and all five panels are visible at once, and a
+   plain vertical stack is what those visitors should get. */
+html.md-js #outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-panel-stack {
+  display: grid;
+}
+html.md-js #outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-panel-stage {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+@media (max-width: 749px) {
+  #outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-path-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

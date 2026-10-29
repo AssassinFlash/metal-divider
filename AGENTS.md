@@ -109,7 +109,13 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 - 禁止临时起意用其他模型替代;任何模型改动 = 业主裁定。
 - 失败必须显性暴露(重试 + 报错),禁止静默降级。
 - 会话侧执行代理(子代理/新会话)的档位由执行会话按任务类型自行判断(业主 2026-10-24):纯文本/代码/研究任务用 sonnet 或 opus 档;多模态任务(看图、截图、视频)用 haiku 档。底层模型映射由业主经 cc-switch 随时调整,执行者不碰全局配置,文档与票据里不硬编码底层模型名。
-- **子代理推理档(业主 2026-10-27)**:子代理一律用 **xhigh** 推理档,不用 high;模型路由按任务选,当前会话 GLM 5.3 不可用时如实报告,不静默换档。
+- **子代理模型与档位匹配(业主 2026-10-29,取代 2026-10-27 的"一律 xhigh")**:子代理可选 **GLM 5.3**、**Grok 4.7**、**DeepSeek Flash** 三个模型,**任何模型被选用时都必须开到它的最高推理档**,不用中间档。
+  - 各模型最高档:GLM 5.3 = **Max**;Grok 4.7 = **XHigh**;DeepSeek Flash = **Max**。
+  - 特性与强弱(智力序:GLM 5.3 > Grok 4.7 > DeepSeek Flash):**GLM 5.3** 最复杂、专精代码、**不支持多模态**;**Grok 4.7** 综合、支持多模态;**DeepSeek Flash** 较低一档的多模态模型,但**速度极快**。
+  - 匹配原则(按任务难度,不是按数量):难而纯文本/代码的(架构判断、根因定位、并发修复、门禁修复、写守卫测试)→ **GLM 5.3 / Max**;需要看图或跨模态判断的(截图核对、视觉缺陷判定、图文一致性)→ **Grok 4.7 / XHigh**;大量、简单、可并行且要快要便宜的(逐页取样、批量只读盘点、清单核对)→ **DeepSeek Flash / Max**。任务跨类时按**最难的那一项**选模型,不按多数项。
+  - 并发优先(业主 2026-10-29):继续以高强度并发换效率,子代理不可省;但每次派发都要写明该子任务用哪个模型与档位,不允许"同一档跑所有任务"。
+  - 执行者只能经 `subagent_type`/档位参数选择;**底层厂商映射由业主经 cc-switch 决定**,执行者不碰全局配置,文档与票据里不硬编码底层模型名。某个模型不可用时**如实报告,不静默降档**。
+  - 子代理用完即回收:不许留后台常驻任务;浏览器会话、临时 profile、扫描产物按 §8 的回收要求处理。
 
 ## 7. 研究与核实
 
@@ -127,6 +133,7 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
   判据提示:同页若 `loading="auto"` 的图正常、而所有 `loading="lazy"` 的都是 0,那是环境,不是产品缺陷;拿这个对照能立刻分辨。
 - **同一个环境污染下的变体不要反复试(§0.1)**:既然滚动无效,把 `loading='eager'`、重设 `src`、`fetch` 都试一遍都是白费——两轮无新信息就该停。
 - **测完要把自己开的 Chrome 窗口删掉(2026-10-28,一天堆到 69 个)**- **测完要把自己开的 Chrome 窗口删掉(2026-10-28,一天堆到 69 个)**:宽视口测量要 `windows.create`,但每个窗口测完不回收,一天下来 Chrome 里堆了 **69 个窗口**,明显拖慢后续所有截图与 eval。按 §0 的保留边界,测量脚本应在 `finally` 里 `close` 会话 + `windows.remove` 窗口(本文档里几个 `tools/audit/*.py` 已这么做)。手工测量后用一个 while 循环批量删;注意 **`windows.remove` 对仍被会话占用的窗口报 `managed_resource_conflict`**,必须先把 session `close` 掉;即便如此仍有窗口删不掉——实测有两个窗口跨多轮报同一个错,而 `opencli` 的 **daemon 进程**(`node .../opencli/dist/src/daemon.js`)常驻并持有窗口引用。这不是操作失误,是架构使然,**不要为它反复重试**(§0.1);把会话都 `close` 干净即可,残留窗口由 daemon 生命周期管理。收尾读回:`windows.getAll` 应只剩开工时那两三个原始窗口。
+- **Playwright 也要回收(业主 2026-10-29 重申)**:每次 `launch` 都会在 `$TMPDIR` 建一个 `playwright_chromiumdev_profile-*`,异常退出会残留(实测累积 4 个)。收尾必须 `context.close()` + `browser.close()`,并检查 `ls -d /var/folders/*/*/T/playwright*` 为 0;删前先 `lsof +D` 确认无进程占用。**扫描产物同样按 §0 滚动淘汰**:同一视口只保留一份权威报告(如 `390` 只留三处判据全修好后那一份),被取代的旧目录直接删,不攒「以后可能有用」;`/tmp` 下曾一次攒到 **802MB**。脚本本身写进 `finally`,不靠手工补。
 - **登录态会把整站性能测量放大 16 倍(2026-10-28,一天内踩两次)**- **登录态会把整站性能测量放大 16 倍(2026-10-28,一天内踩两次)**:共享 Chrome profile 里残留着生产管理员会话,`windows.create` 继承它,于是 WordPress 给"已登录管理员"加载完整媒体栈——**64 个 script、9.9MB**,含 `media-views`、`wp-plupload`、`react-dom`、`redux-routine`、`mediaelement` 与 Hostinger 聊天机器人 vendor bundle(单个 8.3MB);访客态只有 **5 个 script、76KB script、691KB 总量**。差 16 倍。**先登出再测**;`tools/audit/perf.py` 已内置 `loggedIn` 断言,登录态直接 SKIP 而不是报一个假的页面重量。同一原因还让 affordance 审计把 WordPress admin bar 的 195 个 `ab-item` 当成 tiny target。
 - **随手造的 query 参数会命中别处的旧缓存(2026-10-28)**- **随手造的 query 参数会命中别处的旧缓存(2026-10-28)**:LiteSpeed 按**完整 URL 含 query** 缓存(`cache-control: public, max-age=604800`)。验证时用了 `?p=1`,命中了某个更早请求留下的缓存 HTML,它内嵌的 `tailwind.css?ver=` 是旧值,于是页面加载旧 CSS、8 个 `.cat-tab` 全是 `cursor:default`——看起来像修复没生效,实际生产已经好了。换成 `?fresh=<时间戳>` 立刻是 `pointer` + `flat=0`。**验证一律用 `?mdaudit=<时间戳>`,不复用,也不要用 `?p=`、`?v=1` 这类可能撞车的短参数**;出现"改了却没生效"时,先比对该页 HTML 里的 `tailwind.css?ver=` 与 `wp_upload_dir()/windpress/cache/tailwind.css` 的 mtime 是否一致。
 - **`opencli browser open` 会等到 `readyState: complete`(2026-10-28)**:实测 `open` 返回后立刻 `eval`,页面已是 `readyState: complete`、目标元素已存在,不存在"没加载完就审计"的竞态。另 `innerWidth` 在 `about:blank` 上就已等于窗口宽度,**它不是页面就绪信号**,拿它当"等页面加载好"的判断等于没等。

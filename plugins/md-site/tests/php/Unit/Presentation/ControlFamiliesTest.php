@@ -330,6 +330,35 @@ final class ControlFamiliesTest extends TestCase {
 	}
 
 	/**
+	 * An opened story panel stops being announced as hidden.
+	 *
+	 * The row keeps its trigger, so the row itself cannot carry `announce`:
+	 * marking a row `aria-hidden` would hide the button that opens it. The
+	 * panel is the element that actually collapses, and it must follow the
+	 * row's state. Measured on production 2026-10-29: row 3 open and 250px
+	 * tall, its panel still `aria-hidden="true"` — a screen reader was told
+	 * the visible content was hidden.
+	 */
+	public function test_an_open_story_panel_is_not_announced_as_hidden(): void {
+		$start = strpos( $this->runtime(), 'function bindIndexedGroups(' );
+		$this->assertNotFalse( $start, 'the runtime defines bindIndexedGroups' );
+		$body = (string) substr( $this->runtime(), (int) $start, 6000 );
+		$this->assertStringContainsString( 'group.announce', $body, 'a group can announce its own state' );
+
+		$call = $this->runtime();
+		$this->assertMatchesRegularExpression(
+			'/data-sps-story-panel[^\]]*announce:\s*true/s',
+			$call,
+			'the story panels are the group that announces, not the rows that hold the triggers'
+		);
+		$this->assertDoesNotMatchRegularExpression(
+			'/data-sps-row\'\),\s*attr:\s*\'data-sps-row\',\s*announce:\s*true/',
+			$call,
+			'a row never announces: it holds the trigger'
+		);
+	}
+
+	/**
 	 * The perforated section's markers and its drag both work, and the drag is
 	 * operable by keyboard.
 	 *

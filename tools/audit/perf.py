@@ -91,6 +91,12 @@ NAV_JS = """(() => {
     loggedIn: document.body.className.indexOf('logged-in') >= 0,
     scripts: document.querySelectorAll('script[src]').length,
     viewport: window.innerWidth,
+    // Page weight is only comparable at the same device pixel ratio: the
+    // browser picks a different `srcset` width per DPR, and on this site that
+    // is a 4.6x difference in bytes (measured 2026-10-29, same 1440 window:
+    // 3247KB/32req at DPR 2, 698KB/19req at DPR 1). A number without its DPR
+    // cannot be compared to any earlier run.
+    dpr: window.devicePixelRatio,
   };
 })()"""
 
@@ -177,7 +183,8 @@ def main() -> int:
                 rows.append(data)
                 print(f"{path:52} {label:5} ttfb={data.get('ttfb')}ms dns={data.get('dns')}ms "
                       f"conn={data.get('connect')}ms fcp={data.get('fcp')} lcp={data.get('lcp')} "
-                      f"{data.get('transferKB')}KB/{data.get('requests')}req vw={data.get('viewport')}")
+                      f"{data.get('transferKB')}KB/{data.get('requests')}req vw={data.get('viewport')} "
+                      f"dpr={data.get('dpr')}")
     finally:
         run(["close", "--session", session])
         run(["chrome", "call", "windows.remove", json.dumps([window_id])])

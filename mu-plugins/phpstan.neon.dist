@@ -4,6 +4,14 @@ includes:
 
 parameters:
 	paths:
+		# Every mu-plugin is listed by name. A new file that is not added here
+		# is invisible to the analysis, and its tests then fail with
+		# `function.notFound` for every symbol they exercise — the chat
+		# plugins shipped that way and turned the gate red with 75 errors that
+		# were all pointing at the missing entries below.
+		- md-chat-delete.php
+		- md-chat-email.php
+		- md-chat-launcher.php
 		- md-deploy-reset.php
 		- md-error-recorder.php
 		- md-site-guards.php

@@ -2049,7 +2049,21 @@ class="xo-section xo-section--template--21844031930621__contact_v5_yCw9Wf color-
             <h3 class="text-xl font-serif text-white mb-1">Send Us a Message</h3>
             <p class="text-sm text-white/40 mb-6">We respond within 24 hours</p>
 
-            [lc_get_partial slug="md-inquiry-cta"]
+            <!-- The native inquiry form (plugins/md-inquiry Form.php, the
+                 shortcode the footer's quote dialog also places). Not the
+                 md-inquiry-cta band partial: that one is the link-only CTA
+                 and its own docblock forbids carrying the form.
+
+                 .md-inquiry is the inquiry PAGE's frame (gradient + 56px/88px
+                 padding, inquiry.css), so inside this card it would draw a
+                 frame within a frame. The footer's dialog clears the same
+                 frame from chrome.css; home.css is not this change's to
+                 edit, so the two utilities below neutralise it here instead.
+                 They sit in the `utilities` layer, which the entry declares
+                 after `components`, so they win over the volume's rule. -->
+            <div class="[&_.md-inquiry]:[background:none] [&_.md-inquiry]:p-0">
+              [md_inquiry_form source_module="home-contact"]
+            </div>
           </div>
         </div>
 

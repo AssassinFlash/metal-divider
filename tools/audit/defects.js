@@ -58,6 +58,19 @@
     // it exists to darken what is behind it, not to hold content.
     if (/\bbg-(?:\[[^\]]+\]|[a-z]+)\/\d+/.test(cls)) return true;
     if (/\bbg-\[[^\]]+\]\/\d+/.test(cls)) return true;
+    // A layer placed BEHIND its content cannot make a hole. The breadcrumb band
+    // on shop, gallery, perforated and the series archives carries a converted
+    // `xo-section-bg-image` wrapper at `position: absolute; inset: 0;
+    // z-index: -2` whose image is never set — and the old site is byte-for-byte
+    // the same (measured 2026-10-29 on metalpartition.com/collections/all:
+    // white band, `z-index: -2`, `backgroundImage: none` on both wrappers). The
+    // band is white by spec #65, so nothing is lost; four 1425x124 blocks were
+    // being reported as holes. Scoped to negative z-index on purpose: an
+    // absolutely positioned layer with a normal or positive z-index sits OVER
+    // content, and an unpainted one there really is a hole.
+    const position = getComputedStyle(el).position;
+    if ((position === 'absolute' || position === 'fixed') &&
+        parseInt(getComputedStyle(el).zIndex, 10) < 0) return true;
     return false;
   };
   [...document.querySelectorAll('main section, main article, main figure, main div')].forEach((el) => {
@@ -80,6 +93,41 @@
     if (norm(el.textContent).length > 0) return;
     const cs = getComputedStyle(el);
     if (cs.backgroundImage !== 'none') return;
+    // A wrapper is not empty when what it wraps is painted. The perforated
+    // page's pattern switcher is `div.absolute.inset-0` with a transparent
+    // background over children that carry the gradient — four such wrappers
+    // were reported as unpainted 375x380 blocks at 390 (measured 2026-10-29).
+    //
+    // One level was still too shallow: at 320 the same page's mask overlay
+    // (`div.absolute.inset-0[data-pa-mask]`) holds `…_masked-left` (50% wide,
+    // itself unpainted) and only its *grandchild* paints — a radial-gradient
+    // hole pattern, 320x380 inside a 305x380 box (measured 2026-10-29). So
+    // walk all descendants, but require the painted one to cover half the box:
+    // accepting any deep descendant would let a single small dot excuse a real
+    // void, which is the failure this check exists to catch.
+    const area = r.width * r.height;
+    const paintedBelow = [...el.querySelectorAll('*')].some((node) => {
+      const ks = getComputedStyle(node);
+      let paints = ks.backgroundImage !== 'none';
+      if (!paints) {
+        const colour = ks.backgroundColor || '';
+        const rgb = /rgba?\([^)]*,\s*([0-9.]+)\s*\)/.exec(colour);
+        paints = (rgb ? parseFloat(rgb[1]) > 0.05 : false) || /\/\s*0?\.\d+\)/.test(colour);
+      }
+      if (!paints) return false;
+      const kr = node.getBoundingClientRect();
+      return kr.width * kr.height >= area * 0.5;
+    });
+    if (paintedBelow) return;
+    // A scrim is paint, and this check only knew `background-image`: a
+    // `bg-black/55` overlay has `backgroundColor: oklab(0 0 0 / .55)` and
+    // `backgroundImage: none`, so it was reported as an unpainted block.
+    // Measured 2026-10-29 at 390: three of the perforated page's findings
+    // were scrims exactly like that. Any colour with real alpha is paint.
+    const bg = cs.backgroundColor || '';
+    const alpha = /rgba?\([^)]*,\s*([0-9.]+)\s*\)/.exec(bg);
+    if (alpha && parseFloat(alpha[1]) > 0.05) return;
+    if (/\/\s*0?\.\d+\)/.test(bg)) return;
     add('empty-block', 'high', el, Math.round(r.width) + 'x' + Math.round(r.height) + ' with no text, no image, no paint');
   });
 
@@ -229,7 +277,16 @@
   };
   [...document.querySelectorAll('main section, main > div')].forEach((el) => {
     if (!shown(el)) return;
-    const kids = [...el.children].filter(shown);
+    // A fixed element is not in the flow: its rect is a viewport position, so
+    // the vertical distance to a flow sibling is not a gap in the document.
+    // Measured 2026-10-29 at 390: the pattern catalogue's mobile quote bar is
+    // `position: fixed; 375x69`, and comparing it with its flow neighbours
+    // produced a 576px "gap" on both the shop and the series page.
+    const inFlow = (node) => {
+      const position = getComputedStyle(node).position;
+      return position !== 'fixed' && position !== 'sticky';
+    };
+    const kids = [...el.children].filter((kid) => shown(kid) && inFlow(kid));
     if (kids.length < 2) return;
     for (let i = 1; i < kids.length; i++) {
       const a = kids[i - 1];

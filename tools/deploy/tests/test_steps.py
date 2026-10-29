@@ -1050,3 +1050,38 @@ def test_forget_deploy_wraps_the_archive_with_its_leftover_note(
     assert result.notes and "block the next publish" in result.notes[0], (
         "a surviving sibling must be named, never silently stranded"
     )
+
+
+def test_each_checkout_stages_in_its_own_workspace(tmp_path: Path) -> None:
+    """Two checkouts never share a staging tree.
+
+    The staging tree is a build cache keyed by a fingerprint of the source. Two
+    checkouts have different sources and therefore different fingerprints, so a
+    shared workspace lets one checkout's deploy publish a tree built from the
+    other's files. That happened on 2026-10-29: a production deploy logged
+    eleven artifacts `deployed … by rename`, switched in 0.023 s, answered
+    every verify probe 200, and served the other checkout's bytes the whole
+    time — the stamp it wrote was the other checkout's fingerprint exactly.
+
+    Same path twice must give the same directory (the cache has to work within
+    one checkout), and two different paths must never give the same one.
+    """
+    from md_deploy import cli
+
+    first = cli._workspace(tmp_path / "one")
+    again = cli._workspace(tmp_path / "one")
+    other = cli._workspace(tmp_path / "two")
+
+    assert first == again, "one checkout keeps its cache between deploys"
+    assert first != other, "two checkouts never stage into the same tree"
+    assert first.parent == other.parent, "both live under the same workspace root"
+    assert first.name != other.name, "the split is the checkout's own directory"
+
+
+def test_the_workspace_name_is_not_the_checkout_path(tmp_path: Path) -> None:
+    """The directory name is a digest, not the path: a clone path may hold anything."""
+    from md_deploy import cli
+
+    workspace = cli._workspace(tmp_path / "a b c")
+    assert " " not in workspace.name, "the digest is space-free"
+    assert len(workspace.name) == 12, "a stable short digest names the checkout"

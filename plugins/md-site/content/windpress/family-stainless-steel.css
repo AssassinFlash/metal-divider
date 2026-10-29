@@ -178,8 +178,26 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
    right column (about 640px at 1440) stayed mostly flat black. The figure
    takes the remaining width. Closed rows share one pitch: the panel margin
    sits outside the 0fr track, and that track only collapses if its child
-   has min-height 0. The chevron is inset past the fixed back-to-top
-   (40px control, 30px from the viewport edge; 44px / 16px below 990). */
+   has min-height 0.
+
+   The chevron ring is the row's last child, so it has to clear the fixed
+   back-to-top that floats over the column's right edge. That control is a
+   40px square 30px in from the viewport edge, and 44px square 16px in
+   below 990 (chrome.css:1593-1609 and chrome.css:2077-2082). The two
+   properties below mirror those numbers, so the reserve is derived from
+   the control instead of the hand-tuned 72px it replaces. Only the part of
+   the footprint the container's own `md:px-10` does not already cover is
+   taken — 70 - 40 = 30 — because the control can only overlap the column
+   by what is left over; the 991-1100 band stops losing 42px of text width
+   to a control that never reaches it. On widths where the container's
+   centring gutter already clears the control the reserve goes unused,
+   which is still less than the old constant everywhere and never
+   under-reserves. */
+#stainless-project-stories-template--21844035043581__stainless-project-stories {
+--sps-btt-size: 40px;
+--sps-btt-inset: 30px;
+--sps-pad: 40px;
+}
 #stainless-project-stories-template--21844035043581__stainless-project-stories .sps-scene {
 opacity: 0;
 z-index: 0;
@@ -191,7 +209,7 @@ z-index: 1;
 pointer-events: auto;
 }
 #stainless-project-stories-template--21844035043581__stainless-project-stories .sps-story-safe {
-padding-inline-end: 72px;
+padding-inline-end: calc(var(--sps-btt-size) + var(--sps-btt-inset) - var(--sps-pad));
 }
 #stainless-project-stories-template--21844035043581__stainless-project-stories .sps-story-row {
 padding-top: 16px;
@@ -240,11 +258,20 @@ min-height: 220px;
 object-fit: cover;
 }
 @media (max-width: 990px) {
-#stainless-project-stories-template--21844035043581__stainless-project-stories .sps-story-safe {
-padding-inline-end: 64px;
+#stainless-project-stories-template--21844035043581__stainless-project-stories {
+--sps-btt-size: 44px;
+--sps-btt-inset: 16px;
+}
+}
+@media (max-width: 767px) {
+#stainless-project-stories-template--21844035043581__stainless-project-stories {
+--sps-pad: 20px;
 }
 }
 @media (max-width: 749px) {
+#stainless-project-stories-template--21844035043581__stainless-project-stories {
+--sps-pad: 16px;
+}
 #stainless-project-stories-template--21844035043581__stainless-project-stories .sps-story-body {
 grid-template-columns: minmax(0, 1fr);
 }
@@ -254,5 +281,78 @@ min-height: 200px;
 }
 #stainless-project-stories-template--21844035043581__stainless-project-stories .sps-story-label {
 white-space: normal;
+}
+}
+
+/* The CTAs the conversion carried over as class names only.
+ *
+ * The old site painted these from its own stylesheet; the volume conversion
+ * kept the names on the markup and dropped every rule, so since then they
+ * have matched nothing. On the hero's primary CTA that was not cosmetic:
+ * the anchor carries `text-[#1a1a1a]` and no fill at all, so the label sat
+ * on the hero's own ground — 1.06:1 on #141414, and 1.30:1 over a white
+ * photo behind the hero's .85 overlay. A 15px label needs 4.5:1, so it was
+ * unreadable at every width.
+ *
+ * Every rule below adds only what the element's own Tailwind utilities do
+ * not already do; checked one by one against the markup before writing:
+ *   .sps-story-cta    already has bg-[#c9a962] text-[#000000]
+ *                     transition-colors hover:bg-[#d4b878] — complete, so
+ *                     it gets no rule here. A rule would paint the same
+ *                     two properties twice for no gain.
+ *   .sps-primary-cta  has bg-[#c9a962] and text-[#0a0a0a], but a
+ *                     `transition-colors` with no hover state to reach.
+ *   .sh-hero-btn-ghost has border-white/20 and text-white/90, no hover.
+ *   .sh-card-link     has text-white/90 and no hover.
+ * The heading and copy names (sps-heading, sps-copy, sps-card-title,
+ * sp-panel) are implemented entirely by the Tailwind utilities on the same
+ * elements, so they are left alone rather than restyled a second time.
+ *
+ * Colours are the page's own gradient pair, the one its other CTAs already
+ * carry inline as `from-[#c9a962] to-[#d4b878]`, read through tokens.css.
+ * Ratios below are the label against its worst backdrop: #1a1a1a on
+ * #c9a962 measures 7.74:1 and on #d4b878 9.06:1 (was 1.06:1); #0a0a0a on
+ * #d4b878 hover measures 10.30:1; white on the floating card's lightest
+ * composite measures 8.59:1. */
+#stainless-hero-template--21844035043581__stainless-hero .sh-hero-btn-primary {
+background-image: linear-gradient(to right, var(--md-gold, #c9a962), var(--md-gold-light, #d4b878));
+box-shadow: 0 4px 16px rgba(201, 169, 98, 0.3);
+transition: box-shadow 300ms ease, transform 300ms ease;
+}
+#stainless-hero-template--21844035043581__stainless-hero .sh-hero-btn-primary:hover {
+background-image: linear-gradient(to right, var(--md-gold-light, #d4b878), var(--md-gold, #c9a962));
+box-shadow: 0 8px 32px rgba(201, 169, 98, 0.4);
+transform: translateY(-2px);
+}
+#stainless-hero-template--21844035043581__stainless-hero .sh-hero-btn-ghost {
+transition: background-color 300ms ease, border-color 300ms ease;
+}
+#stainless-hero-template--21844035043581__stainless-hero .sh-hero-btn-ghost:hover {
+border-color: rgba(255, 255, 255, 0.4);
+background-color: rgba(255, 255, 255, 0.08);
+}
+#stainless-hero-template--21844035043581__stainless-hero .sh-card-link {
+transition: color 200ms ease;
+}
+#stainless-hero-template--21844035043581__stainless-hero .sh-card-link:hover {
+color: #ffffff;
+text-decoration: underline;
+text-underline-offset: 4px;
+}
+#stainless-screen-types .sps-primary-cta:hover {
+background-color: var(--md-gold-light, #d4b878);
+}
+/* The hero CTAs had no motion of their own before the rules above gave them
+   a hover state, and nothing in chrome.css stops a transform under
+   `prefers-reduced-motion` (its block only resets scroll-behavior), so the
+   lift is switched off here rather than left as a new source of movement.
+   Same selectors as above, declared later, so they win without
+   `!important`. Colour changes stay: only the movement is dropped. */
+@media (prefers-reduced-motion: reduce) {
+#stainless-hero-template--21844035043581__stainless-hero .sh-hero-btn-primary {
+transition: none;
+}
+#stainless-hero-template--21844035043581__stainless-hero .sh-hero-btn-primary:hover {
+transform: none;
 }
 }

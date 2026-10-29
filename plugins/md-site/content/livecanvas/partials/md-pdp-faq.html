@@ -1,4 +1,13 @@
 
         <div class="pdp-faq-item">
           <button class="pdp-faq-q" type="button" @click="activeFaq = activeFaq === 0 ? -1 : 0" :aria-expanded="activeFaq === 0">Can this pattern be adjusted to fit my opening? <span x-text="activeFaq === 0 ? '−' : '+'"></span></button>
-          <div class="pdp-faq-a" x-show="activeFaq === 0" x-collapse><p>Yes. Scale, repeat, orientation, and open area can be adjusted before cutting so the final panel fits the project drawing.</p>
+          <div class="pdp-faq-a" x-show="activeFaq === 0" x-collapse><p>Yes. Scale, repeat, orientation, and open area can be adjusted before cutting so the final panel fits the project drawing.</p></div>
+        </div>
+        <div class="pdp-faq-item">
+          <button class="pdp-faq-q" type="button" @click="activeFaq = activeFaq === 1 ? -1 : 1" :aria-expanded="activeFaq === 1">Can I request a physical sample? <span x-text="activeFaq === 1 ? '−' : '+'"></span></button>
+          <div class="pdp-faq-a" x-show="activeFaq === 1" x-collapse><p>Yes. Samples confirm pattern scale, finish direction, reflection, and edge quality before full production.</p></div>
+        </div>
+        <div class="pdp-faq-item">
+          <button class="pdp-faq-q" type="button" @click="activeFaq = activeFaq === 2 ? -1 : 2" :aria-expanded="activeFaq === 2">Which files make quoting faster? <span x-text="activeFaq === 2 ? '−' : '+'"></span></button>
+          <div class="pdp-faq-a" x-show="activeFaq === 2" x-collapse><p>CAD, PDF elevations, rough dimensions, quantity, finish direction, and site photos give the fastest path to a useful quote.</p></div>
+        </div>

@@ -1436,4 +1436,61 @@ final class CardsTest extends TestCase {
 			}
 		);
 	}
+
+	/**
+	 * The search panel searches the site, and a hit with no picture keeps no frame.
+	 *
+	 * The store endpoint only knows products, so `manufacturing` — a real page
+	 * here — answered `[]` and the panel printed "No patterns match", while
+	 * `/wp-json/wp/v2/search` returned the Manufacturing Process page
+	 * (measured on production 2026-10-29). WordPress's own cross-type search
+	 * replaces it.
+	 *
+	 * The second half is the risk that change introduces: that API returns a
+	 * title, a url and a subtype and no media at all, and the old fill helper
+	 * only assigned `img.src` when there was a source — leaving the element in
+	 * the DOM as an empty grey box beside the title. A row without a picture
+	 * must lose the frame, not keep an empty one.
+	 */
+	public function test_search_covers_the_site_and_a_pictureless_hit_keeps_no_frame(): void {
+		$source = (string) file_get_contents( dirname( __DIR__, 4 ) . '/assets/js/md-chrome.js' );
+
+		$this->assertStringContainsString(
+			'/wp-json/wp/v2/search?per_page=',
+			$source,
+			'the panel asks WordPress for every type, not only products'
+		);
+		$this->assertDoesNotMatchRegularExpression(
+			'/var url = \'\/wp-json\/wc\/store\/v1\/products\?per_page=6&search=\'/',
+			$source,
+			'the product-only search is not what the panel runs'
+		);
+
+		$helper = $this->slice_between( $source, 'var fillTile = function', 'The series tiles carry' );
+		$this->assertStringContainsString(
+			'(media || image).remove()',
+			$helper,
+			'a hit with no picture removes the media frame instead of leaving it empty'
+		);
+		$this->assertMatchesRegularExpression(
+			'/if \(src\) \{.*?\} else \{.*?remove\(\)/s',
+			$helper,
+			'both branches are explicit: a source fills the frame, the absence of one drops it'
+		);
+	}
+
+	/**
+	 * The text between two markers, so an assertion can name one function.
+	 *
+	 * @param string $source The file.
+	 * @param string $start  The opening marker.
+	 * @param string $end    The closing marker.
+	 */
+	private function slice_between( string $source, string $start, string $end ): string {
+		$from = strpos( $source, $start );
+		$this->assertNotFalse( $from, 'the source carries ' . $start );
+		$to = strpos( $source, $end, (int) $from );
+		$this->assertNotFalse( $to, 'the source carries ' . $end . ' after ' . $start );
+		return substr( $source, (int) $from, (int) $to - (int) $from );
+	}
 }

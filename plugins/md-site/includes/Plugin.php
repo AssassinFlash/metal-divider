@@ -19,6 +19,7 @@ use MetalDivider\Site\Presentation\Partials;
 use MetalDivider\Site\Presentation\Shortcodes;
 use MetalDivider\Site\Seo\CatalogRobots;
 use MetalDivider\Site\Seo\PageNoindex;
+use MetalDivider\Site\Seo\SitemapDedupe;
 use MetalDivider\Site\Seo\SchemaFilters;
 
 /**
@@ -43,6 +44,7 @@ final class Plugin {
 	 * @param SchemaFilters $schemas    The SEO schema filters (ticket #34).
 	 * @param CatalogRobots $catalog_robots The catalog filter/search noindex rule.
 	 * @param PageNoindex   $page_noindex   The page-level noindex + canonical rules.
+	 * @param SitemapDedupe $sitemap_dedupe The shop page's duplicate sitemap entry.
 	 * @param Assets        $assets     The front-end scripts (chrome runtime + Alpine).
 	 * @param Catalog       $catalog    The pattern catalog's cards, pager and query inputs.
 	 * @param Sizes         $media_sizes The 1:1 image sides the catalog card draws.
@@ -55,6 +57,7 @@ final class Plugin {
 		private readonly SchemaFilters $schemas,
 		private readonly CatalogRobots $catalog_robots,
 		private readonly PageNoindex $page_noindex,
+		private readonly SitemapDedupe $sitemap_dedupe,
 		private readonly Assets $assets,
 		private readonly Catalog $catalog,
 		private readonly Sizes $media_sizes,
@@ -79,6 +82,7 @@ final class Plugin {
 		$this->schemas->register();
 		$this->catalog_robots->register();
 		$this->page_noindex->register();
+		$this->sitemap_dedupe->register();
 		$this->assets->register();
 		$this->catalog->register();
 		$this->media_sizes->register();

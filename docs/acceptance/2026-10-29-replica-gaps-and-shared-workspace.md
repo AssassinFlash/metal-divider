@@ -1,0 +1,2471 @@
+# 2026-10-29 · 复刻缺口修复、共享暂存区缺陷与主图数据画像
+
+本文件记录业主指出的「复刻没复刻完全」之后的一整轮工作。每一条都给出可复核的
+命令与输出，没有一条来自"看代码觉得应该对"。
+
+## 一、八个页面域的只读盘点
+
+八个子代理并行比对旧站 `metalpartition.com` 与本站在线内容，目标是找出**旧站有、
+我方缺**的内容块与样式。总量：`plugins/md-site/content/livecanvas/` 26 个模板与
+`content/windpress/` 38 个卷。
+
+盘点得出的三类问题，按可复现性排序：
+
+1. **线上可复现的硬缺陷**：stainless 主 CTA 无背景（`#1a1a1a` 压在 `#141414` 上，
+   对比度 1.06:1）；outdoor `Spec sheets by pattern` 整块出现两次；outdoor 15 行采购
+   档位表因 `ocm-*` 无样式退化为连续段落。
+2. **死类名**：类名写在 `class` 属性里，但在对应卷、全量 `content/windpress/*.css`
+   与生产编译产物三处命中均为 0，而旧站对同名类有规则。
+3. **内容缺口**：PDP 的 21:9 宽幅槽位有数据、有样式、有文档，唯独模板没接；
+   首页收尾区块的询盘表单被删成两个链接。
+
+## 二、守卫本身失效的三处（比缺内容更值得记）
+
+### 2.1 不可证数字的守卫对 en-dash 全盲
+
+`TemplatesTest::test_no_unverified_numeric_claims_on_customer_faces` 的模式缺 `/u`
+标志，而全站年份跨度用的都是 en dash（U+2013）。PCRE 按字节走，三个字节被逐个
+比对，任何范围都匹配不上。补上 `/u` 并收紧后，一次性抓出 8 条本应被拦下的声明：
+
+| 位置 | 声明 |
+|---|---|
+| `family-outdoor-privacy.html:207` | `4,000+ hr ASTM B117` |
+| `family-outdoor-privacy.html:784` | `4,000hr+ Salt Spray Tested` |
+| `family-outdoor-privacy.html:843` | `25+ Year Finish Life` |
+| `family-outdoor-privacy.html:2396` | `paint fades in 3–5 years; PVD holds 10–15` |
+| `family-expanded-metal.html:1448` | `ASTM B117 500–1000 hrs` |
+| `family-perforated-panels.html:617` | `10-year color warranty. 500hr salt spray pass` |
+| `family-perforated-panels.html:1078` | `ASTM B117 500–1000 hrs` |
+| `faqs.html:932` / `family-perforated-panels.html:1272` | `10–20 year warranty` |
+
+处理原则：保留结论（316L 适合海岸、PVD 抗 UV），去掉无来源的数字。`ASTM B117`
+作为测试标准代号保留，它不是我方的实测值。阴性对照（`24 hours` / `48 hours` /
+`72 Hours` / `4 hours` 这类回复时限）全部不误伤。
+
+证据：删掉 `family-expanded-metal.html` 的说明句后守卫变红
+（`unverified numeric claims on customer faces: family-expanded-metal.html:
+salt-spray or life figures (1000 hrs)`），恢复后绿。
+
+### 2.2 一条恒真断言
+
+`ChatDeleteTest::test_forget_wecom_card_drops_only_the_deleted_chat` 原文：
+`assertSame( array( 11 => 555 ), array( 11 => 555 ) )` —— 两边是同一个字面量。
+它在任何行为下都不会失败。
+
+改成按调用前后的增量统计 `update_option` 写入次数（`setUp()` 未重置写入日志，
+故必须比增量）。实证：删掉 `md_chat_delete_forget_wecom_card()` 里的
+`array_key_exists( $chat_id, $map )` 守卫，测试报
+`Failed asserting that 2 is identical to 1`；旧写法在此 bug 下仍是绿的。
+
+### 2.3 一条把缺陷写成契约的断言
+
+`MobileChromeTest:66` 断言 JS 里必须出现
+`/wp-json/wc/store/v1/products?per_page=6`。任何真正修好搜索的改动都会被它判红。
+它测的是实现字符串，不是它声称保护的性质。改为断言全站搜索端点，并保留原有的
+负面保护（不许用 `/wp/v2/product`）。
+
+## 三、部署"假成功"的结构缺陷
+
+### 现象
+
+部署日志：11 个 artifact 全部 `deployed … by rename`、`total switch duration:
+0.023 s`、`deploy-verify` 五项全 200、页面缓存 miss→hit。批次号
+`20261028T163924413324Z-3fb2535`，无 `-dirty` 后缀（树是干净的）。
+
+线上实际内容（`?mdaudit` 绕缓存读取）：
+
+```
+Spec sheets by pattern   出现 2 次   ← 本次要删的重复区块还在
+4,000hr                  1 处        ← 本次要清的声明还在
+25+ Year                 1 处        ← 同上
+```
+
+### 根因
+
+`tools/deploy/src/md_deploy/backup.py:55`：
+
+```python
+DATA_HOME = Path.home() / "metal-divider-local"
+```
+
+`cli.py` 的 `_workspace()` 用它拼出暂存区 `~/metal-divider-local/deploy-workspace`
+—— **全机唯一固定路径**。而 `stage_tree()` 用"源指纹 vs 树旁戳"决定是否重建：
+
+```python
+if stamp.is_file() and stamp.read_text().strip() == fingerprint and (...):
+    return destination
+```
+
+两个 checkout 共用一个暂存区时，后者重建会覆盖前者即将发布的树。
+
+指纹对照（决定性证据）：
+
+| 来源 | 指纹 |
+|---|---|
+| 那次部署写下的戳 | `11052c53…` |
+| 另一 checkout `.scratch/impl-162-merge`（提交 `7cf70a8`，不含本次改动） | `11052c53…` 相同 |
+| 本 checkout | `de769d2e…` 不同 |
+
+### 修法
+
+`_workspace(repository)` 按 checkout 隔离：
+
+```python
+return DATA_HOME / "deploy-workspace" / _checkout_id(repository)
+
+def _checkout_id(repository: Path) -> str:
+    return hashlib.sha256(str(Path(repository).resolve()).encode("utf-8")).hexdigest()[:12]
+```
+
+两个 checkout 的 id：`c620c0ce6bae`（本仓库）与 `b1aae010fef6`（另一 checkout）。
+
+守卫（均实证会红）：同一 checkout 的 workspace 稳定（缓存仍要工作）；两个
+checkout 永不落在同一目录。把 `_workspace` 改回共享路径，两条立即变红。
+
+### 修复后的验证顺序
+
+隔离后的首次部署（`20261028T165638318132Z-4418556`）先读隔离暂存树的内容：
+`RELATED_LIMIT = 4` 命中 1、`announce: true` 命中 1、`Spec sheets by pattern`
+1 次、`4,000hr` 0 次——树上是要发布的内容。切换后再比对生产：
+
+| 文件 | 仓库 | 生产 |
+|---|---|---|
+| `Shortcodes.php` | `6b0374d9…` | `6b0374d9…` |
+| `family-outdoor-privacy.html` | `f2a81d16…` | `f2a81d16…` |
+| `md-chrome.js` | 含未部署的搜索改动 | `74583d96…` = 提交 `4418556` 版本 |
+
+## 四、修复的线上实证
+
+### 内容读回（11 项，`fail=0`）
+
+outdoor 重复区块 2→1；`4,000hr`、`25+ Year`、`3166`、`optione`、`500hr`、
+`500–1000 hrs`、`10–20 year warranty` 全部归零；outdoor 的 316L 说明保留；
+首页原生询盘表单存在。
+
+### WindPress 重编译
+
+Tailwind v4 没有服务端构建，规则不进编译缓存就不生效。编译前
+`windpress-check` 报缺 5 个锚类，其中两个是首页表单用的
+`[&_.md-inquiry]:[background:none]` 与 `[&_.md-inquiry]:p-0`。编译后：
+
+```
+windpress cache mtime: 1793178261 → 1793207316
+windpress-check: anchor classes present
+```
+
+编译产物 635KB 里逐类确认命中 10/10：`sh-hero-btn-primary`、`sps-primary-cta`、
+`sps-btt-size`、`ocm-path-row`、`ocm-info-card`、`gh-hero-chip`、`gh-feature-title`、
+`lc-pattern-overlay`、`ppr-scope`、`emf-acc-body`。
+
+### 真 Chrome 实测（不是读源码）
+
+stainless 主 CTA：
+
+```
+background-image: linear-gradient(rgb(201,169,98), rgb(212,184,120))   ← 修复前 none
+color: rgb(26,26,26)   → 7.74:1（修复前 1.06:1）
+visible: true, 204×53px
+```
+
+outdoor 采购档位表：
+
+```
+ocm-path-row   display:flex  ← 修复前为普通段落
+               border 1px rgba(255,255,255,0.06), radius 12px, 高 67px
+ocm-info-card  border 1px, radius 16px
+is-active 态   border rgba(201,169,98,0.24)   ← 修复前无此规则
+```
+
+### 首页询盘表单
+
+页面渲染出 2 个表单，`source_module` 分别为 `home-contact` 与 `quote-modal`
+（页内收尾区块与页眉报价弹窗，非重复渲染）。字段完整：
+`md_inquiry_{nonce,action,locale,source_page,source_module,source_button,name,email,company,phone,country,scope}`，
+表单体 6771 字符。
+
+## 五、PDP 主图：数据画像而非代码缺陷
+
+线上实测（样本取自 `/shop/` 的 24 个真实产品链接）：
+`pdp-hero-plate: 22 / 24`。缺的两个是 `alhambra` 与 `aztec`。
+
+查证过程中我撤回了两条自己的错误推断，记在这里因为它们容易被再次犯：
+
+- **撤回**「媒体里没有适合竖框的图」——错。两者在旧站导出里各有 5 张与 2 张图。
+- **撤回**用 `md_media_class` taxonomy 去查——**该分类法在生产不存在**，附件上
+  没有任何 taxonomy。真实机制是 `_md_role` 元字段 + alt 文本关键词回退
+  （`Shortcodes.php:715-721`）。
+
+真实数据（生产 WP-CLI 实测）：
+
+```
+已发布产品 146
+├─ 1 张图: 15
+│   ├─ role=accent render → 7   （accent 在候选内，主图取得到）
+│   └─ role=scene         → 8   （唯一那张被 hero 背景占用 → 主图无候选）
+└─ 2 张以上: 131
+```
+
+`alhambra`（`role=installed screen scene`）与 `aztec`（`role=official installation
+scene`）属那 8 个 `scene` 单图产品。`first_in_order` 正确排除了已用图，没有让同一
+张图填两个槽位。
+
+**这不是代码缺陷**：一个只有一张场景图的产品无法同时填 hero 与主图。可选处置
+（待业主定）：接受主图为空（当前，hero 单列，页面正常）／为该 8 个产品补图／
+允许两槽复用同一张（不推荐——同一张图在首屏出现两次）。
+
+## 六、本轮未完成
+
+- 搜索改造（`daa638e`）已通过门禁，部署中；首次部署因 SSH 断连失败于切换前，
+  已重试。
+- 390 / 320 窄屏复核：改动后未重跑。
+- 生产管理员只有 `md_admin / martinfu127@gmail.com`，与业主指定的
+  `srchesterjohn@gmail.com` 不一致，需业主确认，未擅改。
+
+## 七、我自己的一次操作失误
+
+生成 WP 认证 cookie 的 SSH 命令**没有封住输出**，凭据被回显到会话。cookie 一小时
+后自然过期，风险有限，但违反了仓库"含密钥命令先封输出"的纪律。记录在此，
+后续同类操作必须先重定向再取用。
+
+## 八、图集恢复与最后四个主图位
+
+### 8.1 图集只挂了应有量的四分之一
+
+生产 WP-CLI 实测（2026-10-29）：
+
+```
+已发布产品 146
+当前挂到产品的图   277
+媒体库里可用的孤儿 1063
+可恢复量            786
+附件总数 1319，其中 post_parent=0 的 1319 个 —— 全部是孤儿
+```
+
+`data/media-final/products/<slug>/` 里每个产品都有完整的序号变体（alhambra
+`--01--`…`--05--`、breeze-block 28 个文件、kyoto-dynasty 27 个），导入时只把
+一张写进 `_thumbnail_id`，其余留在库里未挂回。
+
+`tools/media/reattach-orphans.sh` 按文件名里的 `--NN--` 序号把孤儿挂回
+`_product_image_gallery`，并把附件的 `post_parent` 指回产品。先 dry run 后写库：
+
+```
+products_changed = 145 / 146
+images_added     = 785
+```
+
+写库前快照 `db-20261028T165621Z`。验证 `white-sands`：raw 与
+`wc_get_product()->get_gallery_image_ids()` 都返回 10 个 id，含 `1258`
+（400×800 竖版 `finish preview`）。`media_ids()` 读的正是 thumbnail 加
+gallery（`Shortcodes.php:687-705`），所以挂回即刻生效。
+
+**注意顺序不等于尺寸**：`white-sands --01--` 是 400×800 竖版，`--02--` 才是
+2048 宽。序号是旧站图集顺序，不是清晰度排序。
+
+### 8.2 主图真正缺的只有四个
+
+逐产品调用 `[md_pdp_image slot="plate"]` 全量审计：
+
+```
+filled=142  empty=4
+  poseidon / pebble-creek / funk / alhambra
+```
+
+早先 22/24 的抽样口径漏掉了这几个，全量审计才是准的。
+
+### 8.3 搜索记录（Apify）
+
+| 查询 | 结果 |
+|---|---|
+| 四个图案名 + 描述性限定 | 命中的是 Pinterest 与非相关页面 |
+| `site:parasoleil.com <name>` × 4 | **0 条** |
+| 按来源确认 | 这四个是 `dsd`；全站 `parasoleil` 96 / `dsd` 50 |
+| 找到 DSD 源头 `decorativescreensdirect.com.au` | 抓取其激光切割页，**四个图案都不在目录里** |
+| 图案名 + decorative metal screen | 同名噪音（希腊神话 Poseidon、Alhambra 宫殿） |
+
+结论：外部不存在可用的竖版实景照。所以没有走"外部补素材"这条路。
+
+### 8.4 站内逐张看图的结果
+
+四张 `pattern render` 都用图像方式核对过，不是读文件名：
+
+| 产品 | 图 | 判定 |
+|---|---|---|
+| pebble-creek | `725` 500×1000 | 黑白二值图稿，底部标题条在 3:4 裁切线外 |
+| funk | `327` 499×998 | 同上 |
+| alhambra | `247` 500×999 | 图稿；标题条 y≈938，裁切可见区 y=166–833，恰好裁掉 |
+| poseidon | `728` 500×1000 | 图稿；`POSEIDON` 标题条 y≈943，同样被裁掉 |
+
+而 `poseidon 726`（`reference image`）是黄昏卧室广角，屏风只是背景一角；按
+3:4 居中裁切后留下吊扇、半张床与地毯，**不可用**。`poseidon 727` 才是屏风为主
+体的实景照，但它已被 hero 占用。
+
+`alhambra 246`（768×768）是深色棚拍渲染，有板厚与地面倒影，会被读成"一块深色
+成品板"，也不采用。
+
+### 8.5 为什么用样张而不是复用
+
+`pdp.css:53` 的遮罩是 `linear-gradient(90deg, .92 → .42)`，右端仍有 58% 可见；
+主图框是 `justify-self: end`，正好落在那一侧。复用会让同一张照片在首屏出现两次。
+
+`pdp.css:74` 是 `object-fit: cover`，横图同样能填满 3:4 框——"必须竖图"是先前
+我和子代理误加的约束，这一条已撤回。
+
+### 8.6 旧站同样是空的
+
+抓 `metalpartition.com/products/alhambra-…`：`pdp-hero-plate` 只出现 3 次，全部
+是 `<style>` 里的 CSS 规则，DOM 里没有对应元素，并且布局类是
+`pdp-hero-grid-cols pdp-hero-solo`。所以填满主图是**升级**，不是复刻缺口。
+
+### 8.7 实现与守卫
+
+主图候选链末端加一条精确兜底：仅当其他候选全空时，取 `_md_role` 恰为
+`pattern render` 的图（`ids_with_role()` 按角色精确筛选，不把整个 `other` 桶
+放进来）。`reference image`、`qc photo`、`unknown` 仍然排除。
+
+两条守卫，各自实证会红（去掉兜底即失败）：
+
+- `test_image_plate_falls_back_to_a_pattern_sample`
+- `test_image_plate_does_not_reach_for_a_reference_image`
+
+同时更新了 `test_image_two_image_pattern_*`：`pebble-creek` 正是"一场景 + 一
+样张"的真实形状，主图现在取自样张，`square` 与 `wide` 仍为空。
+
+### 8.8 线上验证（2026-10-29，部署 `20261028T174730302265Z-4b466be`）
+
+代码 md5 与仓库一致（`Shortcodes.php` = `ed1215c9…`）。
+
+**服务端全量审计**（逐产品调用 `[md_pdp_image slot="plate"]`）：
+
+```
+修复前：filled=142  empty=4   （poseidon / pebble-creek / funk / alhambra）
+修复后：filled=146  empty=0
+```
+
+**HTTP 抽样**：`/shop/` 取 24 个真实产品链接，24/24 命中 `pdp-hero-plate`，零缺失。
+
+**实际渲染的是哪张图**（说明选图逻辑选对了，不只是"有元素"）：
+
+| 产品 | plate 图 |
+|---|---|
+| poseidon | `…-03-500w.webp`（样张） |
+| pebble-creek | `…-02-500w.webp`（样张） |
+| funk | `…-02-499w.webp`（样张） |
+| alhambra | `…-04-500w.webp`（样张） |
+| white-sands | `…-01-400w.webp`（竖版 `finish preview`） |
+
+**真 Chrome 实测**（alhambra）：主图框 420×561，比例正好 0.75；图 `428×855` 已加载
+（`complete: true`）；`object-fit: cover`；可见。视觉复核确认框内是图案样张、不是
+房间照片，已露出的约 85% 高度里没有 "ALHAMBRA" 标题条。
+
+**图集落库核对**：全站图集挂载 1062 张，逐张检查 `get_attached_file()` 与
+`file_exists()`，**缺失文件 0 个**——挂回的是真实文件，不是空引用。
+
+### 8.9 必须说清的一件事：挂回不等于页面出现图集
+
+PDP 模板只有四个媒体槽位（`hero-bg` / `hero-plate` / `square` / `wide`），
+**没有图集组件**；旧站同样没有（抓 white-sands 老页面，`pdp-gallery` 与
+`pdp-thumb` 计数均为 0）。
+
+所以 785 张挂回图的直接收益是：主图/方图/宽图的候选池变充足（这是四个空主图得以
+修好的原因）、`SchemaFilters.php:306` 的结构化数据 `image` 数组更完整、
+`ThumbnailCommand` 有更多素材。它**不会**让页面多出一个画廊——那是新增功能，
+需业主决定，本轮未做。
+
+### 8.10 交叉缺陷（不属于本 GOAL，移交）
+
+真 Chrome 首屏复核实测：聊天挂件 `.md-launcher`
+（`lhc-extensions/mdvisitor/.../mdvisitor.css:44`，`position:fixed; right:32px;
+bottom:32px`）压住主图右下角约 160px。
+
+GOAL.md:666 明确写着 AI 客服票 #86/#102/#147 不在本 GOAL 范围，所以本轮不修改
+它，仅记录位置与实测数据供该工作流处理。
+
+## 九、真 390 视口复验（2026-10-29）
+
+上一份 390 报告是 `10-28 23:05`，早于本日全部改动（图集挂回 785 张、主图兜底、
+搜索端点替换、多处 CSS 卷），按纪律重跑而不是引用旧数据。
+
+### 9.1 通道：为什么必须是 Playwright
+
+| 路径 | 结果 |
+|---|---|
+| `opencli chrome call Emulation.setDeviceMetricsOverride` | `unsupported_chrome_method` |
+| `tools/audit/capture_narrow.py --width 390` | 其自身文档写明是"578px 布局压进 390"，不是真重排 |
+| `playwright` + `channel="chrome"` | **`innerWidth` 实测 390** |
+
+本机 Chrome 打不开窄于约 578px 的窗口，所以前两条都给不出真 390。GOAL.md §39 允许
+Playwright 补这个缺口，并禁止自带 Chromium；`channel="chrome"` 用的是业主自己的
+安装。`tools/audit/narrow_viewport.py` 每页回读 `innerWidth` 并写进报告，没真重排
+的页会在输出里暴露，而不是靠假设。
+
+Python 版 Playwright 在 `/opt/homebrew/opt/python@3.12`（`/opt/homebrew/bin/playwright`
+是 Python wrapper，不是 Node 包）。`defects.js` 返回 JSON **字符串**而非对象，
+直接当 dict 会崩。
+
+一次运行只开一个窗口，跑完关闭——业主两次要求不要频繁新建浏览器。
+
+### 9.2 结果：24 个页型全部 `innerWidth=390`
+
+修复前报告 19 个缺陷，逐个回浏览器核实后，**17 个是 `defects.js` 的判据缺陷**：
+
+| 判据 | 缺陷 | 证据 |
+|---|---|---|
+| `empty-block` | 只查 `background-image`，漏 `bg-black/55` 这类半透明底色（`oklab(0 0 0/.55)`） | 遮罩层被判为空块 |
+| `empty-block` | 没考虑"自身透明、子元素有渐变"的装饰包裹 | perforated 图案切换层 4 个误报 |
+| `dead-gap` | 把 `position:fixed` 元素当文档流兄弟比纵向间距 | `.pattern-catalog__quote-bar` 实测 `fixed 375x69`，算出 576px 假空白 |
+
+另外"每页 7 张坏图（PDP 8 张）"也是误报：它们是 `is='xo-lazyload'` 的图，真实地址在
+`xo-src`，位于 mega-menu 默认隐藏容器内，`0×0` 且未赋值，属懒加载预期行为。
+
+三处判据修好后：19 → 14 → 6。
+
+### 9.3 剩下 6 个，核实为设计而非缺陷
+
+| 页 | 类型 | 核实 |
+|---|---|---|
+| geometric / outdoor / chinese / stainless | `tiny-type` 11px ×4 | 全站 98 处 `text-[11px] md:text-[13px]`；旧站同页 `text-[11px]` **50 处**，是原设计 |
+| perforated | `tiny-type` 11px ×5 | 同上 |
+| custom / pdp-white-sands | `img-ratio` | `object-fit: cover` 背景图层，裁切是设计意图（判据自身注释亦如此说明） |
+
+`pdp-white-sands` 那个正是本日修好的 hero 背景（`…-08-`，390×278 铺满 375×1111 竖屏
+hero），`cover` 用法正确。
+
+### 9.4 结论
+
+390 视口下**无页面级布局缺陷**：24/24 页 `innerWidth=390`，无横向溢出、无可见空卡、
+无空容器、无贴边、无坏图。11px 与 cover 裁切属设计决策，不擅自改，列为待裁定项。
+
+本节的净产出是修好了**三处判据缺陷**——它们此前会把 17 个设计意图报成缺陷，比修页面
+更要紧：否则后续每次验收都在噪声里判断。
+
+证据 `/tmp/md-390-evidence/report.json`（24 页 × 真 390，三处判据修复后的权威扫描）
+与各页截图。被它取代的三轮中间扫描（`md-390`、`md-390-final`、`md-390-v2`、
+`md-390-v3`）已按 §0 保留边界删除，仅保留这一份。
+
+### 9.5 320 视口复验（业主 2026-10-29 要求）
+320 是真窄视口，opencli 够不到（Chrome 窗口最小 ~578px），按铁律的窄例外用
+Playwright 驱动业主本机 Chrome，`innerWidth` 断言每页都是 320 才计入。
+
+首轮 24 页报 17 条，逐条查实后**只有一条是新发现，且是判据自身的缺陷**：
+
+| 项 | 实测 | 判定 |
+|---|---|---|
+| `div.absolute.inset-0[data-pa-mask]` 305×380（`/perforated-panels/`） | 直系子层透明，但孙子层是 `radial-gradient` 圆孔图案，320×380 盖满全框 | **误报**：判据只往下看一层 |
+
+`left-panel` 是 `overflow: hidden`，越界的 320px 宽渐变被裁掉，`documentElement.scrollWidth` = 305 = `clientWidth`，**无横向溢出**。
+
+判据已改为递归遍历全部后代，但要求上色元素**覆盖 ≥50% 盒面积**才豁免——否则深处一个
+10×10 的圆点就能把一个真空洞洗白，那正是这条检查存在的理由。三组夹具固化为
+`just narrow --self-check`，且**双向证过**：退回旧的一层规则 → 退出码 **1**（第三组翻车），
+换回新规则 → 退出码 **0**。
+
+| 视口 | 页数 | `empty-block` | `tiny-type` | `img-ratio` |
+|---|---:|---:|---:|---:|
+| 390（`/tmp/md-390b`） | 24 | 0 | 9 | 2 |
+| 320（`/tmp/md-320b`） | 24 | 0 | 9 | 5 |
+
+`tiny-type` 9 条两档相同，是同一批 11px 胶囊文字（全站 98 处
+`text-[11px] md:text-[13px]`，旧站同类页面也有 50 处 11px），属设计。
+`img-ratio` 是 `object-cover` 把横图裁进竖框，比值 >4.0 才报，属设计；但见 §9.6。
+
+### 9.6 移动端真实放大率（新查，属待裁定）
+
+`naturalWidth` 对 `srcset` 图返回的是**按 DPR 折算后的显示尺寸**，不是文件真实像素——
+我据此先报过“292×188 图被放大 1.58 倍”，**该结论作废**。改用文件名里的 `-768w`
+后缀取真实宽度重测 14 页：**56 处**真实放大，比值 1.02–3.64。
+
+成因统一：`<img class="object-cover">` 之类把 768×432 的横图铺进 305×771 的竖框
+（`object-cover` 按 `max(sx, sy)` 缩放，竖屏必然放大）。最重的三处：
+`leaf-skeleton-…-01-` ×3.57、`ext-pp-hero-perforated-facade` ×3.02、
+`kirra-balcony-screen-design` ×2.68。
+
+这不是裁切（裁切已判定为设计），是**同一张图在竖屏下被放大后发虚**。修法有二：给这些位置
+补竖版源图，或在移动端改用 `object-contain`／限制框高。两者都改变视觉，属设计裁定，
+不擅自改。
+
+证据 `/tmp/md-320b/report.json` 与 `/tmp/md-390b/report.json`（两档各一份权威扫描，
+`md-320`、`md-390-evidence`、`md-390` 等被取代的旧目录已按 §0 删除）。
+
+### 9.7 回收（业主 2026-10-29 重申后执行）
+
+| 对象 | 处理 |
+|---|---|
+| opencli 会话 `mdacc` / `mdsearch` / `mdwp` | 全部 `close`，租约 `released` |
+| Playwright 临时 profile ×4 | `lsof +D` 确认无占用后删除，残留读回 **0** |
+| `/tmp` 扫描产物 | 删除被取代的旧目录，每档只留一份权威报告 |
+
+`tools/audit/narrow_viewport.py` 已把回收写进代码（`reclaim_profiles()`），跑完自动扫
+`playwright_chromiumdev_profile-*`，确认无进程持有才删，并打印
+`reclaimed N stale playwright profile(s)`——不依赖人记得清。
+
+### 9.8 「贴边 / 间距贴死」的量化（业主点名的全局问题类别）
+
+这两条没法靠截图判定：一张通栏照片和一段真的贴到边上的正文，在图里都是「顶到边」。
+所以新建 `tools/audit/spacing.py` 读 DOM，量三件事：
+
+| 判据 | 定义 | 为什么 |
+|---|---|---|
+| `edge-touch` | 文字盒到视口左右任一边 **< 8px** | 文字需要留白；通栏背景不需要，因此只量含文字的元素 |
+| `tight-leading` | **20px 以下**正文、≥2 行、行高/字号 **< 1.25** | Tailwind 最紧的一档 `leading-tight` 就是 1.25；更大的字号另属排版 |
+| `narrow-column` | 最宽文字行占视口比例 | 只报不判——72 字符的行宽是排版规则，不是缺陷 |
+
+判定过程中纠掉了我自己的**四类假阳性**，每一条都留下了为什么：
+
+| 假阳性 | 实际原因 | 判据修正 |
+|---|---|---|
+| 首页 89 处贴边 | 折叠 FAQ 面板里 40px 宽的隐藏副本，`display`/`opacity` 都显示"可见" | 宽度 <80px 不算正文；候选再经 `scrollIntoView` + `elementFromPoint` 确认在最上层 |
+| 剩 6 处负间距（-266px 等） | 轮播项停在视口外，`scrollIntoView` 把它拉进来后仍报**滚动前**的坐标 | 滚动后**重新测量**再判定 |
+| `/shop/` 8 处行高 1.0 | `pag__badge`/`ppp__badge` 是 `display:flex` 单词徽章，`height/lineHeight` 把 padding 算成 3 行 | 改用 Range 数**真实行盒**，不再用元素高度推算 |
+| 首页剩 2 处 -0.7px | `mfg-projects-marquee-track` 是 `translateX(-442px)` 跑马灯动画 | 排除滚动容器、非零位移变换、运行中动画三类"会移动"的父级 |
+
+另有一类属**设计**而非缺陷，已改为不报：26–36px 的展示级标题行高 1.06–1.20。旧站同批
+标题同样是 1.06–1.10，这是大字号排版惯例；把标题当正文报，等于每页都报旧站的设计。
+
+#### 9.8.1 行高判据从「比值」改成「墨迹间隙」（同日再修）
+
+`/shop/` 在 320 下报 4 处行高 1.2 的两行标签。逐条放大看渲染像素后，**四处都不是缺陷**：
+
+| 标签 | 两行墨迹间纯背景 |
+|---|---|
+| `Specification Decision Guide` | ≈5.7 CSS px |
+| `Abstract Patterns` | ≈7 CSS px |
+| `Organic Patterns`（最紧） | ≈4 CSS px，`g` 的尾巴对着下一行 `t`，仍分开 |
+| `Geometric Patterns` | ≈7 CSS px |
+
+原因：这套无衬线字在这个字号下**不占满 em 盒**，所以 1.2 的行高比仍能留下 7px 空白。
+行高比是代理量，眼睛看的是**两行墨迹之间的间隙**——判据已改为量后者（`MIN_INK_GAP = 2.0`），
+行高比只作上下文一并报出。同一个原因让 `Step 02 / Drawing & quote`（14px/14px、全大写、
+无下伸部、行间 9 设备像素）也属正常，不再报。
+
+同时修掉一个真 bug：行数原用 Range 矩形个数算，而**单行文字里的 `&` 会被拆成多个矩形**，
+于是 1 行被算成 2 行（320 报 16 条，真换行只有 4 条）。现按 `distinct top` 去重。
+
+自检随之扩成三项，含一个**对照组**（普通 1.6 行高，必须不报）——只证明"能抓到"还不够，
+还要证明"不乱报"：
+
+| 夹具 | 期望 | 关闭判据时 |
+|---|---|---|
+| 1px 贴边正文 | 必须报 | FAIL |
+| 两行盒重叠（line-height 0.7） | 必须报 | FAIL |
+| 普通 1.6 行高 | 必须**不**报 | ok（两态都对） |
+
+`--min-gutter -100 --min-ink-gap -50` 关掉判据 → 两项 FAIL、退出码 **1**；开启 → 三项 ok、
+退出码 **0**。
+
+### 9.9 1440 视口：唯一有实质报数的一档（业主 2026-10-29，覆盖矩阵要求）
+
+1440 此前从未用修好的判据扫过。首扫 24 页报 **87 条**，逐类查实后分成三组：
+
+| 类 | 条数 | 查证结果 |
+|---|---:|---|
+| `long-measure` | 72 | 真实存在，但**优于旧站**，且更严格会撞业主既有裁定（见下） |
+| `empty-block` | 4 | **判据误报**，旧站同结构同空 |
+| `tiny-type` / `img-ratio` | 11 | 与 390/320 同批，已核实为设计 |
+
+#### 9.9.1 那 4 条 `empty-block` 是复刻，不是洞
+
+`div.xo-section-bg-image` 1425×124，在 `/shop/` `/project-gallery/`
+`/perforated-panels/` `/collections/pattern-geometric/` 四页，位置都在 y=113。
+
+实测该层是 `position:absolute; inset:0; z-index:-2`，内层 `xo-background-lazyload`
+**从不加载**：加载后、等 2.5 秒、滚动 600px、回顶部，四次 `backgroundImage` 都是 `none`，
+`style` 属性始终为空，没有加载器去填它。
+
+**但旧站完全相同**——`metalpartition.com/collections/all` 实测同样是白底、`z-index: -2`、
+两个层 `backgroundImage` 都是 `none`，`height` 也是 124。面包屑带的白底来自 spec #65，
+所以**没有内容缺失**，这是忠实复刻。
+
+判据已修：`position:absolute|fixed` 且 `z-index < 0` 的未上色图层不算洞（它在内容**背后**，
+无法造成空洞）。范围只限负 z-index —— 正常或正 z-index 的绝对定位层压在内容之上，没上色
+就真的是洞。
+
+自检扩到 **5 组夹具**，含一对反向对照：
+
+| 夹具 | 期望 | 旧规则 |
+|---|---|---|
+| 空盒 | 必须报 | ok |
+| 10×10 圆点埋两层 | 必须报 | ok |
+| 深层全覆盖渐变 | 必须**不**报 | ok |
+| 未上色层在内容背后（z=-2） | 必须**不**报 | **FAIL** |
+| 同一层在内容前面（z=1） | 必须报 | ok |
+
+旧规则 `--self-check` 退出码 **1**、新规则 **0**，双向证过。
+
+#### 9.9.2 72 条行宽：不改，附证据与待裁定
+
+| 站点 | 最宽行 | 达 980px 的段落 | 备注 |
+|---|---:|---|---|
+| 旧站 metalpartition.com | **159 字符**（1200px@16px） | 多段 980px@18px = 120 字符 | 搬运来源 |
+| 新站 metal-divider.com | **139 字符**（980px@15px） | 56 段 980px | 每个可比点都更窄或持平 |
+
+两家都超过排版惯例的 60–75 字符上限。**新站每一处都比旧站窄或持平**，所以这不是退化。
+
+不擅自收紧的原因有据：`GOAL.md:567` 曾用 `main p { max-width: 40em !important }` 把行宽压到
+「7 页实测 ≤95 字符」，但那条 `!important` **压过了模板自己的帽**——`max-w-[620px]` 的 hero
+导语反被撑到 720px，980px 的正文缩到 640px（1440 视口的 44%）。业主当时的反馈是
+**「可视范围过窄」**，撤掉它是响应这条裁定。
+
+因此进一步收紧行宽＝重开业主已否决过的方向。这一项**记录为待裁定**，不自行实施：
+如果业主认为现在 139 字符仍偏宽，正确做法是给「未被模板限制的段落」加一条**按字号缩放、
+不带 `!important`** 的帽（模板帽仍可更窄），而不是回到 40em。
+
+#### 9.8.2 剩下 5 条 `Step 0N` 眉标的处置（记录，不修）
+
+`/chinese-style-artistic-screens/` 在 320 下报 5 条 `Step 01–05 / …` 眉标，14px/14px
+（`leading-none`）换成两行，墨迹间隙 **1.8 CSS px**。
+
+- 视觉判定（真实截图、3 倍图局部放大）：**完全正常**。全大写没有下伸部，两行各自清楚，
+  `&` 的下沿与下一行之间仍有空白。
+- 这个数字是真的：`leading-none` 的两行本来就是 1.8px 墨迹间隙。它被报出来是判据在说
+  "这两行挨得很近"，而不是在说"这里坏了"——所以列在这里供裁决，不擅自改 CSS。
+- 抬行高会把筛选/步骤行无故拉高，改文案会改信息，两者都不是修缺陷。
+
+测量过程本身也留一条教训：我一度想用截图数像素的方式复核这 1.8px，但选中的元素（高度
+170px）其实包住了整个步骤块而不是眉标，量出来的是多行正文之间的空白，**这次采样作废**。
+同一个量连续三次测不准（行盒间隙恒为 0、canvas 未套 `text-transform`、取样选错元素）后
+按 §0.1 停止——已有可比对的权威证据是渲染截图上的视觉判定，继续换方法只会重复烧时间。
+
+`just spacing --self-check` 会植入一段 1px 贴边正文和一段两行行高 1.0 的 16px 正文，
+两者都必须被抓到；**双向证过**：`--min-gutter -100 --min-leading 0.5` 关掉判据 → 两项
+FAIL、退出码 **1**；判据开启 → 两项 ok、退出码 **0**。自检期间它当场抓到了我自己的
+一个 bug：报告把每行文本截到 50 字符，而断言要找的句子正好被截掉，已放宽到 120。
+
+### 9.10 系列归档面板：单列是复刻缺口，已改回两列（业主 2026-10-29）
+
+补齐 8 个系列归档后，1440 下每页报 3 条 `long-measure`。逐条追下去，根因不在行宽判据，
+而在**面板被改成了单列**。
+
+旧站在三个桌面宽度实测，面板**始终两列**，routes **始终是纵向 grid 三行**：
+
+| 宽度 | 面板列宽 | routes |
+|---:|---|---|
+| 1440 | 795.2px / 547.8px | `display:grid`，`38px 1fr auto`，高 174px，无边框无圆角 |
+| 1280 | 700.5px / 482.5px | 同上 |
+| 1024 | 492.3px / 380.0px | 同上（右列触到 380px 下限） |
+
+`0.62fr ÷ 0.9fr = 0.689`，正是 1440 那组 795/548 的比值——**仓库里的原始列定义本来就对**。
+
+#### 9.10.1 谁改的、改成了什么
+
+`a1685bf`（2026-10-28）把 `.pag__panel` 从 `minmax(0,0.9fr) minmax(380px,0.62fr)` 改成
+`minmax(0,1fr)`，注释理由是「两列会让右侧出现一块 40% 的纯色空单元格」。同一个提交还在
+`@media (min-width: 1024px)` 里把 `.pag__routes` 改成 `display:flex` 横卡。
+
+#### 9.10.2 实测反驳与代价
+
+在运行时把两列比例注入回去重测：
+
+| 项 | 单列（现状） | 两列（注入后） | 旧站 |
+|---|---:|---:|---:|
+| 面板高度 | **982px** | **607px** | 571px |
+| 正文单元格内容 | — | 标题 + **294 字符正文** + PATTERN ROUTES + CTA | 同 |
+| 正文行宽 | 980px ≈ **140 字符** | 459px | 459px |
+
+「40% 纯色空单元格」在这个比例下**不成立**：右列有实质内容。
+
+但只注入列宽还不够。视觉对照发现横卡在 548px 窄列里**标签折成两行、金色箭头压住
+"Patterns"**，并且横卡比图矮，底部留下 **154px 纯色空带**（占右列高度 25%）——那才是真正的
+空块。旧站用纵向三行列表，右列能铺满到 y=526（面板高 572）。所以两处必须一起改。
+
+#### 9.10.3 改动与守卫
+
+两份 CSS（`series-archive.css` / `shop.css`，内容同源）各改两处：面板恢复两列、删除横卡覆盖。
+
+新增 `plugins/md-site/tests/php/Unit/Presentation/SeriesPanelTest.php` 守这两件事，读文件前
+先剥注释（本仓库被「注释里的字满足了断言」绊过）。**双向证过**：把 CSS 退回改动前 →
+2 项 **FAILURES**；改回 → 2 项 OK。
+
+没有测试守过这个组件，正是它能被静默改成单列而无人发现的原因。
+
+#### 9.10.4 部署与线上读回
+
+部署 `20261028T200000983853Z-0e3b5ca`：verify 5 个页面全 200、页面缓存 miss→hit、上一版备份已归档。
+
+改的是 CSS，而站点提供的是 WindPress 编译产物，所以部署后**必须重编译**。首次实测证明没生效：
+线上仍是 `1343px` 单列、`routes: display:flex`。重编译走 opencli 驱动业主本机 Chrome
+（WindPress → Settings → Performance → Generate），判据是缓存文件 mtime
+`1793207316 → 1793218515`，编译后的 `tailwind.css` 里可读到
+`pag__panel{grid-template-columns:minmax(0,.9fr) minmax(380px,.62fr);min-height:0}`。
+
+**线上读回，与旧站逐位吻合**：
+
+| 宽度 | 新站（面板两列 / 正文行宽） | 旧站 | routes |
+|---:|---|---|---|
+| 1440 | 795.2 / 547.8px，正文 **67** 字符 | 795.2 / 547.8px | `grid`，高 174px |
+| 1280 | 700.5 / 482.5px，正文 **58** 字符 | 700.5 / 482.5px | `grid`，高 174px |
+| 1024 | 492.3 / 380.0px，正文 **43** 字符 | 492.3 / 380.0px | `grid`，高 174px |
+
+面板高度 982px → **607px**。
+
+**可证伪预测（先写下、后验证）**：修复前在 1440 下记录「9 个系列归档共 27 条 `long-measure`，
+恢复两列后应大幅减少」。修复后重扫同一 9 页：**27 → 18**，每页 3 → 2。预测成立。
+
+剩下 18 条逐条与旧站比对，**新旧完全一致**，属复刻带来的既存宽行，不是本次回归：
+
+| 段落 | 旧站 | 新站 |
+|---|---|---|
+| `ppp__intro` | 920px / 116 字符 | 920px / 116 字符 |
+| `max-w-[980px]` 引导段 | 980px / 121 字符 | 980px / 121 字符 |
+
+旧站另有一条 760px/113 字符的 `pattern-catalog__cluster-copy`，新站已无对应段落——比旧站少一条。
+
+#### 9.10.5 登录与凭据处置（记录，不含任何密钥）
+
+重编译需登录 wp-admin，遇到两件事：
+
+1. **`ERROR: Stop guessing!` 不是限流。** 读源码确认它来自主题 `picostrap5/inc/clean-head.php`
+   的 `login_errors` 过滤器，作用是隐藏「用户名是否存在」的通用文案。
+2. **真正的失败原因是原生点击被遮挡**：opencli 报
+   `Native input requires a visible browser page`，字段填充本身是成功的
+   （`verified: true, length: 24`）。改用 JS 触发 `#wp-submit` 后一次进入 `/wp-admin/`。
+   期间 `wp_check_password` 直接对哈希校验返回 `MATCH`，证明凭据本身没问题——先证伪再换手段，
+   没有靠反复重试。
+
+凭据处置：生产管理员无明文密码，因此**先备份密码哈希到服务器 `~/md-pwhash.bak`（65 字节，
+`$wp` 开头）→ 临时设随机密码 → 编译 → 用备份哈希写回**。读回校验
+**HASH IDENTICAL TO BACKUP**，临时密码文件（服务器与本机）已删除、读回 0 残留。
+仓库与日志中不含任何密码或哈希值。
+
+**待业主确认（沿自既有交接）**：生产管理员是 `md_admin / martinfu127@gmail.com`，
+不是业主指定的 `srchesterjohn@gmail.com`；`~/Downloads/wp-admin.txt` 里是 hPanel 账号
+`857558227@qq.com`，不是 WordPress 管理员。两者都不是本次造成，但影响后续所有需登录的操作。
+
+### 9.11 性能基线复测：先证伪两次，才拿到可比数字（业主 2026-10-29）
+
+完成标准点名了「性能基线」，而今天改过 CSS 并重编译，旧基线不再代表现状。这一轮**前两次测量
+都作废**，每次都是工具或我自己的口径错，不是站点问题。
+
+#### 9.11.1 第一次作废：登录态
+
+`perf.py` 三页冷载全部 `SKIP — logged in`。原因是先前为 WindPress 编译登录的会话留在共享
+Chrome profile 里。这正是 `AGENTS.md` 记过的陷阱：登录态下 WordPress 加载完整媒体栈，
+**64 个 script / 9.9MB**，访客态只有 5 个 / 76KB。若没有这条断言，我会拿登录态的 685KB 去
+和基线 3232KB 比，得出「性能大幅改善」的假结论。已登出（`wp-admin` 重定向到登录页）后重测。
+
+#### 9.11.2 第二次作废：DPR 未记录
+
+匿名态首测得 `/` **698KB / 19 请求**，基线是 3232KB / 29。差距 4.6 倍，**不能归功于优化**。
+
+实测同机同视口只改 DPR：
+
+| 条件 | 首页 |
+|---|---:|
+| 1440 视口，DPR **1** | **698KB / 19 请求** |
+| 1440 视口，DPR **2** | **3247KB / 32 请求** |
+
+浏览器按 DPR 选不同的 `srcset` 档位。2026-10-28 的基线是 DPR 2 测的（3232KB），所以
+`perf.py` 那组 698KB 与基线**不同口径，不可比**。`perf.py` 原先只打印 `vw`，不打印 DPR——
+这是工具的缺陷，已补 `dpr` 字段并加注释说明为什么：一个没有 DPR 的页面重量数字无法与任何
+历史数据比较。
+
+#### 9.11.3 同口径复测结果：无回归
+
+1440 视口、DPR 2、`loggedIn=false`，与基线完全同条件：
+
+| 页面 | 本次实测 | 2026-10-28 基线 | 差异 |
+|---|---:|---:|---|
+| `/` | 3247KB / 32 请求 | 3232KB / 29 请求 | +15KB / +3 |
+| `/shop/` | 3709KB / 30 请求 | 3696KB / 27 请求 | +13KB / +3 |
+| `/inquiry/` | 881KB / 20 请求 | 871KB / 18 请求 | +10KB / +2 |
+
+**结论：两列修复没有引入可测的回归。** 差异量级 10–15KB、2–3 个请求，在图片压缩与懒加载
+计时的正常浮动内。
+
+首页 3247KB 的构成也核过：两张 hero（`our-aspen-villa-garden-screen-hero-2048w` 760KB、
+`ext-pp-hero-perforated-facade-2048w` 750KB）占近一半，是设计上就要展示的内容，不是预取。
+
+#### 9.11.4 重编译的体积影响
+
+编译后 `tailwind.css` 从 **635040 → 634232 字节（−808）**，因为删掉了横卡覆盖规则。
+这次改动在体积上是净减少。
+
+#### 9.11.5 遗留：不滚动口径
+
+在 1440×920 且不滚动的条件下，首页 109 张图只加载 21 张（88 张 `loading="lazy"` 在视口外）。
+这是懒加载的正常行为，但也意味着**任何不滚动的测量都不是整页重量**。基线口径同样如此，
+所以两者可比；但若要把「整页重量」当指标，必须先滚动或放大视口——`AGENTS.md` 已记
+「验懒加载图用超高视口，不要靠滚动」，此处沿用它即可。
+
+### 9.12 完整询盘链：走到了 Turnstile 门禁，把门禁本身验实（业主 2026-10-29）
+
+完成标准点名「完整询盘链路」，此前只验过「缺字段被拒」。这一轮按业主路径实走，结论是
+**链路在门禁处正确拦住了自动化，而门禁本身是通的**——不是缺陷，但也没走到提交成功，
+所以如实记录，不算验收通过。
+
+#### 9.12.1 已验的部分
+
+| 环节 | 实测 |
+|---|---|
+| PDP 表单结构 | `form.md-inquiry-form`，18 个字段，含 `md_inquiry_pattern_slug=agave-architectural-metal-screen-pattern`、`source_page=pattern-pdp`、`source_module=quote-modal`、`source_button=request_quote` + nonce |
+| 弹层打开路径 | 点 `Request a Quote` → 表单从 `0×0` 变为 **362×735**，确实由 CTA 打开 |
+| 测试模式 | `e2e@example.invalid`（RFC 2606 保留域，永不可达真人）开启后读回 `on`，验证完 `--off` 读回 `off` |
+| Turnstile 挂件 | **已正确渲染**：`window.turnstile` 是 object、`render` 是 function、槽内为 `div > div + input[name=cf-turnstile-response]`、`cf-chl-widget-*` id 存在 |
+| 提交门禁 | `submit.disabled === true`，`statusText` 为空——`appearance="interaction-only"` 下未完成挑战不解锁，这是设计 |
+| 服务端门禁 | `Submission.php`：`turnstile_is_configured()` 为真时，空 token 直接 `fail(..., 'turnstile')` 并 `return`，不会落库 |
+
+#### 9.12.2 未完成的环节与原因
+
+自动化没有真实挑战令牌，`submit` 保持禁用。**没有绕行**：不伪造 token、不在服务端关掉
+Turnstile 冒充成功——那会产出一条假的验收结论。整个过程中**零询盘落库**（`wp post list`
+计数前后都是 0），所以也没有留下冒烟垃圾。
+
+#### 9.12.3 这一轮实际得到的东西
+
+`GOAL.md:710` 记过一次生产真实提交成功（`verified`、队列两行路由正确），说明门禁能放行
+真人。本轮的价值不是重复它，而是**把门禁的可测状态固化成线上读数**：挂件在、render 在、
+门禁真的锁着提交、服务端真的拒空 token。这四项此前都没有对应读数。
+
+要真正完成「实走」，需要一次**真人完成 Turnstile 挑战**——这属于必须业主动手的动作，
+按 §7 只问业主知道的事，记在待办里。
+
+### 9.13 SEO 面复验：三项历史不通过已修，另发现 sitemap 重复（业主 2026-10-29）
+
+`docs/deploy/seo-verification.md`（2026-10-25）列了四项不通过。本轮逐项实测，**三项已不存在**：
+
+| 项 | 2026-10-25 记录 | 2026-10-29 实测 |
+|---|---|---|
+| `/inquiry/thank-you/` | 404（应为 noindex 页） | **200**，`follow, noindex` ✅ |
+| `/privacy/` | 404 | **200** ✅ |
+| `/faqs/` FAQPage JSON-LD | 缺失 | **存在**，40 组 Question/Answer ✅ |
+| GSC 属性 + TXT | 未建 | 未在本轮范围（需业主账号） |
+
+#### 9.13.1 九个系列归档的 SEO 面（首次验证）
+
+这九页此前从未进过任何扫描或 SEO 检查。实测全部合格：
+
+| 检查 | 结果 |
+|---|---|
+| HTTP | 9/9 = 200 |
+| canonical | 9/9 自引用，与请求路径一致 |
+| robots | 9/9 `index, follow` |
+| meta description | 9/9 存在，长度 139–179 字符，**九条互不相同**（哈希两两不同） |
+| sitemap | 9/9 全在 `product_cat-sitemap1.xml`（该文件恰好 9 条） |
+
+#### 9.13.2 新发现：`/shop/` 同时出现在两份 sitemap
+
+`product-sitemap1.xml` 有 **147** 条，而图案只有 **146** 个。多出来的是 `/shop/`。
+
+根因（读库确认，不是推测）：`/shop/` 是真实页面（ID 6，`publish`），
+`woocommerce_shop_page_id` 也是 6，于是 SEOPress 把它**既当页面写进 page sitemap，
+又当 `product` post type 的 archive link 写进 product sitemap**。同一 URL 出现在两份
+sitemap 里，是「Duplicate, Google chose different canonical」那一类形状。
+
+修法上差点走错，记录下来：
+
+- **错的钩子**：`seopress_sitemaps_url` 是逐条 `<url>` 钩子，在**每一份** sitemap 里都会触发。
+  用它会把 page sitemap 里的 `/shop/` 一起删掉，与修复目标相反。
+- **对的钩子**：读 `wp-seopress/templates/sitemap/single.php` 发现 `/shop/` 是作为
+  **archive link** 写入的，同一文件里 SEOPress 自己给了 `seopress_sitemaps_no_archive_link`
+  这个专门钩子，只在该 post type 的 sitemap 里触发。
+- SEOPress 注释里还提到另一个办法（对 shop page 勾 per-page noindex），但 `/shop/` 必须保持
+  可索引，所以不可用。
+
+实现：`SitemapDedupe::drop_shop_archive()` 只在 `$path === 'product'` 时返回空串。
+
+守卫 `SitemapDedupeTest` 三条断言，**双向证过**：把钩子改回
+`seopress_sitemaps_url` → **1 FAILURE**；改回正确钩子 → 3 OK。其中一条断言直接读源文件
+（先剥注释）确认注册的是 archive-link 钩子、且不含逐条钩子，防止后人换回去。
+
+#### 9.13.3 线上读回（部署 `71ba6e2` 之后）
+
+钩子在部署前**未注册**（`has_filter` 返回 no hook），部署后 `hook present`——说明这个修复确实是本次第一次带上去的，
+不是我误把已有行为当成新修。
+
+三条 sitemap 一起读，缺一条都证明不了「只删重复的那一份」：
+
+| sitemap | 修复前 | 修复后 | 判据 |
+|---|---:|---:|---|
+| `product-sitemap1.xml` | 147 条，含 `/shop/` | **146 条，`/shop/` 0 处** | 重复项已移除 |
+| `page-sitemap1.xml` | 19 条，`/shop/` 1 处 | **19 条，`/shop/` 1 处** | 未误伤 |
+| `post-sitemap1.xml` | 1 条（`/blog/`） | **1 条（`/blog/`）** | 未误伤其他 post type |
+
+#### 9.13.4 顺带纠正一处文档自相矛盾
+
+`GOAL.md` 在 2026-10-25 把「sitemap（**147** 产品 + 1063 图）」写成**通过项**，
+而 `GOAL.md:987` 又写「从 `product-sitemap1.xml` 取全部 **146** 个 PDP」。两者不可能同时成立。
+
+本轮实测给出答案：**146 是正确的图案数**，147 是 `/shop/` 混入造成的。也就是说当年那条
+「通过」判定把一个重复条目当成了正常值 —— 正是本仓库反复记的「写死的数字不等于事实」。
+文档里的 147 不改写（它是当时读数的记录），但本节给出正确值与证据。
+
+### 9.14 断点扫描：359/360/560/561/640/760/767/768（业主 2026-10-29）
+
+`GOAL.md:1002` 声称这六个边界宽度「均已实测」，但那是在判据与面板 CSS 修改之前的说法。
+本轮用当前判据在 7 个代表页上重扫，并补上同样翻转的 **640** 与 **760**（从编译后 CSS 里读出
+真实断点集合：`min-width` 有 560/640/760/761/768/990/991/992/1024，`max-width` 有
+359/639/759/767/989）。
+
+| 宽度 | 结果 |
+|---|---|
+| 561 / 640 | 7 页中 6 页 0 缺陷；`family-perforated` 5 条 |
+| 760 / 767 / 768 | 6 页 0 缺陷（760 与 767/768 上 `shop`、`series-geometric` 各 1 条） |
+
+`family-perforated` 那 5 条是 11px 胶囊标签，与 390/320 同一批、已核实为设计。
+**无横向溢出、无空容器、无贴边。**
+
+### 9.15 旧的 `/pages/*` 内容页：13 个 404（本轮最严重的发现）
+
+把旧站 25 个页面 handle 逐条对到生产（不是抽样）：
+
+| 结果 | 数量 |
+|---|---:|
+| 旧站 200，新站 **301** | 11 |
+| 旧站 200，新站 **404** | **13** |
+
+13 个 404 涵盖了站点的内容主体：8 个产品族页（geometric / glass / outdoor /
+chinese / stainless / panels / perforated / expanded）、`faqs`、`about-us`、
+`manufacturing-process`、`project-gallery`、`custom-metal-divider-screens`。
+
+#### 9.15.1 根因是对机制的错误假设，不是漏列清单
+
+`Seo/Config::REDIRECT_TARGETS` 原本只有一条 `'pages' => '/'`，旁边的注释写着它
+「sends the prefix home with a 301」。但 **SEOPress 把重定向的 post title 当作精确路径匹配**，
+所以这一条只覆盖 `/pages` 本身，其下全部落空。
+
+更关键的是：`ConfigTest` 里有一条断言写死了 `array( 'pages' => '/' )`，**把不完整性锁成了
+「正确」**。同理，`SeoCommandTest` 的夹具只预置了那一条重定向，于是「已完全铺设时零 drift」
+在一个缺了大多数重定向的站点上也成立。两个测试共同把这个缺口藏了很久。
+
+这正是仓库反复记的那类错误：**断言与夹具都只是当时状态的快照，不是需求的证明。**
+
+#### 9.15.2 修法
+
+迁移把每个内容页都写在站点根（`post_parent` 0），所以 14 个 handle 直落同名路径；
+唯一例外是 `pages/custom-metal-divider` → `/custom-metal-divider-screens/`，这也正是旧站
+自己的跳转方向。
+
+新增 `PageRedirectTest` 三条断言：13 个 URL 一个不缺、目标就是承载其内容的页面、`/pages`
+本身仍回首页。**双向证过**：删掉 `pages/faqs` 一条 → 测试失败且信息里直接写出该 URL。
+
+`ConfigTest` 的写死断言改成只 pin `pages` 这一条，完整性交给新测试；
+`SeoCommandTest` 的夹具改为**从表派生**，不再手抄。
+
+#### 9.15.3 线上读回（部署 `20261028T211251312398Z-0757e16`）
+
+部署前先拍了基线，否则「现在是 301」无法排除它本来就该是 301：
+
+| 阶段 | 13 个 URL |
+|---|---|
+| 部署前 | **13/13 = 404** |
+| 部署后 | **13/13 = 301**，且每个目标与预期逐字一致 |
+| 跟随跳转 | **13/13 = 200**（目标页真的承载内容，不是二次错误） |
+
+目标逐一核对：`/about-us/`、`/chinese-style-artistic-screens/`、`/custom-metal-divider-screens/`、
+`/expanded-metal-panels/`、`/faqs/`、`/glass-hybrid-screens/`、
+`/laser-cut-geometric-metal-screens/`、`/laser-cut-panels/`、`/manufacturing-process/`、
+`/outdoor-privacy-landscape-screens/`、`/perforated-panels/`、`/project-gallery/`、
+`/stainless-steel-screens/`。
+
+另核查迁移期留下的 9 条多余记录（`pages/balcony-terrace-privacy-screens` 等）：它们在**旧站
+本来就返回 301**，新站同样 301，处理对等，不需要改动。这也印证补的 13 条不多不少。
+
+### 9.16 旧站 URL 族完整核查（业主 2026-10-29）
+
+上一轮的 `/pages/*` 缺口说明「旧站 URL 是否都可达」从未被完整验证。本轮把旧站四族 URL 全部对到生产。
+
+| URL 族 | 旧站 | 新站 | 判定 |
+|---|---|---|---|
+| `/products/<146 个 handle>` | 200 | **146/146 = 301 → `/pattern/<handle>/`** | ✅ 全部正确 |
+| `/pages/<24 个 handle>` | 200 | 13 条本轮已补，11 条原本就对 | ✅ 见 §9.15 |
+| `/collections/pattern-<9 个系列>` | 200 | **9/9 = 200** | ✅ |
+| `/blogs/news/<8 个 handle>` | **全部 404** | 404 | ✅ 对等（旧站无内容可迁） |
+
+产品族批量核对里首次出现 2 个 `000`（`moulin-casse`、`ripples`），逐个重测两次均得
+**301 且目标正确** —— 是网络瞬时失败，不是配置问题。**不把瞬时失败记成缺陷。**
+
+#### 9.16.1 目录产品完整性：146/146，无缺失
+
+一度误判「`/shop/` 少 24 个产品」，原因是抓取方式错：`/shop/page/1/` 会 **301 回 `/shop/`**
+（WordPress 标准行为），所以从第 1 页开始循环抓只会拿到空结果。改用 `/shop/` 抓第 1 页、
+`/shop/page/2..7` 抓其余后：
+
+| 项 | 数量 |
+|---|---:|
+| 数据库 `post_type=product, publish` | **146** |
+| `/shop/` 7 页不重复产品链接 | **146** |
+| 数据库有、目录无 | **0** |
+| 目录有、数据库无 | **0** |
+
+分页结构：第 1–6 页各 24 个，第 7 页 2 个，`/shop/page/8/` = 404。
+
+#### 9.16.2 一处**不修**的决定：旧站目录分页深链
+
+旧站 `/collections/all?page=2` 返回 200（共 7 页），新站该 URL **404**。查清后决定不修：
+
+- 新站自己的分页是 `/shop/page/N/`，工作正常；
+- 旧站分页 URL **不在旧站 sitemap 里**，也没有 canonical —— 搜索引擎从未把它们当作独立页面；
+- 新站 `/collections/all` 主路径 301 → `/shop/` 是正确的（`x-redirect-by: WordPress`，
+  即 WordPress 核心的 canonical 重定向，不是 SEOPress 规则）。
+
+为什么无法机械转发：旧站第 1 页与新站第 1 页**完全一致**（agave / akira / alhambra），
+但第 2 页起点不同（旧站 `casablanca`，新站第 2 页是别的），两边排序不同。
+把 `?page=2` 直接送到 `/shop/page/2/` 会给访客**不同于旧站**的内容，那比 404 更容易误导。
+按 §0.1「说明不了改变哪个交付判断就不追加」的原则，这一项记录为已知且已判定，不计为缺陷。
+
+**顺带澄清一条机制事实**（读 SEOPress 源码得到，纠正了我先前的假设）：非正则重定向是靠
+`basename( path )` 与 post title 精确比较来命中的，不是整路径比较。所以
+`collections/all` 那条记录匹配的是 basename `all`，而不是完整路径——这也是为什么
+`/collections/all` 的 301 实际由 WordPress 核心完成，SEOPress 那条记录并未生效。
+`^/products/(.+)$` 能工作，是因为它是**正则**（`enabled_regex=yes`）。
+
+### 9.17 交互状态复验（业主 2026-10-29）
+
+今天改过 CSS 并多次部署，`GOAL.md` 里「hover / 键盘焦点 / 禁用 JS / 未登录访客」四条都是
+早前的验证。本轮用当前生产重测。
+
+#### 9.17.1 键盘焦点：42/42 有可见焦点环
+
+`/`、`/inquiry/`、`/faqs/` 三页各 Tab 14 次，共 **42 个焦点站全部有可见环**
+（`outline` 非 `none` 且宽度 > 0，或 `box-shadow` 非 `none`）。**无一个无环站。**
+
+#### 9.17.2 禁用 JS：13 页正文完整，门控按设计
+
+`java_script_enabled=False` 下实测 13 页，`md-js` 类正确缺席：
+
+| 页面 | 正文字符 | 图片 |
+|---|---:|---:|
+| `/` | 17,697 | 99 |
+| `/faqs/` | 30,377 | 1 |
+| `/laser-cut-geometric-metal-screens/` | 16,127 | 52 |
+| `/custom-metal-divider-screens/` | 8,864 | 230 |
+| 其余 9 页 | 2,025–9,853 | 6–40 |
+
+无 JS 时 `[x-cloak]` 元素可见（首页 8 个、几何页 17 个）——实测这些是 **FAQ 答案正文**，
+全部展开正是设计意图（内容不丢），不是缺陷。
+
+#### 9.17.3 面板切换：三档视口全部工作
+
+`data-pag-tab` / `data-pag-panel` 契约：点第 2 个 tab 后 `data-active` 正确转移、
+可见面板 `1 → 2`。1440 / 390 / 320 三档都验证通过，两列在窄屏正确叠为单列
+（`grid-template-columns` 333px / 263px）。
+
+四个面板的配图**逐个滚到位后全部加载**（`naturalWidth=348`）：
+
+| 面板 | currentSrc |
+|---|---|
+| 1 | `ext-pp-lobby-feature-screens-768w.webp` |
+| 2 | `ext-gold-black-grille-screen-lineup-550w.webp` |
+| 3 | `ext-expanded-gold-mesh-balcony-facade-768w.webp` |
+| 4 | `outdoor-black-leaf-garden-privacy-screen-01-550w.webp` |
+
+#### 9.17.4 一次必须记下的自我纠正
+
+我先报过「3/4 的面板配图 550w 变体 404，是真缺陷」。**那是错的，两个错误叠加**：
+
+1. **文件名是我自己拼的**。我按 `<name>-550w.webp` 去请求，而模板实际引用的是
+   `<name>-01-550w.webp`，磁盘上存在。凭猜测拼 URL 得到的 404 不构成缺陷证据。
+2. **惰性加载的测量方法错**。那几张图在文档 y≈18811 处，`loading="lazy"` 在进入加载
+   提前量前根本不发请求（网络面板里对该文件 **0 请求**），于是 `currentSrc` 为空、
+   `naturalWidth` 为 0。我一度改用「超高视口」，但该页高度远超视口，仍不生效。
+   按 `AGENTS.md` 记录的正确方法——**滚到元素位置**——之后全部加载。
+
+教训与本仓库记录的「判据要测目标量，不要测代理」同型：`naturalWidth === 0` 不代表文件坏了，
+它同时是「还没请求」的正常状态。**判断资源是否可用，要直接请求那个 URL，不要读页面上的加载状态。**
+
+### 9.18 生产 PHP 错误日志审计（业主 2026-10-29）
+
+今天有多次部署，需要确认没有引入站点侧错误。生产没有可读的 `debug.log`，但仓库自带
+`mu-plugins/md-error-recorder.php`，它把 PHP 错误写进 `wp-content/md-errors/php.log`
+（轮转在 256KB）。读回结果：
+
+| 项 | 数量 | 性质 |
+|---|---:|---|
+| `PHP Fatal error` | 6 | **全部来自 `wp eval`**（CLI 调试命令），无一条访客侧 |
+| `PHP Warning` | 82 | 6 条来自 `wp eval`；**76 条全部是同一条**：LiveCanvas 插件在 `SERVER_NAME` 缺失时告警 |
+| 日期分布 | 25/26/27/28-Oct | **今天（29 日）零新增** |
+
+两条结论：
+
+1. **6 个 Fatal 没有一个是站点问题**。逐条看过堆栈，全部落在
+   `phar:///usr/local/bin/wp-cli-2.12.0.phar/.../Eval_Command.php`，是执行 `wp eval`
+   时脚本本身抛的异常（`unserialize()` 参数类型、`get_col()` on null、未定义函数等）。
+   访客请求永远不会走这条路径。
+2. **76 条 `SERVER_NAME` 告警出自第三方插件** `plugins/livecanvas/`，且只在 CLI 环境触发
+   ——Web 请求由 Web 服务器提供，`SERVER_NAME` 必定存在。不在本站代码范围内。
+
+今天最后一次 `php.log` 写入是 28 日 17:50，早于今天全部部署，说明**今天的改动没有产生任何
+站点侧 PHP 错误**。这条与「部署 verify 全绿」「55 个 URL 读回正确」相互独立，
+是第三处佐证。
+
+### 9.19 结构化数据抽查（业主 2026-10-29）
+
+八个页型的 JSON-LD 全部可解析，**零 `INVALID_JSON`**：
+
+| 页型 | 页面 | 块数 | 类型 |
+|---|---|---:|---|
+| 首页 | `/` | 1 | Organization |
+| 目录 | `/shop/` | 2 | BreadcrumbList, ItemList |
+| FAQ | `/faqs/` | 2 | FAQPage, BreadcrumbList |
+| 系列 | `/collections/pattern-abstract/` | 1 | BreadcrumbList |
+| PDP | `/pattern/agave-…/` | 2 | Product, BreadcrumbList |
+| About / 画廊 / 询盘 | 各自 | 1 | BreadcrumbList |
+
+PDP 的 `Product` 抽查：`name`、`brand`、`image`（数组）、`description`、`sku`、
+`material`、`additionalProperty`、`potentialAction` 齐全；**`offers` 缺席**。
+
+`offers` 缺席是**有意的**，不是缺字段：`SchemaFilters::product()` 的注释写明
+「the price is empty by ruling and offers is therefore never asserted」，转换路径以
+`QuoteAction` 表达。本项目不交易、价格展示态为 $0，补 `offers` 等于向 Google 断言一个
+不存在的报价——那是虚假标注，比缺字段更糟。此项**不改**。
+
+代价要说清：Google 的 Rich Results 会把没有 `offers` 的 `Product` 报为「缺少字段」。
+这是「不交易」这一事实的必然结果，不是可以靠加字段消除的问题。
+
+### 9.20 面板修复后的全站回归复扫（业主 2026-10-29）
+
+§9.10 的两列恢复改了 `.pag__panel` 与 `.pag__routes`，那两条规则被 9 个系列归档共用。
+本轮在修复部署后，用同一判据、同一 32 页清单重扫 390 与 320，确认没有回归：
+
+| 视口 | 页数 | `tiny-type` | `img-ratio` | 合计 |
+|---|---:|---:|---:|---:|
+| 390 | 32 | 9 | 2 | **11** |
+| 320 | 32 | 9 | 6 | **15** |
+
+两档读数与修复前**逐项相同**。这组数字不是「零缺陷」，而是同一批**已核实为设计**的条目：
+
+- `tiny-type` 全部是 11px 胶囊标签（全站 98 处 `text-[11px] md:text-[13px]`，旧站同类页
+  也有 50 处 11px）；
+- `img-ratio` 是 `object-cover` 把横图裁进竖框，比值 > 4.0 才报。
+
+九页系列归档在两档下**全部 0 条**。
+
+一次有价值的对照：`series-*` 九页在 §9.9 的 1440 首扫里共报 27 条 `long-measure`，
+两列恢复后降到 18 条（每页 3→2），而本轮的 390/320 两档为零——说明这次修复改变的是
+**桌面宽度的行宽**，不触碰窄屏，与预期一致。
+
+### 9.21 404 页与错误响应（业主 2026-10-29，此前未验）
+
+三个不存在的 URL 实测：
+
+| URL | 状态码 | robots | 正文 |
+|---|---|---|---|
+| `/this-does-not-exist-xyz` | **404** | `follow, noindex` | 78 字符 + 返回首页链接 |
+| `/pattern/nonexistent-pattern/` | **404** | `follow, noindex` | 同上 |
+| `/collections/pattern-nope/` | **404** | `follow, noindex` | 同上 |
+
+**不是软 404**（软 404 = 不存在的地址返回 200，会让搜索引擎收录无限多的空页），也**不是白屏**。
+
+与旧站对照：旧站同类 URL 也是 404，正文 116 字符（含 “try a search”）+ 一个出口链接。
+新站 78 字符 + 一个出口链接——**功能对等**，少的是那句搜索提示，不构成退化。
+
+### 9.22 1440 档的贴边与行高（首次，业主 2026-10-29）
+
+`tools/audit/spacing.py` 此前只在 390 与 320 跑过，桌面档从未测。本轮补齐：
+
+**32 页全部 `edge=0`、`tight=0`** —— 这是三档里最干净的一档。
+
+| 视口 | 页数 | edge-touch | tight-leading |
+|---|---:|---:|---:|
+| **1440** | 32 | **0** | **0** |
+| 390 | 32 | 0 | 0 |
+| 320 | 12 | 0 | 4（均为 `Step 0N` 眉标，已核实） |
+
+`widest`（最宽文字占视口比例）在 0.5–0.956 之间，最高的是 `/laser-cut-panels/` 的 0.956
+——那是通栏卡片网格的行，不是正文段，属设计。
+
+一条容易混淆的边界要写清：本判据量的是**贴边**与**行高**，不量**行宽**。1440 下那 96 条
+`long-measure` 属于另一个判据（`defects.js`，760px 绝对阈值），见 §9.9.2。两者互不替代：
+`spacing` 答「文字离边多远、行挤不挤」，`defects` 答「一行有多长」。
+
+### 9.23 控制台与资源可达性（业主 2026-10-29，此前未验）
+
+#### 9.23.1 814 个图片引用全部可达
+
+`tools/audit/media_refs.py` 从**模板读真实引用**再逐个请求，不是按猜测拼 URL：
+
+```
+checking 814 references against https://metal-divider.com
+814 checked, 0 not served
+```
+
+这同时是 §9.17.4 那次错误的正确做法：我当时按 `<name>-550w.webp` 猜文件名，得出 3 个假 404；
+工具取的是模板里真实写的 `<name>-01-550w.webp`，请求全部 200。
+
+#### 9.23.2 控制台错误：五页干净，两页全部来自同一个第三方插件
+
+| 页面 | console errors | HTTP ≥400 |
+|---|---:|---:|
+| `/` | 0 | 0 |
+| `/shop/` | 0 | 0 |
+| `/collections/` | 0 | 0 |
+| `/faqs/` | 0 | 0 |
+| `/inquiry/` | 0 | 0 |
+| `/collections/pattern-abstract/` | **7**（CSP） | 1（401） |
+| `/pattern/agave-…/` | **2**（CSP） | 1（404） |
+
+抓到的最具体的证据是一条 URL：**`/pattern/agave-…/undefined/session`** —— `undefined`
+被拼进了路径，是变量未定义就参与拼接的典型缺陷。
+
+#### 9.23.3 这些错误与 `GOAL.md:73` 记录的两条**完全吻合**，不是新增
+
+`GOAL.md` 在 2026-10-27 已记录 rapls 的两条缺陷：①`raplsaich-chatbot-js-extra` 无 nonce，
+被本站 CSP `script-src-elem` 拦截；②`chatbot.js` 以相对地址 `undefined/session` 请求产生 404。
+本轮控制台读到的就是这两条，一条不多。
+
+**补充三项此前没有的量化事实**：
+
+| 项 | 实测 |
+|---|---|
+| 作用范围 | **只有 PDP**：9 个页型里 8 个 0 请求，PDP 2 个请求 / **39KB** |
+| 页面上渲染了什么 | **什么都没渲染**：`[id*=rapls]`、`[class*=rapls]`、`[id*=chatbot]` 全部 0 个元素 |
+| 配置状态 | `rapls_api_key`、`rapls_settings`、`rapls_chatbot_settings` **全部 unset** |
+
+也就是说：一个**未配置、不渲染任何 UI** 的第三方插件，只在 PDP 上加载 39KB 脚本，
+并稳定产生 CSP 违规与 `undefined/session` 404。
+
+#### 9.23.4 为什么本轮不动它
+
+`GOAL.md` 已把它划为 Batch 2、写明「不越界改」，并注明「主站浏览、询盘与 FAQ 不依赖它」。
+本轮验证支持这个判断：五页控制台零错误，询盘页干净。
+
+但它与本次完成标准里的「没有已知未解决缺陷」确有张力，所以把处置选项列清，等业主选：
+
+1. **停用插件**（`wp plugin deactivate rapls-ai-chatbot`）——零配置、零渲染，停用不损失功能；
+2. **保留但让它在 PDP 之外不加载**——需要改第三方插件或加过滤器，成本更高；
+3. **保持现状**——接受 PDP 上 39KB 与 2 条控制台错误。
+
+我不擅自选，因为「停用一个 active 插件」属于生产变更，且该插件在本仓库之外。
+
+### 9.24 PDP × 146 全量复扫（业主 2026-10-29）
+
+`GOAL.md:987` 记过这四项检查，但那是 10 月 26 日的读数。今天有多次 CSS 与代码部署，
+本轮用**当前部署**重跑，并加了第五项（title 有效性）。取数来源是站点自己的
+`product-sitemap1.xml`（146 条），不是本地清单。
+
+| 检查项 | 结果 |
+|---|---|
+| HTTP 200 | **146 / 146** |
+| canonical 自指 | **146 / 146** |
+| `Product` JSON-LD 存在 | **146 / 146** |
+| 隐藏域 `md_inquiry_pattern_slug` 与 URL slug 一致 | **146 / 146** |
+| `<title>` 有效（长度 > 10） | **146 / 146** |
+
+10 路并发，逐条记录在 `/tmp/pdp_sweep.json`。样本：
+
+```
+/pattern/serpentine-architectural-metal-screen-pattern/
+  code=200 canonical=self jsonld=True slug=self title_ok=True
+```
+
+`GOAL.md:987` 记过首轮曾报 146 个「canonical 不符」，那是**脚本缺陷**（basename 去尾斜杠后
+比较值缺 `/`）。本轮直接按「canonical 是否等于 URL 本身」判定，0 不符——与那条记录一致。
+
+### 9.25 sitemap 去重：一次做窄、一次做过头的完整过程
+
+这一项走了三步，每一步都有读数，记下来因为教训比结果重要。
+
+#### 第一步：只修 `/shop/`（范围太窄）
+
+`SitemapDedupe` 首版把规则限定在 `post_type === 'product'`，修好了
+`product-sitemap1.xml` 的 147 → 146。但当轮之后做 sitemap 交叉检查时发现：
+
+```
+sort all-sitemap-urls | uniq -d   →  https://metal-divider.com/blog/
+```
+
+**`/blog/` 也被列了两次**，形态与 `/shop/` 完全相同：它是真实页面（ID 1542），
+`page_for_posts` = 1542，于是 SEOPress 既当页面写进 `page-sitemap1.xml`，又当 `post`
+类型的 archive link 写进 `post-sitemap1.xml`。
+
+首版测试把 `product` 写成唯一场景 —— 这正是漏掉 blog 的原因。
+
+#### 第二步：改成去掉所有 archive link（过头了）
+
+规则改为无条件返回 `''`，依据是「本站所有 archive 背后都是页面」。部署后读回：
+
+| 文件 | 部署前 | 部署后 |
+|---|---|---|
+| `page-sitemap1.xml` | 19 条，含 `/blog/` | **19 条，含 `/blog/`**（对） |
+| `post-sitemap1.xml` | 1 条（`/blog/`） | **0 条（完全空）** |
+| `sitemaps.xml` 索引 | 列着 `post-sitemap1.xml` | **仍然列着** |
+
+一条重复 URL 换成了**一个死索引项**：爬虫会持续抓一个永远没有 URL 的文件。
+
+#### 第三步：空类型不进索引
+
+读 SEOPress 源码 `template-xml-sitemaps.php` 确认：索引循环算出 `$count_posts`，
+但它**只用于算分页**——计数为 0 时 `$max_loop = 1`，条目照印，且没有「计数为 0 就跳过」
+的过滤器。所以改在 `seopress_sitemaps_xml_index` 上过滤组装好的索引，移除无已发布条目的
+类型的 `<sitemap>` 元素。
+
+规则**读状态而非名单**：博客今天是空的（`GOAL.md:104` 与 `AGENTS.md` 都记「博客未开始，
+无内容来源」），第一篇文章发布后该条目会自动回来。测试覆盖两个方向。
+
+#### 这一节真正要记的
+
+两次都不是「没测」，而是**测了但测的范围与判据跟着上一次的结论走**：
+
+- 第一步：判据写死在测试里（`product` 是唯一场景），于是它不会报出第二种形态；
+- 第二步：判断「所有 archive 都是页面」是正确的，但没预料到**去掉之后文件会空**——
+  修一个问题的动作制造了另一个问题。读回时先看的正是「索引里还有没有它」。
+
+教训：**改一处数据缺失时，要同时问「删掉之后这份容器还剩下什么」**。
+
+#### 9.25.1 一个差点被误判成「逻辑错」的部署问题
+
+第三次修复（taxonomy 分支）部署后，线上索引仍是 4 条、`category` 还在。排查过程：
+
+| 检查 | 结果 |
+|---|---|
+| 站点是否正常 | 200 |
+| `drop_empty_type_entries` 是否在服务器上 | **在**（`grep` 计数 2） |
+| 钩子是否注册且被使用 | **是**（`has_filter` present，源码 309 行有 `apply_filters`） |
+| 响应是否被 LiteSpeed 缓存 | **否**（`x-litespeed-cache-control: no-cache`） |
+| 生产环境直接调用该方法 | **150 字节进、150 字节出，`category` 仍在** |
+
+第五条是决定性的：**方法本身不生效**。再读服务器上的实现，发现它是**旧版**——只有
+`post/product/page` 三个 post type，没有 taxonomy 分支。
+
+原因不是逻辑错，而是**部署根本没上去**：`d5d9ae9` 那次 `just deploy` 被前一次部署的
+「未完成标记」拦下并退出了（部署链拒绝在其上叠加），而前一次部署随后才自行完成。
+我误以为「前一个已完成」就等于「后一个已部署」。
+
+**教训**：`just deploy` 返回非零时，不能只看日志最后几行判断成败。这次日志里写的是
+`deployment …-6a8b4cc still needs verify/archive or rollback` —— 那是**拒绝执行**，
+不是执行失败。区分这两种情况的办法是读部署 id：被拒绝的那次不会产生新 id。
+
+另外记一条并发风险：`deploy6` 与 `deploy7` 同时存在时，`deploy7` 被静默拒绝；
+若两次改动不同，线上会停在前一个版本而日志看起来「有过部署」。本项目应避免并发部署。
+
+#### 9.25.2 最终读回：索引 4 → 3，跨 sitemap 零重复（部署 `20261028T223210409080Z-d5d9ae9`）
+
+部署前的实况是索引 **4 条**（`post` 已在上一次移除），其中 `category` 是空项。
+
+**部署前先写下的预测**：索引应从 4 条变为 **3 条**，`category` 消失，
+`page` / `product` / `product_cat` 三条必须保留；若是 2 条或仍 4 条，说明逻辑仍有问题。
+
+读回结果：
+
+```
+https://metal-divider.com/page-sitemap1.xml
+https://metal-divider.com/product-sitemap1.xml
+https://metal-divider.com/product_cat-sitemap1.xml
+```
+
+**3 条，与预测一致**。连续两次读数相同（排除瞬时值）。
+
+再查跨 sitemap 重复：
+
+| 项 | 结果 |
+|---|---:|
+| 三份 sitemap 的 URL 总数 | **174** |
+| 去重后 | **174** |
+| 重复 | **0** |
+
+修复前跨五份 sitemap 有 175 条、其中 `/blog/` 出现两次；现在是 174 条、零重复。
+
+两份空 sitemap（`post-` 与 `category-`）自身仍返回 200，但**已不在索引里**，
+搜索引擎不会被指过去，因此空文件本身无害——不为它额外做 404 处理。
+
+### 9.26 编译产物与源码的一致性（业主 2026-10-29）
+
+站点提供的是 WindPress 编译后的 `tailwind.css`，不是 `content/windpress/*.css` 源码。
+今天改过 CSS 并重编译过一次，此后只改 PHP，所以本轮只需确认**编译产物仍是那一次的结果**：
+
+| 项 | 读数 |
+|---|---|
+| 编译产物 mtime | `1793218515`（今天重编译后的值，未再变化） |
+| 大小 | 634,232 字节 |
+| 两列规则是否在产物里 | **在**：`pag__panel{grid-template-columns:minmax(0,.9fr) minmax(380px,.62fr);min-height:0}` |
+
+一次自己的测量失误要记：我先用
+`grep '0.9fr) minmax(380px,.62fr)'` 计数，得到 **0**，差点判成「编译产物没有新版规则」。
+实际产物里写的是 `minmax(0,.9fr) minmax(380px,.62fr)`——**我的模式在 `.9fr` 前少了 `minmax(0,`**，
+而紧邻的 `)` 与 ` minmax` 之间有一个空格被我写成了无空格。换成 `grep -o 'pag__panel{[^}]*}'`
+直接看规则原文，三条命中。
+
+这与本仓库记录的「判据要测目标量」同型：**用自己拼的模式去搜，搜不到不等于不存在**。
+
+### 9.27 站内链接完整性（业主 2026-10-29，此前未验）
+
+爬虫最容易碰到、也最容易遗漏的缺陷是**内部链接指向不存在的页面**。本轮从站点自己的
+sitemap 出发，把每个已发布页面抓下来、提取全部站内链接、再逐个请求目标：
+
+```
+pages in sitemap:        174
+unique internal targets: 183
+broken internal links:   0
+```
+
+**174 页 → 183 个不同的站内目标 → 零坏链。** 目标数（183）比页数（174）多，是因为
+导航与页脚链接到 sitemap 未列出的地址（`/inquiry/thank-you/`、分类锚点等）——那些也全部 200。
+
+判据说明：只统计 `href="https://metal-divider.com/…"` 形式的绝对站内链接；带 `#` 的锚点
+被剥掉后再测，因为锚点本身不产生请求。
+
+### 9.28 URL 规范化与外链盘点（业主 2026-10-29，此前未验）
+
+#### 9.28.1 规范化：正确，只有一条两跳链
+
+| 入口 | 结果 |
+|---|---|
+| `http://metal-divider.com/` | 301 → `https://metal-divider.com/`（**1 跳**） |
+| `https://www.metal-divider.com/` | 301 → `https://metal-divider.com/`（1 跳） |
+| `http://www.metal-divider.com/` | 2 跳（http→https，再 www→裸域），最终 200 |
+| `https://metal-divider.com`（无尾斜杠） | 200 |
+| `https://METAL-DIVIDER.COM/` | 200 |
+| `/shop`（无尾斜杠） | 301 → `/shop/`（1 跳） |
+
+只有 `http://www.` 这一种组合是两跳。它是**最罕见的入口**（同时用明文 http 和 www），
+且两跳都能完成、最终 200，`GOAL.md` 早已记过这条注记。**记录不修**：合并它需要额外规则，
+收益远小于复杂度。
+
+#### 9.28.2 外链盘点：28 页只有 2 个外站
+
+| 外站 | 次数 | 判定 |
+|---|---:|---|
+| `wa.me/85264731687` | 200 | 业主裁定的单一对客 WhatsApp 号，正确 |
+| `facebook.com/stainlesssteeleverywhere` | 1 | 见下 |
+
+**零第三方下载链接**——`GOAL.md:208` 的裁定（删除竞品文件直链、换本站媒体库文档）已落实。
+
+#### 9.28.3 那个 Facebook 链接是复刻，不是我们加的
+
+它出现在 `/custom-metal-divider-screens/`，来自 `content/livecanvas/custom-screens.html:1925`。
+**旧站同一页也有同一个链接**（实测 grep 计数 1），是原样搬运。
+
+#### 9.28.4 新发现：旧站三个品牌社媒链接全丢了，其中两个已是死链
+
+| 链接 | 旧站出现位置 | 现在访问 |
+|---|---|---|
+| `instagram.com/metaldivider` | 首页 / About / Contact | **200** |
+| `linkedin.com/company/metaldivider` | 同上 | **404** |
+| `youtube.com/@metaldivider` | 同上 | **404** |
+
+新站三处**全都没有**（全站外链盘点里它们一次也没出现）。
+
+这是本轮唯一可能是「内容丢失」的项，但我不擅自补，两个原因：
+
+1. **两个链接已经 404**。照搬会把死链引入新站，比没有更糟。
+2. **剩下那个 Instagram 无法确认归属**。它返回 200，但页面需要登录才能读到账号信息，
+   我拿不到任何能证明「这是业主的账号」的证据。
+
+按「只问业主知道的事」，这三条要由业主确认：账号是否仍归自己、是否要放、放在哪几页。
+
+### 9.29 全站元数据审计：174 页 title / description / h1（业主 2026-10-29）
+
+这是此前未整体做过的检查。取数来源是站点自己的三份 sitemap（page + product + product_cat）。
+
+| 检查项 | 结果 |
+|---|---|
+| 缺失 title | **0** |
+| 缺失 description | **0** |
+| 缺失 h1 | **0** |
+| 重复 title | **0** |
+| 重复 description | **0** |
+| 重复 h1 | **0** |
+| title 长度 | 24–62 字符，**0 条超 70、0 条短于 15** |
+
+**174 页零缺失、零重复，title 长度全部合规。** 这是本轮最干净的一组读数。
+
+#### 9.29.1 27 条 description 超过 165 字符，是复刻不是我们的问题
+
+最长的 191 字符（`/pattern/kyoto-dynasty-…/`）。逐条看下来，27 条全部是 PDP，都是同一个
+句式模板：`Review the <产品名> architectural metal screen pattern for privacy screens,
+facades, and partitions. Compare visual density, open area, and specification fit.`
+产品名长的就超过 165。
+
+**与旧站逐字对照**：旧站同一页的 `<meta name='description'>`、`og:description`、
+`twitter:description` 与新站**完全相同，包括 191 这个长度**。
+
+所以这不是新站缩短或加长造成的，是旧站数据的原样搬运。按「先搬运、再升级」的原则，
+搬运阶段不改写它；是否要为了不被 SERP 截断而缩短，属于文案裁定，记在这里等业主定。
+
+descriptions 长度区间 99–191，**没有一条短于 70**——不存在「描述过短等于没写」的问题。
+
+### 9.30 图片 alt：静态 HTML 里 96 张没有 alt，但运行时会被补上
+
+| 项 | 数量 |
+|---|---:|
+| 扫描页面 | 28（page + product_cat sitemap） |
+| 图片总数（单次抓取） | 1332 |
+| 无 `alt` 属性 | 96 |
+| 其中 `xo-lazyload` 惰性图 | 0 |
+
+分类：64 张无 class、28 张 `md-search-tile__img`、4 张 `w-full h-full object-cover`。
+
+**这 28 张搜索图块不是缺陷**：`md-chrome.js:3175` 有 `image.alt = alt || ''`，
+图块由 JS 在搜索面板打开时克隆模板并**设置 alt**，静态 HTML 里本来就不该有。
+
+另 64 张无 class 的图本轮**未逐张定性**，因为它们分散在惰性渲染区块里，静态抓取看到的是
+未初始化状态。要定性必须逐页开面板读运行时 DOM——那是另一轮的工作，本轮不做，
+也不把「静态 HTML 没 alt」当成「页面对用户没有 alt」。
+
+#### 9.30.1 更正：那 96 张全部是我的计数 bug，真实缺 alt 的内容图是 0
+
+上一节记的「96 张无 alt、其中 64 张无 class」**是错的**。重做后逐项分开，结论完全不同：
+
+| 项 | 数量 |
+|---|---:|
+| 图片总数 | 1332 |
+| 有 `alt` | 1236 |
+| `role="presentation"` 装饰图（**按无障碍规范本就不该有 alt**） | 40 |
+| `<template>` 里的占位（不渲染，JS 克隆时才填) | 56 |
+| **真实内容图缺 alt** | **0** |
+
+错在两处，都不是页面问题：
+
+1. **只匹配了双引号**。搜索模板用的是 `class='md-search-hit__img'`（单引号），我的
+   `class="([^"]*)"` 匹配不到，于是把「有 class」的图归进了「无 class」。
+2. **把 `<template>` 内容当成已渲染图片**。template 里的 `<img>` 不参与渲染，它的 alt 由
+   `md-chrome.js:3175` 的 `image.alt = alt || ''` 在克隆时设置。首页 HTML 里
+   `md-search-hit__img` 只出现 **1 次**（就是这个模板），而我的脚本报 6 次——说明抓取期间
+   做了重复计数。
+
+**为什么两轮数字是 292、96、64**：三个数各不相同，这本身就是信号。**同一个量连续测出三个
+不同结果，说明测的是脚本行为，不是页面事实**——本仓库 §0.1 记的就是这条：同一尝试连续两次
+无新增诊断信息即停。我连着报了三次数才回头查脚本，是这一节最该记的教训。
+
+`role="presentation"` 的图不该有 alt，这不是「缺失」而是**正确做法**：屏幕阅读器会跳过它，
+避免把装饰性图片念成一个空条目。
+
+### 9.31 文字对比度：110 条假阳性，1 个真缺陷（业主 2026-10-29）
+
+#### 9.31.1 首轮报了 110 条，其中 106 条是我的取色逻辑错
+
+按 WCAG（正文 4.5:1、大字 3:1）扫描 13 页，首轮报 **110 处低对比度**。抽查发现多处
+`ratio: 1`——**42px 标题与背景亮度完全相同**，这在实际渲染里不可能成立。
+
+根因：取背景色的函数只看 `backgroundColor`，一路向上找到第一个不透明色。而中间层常常是
+`background: linear-gradient(...)` 配 `backgroundColor: rgba(0,0,0,0)`，于是它跳过渐变继续
+上溯，最后取到最外层 section 的**白色**。白字配白底 = 1:1。
+
+修法是让取色函数**识别渐变**（取第一个色标）。修完从 **110 降到 4**。
+
+这与本仓库记的「判据要测目标量」同型：`ratio: 1` 是「我的取色错了」的症状，
+不是「文字看不见」的证据。**如果真看不见，像素里不会有白色字形。**
+
+#### 9.31.2 剩下 4 条：3 条是渐变文字，1 条是真缺陷
+
+逐个查实：
+
+| 位置 | 真因 | 判定 |
+|---|---|---|
+| `/about-us/` `METAL DIVIDER` | `background-clip: text` + `-webkit-text-fill-color: rgba(0,0,0,0)` + 金色渐变 | **正常**，渐变文字 |
+| `/custom-metal-divider-screens/` 两处 | 同上，白色渐变 | **正常** |
+| `/collections/` `Home / Pattern Series` | **`color: #000` 坐在 `rgb(18,18,18)` 上** | **真缺陷** |
+
+#### 9.31.3 真缺陷的证据链，不靠单一线索
+
+DOM 读数是 `color: rgb(0,0,0)`，但 DOM 里链条上几层背景全是透明，**不能只凭这点下结论**。
+所以补了像素采样：截图该行后统计左侧文字区，
+
+```
+dominant colours: rgb(18,18,18) ×26287, rgb(255,255,255) ×6400,
+                  rgb(20,20,20) ×6360, rgb(0,0,0) ×860
+luminance: min=0 p5=18 median=18 max=255
+```
+
+**同一块深色底上同时存在白色和黑色墨迹**——白色那一半是别的链接，黑色那一半正是面包屑。
+对比度约 **1.1:1**，等于看不见。
+
+#### 9.31.4 修法与边界
+
+`.clb__*` 的四个颜色（list / link / current / sep）原本全是 `#000`，与它们上方**白底**
+的 `.breadcrumb__*` 用了同一套值。白底那一套**保持 `#000` 不动**——那是对的。
+
+旧站实测 `grep -c 'clb__'` 在 `/collections/all` 上是 **0**，没有 `.clb__*` 标记结构，
+所以这里不存在「复刻值」可对照，只有「文字必须在它所在的底上可读」这一条。
+
+#### 9.31.5 守卫测试的第一版是坏的
+
+写完测试先做反向验证，**用坏 CSS 跑竟然通过**。查下去是负向前瞻的写法问题：
+
+```php
+'/\.clb__list\s*\{[^}]*color:\s*(?!\#000\b|black\b)[^;}]+/s'
+```
+
+`\s*` 可以退化为零个字符，`(?!\#000)` 于是从一个**不是** `#000` 的位置上「成功地匹配了
+空」，整条正则照样命中。**一个永远通过的测试比没有测试更糟。**
+
+改成把声明值提取出来做字符串比较；随后又发现 `.clb__link` 有基础块和 `:hover` 块，
+原先只读第一个块、取错了声明；改成扫描该选择器的所有块。
+
+最终**双向证过**：修复版 2 项 23 断言 OK；退回坏 CSS → 报
+`'.clb__list sits on rgb(18,18,18); #000 there measures about 1.1:1'`，1 FAILURE。
+
+#### 9.31.6 线上读回：黑字消失，网格里只剩深底与白/灰墨
+
+部署 `20261028T230530458490Z-e744780` → WindPress 重编译（mtime `1793218515 → 1793229362`）。
+
+编译产物里已能看到新值：`clb__current{color:#fff}`、`clb__list{color:#ffffff9e}`。
+线上 DOM 读数与之一致：`list/link` = `rgba(255,255,255,0.62)`、`sep` = `0.34`、
+`current` = `rgb(255,255,255)`。
+
+**像素对照（同一区域、同一裁剪、DPR 2）**：
+
+| | 主色 | 黑色墨迹 | 最低亮度 |
+|---|---|---|---|
+| 修复前 | `rgb(18,18,18)` ×26287 | **`rgb(0,0,0)` ×860** | **0** |
+| 修复后 | `rgb(18,18,18)` ×26205 | **无** | **18**（= 底色本身） |
+| | | 新增 `rgb(165,165,165)` ×307（62% 白在深底上的实际色） | |
+
+修复后最低亮度等于背景色本身，意味着**画面上不再有任何比背景更暗的墨迹**——
+黑字确实消失了。
+
+### 9.32 对比度判据已固化，并在写它的过程中又抓到自己两次错
+
+上一节的对比度测量只存在于 `/tmp`，且首版有取色 bug。本轮把它写进
+`tools/audit/contrast.py`（`just contrast`），带 `--self-check`。
+
+#### 9.32.1 三次修正，每次都让假阳性下降一个量级
+
+| 版本 | 缺陷 | 结果 |
+|---|---|---|
+| 首版（临时脚本） | 只读 `backgroundColor`，跳过渐变背景，一路找到白色祖先 | 报 **110** 条 |
+| 加渐变识别 | 渐变算作底色 | 110 → **4** |
+| **加半透明合成** | 只接受 `alpha >= 0.99` 的底色，跳过 `rgba(212,175,55,0.9)` 这类半透明按钮底，继续上溯到黑色渐变 | `/project-gallery/` 的 9 条**全部消失** |
+
+第二处尤其典型：一个**黑色文字的金色按钮**被判成「黑字压黑底」。
+`rgba(212,175,55,0.9)` 是 90% 不透明的金色，和白色文字本应约 9:1。
+判据现在从最内层向外**逐层合成**半透明层，而不是要求某一层完全不透明。
+
+#### 9.32.2 自检本身也错过一次
+
+写完 `--self-check` 先跑，**黑字那条没有被报出来**——看起来像判据坏了。查下去是判据
+**正确**：它确实报了黑字（`ratio 1.12`、底 `rgb(18,18,18)`），错的是我的断言字符串。
+夹具文本被截断到 44 字符，而我断言的是截断后的完整句子。
+
+这已是同一形态的第三次：「我自己拼的字符串」不等于「页面上的事实」。
+处理办法是把夹具文本缩短到不会被截断，而不是放宽断言。
+
+#### 9.32.3 全站 32 页现在的读数：26 条，分三类
+
+| 类别 | 数量 | 性质 |
+|---|---:|---|
+| 半透明小字 `rgba(255,255,255,0.38–0.45)`，11–14px | **16** | 3.57–4.47，略低于 4.5。**设计取舍**，见下 |
+| WhatsApp 品牌绿底白字 `rgb(37,211,102)` | **1**（全站 29 处使用该色） | 1.98。**品牌色与 WCAG 的冲突**，不是我们的错 |
+| 其余（已查实并消除） | 9 | **全部是半透明底色未合成的假阳性** |
+
+**两类都不擅自改**：
+
+- WhatsApp 绿 `#25D366` 是官方品牌色，旧站同样使用（实测旧站页面里有 `#25d366`），
+  白字压品牌绿是行业通行做法。改它意味着偏离品牌色，属设计裁定。
+- `0.38–0.45` 的白色小字同属排版层级决策：它们是辅助信息（材料牌号、适用环境），
+  与主文案有意区分。改到 0.5 以上会让层级消失。
+
+### 9.33 面包屑修复的跨视口复验（业主 2026-10-29）
+
+上一节只验了 1440。CSS 改动必须在窄屏复验，否则等于没验。
+
+#### 9.33.1 四个宽度全部正确
+
+| 视口 | 盒子 | 可见 | `clb__current` | `clb__link` |
+|---|---:|---|---|---|
+| 1440 | 1400×44 | 是 | `rgb(255,255,255)` | `rgba(255,255,255,0.62)` |
+| 768 | 753×44 | 是 | 同上 | 同上 |
+| 390 | 375×44 | 是 | 同上 | 同上 |
+| 320 | 305×44 | 是 | 同上 | 同上 |
+
+宽度随视口收缩（1400 → 753 → 375 → 305），**无横向溢出**，也没有在窄屏被隐藏。
+
+#### 9.33.2 那两个 golden-button 假阳性已确认消除
+
+旧的全站报告里 `/project-gallery/` 有 **9 条** `rgb(0,0,0)` on `rgb(0,0,0)`。用合成修正后的工具重跑该页：
+
+```
+0 low-contrast text run(s) across 1 page(s)
+```
+
+**9 → 0**。这 9 条自始至终都是「金色按钮的半透明底没被合成」造成的，不是页面的问题。
+
+#### 9.33.3 31 处 `color: #000` 是否都是缺陷：不是
+
+六个卷里共 31 处 `color: #000`。但它们当中**没有一条出现在最新全站扫描的 26 条里**
+（那 26 条是 16 条半透明白字 + 1 条 WhatsApp 绿 + 9 条已消除的假阳性），
+说明这些黑字全部坐在浅色底上——**黑字配浅底是正确做法**。
+
+判断依据是实测对比度，不是「看到 `#000` 就报」。这与本仓库记的
+「判据要测目标量」一致：`#000` 本身不是缺陷，`#000` 落在什么颜色上才是。
+
+### 9.34 隐私政策与实际数据实践的核对（业主 2026-10-29，此前未验）
+
+隐私页最容易出的问题是**写着已经不存在的东西**（例如 CookieYes、WAF），或者
+**漏了正在使用的东西**。逐项实测：
+
+| 关键词 | 页面 | 实际情况 | 判定 |
+|---|---|---|---|
+| `CookieYes` | **absent** | CookieYes 不在站上 | ✅ 一致 |
+| `WAF` | **absent** | 无前置 CDN/WAF | ✅ 一致 |
+| `pattern list`（图案清单） | **absent** | 站点无图案清单机制 | ✅ 一致 |
+| `Turnstile` | PRESENT | 询盘表单使用 | ✅ 一致 |
+| `Hostinger` | PRESENT | 托管方 | ✅ 一致 |
+| `CDN` | PRESENT | 见下 | ✅ 一致 |
+
+9 个章节结构完整（Who we are / What we collect / Why & legal basis / Cookies /
+Sharing / Retention / Cross-border / Your rights / Children-security-contact），
+正文 5,480 字符。
+
+#### 9.34.1 关于 CDN 那一段写得准确
+
+页面原文：
+
+> Hostinger hosts the site and serves it through its CDN. Cloudflare is not that
+> CDN: when the inquiry form's spam check runs, Cloudflare receives only a
+> one-time Turnstile token and, if known, the IP address…
+
+这与 `AGENTS.md` 的裁定完全一致：**无前置 CDN/Cloudflare，Cloudflare 的唯一身份是
+Turnstile 挂件**。政策明确区分了「托管方的 CDN」与「Cloudflare 不是那个 CDN」，
+没有把 Turnstile 误写成 WAF 或 CDN。
+
+#### 9.34.2 一处需要业主回答的事实：5 年保留期
+
+页面第 6 节写「Inquiry records are kept for **5 years** — the tracking cycle of a
+B2B project」。
+
+`GOAL.md:106` 记的是「询盘回复时限、**隐私保留 5 年**仍未答」，`GOAL.md:125` 记
+「5 年保留期和法域**未改**」。也就是说这个 5 年是从旧站沿用的，**业主从未确认过**。
+
+同一处还有「询盘回复时限」——`GOAL.md` 记旧站同时有 `one business day` /
+`within 24 hours` / `same day` 三种说法，也一直未答。
+
+这两项都属于「只有业主知道的业务事实」，我不编造，列进待确认。
+
+#### 9.33.4 窄视口全站回归：与改动前逐项相同
+
+面包屑改的是 CSS，必须在 390/320 复核。同一判据、同一 32 页清单：
+
+| 视口 | 页数 | `tiny-type` | `img-ratio` | 合计 | 改动前 |
+|---|---:|---:|---:|---:|---:|
+| 390 | 32 | 9 | 2 | **11** | 11 |
+| 320 | 32 | 9 | 6 | **15** | 15 |
+
+**逐项相同，没有回归。** 两档的全部条目仍是此前已核实为设计的那两类
+（11px 胶囊标签、`object-cover` 裁切），面包屑改动没有制造新条目。
+
+#### 9.34.1 补充：Turnstile 的实际请求体与政策一致
+
+政策写 Cloudflare「receives only a one-time Turnstile token and, if known, the IP
+address」。读 `Turnstile::verify()` 确认代码就是这样：
+
+```php
+'response' => $token,          // 一次性 token
+if ( '' !== $ip ) {
+    $body['remoteip'] = $ip;   // 有 IP 才带，没有就不发
+}
+```
+
+**只发这两项，IP 为空时连它也不发。** 政策没有夸大也没有遗漏。
+
+### 9.35 存储回收：312 → 21 项（业主 2026-10-29，§0 纪律）
+
+几十轮验证累积了大量临时目录。按 §0「本地备份、快照、实例和临时工作树必须有保留边界」
+做了一次盘点与淘汰。
+
+#### 9.35.1 判据：只保留文档引用的
+
+不是按日期、不是按大小，而是**从 `docs/**/*.md`、`GOAL.md`、`AGENTS.md` 里反查被引用的
+路径**。被引用 = 有证据价值；未被引用 = 可重建的中间产物。
+
+| 项 | 处理前 | 处理后 |
+|---|---:|---:|
+| `/tmp/md-*` 条目 | **312** | **21** |
+| 占用 | **883 MB** | **235 MB** |
+
+释放 **647 MB**。保留的 20 个全部可读（`md-320-20261028`、`md-390b`、`md-320b`、
+`md-sweep`、`md-evidence` 与 15 个 readback JSON）。
+
+#### 9.35.2 一个不能删的例外
+
+`/tmp/md-takeover/session.jsonl`（117 MB）未在文档中被引用，但它是一份**旧会话的完整日志**。
+查它的会话 id `session-43e3ce28-…` 在 `~/.kimi-code/sessions/` 下**没有对应目录**，
+也就是说**这是唯一副本**。按 §0「保护唯一原件」保留，不按「未引用」删除。
+
+#### 9.35.3 备份：删掉一份可证明失败的
+
+`~/metal-divider-local/backups` 原有 8 份。其中 `backup-20261026-1851` 只有 **132 KB**，
+`db.sql.gz` 24 KB（正常备份是 2.8 MB），`wp-content` 只有 2 项——是一次失败的备份，
+删掉。其余 7 份覆盖 10-24 到 10-28 的不同时点，全部保留。
+
+两份 1.4 GB 备份（`20261028-0401` / `20261028-1202`）查过并不重复：`wp-content` 有
+**24 处差异**，后者多 4 个 mu-plugins，是两个真实恢复点。
+
+#### 9.35.4 又一次自己的测量错误
+
+删完备份后用 `du -sh backup-* | sort -rh` 读回，`backup-20261028-1202` 显示 **14 MB**，
+看起来像被误删。查下去：**内容完好，31,396 个文件、1.4 GB**（plugins 369 MB +
+uploads 1.0 GB）。那个 14 MB 是 `du` 在管道里被打断产生的错误读数，用 `du -shx` 与
+`--apparent-size` 复测都是 1.4 GB。
+
+教训同型：**一个异常读数要先复测再下判断**，尤其当它出现在「刚做过删除」之后——
+那时最容易把测量噪声当成自己造成的破坏。
+
+### 9.36 那 16 条「半透明小字」也查清了：旧站同一个值
+
+上一节把它们归为「排版层级取舍，不擅自改」。本轮补了决定性的对照——**旧站用的是同一个色值**：
+
+| 文本 | 旧站同位置的颜色 |
+|---|---|
+| `Grade 1.4301` | `rgba(255,255,255,0.4)` |
+| `Strand 0.5–3.0 mm` | `rgba(255,255,255,0.4)` |
+
+新站的 `rgba(255,255,255,0.38–0.45)` 与旧站一致到小数点后一位。所以这 16 条不是
+「我们引入了低对比度」，而是**复刻带来的既存样式**。
+
+按「先搬运、再升级」：搬运阶段原样保留；要不要为了 WCAG AA 提升到 4.5，属于
+**视觉升级决策**，与「27 条超长 description」「16 条小字」「WhatsApp 品牌绿」同属一类，
+一并等业主裁定。
+
+### 9.37 `.scratch/` 里那份 226 MB 副本不是垃圾，不能删
+
+盘点时看到 `.scratch/impl-162-merge` 占 226 MB，长得像整个仓库的副本。查清后**不是**：
+
+```
+git worktree list
+  …/metal-divider                   5909b80 [impl/158-ai-wiring]
+  …/metal-divider/.scratch/impl-162-merge  d7241e2 [impl/162-merge]
+```
+
+它是一个**已注册的 git worktree**，属于另一条分支 `impl/162-merge`：
+
+| 检查 | 结果 |
+|---|---|
+| 有未提交改动吗 | **0** |
+| 已推到 origin 吗 | 是（`remotes/origin/impl/162-merge` 存在） |
+| 已并入我们的分支吗 | **否**（它有 1 个我们没有的提交，我们有 57 个它没有的） |
+
+所以它是**另一条尚未合并的分支的工作树**，不是过时副本。按 §0「保护未提交改动与唯一原件」
+保留，交给那条分支的负责人回收。
+
+**这条要记的**：`.scratch/` 在 `.gitignore` 里，容易被当成「随便可删的临时目录」。
+但 git 的 worktree 可以注册在仓库内任何路径下——**忽略规则管不到它是不是别处的工作现场**。
+判断依据是 `git worktree list`，不是目录名。
+
+#### 9.37.1 WhatsApp 按钮同样是复刻，连类名都一样
+
+旧站那三个按钮的 class 原文：
+
+```
+bg-[#25d366] px-6 text-center text-[15px] font-semibold text-white …
+bg-[#25D366] py-3.5 text-sm font-semibold text-white no-underline …
+bg-[#25D366] hover:bg-[#22c55e] text-white font-semibold …
+```
+
+`bg-[#25D366]` + `text-white` —— 新站用的是同一对，连 `text-white` 都在。
+所以那条 1.98:1 **不是我们引入的**，是旧站本来就有的品牌色组合。
+
+至此对比度相关的三类剩余项全部定案为**复刻**：
+
+| 项 | 数量 | 旧站同位置 | 结论 |
+|---|---:|---|---|
+| 半透明小字 `rgba(255,255,255,0.38–0.45)` | 16 | `rgba(255,255,255,0.4)` | 复刻 |
+| WhatsApp 绿底白字 | 1（全站 29 处用该色） | `bg-[#25D366] text-white` | 复刻 |
+| 超长 description（191 字符） | 27 | 逐字相同 | 复刻 |
+
+三项都属「要不要为了 WCAG / SERP 截断而升级」的同一个决策，不属于搬运阶段的缺陷。
+
+### 9.38 页头页脚从未被对比度扫过：补测后 140 → 24
+
+`contrast.py` 的作用域是 `document.querySelector('main')`，**页头与页脚从未被测**——
+而它们出现在每一页上。补测后先得 140 条，全部是「白字 `ratio: 1`」。
+
+#### 9.38.1 那 140 条是测容器造成的假阳性
+
+抽查 `PATTERNS` 那一项：页面上只有一个这样的链接，**颜色是 `rgb(0,0,0)`**、
+坐在白色 wrapper 上、21:1 完全正常。但探针报的是 `rgb(255,255,255)`。
+
+根因：探针选中的是外层 `LI`（85×44、`opacity: 1`、在页面上可见），读了 **容器的
+`color`**。那个白色从未被渲染成任何文字——文字由子元素 `A` 的黑色呈现。
+`innerText` 会把所有后代的文字拼起来，于是「容器」和「文字」在我这里混成了一个。
+
+修法：只测**自身含文本节点**的元素（遍历 `childNodes` 找 `nodeType === 3`）。
+140 → **24**。
+
+这与本仓库反复记的同一条：**别测容器，测真正画字的那个元素**。
+前一次是 `naturalWidth`、再前一次是渐变底色，现在是容器的 `color`。
+
+#### 9.38.2 剩下的 24 条集中在页脚同一组
+
+| 文本 | 颜色 | 字号 | 对比度 |
+|---|---|---|---|
+| `© 2026 Metal Divider. All rights reserved` | `rgba(255,255,255,0.42)` | 10px | 4.04 |
+| `Privacy` | 同上 | 10px | 4.04 |
+| `Contact` | 同上 | 10px | 4.04 |
+
+4.04 对 4.5——差 0.46。这是**页脚法务行**，全站每页重复，属同一个视觉决策
+（与 16 条正文小字、WhatsApp 绿同类），不单独改。
+
+#### 9.38.3 页脚还有一组深色文字，说明它坐在浅色块上
+
+页脚实测存在 `rgb(20,20,20)` 的 11px 文字（如 `Screens`），说明页脚内部有**浅色卡片区**，
+与深色区并存。这解释了为什么页脚的对比度不能「一刀切按深色底判断」——
+判据必须逐元素向上找它真正的底，这正是 `backdrop()` 在做的事。
+
+#### 9.38.4 一项没查到底的（按 §0.1 停止）
+
+想确认页脚法务行的 `0.42` 是不是旧站原值。旧站 `Home` 的 footer 只有 8,541 字符、
+一个颜色 token（`#1d1d1d`），样式全在外部 CSS；用 curl 取不到渲染色，需要浏览器读旧站。
+
+这一项我**没有继续**：已经为一个 0.46 的差值换了三种取数方式，属于 §0.1 说的
+「同一尝试连续两次无新增诊断信息即停」。**记为未确认**，不外推成「复刻」。
+
+### 9.39 判据一变，之前那批数字就作废
+
+这一条不是关于页面的，是关于**怎么对待自己产出的数字**。
+
+本轮先把 `contrast.py` 的作用域从 `main` 扩到 `main + header + footer`，同时把
+「读元素的 `innerText`」改成「只读元素**自身的文本节点**」。改完后：
+
+| 版本 | 1440 全站读数 |
+|---|---:|
+| 扩范围后、未改「自身文本」前 | **140** |
+| 改完「自身文本」后 | **24**（2 页抽样时是 8，全部 `zone: footer`） |
+
+问题出在：**390 与 320 那两批是在改 `zone` 字段之前启动的**，跑完时文件里 13 条
+全部标成 `zone: '?'`——它们用的是旧判据。
+
+如果我照单收下，会得到这样的结论：
+
+> 1440 有 8 条（全在 footer）、390 有 13 条、320 有 13 条
+
+这三个数**不可比**：前一个用新判据、后两个用旧判据。所以那两批作废，用同一版本重跑。
+
+#### 9.39.1 要记的规矩
+
+**判据一改，同一判据下此前的所有读数都作废，不能续用做对照。**
+
+这一轮里同一个量已经变过几次：110 → 4（加渐变）→ 140（扩范围）→ 24（改自身文本）。
+每次变化都不是页面变了，而是**我看的方式变了**。这时候把新旧数字并列，等于假对照——
+比没有数据更糟，因为它看起来像有据可依。
+
+判断方法：跑扫描前先确认工具的**输出结构**（这里是有没有 `zone` 字段），
+跑完后对每一批数据检查它是不是当前版本产的。缺字段就是旧版，不能当作有效读数。
+
+### 9.40 Tailwind 4 的 `oklch()` 让判据有系统性盲区（本轮最重要的发现）
+
+390/320 那轮重跑给出 **151 条**，而 1440 只有 8 条。数量级差这么多，先查为什么。
+
+拆开看：
+
+| zone | 条数 | 说明 |
+|---|---:|---|
+| footer | **128** | 全是同一条 `rgba(255,255,255,0.42)`、12px，32 页 × 每页 4 处 |
+| main | 23 | 需要逐条看 |
+
+那 128 条不是 128 个问题，是**同一个元素在 32 页上各出现 4 次**。真正要看的是 main 里的 23 条。
+
+#### 9.40.1 `oklch()` 被静默丢弃，然后取错底
+
+其中两条最刺眼：
+
+```
+/about-us/            [main] 1.24/4.5 14px rgb(10, 46, 20) on rgb(20, 20, 20)  Chat Now
+/manufacturing-process/ [main] 1.24/4.5 14px rgb(10, 46, 20) on rgb(20, 20, 20)  Chat Now
+```
+
+深绿文字压在近黑底上——看着像真缺陷。查 DOM：
+
+```
+A  color: rgb(10, 46, 20)   bg: oklch(0.696 0.17 162.48)
+```
+
+**按钮底色是 Tailwind 的亮绿，写成 `oklch()`。** 而我的 `parse()` 只认 `rgba?()`，
+对 `oklch()` 返回 `null`；`backdrop()` 于是跳过这一层，继续上溯到深色容器。
+
+这个亮绿究竟是什么颜色，用画一个 1×1 像素再读回的办法量出来：**`rgb(0,188,125)`**。
+深绿文字压在它上面约 **5.5:1**——完全正常。
+
+**根因**：Chrome 对 `oklch()` 不做归一化，`getComputedStyle().color` 与
+`ctx.fillStyle` 都原样返回 `oklch(...)`。整站大量使用 Tailwind 4，这类颜色到处都是，
+所以这是**系统性盲区**，不是偶发。
+
+修法：`parse()` 遇到不认识的语法时，**画一个像素再用 `getImageData` 读回**——
+让渲染器做转换。修完那两条 `Chat Now` 消失。
+
+#### 9.40.2 一条真实的「设计意图」：4% 不透明的水印
+
+修完 oklch 后浮出一条新的：
+
+```
+[main] 1.1/3  50.7px  oklab(… / 0.04)  on rgb(20,20,20)  MANUFACTURING
+```
+
+50.7px 大字、**4% 不透明度**，等于几乎看不见。查它的属性：
+
+```
+P  class="pointer-events-none absolute inset-x-0 top-1/2 -z-0 …"
+```
+
+`pointer-events-none` + `absolute` + 负 z 的**装饰性水印**。4% 正是它的设计值，
+不是「文字看不见」。判据应把这类排除（与 `defects.js` 里 `decorative()` 同一道理）。
+
+#### 9.40.3 这一节的账
+
+同一轮里我改了几次判据，每次都在不同的地方栽跟头：
+
+| 版本 | 盲区 | 症状 |
+|---|---|---|
+| 首版 | 只读 `backgroundColor` | 渐变底被跳过 → 110 条 |
+| 第二版 | 只接受 `alpha >= 0.99` | 半透明金按钮被跳过 → `/project-gallery/` 9 条 |
+| 第三版 | 只认 `rgba?()` | **`oklch()` 被跳过 → `Chat Now` 2 条** |
+| 第四版 | 读容器 `innerText` | 容器颜色当文字 → 页头 140 条 |
+| 第五版 | 未排除装饰层 | 4% 水印 1 条 |
+
+五版里有四版的根因是同一个：**判据看不懂某一层，就跳过它去取更远的层**。
+每次跳过都会把「正确的近景」换成「错误的远景」。
+
+**教训**：判据在取不到某一层时，不应该默默跳过——**要么正确地转换它，要么把这条报成
+「无法判定」**。静默跳过一定会产生假数据，而且假的方向总是看起来更像缺陷。
+
+### 9.41 报告不记录视口宽度，会让一份旧文件看起来完全有效
+
+三档扫描跑完时 `exit=1`，但三个输出文件都在。检查发现：
+
+```
+/tmp/md-cf-320/contrast.json  ==  /tmp/md-cf-390/contrast.json     (identical: True)
+```
+
+**320 那份是 390 的副本**——320 从未真正运行，只是目录里留着上一次的文件。
+如果不查这一步，我会拿「1440: 173 / 390: 170 / 320: 170」当三档证据，
+其中第三个数是假的。
+
+根因是**报告里不记录 `innerWidth`**。于是：
+
+| 文件 | 补字段前 `innerWidth` |
+|---|---|
+| 1440 | `None` |
+| 390 | `None` |
+| 320 | `None` |
+
+三份都无从自证属于哪个宽度，一份复制品与一份真报告在结构上**完全无法区分**。
+
+修法：每页记录 `entry["innerWidth"] = innerWidth`。补完后重跑，才第一次能断言
+「这份报告来自 390」。这也让重跑 390 与 1440 成为必要——旧文件缺字段。
+
+**这一条与 §9.39 同源**：判据/报告必须自带**它测的是什么**的证据。
+一个数脱离它的测量条件就不是证据，只是数字。
+
+### 9.42 页脚被重复计数 32 次，淹没了真正要看的东西
+
+首次全站读数 173 条，拆开看：
+
+| zone | 条数 |
+|---|---:|
+| footer | **128** |
+| main | 45 |
+
+那 128 条全是**同一个页脚元素**：`rgba(255,255,255,0.42)`、10px、4.04:1，
+32 页 × 每页 4 处。它把 45 条正文问题淹掉了。
+
+工具改为**按 `(zone, color, backdrop, size, class, text)` 去重**，并在汇总里标出
+「这条出现在几页」。输出从此是可读的：
+
+```
+[footer] 4.04/4.5 10px rgba(255,255,255,0.42)  32 page(s)
+[main]   3.81/4.5 16px …  Send us your drawings, a s
+[main]   2.68/4.5 11px …  Email
+[main]   2.68/4.5 11px …  Location
+```
+
+第一次去重时我把 `text` 截断到 34 字符才组键，于是页脚四个不同条目被并成一条；
+补上 `class` 并把文本纳入键之后才分开。
+
+**一个共享组件出现在 32 页上，是 1 个问题，不是 32 个。**
+
+### 9.43 三档最终读数（同一判据、每份报告自证宽度）
+
+补上 `innerWidth` 后重跑，三档第一次互不相同、可互相印证：
+
+| 视口 | 报告记录的 `innerWidth` | 页数 | 原始条数 | 去重后真实问题 |
+|---|---:|---:|---:|---:|
+| 1440 | **{1440}** | 32 | 173 | **40** |
+| 390 | **{390}** | 32 | 170 | **37** |
+| 320 | **{320}** | 32 | 170 | **37** |
+
+三份报告各自记录的宽度与请求一致，**这是「三档真的各测了一次」的唯一硬证据**。
+在此之前三份都是 `None`，其中一份还是另一份的副本。
+
+原始 173 与去重 40 的差距，全部来自页脚那一条在 32 页上重复。
+
+#### 9.43.1 这 40/37/37 是什么
+
+逐条看过，全部落在两类，且都是已证实为复刻的样式：
+
+| 类别 | 说明 | 旧站同位置 |
+|---|---|---|
+| 半透明白字 `rgba(255,255,255,0.38–0.45)` | 正文/标签里的辅助信息，3.57–4.47 | **`rgba(255,255,255,0.4)`** |
+| 页脚法务行 `rgba(255,255,255,0.42)` | 每页 4 处 | 未确认（§9.38.4） |
+| WhatsApp 品牌绿 `#25D366` 白字 | 1.98 | **`bg-[#25D366] text-white`** |
+
+**没有一条是本轮改动引入的**，也没有一条是此前未发现的新缺陷。
+
+#### 9.43.2 结账：这一项从 110 条降到 40 条，靠的是判据修正而不是改页面
+
+| 阶段 | 读数 | 变化原因 |
+|---|---:|---|
+| 首版 | 110 | 只读 `backgroundColor`，渐变底被跳过 |
+| 加渐变识别 | 4 | — |
+| 扩页头页脚 | 140 | 但读的是容器颜色 |
+| 只读自身文本 | 24 | 容器不再是文字 |
+| **修 `oklch`** | **173（原始）** | 判据第一次能看见 oklch 层 |
+| 去重页脚 | **40（真实问题）** | 同一元素不再按页计数 |
+
+数字先升后降，但**页面从没变过**。唯一真正改过页面的，是 §9.31 面包屑那一次。
+
+### 9.44 媒体引用两次复跑给出 3 条与 1 条「未送达」，逐个直连都是好的
+
+`media_refs.py` 对 814 条引用做逐条请求。同一命令连跑两次：
+
+| 次 | 结果 |
+|---|---|
+| 第 1 次 | `814 checked, 3 not served` |
+| 第 2 次 | `814 checked, 1 not served` |
+
+**两次数量不同，本身就不像真的缺失**——缺文件是稳定的，不会第一次 3 个第二次 1 个。
+
+逐个直连那几条（都是几百 MB 的 `.mp4`）：
+
+```
+206  …-hd-720p-3-0mbps-68262742.mp4       (range 0-1024)
+206  …-hd-1080p-3-3mbps-68943975.mp4      (range 0-1024)
+```
+
+`206 Partial Content` 说明文件在、服务器支持 range、能正常取到数据。
+那几次「未送达」是**大文件整份下载超时**，不是资源缺失。
+
+#### 9.44.1 换成什么说法才诚实
+
+不能写「0 缺失」也不能写「有 3 条缺失」。准确的说法是：
+
+> 814 条引用全部存在；逐条整份下载时有 1–3 条会因体积超时，直连（含 range）均返回 206/200。
+
+**一个不稳定的数字不能当作缺陷计数，也不能当作「全部正常」的证据。**
+出现波动时先问「这个量本身稳不稳」，而不是取其中一次结果。
+
+这与 §9.39 / §9.41 是同一条：数字离开它的波动范围就不是证据。
+
+### 9.45 询盘表单四层防护逐层实战（业主 2026-10-29）
+
+`Submission::process()` 的顺序是 **限流 → nonce → 蜜罐 → 字段校验 → Turnstile**。
+此前只验过「缺字段被拒」，其余三层没有单独证据。本轮用受控 POST 逐层击破：
+每次记录返回的 `role="alert"` 文案与**询盘/队列计数**，证明它确实没落库。
+
+测试前基数：询盘 **0**、队列 **0**。
+
+| # | 条件 | 返回 | 是否落库 |
+|---|---|---|---|
+| 1 | 不带 nonce | `Your form session expired. Please reload the page and try again.` | **否**（0/0） |
+| 2 | 有效 nonce + 蜜罐 `website` 有值 | `We could not accept this submission. If this keeps happening, reach us…` | **否**（0/0） |
+| 3 | 有效 nonce、蜜罐空、字段齐全、**无 Turnstile token** | `Verification failed. Please refresh the page and try again.` | **否**（0/0） |
+
+三次都是 HTTP 200 + 无 303 跳转 + 表单仍在页面上 + 错误用 `role="alert"` 播报，
+说明四条路径都走到 `$this->state->fail()` 而不是静默吞掉。
+
+#### 9.45.1 顺手证实了字段校验实际在卡什么
+
+第 3 次最初两次尝试返回 `Please complete the highlighted fields.`，查下去是我漏了两个必填项：
+
+- `md_inquiry_quantity` 是 **choice 字段**，只接受 `Validator::QUANTITIES` 白名单里的六个值
+  （`Sample / test panel (1-10 sqm)` … `Not decided yet`），我传的 `1` 不合法；
+- `md_inquiry_confirm` 必须正好是 `'1'`。
+
+补上合法值后才走到 Turnstile 层。**这说明字段校验确实按白名单执行，不是摆设。**
+
+#### 9.45.2 限流留下了 5/5，已清理并读回
+
+`RateLimiter::LIMIT = 5` / `WINDOW = 600`。查 transient：
+
+```
+_transient_md_inquiry_rl_bd501ea3… = [1793233196, 1793233216, 1793233231, 1793233248, 1793233267]
+```
+
+**五次全用掉了**——正是我这五次 POST。这本身是限流的实证，但留着会挡住真实访客。
+按测试纪律清理（连同 `_transient_timeout_` 一并删），读回：
+`SELECT COUNT(*) … LIKE '%md_inquiry_rl_%'` = **0**，询盘仍是 **0**。
+
+#### 9.45.3 剩下的只有真人那一层
+
+四层里三层已单独证实。Turnstile 层也证实了会拒绝（第 3 次），但**没有证实它会放行**——
+那需要一次真人在真 Chrome 里完成挑战。这是唯一还需业主动手的环节。
+
+### 9.46 询盘表单四档布局：宽度可接受，但聊天挂件会盖住提交按钮
+
+#### 9.46.1 表单本身：四档都可用，320 偏窄但不影响填写
+
+| 视口 | 表单宽 | 输入框 | 溢出 | 标签截断 |
+|---|---:|---|---:|---:|
+| 1440 | 1238 | — | 无 | 0 |
+| 768 | 591 | — | 无 | 0 |
+| 390 | 285 | 285×50 / 16px | 无 | 0 |
+| 320 | **215** | 215×50 / 16px | 无 | 0 |
+
+320 下 215px 是因为 `.quote-inner` 有 `padding: 28px`（≥750px 时 40px）。视觉判定结论是
+「**略有但可接受**」：文字清楚、无截断、无挤字，字段约占可用宽度 70%。若想贴近常见手机表单
+（320 下约 273–288px），需把内边距收到 ~16px；只降到 20px 几乎看不出。**本轮不改。**
+
+顺带纠正一处我自己的误判：`md_inquiry_confirm` 复选框本身只有 **20×20**，一度被我当成
+「低于 44px 触控下限」。实际它包在 **215×63 的 label 里**——可点区域是 63px 高，不是 20px。
+**量控件要量可点区域，不是量那个 `<input>`。**
+
+#### 9.46.2 真缺陷：矮视口下聊天挂件盖住提交按钮 62.5%
+
+在 `390×640`（较矮的手机视口）滚到 `scrollY: 1200` 时：
+
+```
+submit  : 285×48  位于 (45, 576)
+mdvl-launcher : 207×54  位于 (152, 570)
+重叠    : 178×48 = 按钮面积的 62.5%
+```
+
+**提交按钮被盖住近三分之二。** `elementFromPoint` 命中的是 `SPAN.mdvl-mark`，
+不是按钮本身——那一下点下去不会提交，会打开客服窗口。
+
+这不是「视口太窄」的问题：`1440×844`、`390×844`、`320×640` 都没有命中，
+只有**视口高度较小**时滚动到特定位置才发生。说明它是**固定定位挂件与滚动位置的交叠**，
+而不是布局缺陷。
+
+#### 9.46.3 为什么不接这个
+
+`GOAL.md:666` 写明「AI 客服票（#86/#102/#147）**不在本 GOAL 范围**」，
+`GOAL.md:1260` 也把「同屏双入口（rapls 徽章 + mdvisitor 胶囊）叠压输入区右角」
+记为**观察项、留 Batch 2、走查时业主过目**。
+
+本轮的新证据把这个观察项**量化并升级了严重性**：不是「叠压输入区右角」，
+而是「滚到某位置时盖住提交按钮 62.5%」。但它的归属仍是客服工作流，
+所以按 §7「只问业主知道的事」与范围纪律，**记录、量化、上报，不擅自改挂件**。
+
+需要的裁决是：这个挂件要不要在与询盘表单同页时缩小/移位/隐藏。
+
+### 9.47 全站遮挡扫描：聊天挂件在 4 个页面上盖住可点控件
+
+#### 9.47.1 先分清两类「遮挡」
+
+7 个页面 × 2 个矮视口（390×844 / 390×640），逐屏滚动、对每个可点控件做
+`elementFromPoint(中心点)`，看命中的是不是它自己。结果分两类，**只有第二类算缺陷**：
+
+| 覆盖者 | 条数 | 判定 |
+|---|---:|---|
+| `div.xo-header-grid` | 7 | **正常**：固定页头盖住滚动中的内容，这是 sticky header 的定义 |
+| `button.mdvl-launcher` | 7 | **缺陷** |
+| `span.mdvl-mark` | 5 | **缺陷** |
+| `span.mdvl-label` | 4 | **缺陷** |
+
+那 16 条缺陷全部来自**同一个聊天挂件**（`mdvl-*` 三个元素），跨 `/`、`/inquiry/`、
+`/faqs/`、`/collections/`、`/about-us/`、`/shop/`、PDP 七个页面。
+
+#### 9.47.2 询盘页最严重：必填字段被盖
+
+在 `390×640` 下逐段滚动复现，命中的是**表单自己的字段**：
+
+| 滚动位置 | 被盖的控件 | 被谁盖 |
+|---:|---|---|
+| 0 | `company` 输入框 | `BUTTON.mdvl-launcher` |
+| 600 | `message` 文本域 | `BUTTON.mdvl-launcher` |
+| 1200 | `submit` 按钮 | `SPAN.mdvl-mark` |
+
+`message` 是必填项。也就是说：**访客在某个滚动位置想点进留言框，点下去打开的是客服窗口。**
+
+上一轮单独测提交按钮时得到 62.5% 的覆盖率，现在是同类问题在三个不同控件上的复现。
+
+#### 9.47.3 挂件的定位是设计值，不是漂移
+
+| 来源 | `right` / `bottom` |
+|---|---|
+| `mdvisitor-launcher.css` 基础规则 | `24px` |
+| `@media (max-width: 560px)` | **`16px`** ← 390 与 320 命中的是这条 |
+| 线上实测 `getComputedStyle` | `16px` |
+
+同一个媒体查询里 `.mdvl-card { inset: 0 }`（窄屏全屏卡片）。所以窄屏贴边 16px 是**刻意的**，
+挂件还带 `z-index: 2147483000`（接近 int 上限），压过页面一切。
+
+**这不是 CSS 写错，是「固定贴边 + 极高 z-index + 尺寸 207×54」三者组合的必然结果。**
+要修只能改这三者之一，或者在询盘页上给它让位。
+
+#### 9.47.4 归属与不改的理由
+
+`GOAL.md:666` 把 AI 客服票（#86/#102/#147）划在**本 GOAL 范围之外**；
+`GOAL.md:1260` 把「rapls 徽章 + mdvisitor 胶囊叠压输入区右角」记为**观察项、留 Batch 2**。
+
+本轮把它从「叠压输入区右角」量化成：
+
+- **16 处**可点控件在滚动中被它盖住，跨 7 页
+- 其中包含**必填输入框**（`company`、`message`）与**提交按钮**（62.5% 面积）
+
+严重性已经不是「右角叠压」。但修改挂件仍属客服工作流，按范围纪律**不动手**，
+把这三个数交给业主裁决。
+
+### 9.48 目录筛选、排序、分页逐项实测（业主 2026-10-29）
+
+`GOAL.md:1110` 记过「目录搜索/排序/分页及空态」已实测，但那是多轮部署之前的读数。
+本轮用当前部署复验，并且**验证的是「它真的改变了结果」，不是「参数被接受」**。
+
+#### 9.48.1 排序：三个值各自产生不同顺序
+
+| `sort_by` | 前三个产品 |
+|---|---|
+| 默认（无参数） | `agave` / `akira` / `alhambra` |
+| `title-ascending` | `agave` / `akira` / `alhambra`（与默认一致，默认就是它） |
+| `title-descending` | **`zelda`** / `winter-branches` / `winderoo` |
+| `created-descending` | **`white-sands`** / `wild-spinach` / `winter-branches` |
+
+三者两两不同，说明排序真的作用在查询上。
+
+#### 9.48.2 搜索：结果集真的被收窄
+
+| `pattern_search` | 结果数 |
+|---|---:|
+| （无） | 24（第一页） |
+| `leaf` | **5** |
+| `agave` | **1** |
+| `zzzznotfound` | **0** |
+
+零结果时页面仍是 **200**、搜索表单仍在、空态元素存在（`md-catalog-empty`），不是 404 也不是空白页。
+
+#### 9.48.3 排序跨页延续
+
+`/shop/?sort_by=title-descending` 的分页链接自己带上了参数：
+
+```
+/shop/page/2/?sort_by=title-descending
+```
+
+翻到第 2 页后首项是 **`spinnaker`**（接着 `zelda`/`winter-branches` 的字母序往下），
+而默认顺序的第 2 页首项是 `casablanca`。**排序没有被翻页丢掉。**
+
+#### 9.48.4 筛选 + 排序可以叠加
+
+同一 `q=a`：升序从 `agave` 起，降序从 `zelda` 起。两个参数同时生效。
+
+#### 9.48.5 noindex 恰好落在该落的地方
+
+| URL | robots |
+|---|---|
+| `/shop/` | **`index, follow`** |
+| `/shop/?pattern_search=leaf` | **`follow, noindex`** |
+| `/shop/?sort_by=title-descending` | **`follow, noindex`** |
+| `/shop/page/2/` | **`index, follow`** |
+| `/collections/pattern-abstract/` | **`index, follow`** |
+
+这正是 `CatalogRobots` 注释里写的设计：**纯目录与分页保持可索引**（分页是标准做法），
+**只有带筛选/排序参数的视图 noindex**——那些是有界的多份重复视图，会耗尽抓取预算。
+`/shop/` 同时在 page sitemap 里（1 条），与 `index` 一致，不矛盾。
+
+#### 9.48.6 一处我自己的脚本缺陷，差点报成产品缺陷
+
+第一次测 noindex 时我得到「`/shop/` 本身也是 `noindex`」，看着像主目录失去索引资格。
+查下去是**我的 URL 拼接写错了**：对 `/shop/` 我硬接 `&mdaudit=`，请求变成了
+`/shop/&mdaudit=…`，那是一个不同的路径，命中了错误的规则。
+
+改成「先判断 URL 里有没有 `?`，再决定用 `?` 还是 `&`」之后，五个 URL 全部落在正确值上。
+
+**教训**：拼测试 URL 也要按真实规则拼。用一个错的 URL 去问对的规则，得到的是第三种答案。
+
+### 9.49 无障碍基础审计（业主 2026-10-29，此前未验）
+
+七个页型逐项检查：`lang`、地标数量、跳转链接、表单标签关联、控件的可访问名称。
+
+| 项 | 结果 |
+|---|---|
+| `lang` | 7 页全部 `en-US` |
+| 跳转链接（skip link） | 7 页全部存在 |
+| 表单控件无标签 | **0**（`label[for]` / 包裹 / `aria-label` 三者之一） |
+| **`<main>` 数量** | `/shop/` 与 9 个系列归档 **各 2 个**；其余页 1 个 |
+
+#### 9.49.1 真缺陷：10 个页面有嵌套 `<main>`
+
+```
+MAIN#theme-main                  1425×10192  ← 主题骨架自带
+  └ MAIN.pattern-catalog__content 1073×5253  ← 模板里又开了一个
+```
+
+HTML 规范禁止 `main` 嵌套 `main`。屏幕阅读器与爬虫都靠 main 地标跳过导航，
+两个会让这件事在**图案买家最常落地的页面上**变得含糊。
+
+来源是 `shop.html` 与 `series-archive.html` 各写了一个
+`<main class="pattern-catalog__content">`，而主题骨架已经在外层渲染 `<main id="theme-main">`。
+
+改法是**把内层换成同 class 的 `<div>`**，不是重写：外层 `main` 继续提供
+`base.css` 里 `main p` 的行宽上限（实测目录段落 **720px** 仍生效），
+而 `pattern-grid.css` 认的是 class，不是标签名。
+
+守卫 `SingleMainTest` 两条断言：模板里不得出现 `<main>`、wrapper 的 class 必须保留
+（第二条防的是「为了改语义把布局也改了」）。**双向证过**：把 `<main>` 放回去，
+测试报 `shop.html: the theme already renders <main id="theme-main"> around this template`。
+
+#### 9.49.2 两次我自己的误报，都不是产品问题
+
+**第一次**：「每页 6 个链接没有可访问名称」。查 HTML 源码，
+`mmv2__hub-link` 与 `mmv2__link` 内部都有完整文字
+（`Stainless steel screens`、`Laser-Cut & Geometric Metal Screens`）。
+它们处在**折叠的 mega menu 里**，`innerText` 对未渲染内容返回空——
+**被折叠的元素的 `innerText` 是空的，这不等于它没有名字。**
+
+**第二次**：改成检查只含图片的 `mmv2__img` 链接时，我报「7 个全部无 alt」。
+再查源码，每个都有 `alt='Gold laser-cut stainless steel partition screens in four
+decorative patterns'` 这样的描述。我的正则写成 `alt="..."`，而源码里 `alt` 在换行、
+带前导空格、且用的是单引号附近的结构，没匹配上。
+
+正确的计数是 **7/7 都有 alt**。
+
+**这两次和之前几次是同一个形态**：我用自己拼的字符串或选择器去问页面，
+拿不到就当「不存在」。判据必须能证明自己看得见正常情况，否则它只会报告缺陷。
+
+#### 9.49.3 纠正：站点**没有**跳过链接，键盘用户到不了正文
+
+上一节表格里我曾写「跳转链接（skip link）：7 页全部存在」。**那是错的。**
+
+我的探针只查「页面里第一个 `href="#…"` 的锚点」，而首页第一个锚点是
+`<a href="#open-quote">` —— 那是报价弹层的触发器，不是跳过链接。
+换成真正查 `skip.to.(main|content)` / `skip-link` 之后：
+
+```
+skip-link matches = 0   /
+skip-link matches = 0   /shop/
+skip-link matches = 0   /inquiry/
+skip-link matches = 0   /faqs/
+```
+
+**整站没有跳过链接。**
+
+它造成的实际代价可以用键盘实测：从页面开头连续按 Tab，看第几次才落进 `<main>`。
+
+| 页面 | 第一次落进 main 的 Tab 序号 |
+|---|---:|
+| `/` | **30 次以内没有一次落进**（满 30 次停止） |
+| `/shop/` | 同上 |
+
+键盘与屏幕阅读器用户每次进一个新页面，都要按过整套导航才能到正文。
+`/shop/` 的 `nav` 有 6 个，首页有 3 个，加上菜单内部的可聚焦项，30 次不够。
+
+这是**真实且可量化**的无障碍缺口，不是样式偏好。
+
+#### 9.49.4 为什么本轮不改它
+
+加跳过链接要动页头骨架（`partials/header.html` 或主题层），而页头是**复刻页面的
+视觉基准**——`AGENTS.md` 要求未裁定升级的复刻页通过像素门。一个出现在 Tab 时才可见的
+链接不改变像素，但它需要先确认主题层没有自己的实现、且不与既有焦点顺序冲突。
+
+按「先测量、再决定」，本轮把它连同代价（30 次 Tab）一起记录，作为下一步的输入。
+
+#### 9.49.5 线上读回：DOM 里每个页面只剩一个 `main`
+
+部署后逐页读 DOM（不是 grep HTML）：
+
+| 页面 | `document.querySelectorAll('main').length` | id |
+|---|---:|---|
+| `/shop/` | **1** | `theme-main` |
+| `/collections/pattern-abstract/` | **1** | `theme-main` |
+| `/collections/pattern-asian/` | **1** | `theme-main` |
+| `/collections/pattern-perforated/` | **1** | `theme-main` |
+| `/collections/pattern-vintage-retro/` | **1** | `theme-main` |
+
+嵌套 `main` 已消除。
+
+#### 9.49.6 我在这条上又数错了一次
+
+部署后我用 `grep -c '<main'` 数模板，得到 **2**；再用 `curl | grep -o '<main'` 数线上 HTML，得到 **3**。
+看起来像「修复让它更糟了」。
+
+查下去两次都是我自己的问题：
+
+1. **模板那 2 个里，1 个在我自己写的注释里**——注释正文写的是
+   `<!-- A <div>, not a <main>: the theme skeleton already renders <main id="theme-main"> … -->`。
+   `grep` 不看上下文，把注释里的 `<main` 也算进去了。
+2. **线上 HTML 那 3 个里，2 个同样在注释里**（注释会被原样发送给浏览器），
+   浏览器解析后**注释不产生元素**。所以 DOM 里一直只有 1 个。
+
+**`grep` 数 HTML 源不等于数 DOM 元素。** 这与本仓库记过的「`curl` 到的 HTML 不等于访客看到的结果」
+是同一条——只是这次我自己又踩了一遍，而且是踩在自己刚写的注释上。
+
+教训：**判据如果会被自己的说明文字干扰，就先剥注释再数**（`SingleMainTest` 里已经这么做了，
+但我在命令行上临时数的时候没做）。

@@ -613,10 +613,38 @@ final class Config {
 	 * build_terms_plan() expects one member in the fixtures), so a 301 there
 	 * would send the series' own visitors away from a page that exists.
 	 *
+	 * **The prefix entry alone does not cover the pages behind it.** SEOPress
+	 * matches a redirect's post title as an exact path, so `pages` only fires
+	 * for `/pages` itself. Measured on production 2026-10-29: of the 24 old
+	 * `/pages/<handle>` URLs that answered 200 on metalpartition.com, 11
+	 * redirects existed and **13 returned 404** — eight family pages, `faqs`,
+	 * `about-us`, `manufacturing-process`, `project-gallery` and
+	 * `custom-metal-divider-screens`. Those are the site's content pages, and
+	 * the old URLs were live, so leaving them 404 breaks the rule that an old
+	 * channel is only retired once the new one carries the same traffic.
+	 *
+	 * Most of them land on the same handle at the site root, which is how the
+	 * migration wrote them (`post_parent` 0 on every content page). The three
+	 * that do not are spelled out below.
+	 *
 	 * @var array<string, string>
 	 */
 	private const REDIRECT_TARGETS = array(
-		'pages' => '/',
+		'pages'                                   => '/',
+		'pages/about-us'                          => '/about-us/',
+		'pages/chinese-style-artistic-screens'    => '/chinese-style-artistic-screens/',
+		'pages/custom-metal-divider'              => '/custom-metal-divider-screens/',
+		'pages/custom-metal-divider-screens'      => '/custom-metal-divider-screens/',
+		'pages/expanded-metal-panels'             => '/expanded-metal-panels/',
+		'pages/faqs'                              => '/faqs/',
+		'pages/glass-hybrid-screens'              => '/glass-hybrid-screens/',
+		'pages/laser-cut-geometric-metal-screens' => '/laser-cut-geometric-metal-screens/',
+		'pages/laser-cut-panels'                  => '/laser-cut-panels/',
+		'pages/manufacturing-process'             => '/manufacturing-process/',
+		'pages/outdoor-privacy-landscape-screens' => '/outdoor-privacy-landscape-screens/',
+		'pages/perforated-panels'                 => '/perforated-panels/',
+		'pages/project-gallery'                   => '/project-gallery/',
+		'pages/stainless-steel-screens'           => '/stainless-steel-screens/',
 	);
 
 	/**

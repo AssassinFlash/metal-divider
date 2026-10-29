@@ -63,7 +63,14 @@ final class MobileChromeTest extends TestCase {
 		$this->assertStringContainsString( 'background:#141414', $css );
 		$this->assertStringContainsString( '.md-quote-modal__card .md-inquiry-fields{', $css );
 		$this->assertStringContainsString( 'position: static;', $css );
-		$this->assertStringContainsString( '/wp-json/wc/store/v1/products?per_page=6', $js );
+		// The panel searches the whole site through WordPress's own search, and
+		// the store endpoint is left with the one job it is still good for:
+		// turning the product hits in that response into thumbnails. The
+		// product-only store search is what made `manufacturing` answer "No
+		// patterns match" while the Manufacturing Process page existed
+		// (measured on production 2026-10-29).
+		$this->assertStringContainsString( '/wp-json/wp/v2/search?per_page=', $js );
+		$this->assertStringContainsString( '/wp-json/wc/store/v1/products?per_page=24&include=', $js );
 		$this->assertStringNotContainsString( '/wp-json/wp/v2/product', $js );
 		$this->assertStringContainsString( "panel.classList.contains('xo-menu-hamburger-style1__mega-menu')", $js );
 	}

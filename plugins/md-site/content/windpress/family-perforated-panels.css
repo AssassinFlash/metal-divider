@@ -57,6 +57,29 @@ padding-bottom: 80px;
 .md-t156d2b52 { --pt:0;--pb:0;--bg-color:#141414 }
 .md-tb30e9d9a { background-image: linear-gradient(45deg, #c9a962 1px, transparent 1px), linear-gradient(-45deg, #c9a962 1px, transparent 1px);background-size: 60px 60px }
 
+/* ── Hero float pair ─────────────────────────────────────────────────────
+   Old-site values (`oh-float` 6s / −12px, `oh-float-accent` 5s / −8px after
+   1.5s). Both class names came across in the markup, neither animation did,
+   so the panel and its accent photo stood still. Keyframes are prefixed
+   because every volume compiles into one cache. */
+@keyframes pp-hero-float {
+0%, 100% { transform: translateY(0); }
+50% { transform: translateY(-12px); }
+}
+@keyframes pp-hero-float-accent {
+0%, 100% { transform: translateY(0); }
+50% { transform: translateY(-8px); }
+}
+.ph-side-float { animation: pp-hero-float 6s ease-in-out infinite; }
+.ph-accent-float {
+animation: pp-hero-float-accent 5s ease-in-out infinite;
+animation-delay: 1.5s;
+}
+@media (prefers-reduced-motion: reduce) {
+.ph-side-float,
+.ph-accent-float { animation: none; }
+}
+
 /* ── Application comparison: split handle and mask ───────────────────────
    The section shipped a draggable split (data-pa-slider, data-pa-masked-left)
    with no stylesheet at all — measured, every `pa-scope` rule was missing from
@@ -152,14 +175,35 @@ outline-offset: 4px;
    children but not the selected state the runtime sets. */
 [data-pa-marker] { position: relative; background: transparent; border: 0; }
 /* The marker's inner circle is drawn by utility classes (`border-2`,
-   `bg-[#141414]`), so a component-layer rule loses to them. Doubling the
-   attribute outranks a single-class utility without `!important`. */
+   `bg-[#141414]`). Those utilities sit in the `utilities` layer, which the
+   entry orders last, so a component rule cannot outrank them on a property
+   they set — `border-color` is free at rest (only `group-hover:` sets it),
+   `background-color` is not. The glow is the old site's `.…-marker.is-active`
+   ring, carried on the free property. */
 [data-pa-marker][data-pa-marker].is-active > div {
 border-color: var(--md-gold, #c9a962);
-background: rgba(201, 169, 98, 0.18);
+box-shadow: 0 0 20px rgba(201, 169, 98, 0.4);
 }
 [data-pa-marker].is-active [data-pa-marker-label] {
 color: #fff;
+}
+
+/* The dot lattices behind the comparison: the old site's dense field (14px),
+   sparse field (32px) and the masked copy the reveal uncovers (14px, denser
+   dots). All three class names came across in the markup; not one of the
+   three rules did, so the mask uncovered nothing and the split read as a
+   photograph sliding over another. */
+.pa-scope-template--21844034814205__perforated-applications-pattern-left {
+background-image: radial-gradient(circle, rgba(201, 169, 98, 0.35) 1.5px, transparent 1.5px);
+background-size: 14px 14px;
+}
+.pa-scope-template--21844034814205__perforated-applications-pattern-right {
+background-image: radial-gradient(circle, rgba(201, 169, 98, 0.25) 3px, transparent 3px);
+background-size: 32px 32px;
+}
+.pa-scope-template--21844034814205__perforated-applications-pattern-masked {
+background-image: radial-gradient(circle, rgba(201, 169, 98, 0.4) 1.5px, transparent 1.5px);
+background-size: 14px 14px;
 }
 [data-pa-rail-fill] {
 position: absolute;
@@ -199,6 +243,38 @@ outline-offset: 2px;
 [data-ppr-card]:focus-visible {
 outline: 2px solid #ffffff;
 outline-offset: 2px;
+}
+
+/* The same cards' surface. Their `ppr-scope-…-card` class came across in the
+   markup with none of its rules, so all four tiles sat borderless and
+   unmoving — the old site's border, hover lift and selected frame were the
+   only thing distinguishing one option from another under the pointer. The
+   values are the old site's. The timing is not repeated here: this volume
+   compiles into `@layer components` and the markup's `transition-*`
+   utilities sit in `utilities`, which the entry orders last, so a transition
+   declared here would lose every longhand. The markup carries the old
+   site's 400ms `cubic-bezier(0.25, 0.1, 0.25, 1)` instead — its
+   `duration-400` was a step no build defines, so the lift ran on the
+   default timing. */
+.ppr-scope-template--21844034814205__perforated-pattern-routes-card {
+border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ppr-scope-template--21844034814205__perforated-pattern-routes-card:hover {
+border-color: rgba(201, 169, 98, 0.4);
+transform: translateY(-4px);
+}
+/* After the hover rule, and equal in weight to it, so the selected frame wins
+   while the cursor is still on the tile it selected. */
+[data-ppr-card][aria-pressed="true"] {
+border-color: #c9a962;
+box-shadow: 0 0 32px rgba(201, 169, 98, 0.25), 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+/* The badge's ring, fill and type are utilities (`border-white/20`,
+   `text-white`), and a components-layer rule cannot outrank them. Its glow is
+   the one part of the old site's selected-badge treatment no utility sets, so
+   the glow is all this volume can carry. */
+[data-ppr-card][aria-pressed="true"] .ppr-scope-template--21844034814205__perforated-pattern-routes-num-badge {
+box-shadow: 0 0 12px rgba(201, 169, 98, 0.3);
 }
 
 @media (max-width: 749px) {

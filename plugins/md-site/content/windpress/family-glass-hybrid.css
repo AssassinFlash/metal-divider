@@ -2,6 +2,60 @@
  * markup and stylesheets by the conversion pipeline (ticket
  * #32, spec 19 §4.2 T2). Rules keep their source order.
  */
+/* Hero glass-type chips and the two feature lines. The old page's hero kept
+ * these four rules in the section's own <style> block; the conversion dropped
+ * them, so the three chips rendered as bare text and both headings lost their
+ * size and weight. Scope is the section id the rest of this file uses.
+ *
+ * Values are copied verbatim rather than converted to px. The old main.css
+ * sets html{font-size:62.5%} (1rem = 10px) and base.css carries that same
+ * root, so 1.75rem renders 17.5px and 0.86rem renders 8.6px here exactly as
+ * they did on the old page — converting would be what changes them.
+ * font-family is left to inherit: body resolves --md-font-sans, whose first
+ * family is Inter, the one the old rule named. */
+#glass-hybrid-hero-template--21873710530813__interior_room_partitions_hero .gh-hero-chip {
+display: inline-flex;
+align-items: center;
+gap: 0.45rem;
+border-radius: 0.55rem;
+border: 1px solid rgba(255, 255, 255, 0.14);
+background: rgba(255, 255, 255, 0.03);
+padding: 0.5rem 0.92rem;
+font-size: 0.86rem;
+font-weight: 600;
+color: rgba(255, 255, 255, 0.8);
+}
+#glass-hybrid-hero-template--21873710530813__interior_room_partitions_hero .gh-chip-dot {
+height: 0.42rem;
+width: 0.42rem;
+border-radius: 9999px;
+background: #c9a962;
+flex: none;
+}
+#glass-hybrid-hero-template--21873710530813__interior_room_partitions_hero .gh-feature-title {
+margin: 0;
+font-size: 1.75rem;
+line-height: 1.2;
+font-weight: 650;
+color: #f4f4f5;
+}
+#glass-hybrid-hero-template--21873710530813__interior_room_partitions_hero .gh-feature-text {
+margin-top: 0.45rem;
+font-size: 1.2rem;
+line-height: 1.55;
+color: rgba(255, 255, 255, 0.76);
+}
+@media (min-width: 768px) {
+#glass-hybrid-hero-template--21873710530813__interior_room_partitions_hero .gh-hero-chip {
+font-size: 0.94rem;
+}
+#glass-hybrid-hero-template--21873710530813__interior_room_partitions_hero .gh-feature-title {
+font-size: 2.25rem;
+}
+#glass-hybrid-hero-template--21873710530813__interior_room_partitions_hero .gh-feature-text {
+font-size: 1.48rem;
+}
+}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions {
 padding-top: 72px;
 padding-bottom: 72px;
@@ -15,17 +69,23 @@ padding-bottom: 96px;
 html.md-js #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions [x-cloak] {
 display: none !important;
 }
-/* Panel gallery */
+/* Panel gallery. The stack was a fixed 520px box with an absolutely
+ * positioned gallery inside it, and every panel hides its overflow — so the
+ * bottom overlay, which is the text, could only ever be clipped: nothing in
+ * the box responded to a longer title or a larger type scale. Height now
+ * follows the content. 520px stays as the floor that keeps the intended band,
+ * the image moves behind the text as a fill layer, and the overlay sits in
+ * flow at the bottom of the panel so its own height is what grows the gallery.
+ */
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery-stack {
 position: relative;
-height: 520px;
+min-height: 520px;
 }
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery {
-position: absolute;
-inset: 0;
+position: relative;
 display: flex;
 gap: 12px;
-height: 100%;
+min-height: 520px;
 }
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel {
 flex: 1;
@@ -35,6 +95,9 @@ overflow: hidden;
 cursor: pointer;
 transition: flex 0.6s cubic-bezier(0.25, 1, 0.5, 1);
 position: relative;
+display: flex;
+flex-direction: column;
+justify-content: flex-end;
 border: 1px solid rgba(255, 255, 255, 0.08);
 background: #141414;
 }
@@ -43,6 +106,8 @@ flex: 2.5;
 border-color: rgba(201, 169, 98, 0.4);
 }
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-img {
+position: absolute;
+inset: 0;
 width: 100%;
 height: 100%;
 object-fit: cover;
@@ -94,12 +159,11 @@ height: 6px;
 border-radius: 50%;
 background: #c9a962;
 }
-/* Bottom overlay — always visible, expands on active */
+/* Bottom overlay — always visible, expands on active. It is the panel's only
+ * in-flow child, so its height is what decides the panel height: the text can
+ * never be pushed outside the box and clipped. */
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-overlay {
-position: absolute;
-bottom: 0;
-left: 0;
-right: 0;
+position: relative;
 padding: 20px;
 background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
 z-index: 2;
@@ -131,13 +195,11 @@ transition: all 0.4s ease;
 color: rgba(255,255,255,0.85);
 font-size: 14px;
 }
-/* Mobile: horizontal scroll */
+/* Mobile: horizontal scroll. Height is not set here — the phone layout block
+ * further down turns these panels into a vertical stack whose height comes
+ * from the text, so a floor declared here would be overridden anyway. */
 @media (max-width: 749px) {
-#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery-stack {
-height: 380px;
-}
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery {
-height: 100%;
 overflow-x: auto;
 scroll-snap-type: x mandatory;
 -webkit-overflow-scrolling: touch;
@@ -247,12 +309,13 @@ margin-top: 6px;
 }
 [id*="21873710530813"] .mf-stats-container + .mb-10,
 [id*="21873710530813"] .lcm-stats-container + .mb-10 { display: none !important; }
-#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery-stack { height: auto; }
+#glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery-stack { height: auto; min-height: 0; }
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-gallery {
 position: relative;
 display: flex;
 flex-direction: column;
 height: auto;
+min-height: 0;
 overflow: visible;
 gap: 12px;
 scroll-snap-type: none;
@@ -262,7 +325,7 @@ scroll-snap-type: none;
 position: relative;
 flex: none;
 width: 100%;
-height: 260px;
+min-height: 260px;
 border-radius: 16px;
 }
 #glass-hybrid-solutions-template--21873710530813__glass_hybrid_solutions .ghs-panel-overlay { padding: 16px; }

@@ -116,6 +116,35 @@ present name="dev": php-install
 readback *args:
     python3 "{{ justfile_directory() }}/tools/audit/marker_readback.py" {{ args }}
 
+# Sweep the live site at a true narrow viewport in the owner's own Chrome. Only
+# Playwright can set device metrics and Chrome refuses windows under ~578px, so
+# this is the one place the browser rule allows it (AGENTS.md §8). Always run
+# `--self-check` first: it plants three known boxes and fails if the empty-block
+# rule stops telling a void from a painted wrapper.
+[positional-arguments]
+narrow *args:
+    cd "{{ justfile_directory() }}" && /opt/homebrew/opt/python@3.12/bin/python3.12 tools/audit/narrow_viewport.py {{ args }}
+
+# Measure the two complaints a screenshot cannot settle: text touching the edge
+# and body text whose lines are packed tighter than they can breathe. Both are
+# read off the DOM, not off pixels, so a full-bleed photo is never mistaken for
+# a layout gap. `--self-check` plants a 1px-gutter paragraph and a line-height
+# 1.0 paragraph and fails unless both are caught.
+[positional-arguments]
+spacing *args:
+    cd "{{ justfile_directory() }}" && /opt/homebrew/opt/python@3.12/bin/python3.12 tools/audit/spacing.py {{ args }}
+
+# Text that does not separate from the band behind it. Two things this has to
+# get right, both learned the hard way: a gradient is paint (reading only
+# backgroundColor walked past gradient bands to a white ancestor and reported
+# white-on-white), and gradient-clipped text takes its colour from the gradient,
+# so its computed colour says nothing. --self-check plants one legible and one
+# invisible paragraph on the same dark band and fails unless the rule tells
+# them apart.
+[positional-arguments]
+contrast *args:
+    cd "{{ justfile_directory() }}" && /opt/homebrew/opt/python@3.12/bin/python3.12 tools/audit/contrast.py {{ args }}
+
 # Install the SEOPress configuration plane into the instance (spec 22,
 # ticket #34: title/description templates, noindex faces, sitemap, robots.txt,
 # knowledge graph, schema builder posts, /pages redirect, page metas). With
