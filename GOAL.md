@@ -1358,3 +1358,24 @@ md_chat_delete 前缀(PreparedSQL 批量整改);④deploy forget 通道(卡死 p
 合规出口);⑤runbook 补 future-changes/rollback 两节;⑥chat-seed manifest 记 LHC
 版本(钉扎);⑦知识缺口读回命令(raplsaich_unanswered_log 消费端);⑧隐私政策补
 企微出境+保留期条款。明日:W1 在线转人工演练(白天)。
+
+## W1 在线转人工演练(2026-10-29 13:47–14:00,白天窗,业主在场)
+
+**结果:全链贯通 ✅**——访客问 "Agave 316 for coastal lobby"→AI 知识接地回答
+("Based on: Pattern Agave")→访客 "I would like to talk to a person please."→bot
+"connecting you with our team"→**转人工卡即发企微**(chat #34,05:53 UTC)→业主
+点 Open 进 mdmobile→回复 "Hi. Chester here for your help."→**访客挂件实时收到**
+(DOM 第 6 条;DB status=1/last_op_msg_time=1793253385)。zai 视觉核图无错无破版
+(/tmp/mdw1-visitor-reply.png)。
+
+**实测语义修正(承 b8 值班记录)**:dep 在线≠营业时间内自动在线——业务窗内无操作员
+在场时挂件呈 **onlyBotOnline** 态(AI+转人工入口,非离线留资表单);离线留资表单只在
+营业窗外。即:营业窗=AI 托底+可转人工;窗后=留资。转人工不依赖操作员在线(bot 侧
+transfertohuman is_online 恒 true,上游行为),卡即发,业主接入后会话激活。
+
+**UX 发现(记 Batch 3)**:操作员回复与 AI 消息视觉完全同款(同气泡样式、头部仍标
+"AI assistant"、无坐席姓名标签/头像变化)——访客无从分辨已连上真人。修法方向:
+mdvisitor 主题给 operator 消息加身份标识(姓名标签/头像/头部状态切换),不新建体系。
+
+**测试清理**:lh_chat #34(含消息)待业主收尾后删;挂件会话回收;被导航占用的事先
+存在的标签页(GitHub de-linker PR 页)恢复原址。
