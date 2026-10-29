@@ -233,9 +233,25 @@ final class Form {
 		$out .= '<div class="md-inquiry">';
 
 		$out .= '<form class="md-inquiry-form" method="post">';
-		$out .= \wp_nonce_field( Submission::ACTION, Submission::NONCE_FIELD, false, false );
-		$out .= '<input type="hidden" name="md_inquiry_action" value="submit">';
-		$out .= '<input type="hidden" name="md_inquiry_locale" id="' . \esc_attr( $this->id_of( 'md-inquiry-locale' ) ) . '" value="en">';
+		// wp_nonce_field() writes `id="md_inquiry_nonce"` with no suffix, so two
+		// forms on one page produced two elements with the same id — measured on
+		// production `/` (91 ids, one duplicated) and on every page that now
+		// carries a closing-card form beside the footer dialog. Duplicate ids are
+		// invalid HTML and make getElementById and any `for=` label resolve to
+		// whichever form came first.
+		//
+		// The call stays native (so plugins filtering the field keep working);
+		// only its id is rewritten to carry this instance's suffix. The name is
+		// never touched: Submission reads it from $_POST, which knows nothing
+		// about instances.
+		$nonce_field = \wp_nonce_field( Submission::ACTION, Submission::NONCE_FIELD, false, false );
+		$out        .= str_replace(
+			'id="' . Submission::NONCE_FIELD . '"',
+			'id="' . \esc_attr( $this->id_of( Submission::NONCE_FIELD ) ) . '"',
+			$nonce_field
+		);
+		$out        .= '<input type="hidden" name="md_inquiry_action" value="submit">';
+		$out        .= '<input type="hidden" name="md_inquiry_locale" id="' . \esc_attr( $this->id_of( 'md-inquiry-locale' ) ) . '" value="en">';
 		if ( null !== $pattern ) {
 			$out .= '<input type="hidden" name="md_inquiry_pattern_slug" value="' . \esc_attr( $this->pattern_slug_of( $pattern_slug, $pattern ) ) . '">';
 		}

@@ -58,9 +58,12 @@ final class FormTest extends TestCase {
 		WP_Mock::userFunction( 'get_the_post_thumbnail_url' )->andReturn( '' );
 		WP_Mock::userFunction( 'get_post_field' )->andReturn( 'apiary-architectural-metal-screen-pattern' );
 		WP_Mock::userFunction( 'get_post' )->andReturn( null );
+		// wp_nonce_field() emits BOTH name and id, and the id is what collided
+		// when a page carried two forms. The mock used to emit only the name,
+		// which is exactly why no test ever saw the duplicate.
 		WP_Mock::userFunction( 'wp_nonce_field' )->andReturnUsing(
 			static function ( string $action, string $name ): string {
-				return '<input type="hidden" name="' . $name . '" value="nonce-for-' . $action . '">';
+				return '<input type="hidden" name="' . $name . '" id="' . $name . '" value="nonce-for-' . $action . '">';
 			}
 		);
 		$this->registered_scripts = array();
@@ -87,7 +90,16 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'class="md-inquiry-pattern__code">APIARY<', $html );
 		$this->assertStringContainsString( 'This pattern is attached to your inquiry.', $html );
 		$this->assertStringContainsString( '<form class="md-inquiry-form" method="post">', $html, 'no action attribute: the form posts to the page it sits on, the CSP\'s form-action honored' );
-		$this->assertStringContainsString( 'name="md_inquiry_nonce" value="nonce-for-md_inquiry_submit"', $html );
+		// Asserted as three separate facts, not one adjacency: a real
+		// wp_nonce_field() writes id between name and value, and an assertion
+		// pinned to attribute order fails on markup that is correct.
+		$this->assertStringContainsString( 'name="md_inquiry_nonce"', $html, 'the nonce travels as md_inquiry_nonce' );
+		$this->assertStringContainsString( 'value="nonce-for-md_inquiry_submit"', $html, 'the nonce value is the action\'s nonce' );
+		$this->assertMatchesRegularExpression(
+			'/id="md_inquiry_nonce(-\d+)?"/',
+			$html,
+			'the nonce field carries an id, suffixed per instance when a page has more than one form'
+		);
 		$this->assertStringContainsString( 'name="md_inquiry_pattern_slug" value="apiary-architectural-metal-screen-pattern"', $html );
 		$this->assertStringContainsString( 'id="md-inquiry-source-page" name="md_inquiry_source_page" value="pattern-pdp"', $html );
 		$this->assertStringContainsString( 'id="md-inquiry-source-module" name="md_inquiry_source_module" value="pattern-actions"', $html );
@@ -695,5 +707,50 @@ resets.forEach(function (args) {
 
 console.log('ok renders=' + renders.length + ' resets=' + JSON.stringify(resets));
 TURNSTILE_BEHAVIOR;
+	}
+	/**
+	 * Two forms on one page must not share an element id.
+	 *
+	 * The production home page carries two (the closing card and the footer's
+	 * quote dialog) and, before this guard, both nonce fields were
+	 * `id="md_inquiry_nonce"` — 91 ids on the page with exactly one duplicated.
+	 * Duplicate ids are invalid HTML, and getElementById plus any `for=` label
+	 * resolve to whichever form rendered first, so the second form's nonce
+	 * became unreachable to anything that addresses it by id.
+	 *
+	 * The mock in setUp omits the id attribute entirely, so this test supplies
+	 * its own wp_nonce_field that emits the id WordPress really emits.
+	 */
+	public function test_two_forms_on_a_page_do_not_share_an_element_id(): void {
+		$first  = $this->render( '', array() );
+		$second = $this->render( '', array() );
+
+		$ids = static function ( string $html ): array {
+			preg_match_all( '/\bid="([^"]+)"/', $html, $matches );
+			return $matches[1];
+		};
+
+		$first_ids  = $ids( $first );
+		$second_ids = $ids( $second );
+
+		// The render counter is static and is not reset between tests, so this
+		// does not assert which suffix a given call gets — only that the two
+		// calls differ, which is the property that matters.
+		$this->assertNotSame( $first_ids, $second_ids, 'two renders produce different ids' );
+		$this->assertNotEmpty(
+			array_filter( $first_ids, static fn ( string $id ): bool => 0 === strpos( $id, 'md_inquiry_nonce' ) ),
+			'the nonce field carries an id at all'
+		);
+		$this->assertNotEmpty(
+			array_filter( $second_ids, static fn ( string $id ): bool => 0 === strpos( $id, 'md_inquiry_nonce' ) ),
+			'the second form\'s nonce field carries an id too'
+		);
+
+		$shared = array_intersect( $first_ids, $second_ids );
+		$this->assertSame(
+			array(),
+			array_values( $shared ),
+			'two forms on one page share element ids: ' . implode( ', ', $shared )
+		);
 	}
 }
