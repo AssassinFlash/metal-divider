@@ -31,6 +31,7 @@ Usage:
     python3 tools/audit/sweep_opencli.py [--base URL] [--out DIR] [--widths 1440,390,320]
 """
 import argparse
+import hashlib
 import json
 import os
 import struct
@@ -139,6 +140,8 @@ def main():
         window_width = res.get("data")
 
     report = []
+    last_shot_hash = ""
+    prev_slug = ""
     for slug, path in pages:
         url = base + path + bust
         got = call(session, ["open", url], timeout=300)
@@ -146,6 +149,33 @@ def main():
             report.append({"slug": slug, "path": path, "error": "open failed: " + str(got)[:160]})
             print("%-20s open failed" % slug, flush=True)
             continue
+
+        # `open` returning ok does not mean the document changed. `wait selector
+        # main` is satisfied by the PREVIOUS page — main already exists — so a
+        # slow navigation let the capture photograph the page before this one.
+        # Measured 2026-10-29: three pairs came out byte-identical
+        # (faqs-1440 == glass-hybrid-1440, custom-screens-390 ==
+        # outdoor-privacy-390, inquiry-390 == laser-cut-geometric-390), which is
+        # a mis-capture, not a design finding.
+        #
+        # The guard is the page's own pathname: wait until the document reports
+        # the path this iteration asked for, up to a bounded number of tries.
+        wanted = path.rstrip("/")
+        landed = False
+        for _attempt in range(20):
+            probe = call(session, ["eval", "location.pathname"], timeout=60)
+            here = str(probe.get("data") or "").rstrip("/")
+            if probe.get("ok") and (here == wanted or here == wanted + "/index.php"):
+                landed = True
+                break
+            time.sleep(0.25)
+        if not landed:
+            report.append(
+                {"slug": slug, "path": path, "error": "navigation never landed on " + path}
+            )
+            print("%-20s navigation did not land" % slug, flush=True)
+            continue
+
         call(session, ["wait", "selector", "main"])
         settle(session)
 
@@ -168,9 +198,42 @@ def main():
             else:
                 shots[width] = {"error": str(shot)[:160]}
 
+        # A capture byte-identical to the previous page's is the same defect
+        # wearing a different face: the navigation landed but the paint did not
+        # catch up. Recapture once, and record the retry so the report shows it.
+        duplicate_of = None
+        if shots.get(widths[0], {}).get("file") and last_shot_hash:
+            try:
+                with open(shots[widths[0]]["file"], "rb") as fh:
+                    digest = hashlib.sha256(fh.read()).hexdigest()
+                if digest == last_shot_hash:
+                    duplicate_of = prev_slug
+                    time.sleep(1.2)
+                    recapture = call(session, ["screenshot", shots[widths[0]]["file"],
+                                               "--width", str(widths[0]), "--height", "900",
+                                               "--full-page"], timeout=300)
+                    if recapture.get("ok"):
+                        with open(shots[widths[0]]["file"], "rb") as fh:
+                            digest = hashlib.sha256(fh.read()).hexdigest()
+                        if digest == last_shot_hash:
+                            duplicate_of = prev_slug + " (still identical after recapture)"
+                        else:
+                            duplicate_of = None
+                last_shot_hash = digest
+            except OSError:
+                pass
+        elif shots.get(widths[0], {}).get("file"):
+            try:
+                with open(shots[widths[0]]["file"], "rb") as fh:
+                    last_shot_hash = hashlib.sha256(fh.read()).hexdigest()
+            except OSError:
+                pass
+        prev_slug = slug
+
         report.append({
             "slug": slug,
             "path": path,
+            "duplicateOf": duplicate_of,
             "url": url,
             "windowWidth": window_width,
             "dom": {"summary": dom.get("summary", {}), "items": dom.get("items", [])},
