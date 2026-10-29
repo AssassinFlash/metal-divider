@@ -4879,6 +4879,75 @@
     });
   }
 
+
+  // LiveCanvas's lazy images, which arrived without their loader.
+  //
+  // The converted markup carries `<img is="xo-lazyload" xo-src=... xo-srcset=...>`
+  // — a customised built-in that LiveCanvas's own runtime upgrades by copying
+  // xo-src into src. That runtime is not on these pages, so every one of those
+  // images stayed at src="" with naturalWidth 0. Measured on production
+  // 2026-10-29: 7 per page on twelve pages, 25 empty <img> on
+  // /custom-metal-divider-screens/ alone, all of them inside the header's mega
+  // menu, which is why the menus looked like empty boxes.
+  //
+  // This is the upgrade, done here because the plugin owns the behaviour and the
+  // templates may not carry scripts. Images without the attribute are untouched,
+  // and an image that already has src is not rewritten: the markup is the source
+  // of truth for what a browser should load.
+  function setupLazyImages() {
+    var images = document.querySelectorAll('img[is="xo-lazyload"], img[xo-src]');
+    if (!images.length) {
+      return;
+    }
+
+    var load = function (img) {
+      var src = img.getAttribute('xo-src');
+      var srcset = img.getAttribute('xo-srcset');
+      if (srcset && !img.getAttribute('srcset')) {
+        img.setAttribute('srcset', srcset);
+        img.removeAttribute('xo-srcset');
+      }
+      if (src && !img.getAttribute('src')) {
+        img.setAttribute('src', src);
+        img.removeAttribute('xo-src');
+      }
+      img.removeAttribute('is');
+      // The overlay is the placeholder shimmer; with the image in place it is
+      // a grey veil over the picture, so it goes.
+      var overlay = img.parentElement && img.parentElement.querySelector('.xo-lazyload-overlay');
+      if (overlay) {
+        overlay.remove();
+      }
+    };
+
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        each(entries, function (entry) {
+          if (entry.isIntersecting) {
+            load(entry.target);
+            io.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '200px' });
+      each(images, function (img) { io.observe(img); });
+    } else {
+      each(images, load);
+    }
+
+    // A mega menu that opens after the observer ran would keep its images
+    // unloaded; load on first hover or focus of the header.
+    var header = document.querySelector('header');
+    if (header) {
+      var once = function () {
+        each(images, load);
+        header.removeEventListener('mouseover', once);
+        header.removeEventListener('focusin', once);
+      };
+      header.addEventListener('mouseover', once);
+      header.addEventListener('focusin', once);
+    }
+  }
+
   function start() {
     // `md-js` is what makes `x-cloak` mean anything: the CSS only hides a
     // cloaked block once this class is on the root, so a visitor without
@@ -4942,6 +5011,8 @@
     setupMetricCounters();
 
     setupSkipLink();
+
+    setupLazyImages();
 
     // The catalog's sort select posts its form on change (the CSP blocks
     // inline handlers, so the behaviour lives here).

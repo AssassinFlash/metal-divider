@@ -178,4 +178,61 @@ final class MetricCounterTest extends TestCase {
 		$this->assertFileExists( $path, 'the behaviour file is part of the plugin' );
 		return (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
 	}
+	/**
+	 * LiveCanvas's lazy images must be upgraded, because their runtime is absent.
+	 *
+	 * The converted markup carries `<img is="xo-lazyload" xo-src=...>`; LiveCanvas
+	 * upgrades that built-in by copying xo-src into src, and that runtime is not on
+	 * these pages. Measured on production 2026-10-29: twenty-five <img> with
+	 * src="" on /custom-metal-divider-screens/ alone, naturalWidth 0, seven per
+	 * page across twelve pages — the header mega menu's pictures, which is why the
+	 * menus read as empty boxes.
+	 *
+	 * This guard is the template half: a template that ships an xo-src image is
+	 * only safe while the behaviour that upgrades it exists.
+	 */
+	public function test_lazy_images_have_a_behaviour_that_upgrades_them(): void {
+		$js = $this->chrome_js();
+
+		$carriers = array();
+		foreach ( $this->template_files() as $relative ) {
+			$source = (string) file_get_contents( Templates::path( $relative, true ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			if ( preg_match( '/\bxo-src=/', $source ) ) {
+				$carriers[] = $relative;
+			}
+		}
+		if ( array() === $carriers ) {
+			$this->markTestSkipped( 'no template carries an xo-src image' );
+		}
+
+		$this->assertStringContainsString( 'function setupLazyImages', $js, 'the upgrade behaviour exists (' . count( $carriers ) . ' templates need it)' );
+		$this->assertStringContainsString( 'setupLazyImages();', $js, 'and it is called from start()' );
+		$this->assertMatchesRegularExpression(
+			'/img\[is="xo-lazyload"\], img\[xo-src\]|img\[xo-src\], img\[is="xo-lazyload"\]|\[xo-src\]/',
+			$js,
+			'it selects the images the templates mark'
+		);
+		$this->assertStringContainsString( "getAttribute('xo-src')", $js, 'it reads the URL the markup carries' );
+		$this->assertStringContainsString( "setAttribute('src'", $js, 'and writes it where the browser reads it' );
+		$this->assertMatchesRegularExpression(
+			'/removeAttribute\(\s*.is.\s*\)|removeAttribute\(\s*\x27is\x27\s*\)/',
+			$js,
+			'the customised built-in is dissolved once upgraded'
+		);
+	}
+
+	/**
+	 * Every template file, relative to the volume root.
+	 *
+	 * @return list<string>
+	 */
+	private function template_files(): array {
+		$root  = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $root, \FilesystemIterator::SKIP_DOTS ) );
+		$out   = array();
+		foreach ( $files as $file ) {
+			$out[] = str_replace( $root . '/', '', (string) $file );
+		}
+		return $out;
+	}
 }
