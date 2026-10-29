@@ -638,3 +638,60 @@ forms / comments / **unique ids** / skip link / stylesheet。
 **14 项中 12 项通过**，未过的两项仍是同一原因：编译产物里没有
 `.md-inquiry-app:not(#md-inquiry *)` 与 `.md-skip-link`，因为 WindPress 只能在后台编译，
 而生产登录返回 `ERROR: Stop guessing!`。
+
+
+---
+
+## 十、我方造成的线上缺陷：跳过链接可见（2026-10-29 发现并撤除）
+
+### 10.1 事实
+
+上一轮把跳过链接加进页头并部署，但它的样式在 WindPress 卷里，而该卷在这台主机上
+**只能在后台浏览器里手工编译**，所以样式表从未收到 `.md-skip-link` 规则。
+
+真 Chrome 读生产首页的计算样式：
+
+```
+a.md-skip-link → position: static | clip: auto | clip-path: none
+                 114×20px | top:2 left:0 | visible: true
+```
+
+即每个页面左上角都挂着一个肉眼可见的「Skip to content」链接。
+
+**所有人都看得见的跳过链接，比没有跳过链接更糟。** 这是我造成的回归，不是继承来的。
+
+### 10.2 处置
+
+- 页头 partial 移除该锚点，原位留注释记录上述实测读数与原因；
+- `SkipLinkTest` 三条断言在锚点缺席时 `markTestSkipped`，而不是失败 ——
+  要求仍写在仓库里，锚点与样式能一起上线时自动恢复；
+- 不把样式塞进子主题或其它位置：子主题自己的注释写明「只有一条 CSS 通道（WindPress 卷）」，
+  绕开编译会破坏既定的单一通道。
+
+测试结果：`403 tests ... Skipped: 3`，其余全绿。
+
+### 10.3 判据本身也是错的（这条更值得记）
+
+原来的 `check_skip_link` **要求锚点存在**，而锚点确实存在，所以它判 `ok` ——
+它通过了一个所有访客都看得见已经坏掉的页面。
+
+改为断言**成对条件**：只有编译 CSS 里含 `.md-skip-link` 时，锚点才允许存在；
+只有锚点没有规则同样不合格。自检植入三种真实状态：
+无锚点、**有锚点无样式（就是线上那个状态）**、成对齐全，要求三种都判对。
+
+判据现共六组，全部双向证过：
+
+```
+SELF-CHECK ok  forms
+SELF-CHECK ok  comments
+SELF-CHECK ok  unique ids
+SELF-CHECK ok  skip link           （有锚点无样式 → 红）
+SELF-CHECK ok  skip link (absent)  （什么都没有 → 绿）
+SELF-CHECK ok  stylesheet
+```
+
+### 10.4 我上一轮的判断失误
+
+我写「14 项读回 12 项通过」，把两个 FAIL 当成待办清单。
+**失败项可能已经是一个线上缺陷**，而这两项已经在线上、对每个访客可见地挂了一整天。
+判据报 FAIL 时的正确第一问是「它现在正在造成什么损害」，而不是「它排在哪一项后面」。
