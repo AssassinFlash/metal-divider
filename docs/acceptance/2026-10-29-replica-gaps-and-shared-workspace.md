@@ -2436,3 +2436,36 @@ skip-link matches = 0   /faqs/
 链接不改变像素，但它需要先确认主题层没有自己的实现、且不与既有焦点顺序冲突。
 
 按「先测量、再决定」，本轮把它连同代价（30 次 Tab）一起记录，作为下一步的输入。
+
+#### 9.49.5 线上读回：DOM 里每个页面只剩一个 `main`
+
+部署后逐页读 DOM（不是 grep HTML）：
+
+| 页面 | `document.querySelectorAll('main').length` | id |
+|---|---:|---|
+| `/shop/` | **1** | `theme-main` |
+| `/collections/pattern-abstract/` | **1** | `theme-main` |
+| `/collections/pattern-asian/` | **1** | `theme-main` |
+| `/collections/pattern-perforated/` | **1** | `theme-main` |
+| `/collections/pattern-vintage-retro/` | **1** | `theme-main` |
+
+嵌套 `main` 已消除。
+
+#### 9.49.6 我在这条上又数错了一次
+
+部署后我用 `grep -c '<main'` 数模板，得到 **2**；再用 `curl | grep -o '<main'` 数线上 HTML，得到 **3**。
+看起来像「修复让它更糟了」。
+
+查下去两次都是我自己的问题：
+
+1. **模板那 2 个里，1 个在我自己写的注释里**——注释正文写的是
+   `<!-- A <div>, not a <main>: the theme skeleton already renders <main id="theme-main"> … -->`。
+   `grep` 不看上下文，把注释里的 `<main` 也算进去了。
+2. **线上 HTML 那 3 个里，2 个同样在注释里**（注释会被原样发送给浏览器），
+   浏览器解析后**注释不产生元素**。所以 DOM 里一直只有 1 个。
+
+**`grep` 数 HTML 源不等于数 DOM 元素。** 这与本仓库记过的「`curl` 到的 HTML 不等于访客看到的结果」
+是同一条——只是这次我自己又踩了一遍，而且是踩在自己刚写的注释上。
+
+教训：**判据如果会被自己的说明文字干扰，就先剥注释再数**（`SingleMainTest` 里已经这么做了，
+但我在命令行上临时数的时候没做）。
