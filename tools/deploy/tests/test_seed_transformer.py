@@ -213,3 +213,38 @@ class TestRegenAutologin:
             [PHP, "-r", code], capture_output=True, text=True, check=True
         )
         assert result.stdout == ""
+
+
+class TestLhcVersion:
+    """The golden release pin the seed manifest records.
+
+    LHC keeps its release identity only in lhupdate.php —
+    `const LHC_RELEASE = 497;` (the runbook's "4.97v"); there is no
+    erLhcoreClassUpdate::VERSION and no database row that carries it. The
+    reader must find the constant in the real file's shape and refuse
+    everything it cannot see.
+    """
+
+    GOLDEN_FILE = (
+        "<?php\nuse Exception;\nclass erLhcoreClassUpdate {\n"
+        "    const DB_VERSION = 362;\n"
+        "    const LHC_RELEASE = 497;\n"
+        "}\n"
+    )
+
+    def test_the_release_is_read_from_the_real_files_shape(self, tmp_path: Path) -> None:
+        lhupdate = tmp_path / "lhupdate.php"
+        lhupdate.write_text(self.GOLDEN_FILE, encoding="utf-8")
+        version = _php(f"echo md_seed_lhc_version({json.dumps(str(lhupdate))});")
+        assert version == "497"
+
+    def test_a_file_without_the_constant_is_refused(self, tmp_path: Path) -> None:
+        lhupdate = tmp_path / "lhupdate.php"
+        lhupdate.write_text("<?php\\nclass Other { const DB_VERSION = 362; }\\n")
+        assert _php(f"echo md_seed_lhc_version({json.dumps(str(lhupdate))});") == ""
+
+    def test_a_missing_file_is_refused(self, tmp_path: Path) -> None:
+        assert (
+            _php(f"echo md_seed_lhc_version({json.dumps(str(tmp_path / 'no.php'))});")
+            == ""
+        )

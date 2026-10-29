@@ -185,6 +185,15 @@ SEED_LOCAL_ONLY_NAMES = ("staging-passwords-local-only.sql",)
 # import only until this marker exists.
 BRINGUP_OPTION = "md_chat_push_bringup"
 
+# The LHC release identity of a chat tree: erLhcoreClassUpdate::LHC_RELEASE
+# in the golden tree's lhupdate.php (497 → the runbook's "4.97v"). The seed
+# manifest records the golden release at export time; chat-push compares it
+# against the target's own file and warns on drift — a silently upgraded
+# golden tree would otherwise ship a chat plane this checkout never saw.
+LHC_RELEASE_FILE = "chat/lib/core/lhcore/lhupdate.php"
+LHC_RELEASE_RE = re.compile(r"const\s+LHC_RELEASE\s*=\s*(\d+)")
+SEED_MANIFEST = "manifest.json"
+
 # Seed files the golden host must never import: each carries sanitized
 # credentials (blanked password, blanked chat-config secret fields, struck
 # hex tokens, desk preferences with credential-looking identifiers
@@ -266,6 +275,7 @@ def chat_push_plan() -> list[str]:
         "rewrite seed URLs and the Rapls table prefix for the target",
         "regenerate the autologin secret_hash on the target when the seed"
         " left it empty (the seed ships it blank by design)",
+        "warn when the target's LHC release differs from the seed manifest's pin",
         "merge the chat option rows on the target host (secrets never leave it)",
         "hash-verify the shipped lhc-extensions and mu-plugins on both sides",
         "reset the LHC compiled-template cache dirs inside the window",
@@ -354,6 +364,7 @@ def chat_seed_plan(home: Path) -> list[str]:
         "scp tools/deploy/seed/dump-chat-seed.sh to the golden host (/tmp)",
         "run export-chat-seed.php on the golden host",
         "run dump-chat-seed.sh on the golden host",
+        "record the golden LHC release in the seed manifest (manifest.json)",
         f"pull /tmp/md-seed.tar.gz and unpack it into {seed_directory(home)}",
         "remove the /tmp seed artifacts from the golden host",
     ]
@@ -387,9 +398,13 @@ def chat_seed(*, repository: Path, home: Path) -> steps.Result:
     # The same PHP resolution the dump script uses (command -v, then the
     # pinned /usr/local/bin/php the host's WP-CLI shares).
     php_bin = "$(command -v php || echo /usr/local/bin/php)"
+    lhc_version: str | None = None
     for line in golden.shell(f"{php_bin} /tmp/{php.name}").splitlines():
         if line.strip():
             actions.append(line.strip())
+        if line.startswith("lhc_version="):
+            reported = line.partition("=")[2].strip()
+            lhc_version = reported if reported not in ("", "-") else None
     for line in golden.shell(f"bash /tmp/{dump.name}").splitlines():
         if line.strip():
             actions.append(line.strip())
@@ -401,7 +416,7 @@ def chat_seed(*, repository: Path, home: Path) -> steps.Result:
     # extraction: the tarball just pulled is this run's only source.
     stale = [
         name
-        for name in (*SEED_FILES.values(), *SEED_LOCAL_ONLY_NAMES)
+        for name in (*SEED_FILES.values(), *SEED_LOCAL_ONLY_NAMES, SEED_MANIFEST)
         if (out_dir / name).exists()
     ]
     for name in stale:
@@ -414,6 +429,23 @@ def chat_seed(*, repository: Path, home: Path) -> steps.Result:
     if not (out_dir / SEED_FILES["schema"]).is_file():
         notes.append(
             f"{SEED_FILES['schema']} is missing — the golden export did not complete"
+        )
+
+    # The release pin travels with the seed, not the tarball: the exporter
+    # reads the golden tree's lhupdate.php and reports it, and the manifest
+    # records it so a future push can warn when the two hosts drifted apart.
+    if lhc_version is not None:
+        (out_dir / SEED_MANIFEST).write_text(
+            json.dumps({"lhc_version": lhc_version}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        actions.append(
+            f"record the golden LHC release ({lhc_version}) in {SEED_MANIFEST}"
+        )
+    else:
+        notes.append(
+            "the golden export did not report an LHC release;"
+            f" {SEED_MANIFEST} was not written"
         )
 
     # The seed tarball, the unpacked /tmp/md-seed and the two scripts are
@@ -546,6 +578,7 @@ def chat_push(
                 if outcome == "regenerated"
                 else "confirm the autologin secret_hash on the target (already set)"
             )
+        _check_lhc_release(target, out_dir, actions, notes)
         for name in _write_options(
             target,
             out_dir,
@@ -824,6 +857,57 @@ def _regenerate_autologin_hash(target: Target, notes: list[str]) -> str:
                 notes.append(
                     f"the regeneration script stayed behind at {remote_script}: {error}"
                 )
+
+
+def _check_lhc_release(
+    target: Target, seed_dir: Path, actions: list[str], notes: list[str]
+) -> None:
+    """Compare the target's LHC release against the seed manifest's pin.
+
+    A warning, never a gate: whether an upgraded golden tree may ride
+    along is an operator's call. The check reads the same lhupdate.php
+    constant the exporter pinned (LHC_RELEASE_FILE), so the two sides of
+    the comparison can only drift when the trees themselves did.
+    """
+    manifest_path = seed_dir / SEED_MANIFEST
+    if not manifest_path.is_file():
+        notes.append(
+            f"{SEED_MANIFEST} is missing from the seed — its LHC release pin"
+            " is unknown; re-run chat-seed to record it"
+        )
+        return
+    try:
+        pinned = json.loads(manifest_path.read_text(encoding="utf-8")).get(
+            "lhc_version"
+        )
+        source = target.shell(
+            f"cat {shlex.quote(target.path_of(LHC_RELEASE_FILE))}"
+        )
+    except (OSError, ValueError, DeployError) as error:
+        notes.append(f"the LHC release pin could not be checked: {error}")
+        return
+    matched = LHC_RELEASE_RE.search(source)
+    if matched is None:
+        notes.append(
+            f"the target's {LHC_RELEASE_FILE} carries no LHC_RELEASE constant;"
+            " the seed pin could not be compared"
+        )
+        return
+    live = matched.group(1)
+    if pinned is None:
+        notes.append(
+            f"{SEED_MANIFEST} carries no lhc_version; re-run chat-seed to pin it"
+        )
+    elif live != pinned:
+        notes.append(
+            f"the target LHC release is {live}, the seed was taken at {pinned}"
+            " — the chat plane may have drifted; re-seed from the golden host"
+            " or judge the difference by hand"
+        )
+    else:
+        actions.append(
+            f"confirm the target LHC release matches the seed manifest ({live})"
+        )
 
 
 def _find_secret_keys(value: object, secret_keys: tuple[str, ...]) -> list[str]:

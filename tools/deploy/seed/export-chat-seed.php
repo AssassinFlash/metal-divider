@@ -161,6 +161,22 @@ function md_seed_export_main() {
     echo 'users_setting_struck=' . $us_struck . PHP_EOL;
     echo 'secrets_collected=' . count($secret_values) . PHP_EOL;
     echo 'options=' . implode(',', array_keys($options)) . PHP_EOL;
+    /* The golden LHC release (erLhcoreClassUpdate::LHC_RELEASE in
+     * chat/lib/core/lhcore/lhupdate.php) — the version pin the seed
+     * manifest records, so a later push can warn on drift. '-' when the
+     * file or the constant cannot be read. */
+    $lhc = md_seed_lhc_version($chat_root . '/chat/lib/core/lhcore/lhupdate.php');
+    echo 'lhc_version=' . ($lhc === null ? '-' : $lhc) . PHP_EOL;
+}
+
+/* The LHC release constant from the golden tree's lhupdate.php, or null
+ * when the file or the constant is missing. The release is the raw int
+ * LHC ships (497 → "4.97v"); nothing here touches the database. */
+function md_seed_lhc_version($lhupdate_php) {
+    $source = @file_get_contents($lhupdate_php);
+    if ($source === false) { return null; }
+    if (!preg_match('/const\s+LHC_RELEASE\s*=\s*(\d+)/', $source, $m)) { return null; }
+    return $m[1];
 }
 
 function q($pdo, $s) { return $pdo->quote($s); }

@@ -336,6 +336,9 @@ class _PushTarget:
         self.shell_error: str | None = None
         self.eval_file_output: str | None = None
         self.regen_output: str = "OK autologin_data secret_hash regenerated\n"
+        self.rsync_calls: list[tuple[str, str]] = []
+        self.shell_answers: dict[str, str] = {}
+        self.lhc_release: str | None = "497"
 
     def path_of(self, relative: str) -> str:
         return f"{self.root}/{relative}"
@@ -344,7 +347,21 @@ class _PushTarget:
         if self.shell_error is not None:
             raise DeployError(self.shell_error)
         self.shell_calls.append(script)
+        if chat.LHC_RELEASE_FILE in script:
+            if self.lhc_release is None:
+                raise DeployError("cat: No such file or directory")
+            return (
+                "<?php\nclass erLhcoreClassUpdate {\n"
+                f"    const LHC_RELEASE = {self.lhc_release};\n"
+                "}\n"
+            )
+        for marker, answer in self.shell_answers.items():
+            if marker in script:
+                return answer
         return ""
+
+    def rsync(self, source: str, destination: str) -> None:
+        self.rsync_calls.append((source, destination))
 
     def wp_on_target(self) -> tuple[str, ...]:
         return ("wp", "--path", self.root)
@@ -409,6 +426,9 @@ def _write_minimal_seed(home: Path, *, with_credentials: bool) -> None:
         "md_kb_endpoint": {"transfer_words": ["price"]},
     }
     (out / chat.SEED_FILES["options"]).write_text(json.dumps(payload), encoding="utf-8")
+    (out / chat.SEED_MANIFEST).write_text(
+        json.dumps({"lhc_version": "497"}) + "\n", encoding="utf-8"
+    )
 
 
 def test_chat_push_runs_inside_the_snapshot_and_maintenance_envelope(
@@ -826,6 +846,115 @@ def test_chat_push_fails_when_the_regen_does_not_acknowledge(
 
     with pytest.raises(DeployError, match="did not acknowledge"):
         chat.chat_push(cast(Target, target), repository=REPO_ROOT, home=tmp_path)
+
+
+def _seed_tarball_at(out_dir: Path) -> Path:
+    """A real flat seed tarball the fake golden 'pull' stands in for."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tarball = out_dir / "md-seed.tar.gz"
+    with tarfile.open(tarball, "w:gz") as archive:
+        for name in (
+            chat.SEED_FILES["tables"],
+            chat.SEED_FILES["schema"],
+            chat.SEED_FILES["knowledge"],
+        ):
+            info = tarfile.TarInfo(name)
+            data = b"-- seed member\n"
+            info.size = len(data)
+            archive.addfile(info, io.BytesIO(data))
+    return tarball
+
+
+def _seed_target(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> _PushTarget:
+    """A golden host scripted for one chat_seed export run."""
+    golden = _PushTarget(
+        label="staging",
+        base_url="https://staging.metal-divider.com",
+        root="/home/golden",
+    )
+    golden.shell_answers = {
+        "export-chat-seed.php": (
+            "prefix=wp_\nusers=2\nlhc_version=497\noptions=md_wecom_notify\n"
+        ),
+        "dump-chat-seed.sh": "tar: /tmp/md-seed\n",
+    }
+    monkeypatch.setattr(chat, "named_target", lambda _name: golden)
+    _seed_tarball_at(chat.seed_directory(tmp_path))
+    return golden
+
+
+def test_chat_seed_records_the_lhc_release_in_the_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The manifest pins the golden tree's release so drift gets caught.
+
+    The release identity lives only in lhupdate.php's LHC_RELEASE (497 →
+    "4.97v"); nothing else in the seed records it, so a future golden
+    upgrade would silently ride every push.
+    """
+    golden = _seed_target(tmp_path, monkeypatch)
+
+    result = chat.chat_seed(repository=REPO_ROOT, home=tmp_path)
+
+    manifest = json.loads(
+        (chat.seed_directory(tmp_path) / chat.SEED_MANIFEST).read_text(encoding="utf-8")
+    )
+    assert manifest == {"lhc_version": "497"}
+    assert any("record the golden LHC release (497)" in a for a in result.actions), (
+        "the pin is an auditable step of the export"
+    )
+    assert any(source.endswith("export-chat-seed.php") for source, _ in golden.rsync_calls)
+
+
+def test_chat_seed_without_a_release_says_so(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An exporter that cannot see the release must not pin garbage."""
+    golden = _seed_target(tmp_path, monkeypatch)
+    golden.shell_answers["export-chat-seed.php"] = "prefix=wp_\nlhc_version=-\n"
+
+    result = chat.chat_seed(repository=REPO_ROOT, home=tmp_path)
+
+    assert any("did not report an LHC release" in n for n in result.notes)
+    assert not (chat.seed_directory(tmp_path) / chat.SEED_MANIFEST).exists()
+
+
+def test_chat_push_warns_when_the_target_lhc_release_differs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A drifted target release is a warning, never a gate — the call is the
+    operator's."""
+    target = _push_fixture(tmp_path, monkeypatch)
+    target.lhc_release = "500"
+
+    result = chat.chat_push(cast(Target, target), repository=REPO_ROOT, home=tmp_path)
+
+    assert any(
+        "target LHC release is 500" in n and "seed was taken at 497" in n
+        for n in result.notes
+    ), "the drift must be named with both versions"
+    assert not any("matches the seed manifest" in a for a in result.actions)
+
+
+def test_chat_push_confirms_a_matching_release_and_flags_a_missing_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A matching pin is reported; a seed without one is asked to re-seed."""
+    target = _push_fixture(tmp_path, monkeypatch)
+
+    result = chat.chat_push(cast(Target, target), repository=REPO_ROOT, home=tmp_path)
+
+    assert any(
+        "confirm the target LHC release matches the seed manifest (497)" in a
+        for a in result.actions
+    )
+    assert not any("LHC release" in n for n in result.notes)
+
+    (chat.seed_directory(tmp_path) / chat.SEED_MANIFEST).unlink()
+
+    again = chat.chat_push(cast(Target, target), repository=REPO_ROOT, home=tmp_path)
+
+    assert any("re-run chat-seed" in n for n in again.notes)
 
 
 def test_extract_seed_unpacks_the_flat_dump_tarball(tmp_path: Path) -> None:
