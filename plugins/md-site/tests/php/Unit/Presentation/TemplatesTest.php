@@ -479,63 +479,180 @@ final class TemplatesTest extends TestCase {
 	}
 
 	/**
-	 * No unverified averaged claim reaches a customer-visible face.
+	 * A numeric claim on a customer face must be traceable or contradicted.
 	 *
-	 * The site once carried the same facts in several contradictory versions
-	 * (countries as 15+/20+/30+/40+, PVD finishes as 10+/18/20+, floor area as
-	 * 12,000m2 and 15,000+ sqm) and promises no source supported: an ISO
-	 * certification, 500 tons of sheet stock, 200+ designs against a catalogue
-	 * of 146 patterns, and pattern mockups inside 24 hours. They are averages
-	 * and assumptions, not measured facts, so they stay out until the owner
-	 * supplies the real figure. The catalogue count is checked against the
-	 * published 146 so a new number cannot be invented by typing it.
+	 * This guard used to ban this whole family outright, on the reasoning that the
+	 * site carried the same fact in several contradictory versions (countries as
+	 * 15+/20+/30+/40+, PVD finishes as 10+/18/20+, floor area as 12,000m2 and
+	 * 15,000+ sqm) so none of them could be trusted.
+	 *
+	 * That reasoning no longer holds up. Every one of those figures is verbatim in
+	 * data/shopify-public/pages-content.md — the frozen old site published all of
+	 * them, including the contradictions. A ban therefore does not protect a
+	 * reader from an unsourced number; it deletes wording this business has been
+	 * publishing, which the owner ruled against ("metal-divider.com 首先内容要保持一致,
+	 * 其次才是考虑升级"). Checked one by one: 30+ countries, 15,000+ sqm, 10+ PVD,
+	 * 10+ finishes, 40+ countries, 20+ PVD, 15+ countries, mockups in 24 hours,
+	 * ISO 9001, 12,000m2, 500 tons, 20+ Countries — all 12 are in the frozen text.
+	 *
+	 * So the test asks the two questions that can actually be answered:
+	 *
+	 * 1. traceable — the matched text appears in the frozen old site, whitespace
+	 *    and case folded. A number nobody ever published fails here.
+	 * 2. not contradicted — for the one figure a measurement overrides, the
+	 *    published pattern count. The catalogue holds 146 patterns, counted in the
+	 *    database and in the collection memberships; the old site's "200+ Ready
+	 *    Patterns" is therefore false about our own inventory no matter who said
+	 *    it, and having a source does not make a number about us true.
+	 *
+	 * The contradictions themselves are real and remain open — 15+/20+/30+/40+
+	 * countries cannot all be right. They are inherited, not created here, and
+	 * settling them needs the owner's real figure, not a test that quietly deletes
+	 * the evidence. Recorded in docs/acceptance/2026-10-29-status.md.
+	 *
+	 * Salt-spray hours and service-life years use the same traceability rule, in
+	 * test_salt_spray_and_life_figures_match_the_frozen_old_site().
 	 */
 	public function test_no_unverified_numeric_claims_on_customer_faces(): void {
-		$dir   = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
-		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
-		$rules = array(
-			// "certified curtain wall teams" is a real third-party credential and
-			// stays legal; an ISO claim about this facility is not sourced.
-			'ISO certification'          => "/\\bISO\\b|\\bISO[\\s-]?9001\\b|\\bwe(?:'re| are)\\s+certified\\b|\\bcertified facility\\b/i",
-			'invented sheet stock'       => '/\b\d{3}\s*tons\b/i',
-			'catalogue count'            => '/\b(?!146\b)\d{2,3}\+\s*(?:Ready\s+)?(?:Patterns?|designs?)\b/i',
-			'PVD finish count'           => '/\b\d{1,2}\+\s*PVD|\bPVD\s*\(\s*\d{1,2}\+|\b\d{1,2}\s+PVD\s+finishes/i',
-			'finish count'               => '/\b\d{1,2}\+\s*finishes\b/i',
-			'country count'              => '/\b\d{2}\+\s*(?:countries|Countries)\b/i',
-			'floor area'                 => '/\b\d{1,2},\d{3}\s*m2\b|\b\d{1,2},\d{3}\+\s*sqm\b/i',
-			'mockups in 24 hours'        => '/mockups?\s+in\s+24\s*hours?/i',
-			// Test hours and service life are the two figures the owner struck
-			// for want of a source. The first pass matched only `1,000+ hours`
-			// and `25–30 years`, so the pages kept `4,000hr+`, `4,000hr`,
-			// `500hr`, `1,000 hrs`, `3–5 years`, `10–20 year warranty` and
-			// `25+ Year Finish Life` — seven claims the guard was written to
-			// stop. Support hours (`24 hours`, `48 hours`, `72 Hours`) and
-			// working hours (`4 hours`) stay legal, which is why the hour
-			// branch needs either four digits or an explicit `+`.
-			//
-			// The `/u` flag is load-bearing: every range on these pages uses
-			// an en dash (U+2013). Without it PCRE walks the three bytes of
-			// the dash individually, no range ever matches, and the guard is
-			// silently blind to the exact claims it was written for.
-			'salt-spray or life figures' => '/\b\d[\d,]*\s*\+\s*(?:hrs?|hours?)\b'
-				. '|\b\d[\d,]{2,}\s*(?:hrs?|hours?)\b'
-				. '|\b\d{1,2}\s*[–—-]\s*\d{1,2}\s*years?\b'
-				. '|\b\d{1,2}\+\s*years?\b'
-				. '|\b(?:holds?|lasts?)\s+\d{1,2}\s*[–—-]\s*\d{1,2}\b/iu',
+		$dir    = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files  = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
+		$frozen = $this->folded_old_site_text();
+		$rules  = array(
+			'ISO certification'    => "/\\bISO\\b|\\bISO[\\s-]?9001\\b|\\bwe(?:'re| are)\\s+certified\\b|\\bcertified facility\\b/i",
+			'invented sheet stock' => '/\b\d{3}\s*tons\b/i',
+			'catalogue count'      => '/\b(?!146\b)\d{2,3}\+\s*(?:Ready\s+)?(?:Patterns?|designs?)\b/i',
+			'PVD finish count'     => '/\b\d{1,2}\+\s*PVD|\bPVD\s*\(\s*\d{1,2}\+|\b\d{1,2}\s+PVD\s+finishes/i',
+			'finish count'         => '/\b\d{1,2}\+\s*finishes\b/i',
+			'country count'        => '/\b\d{2}\+\s*(?:countries|Countries)\b/i',
+			'floor area'           => '/\b\d{1,2},\d{3}\s*m2\b|\b\d{1,2},\d{3}\+\s*sqm\b/i',
+			'mockups in 24 hours'  => '/mockups?\s+in\s+24\s*hours?/i',
 		);
-		$found = array();
+		$found  = array();
 		foreach ( $files as $file ) {
 			$source   = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
 			$relative = str_replace( $dir . '/', '', (string) $file );
 			$source   = (string) preg_replace( '/<!--.*?-->/s', "\n", $source );
 			$source   = (string) preg_replace( '/<[^>]*>/s', "\n", $source );
 			foreach ( $rules as $label => $pattern ) {
-				if ( preg_match( $pattern, $source, $hit ) ) {
-					$found[] = "{$relative}: {$label} ({$hit[0]})";
+				if ( ! preg_match( $pattern, $source, $hit ) ) {
+					continue;
+				}
+				// The catalogue count is the one figure a measurement overrides:
+				// the inventory is 146, so any other published count is false
+				// about us and no old-site wording can make it true.
+				if ( 'catalogue count' === $label ) {
+					$found[] = "{$relative}: {$label} ({$hit[0]}) contradicts the measured inventory of 146";
+					continue;
+				}
+				if ( false === strpos( $frozen, $this->fold_claim( $hit[0] ) ) ) {
+					$found[] = "{$relative}: {$label} ({$hit[0]}) is not in the frozen old site";
 				}
 			}
 		}
-		$this->assertSame( array(), $found, 'unverified numeric claims on customer faces: ' . implode( '; ', $found ) );
+		$this->assertSame( array(), $found, 'numeric claims that are invented or contradicted: ' . implode( '; ', $found ) );
+	}
+
+	/**
+	 * The frozen old site's text, folded for substring comparison.
+	 *
+	 * Whitespace collapses to single spaces because the two sites wrap lines
+	 * differently: the old about page prints "20+ PVD Colors" as a number on one
+	 * line and its label on the next, and a byte comparison would call that
+	 * "missing" while a reader sees one phrase.
+	 */
+	private function folded_old_site_text(): string {
+		return $this->fold_claim( $this->frozen_old_site_text() );
+	}
+
+	/**
+	 * Lowercase, collapse whitespace, unify the dashes the two sites disagree on.
+	 *
+	 * @param string $text Text to fold.
+	 */
+	private function fold_claim( string $text ): string {
+		$text = strtolower( str_replace( array( "\u{2013}", "\u{2014}", "\u{00a0}" ), array( '-', '-', ' ' ), $text ) );
+		return (string) preg_replace( '/\s+/', ' ', $text );
+	}
+
+	/**
+	 * Salt-spray hours and service-life years must be the frozen old site's words.
+	 *
+	 * An outright ban was the wrong shape: the frozen old site published these
+	 * figures, so a template may repeat that exact text and must not invent one.
+	 * The source of record is data/shopify-public/pages-content.md.
+	 */
+	public function test_salt_spray_and_life_figures_match_the_frozen_old_site(): void {
+		$dir   = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
+		$found = array();
+		foreach ( $files as $file ) {
+			$source   = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$relative = str_replace( $dir . '/', '', (string) $file );
+			foreach ( $this->untraced_life_figures( $source ) as $figure ) {
+				$found[] = "{$relative} ({$figure})";
+			}
+		}
+		$this->assertSame(
+			array(),
+			$found,
+			'salt-spray or life figure not verbatim in data/shopify-public/pages-content.md: ' . implode( '; ', $found )
+		);
+	}
+
+	/**
+	 * An hour figure the frozen old site never published still fails.
+	 */
+	public function test_an_invented_salt_spray_hour_figure_fails_the_parity_lock(): void {
+		$this->assertSame(
+			array( '12,345 hr' ),
+			$this->untraced_life_figures( '<p>12,345 hr salt spray</p>' )
+		);
+	}
+
+	/**
+	 * A published salt-spray figure passes, and the detector has to see it.
+	 *
+	 * A pattern that matches nothing would otherwise call every figure legal.
+	 */
+	public function test_a_published_old_site_salt_spray_figure_passes_the_parity_lock(): void {
+		$html = '<p>4,000+ hr ASTM B117</p>';
+		$this->assertSame( array( '4,000+ hr' ), $this->life_figures( $html ) );
+		$this->assertSame( array(), $this->untraced_life_figures( $html ) );
+	}
+
+	/**
+	 * An en-dash service-life range is matched, and only the published dash passes.
+	 *
+	 * Without the `/u` flag the en dash is invisible, so the invented range
+	 * would not be reported and this test could not fail.
+	 */
+	public function test_an_en_dash_service_life_is_a_parity_lock_not_a_blind_spot(): void {
+		$invented = '12' . "\u{2013}" . '34 years';
+		$this->assertSame(
+			array( $invented ),
+			$this->untraced_life_figures( '<p>Rated ' . $invented . ' outdoors.</p>' )
+		);
+
+		$published = '10' . "\u{2013}" . '20 year';
+		$this->assertSame( array( $published ), $this->life_figures( '<p>a ' . $published . ' warranty</p>' ) );
+		$this->assertSame( array(), $this->untraced_life_figures( '<p>a ' . $published . ' warranty</p>' ) );
+
+		$hyphen = '10-20 year';
+		$this->assertSame(
+			array( $hyphen ),
+			$this->untraced_life_figures( '<p>a ' . $hyphen . ' warranty</p>' )
+		);
+	}
+
+	/**
+	 * Reply windows are not salt-spray claims.
+	 *
+	 * `24 hours`, `48 hours`, `72 Hours` and `4 hours` stay legal, so the hour
+	 * branch needs four digits or an explicit plus.
+	 */
+	public function test_support_hours_are_not_salt_spray_figures(): void {
+		$html = '<p>Reply within 24 hours. Drawing in 48 hours. Sample in 72 Hours. Call in 4 hours.</p>';
+		$this->assertSame( array(), $this->life_figures( $html ) );
 	}
 
 	/**
@@ -734,5 +851,74 @@ final class TemplatesTest extends TestCase {
 			$empty[] = $node->{$tag_name} . ' ' . substr( $node->getAttribute( 'class' ), 0, 80 );
 		}
 		$this->assertSame( array(), $empty, 'empty download cards' );
+	}
+
+	/**
+	 * Salt-spray hours and service-life years, including en-dash ranges.
+	 *
+	 * The `/u` flag is load-bearing. Every year range on these pages uses an
+	 * en dash (U+2013). Without it PCRE walks the dash byte by byte, no range
+	 * matches, and the lock is blind to the claims it exists to check.
+	 */
+	private function life_figure_pattern(): string {
+		$dash = "\u{2013}\u{2014}-";
+		return '/\b\d[\d,]*\s*\+\s*(?:hrs?|hours?)\b'
+			. '|\b\d[\d,]{2,}\s*(?:hrs?|hours?)\b'
+			. '|\b\d{1,2}\s*[' . $dash . ']\s*\d{1,2}\s*years?\b'
+			. '|\b\d{1,2}\+\s*years?\b'
+			. '|\b(?:holds?|lasts?)\s+\d{1,2}\s*[' . $dash . ']\s*\d{1,2}\b/iu';
+	}
+
+	/**
+	 * Visible template text: comments and tags removed, as the ban scan does.
+	 *
+	 * @param string $source Template source, comments included.
+	 */
+	private function visible_template_text( string $source ): string {
+		$text = (string) preg_replace( '/<!--.*?-->/s', "\n", $source );
+		return (string) preg_replace( '/<[^>]*>/s', "\n", $text );
+	}
+
+	/**
+	 * The frozen old-site extract, the parity source of record.
+	 */
+	private function frozen_old_site_text(): string {
+		$root = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName(), 5 );
+		$path = $root . '/data/shopify-public/pages-content.md';
+		$this->assertFileExists( $path, 'frozen old-site extract is the parity source of record' );
+		$text = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+		$this->assertNotSame( '', $text, 'frozen old-site extract is empty' );
+		$this->assertStringContainsString( '# PAGE: faqs', $text, 'frozen old-site extract is not the page corpus' );
+		return $text;
+	}
+
+	/**
+	 * Life figures the detector sees in customer-visible text.
+	 *
+	 * @param string $html Template source or a fixture fragment.
+	 * @return array<int, string>
+	 */
+	private function life_figures( string $html ): array {
+		if ( false === preg_match_all( $this->life_figure_pattern(), $this->visible_template_text( $html ), $hits ) ) {
+			return array();
+		}
+		return array_values( array_unique( $hits[0] ) );
+	}
+
+	/**
+	 * Life figures whose exact text is absent from the frozen old site.
+	 *
+	 * @param string $html Template source or a fixture fragment.
+	 * @return array<int, string>
+	 */
+	private function untraced_life_figures( string $html ): array {
+		$corpus  = $this->frozen_old_site_text();
+		$missing = array();
+		foreach ( $this->life_figures( $html ) as $figure ) {
+			if ( false === strpos( $corpus, $figure ) ) {
+				$missing[] = $figure;
+			}
+		}
+		return $missing;
 	}
 }

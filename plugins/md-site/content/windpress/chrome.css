@@ -13,6 +13,46 @@
 /* The nav label's size/family/case is set once in the header block below
    (ticket #67); the old inline-span 15px and h3 13px pair are gone so the
    deploy-time overlay definition cannot win again. */
+
+/* Skip link. Clipped until focused so it stays in the tab order without
+   painting on the page; on focus it pins to the viewport, above the sticky
+   band (z-index 100) and below the modals (1000). px, not rem: the carried
+   62.5% root would render a rem figure at 0.625x. */
+.md-skip-link{
+position: absolute;
+width: 1px;
+height: 1px;
+padding: 0;
+margin: -1px;
+overflow: hidden;
+clip: rect(0, 0, 0, 0);
+clip-path: inset(50%);
+white-space: nowrap;
+border: 0;
+}
+.md-skip-link:focus,
+.md-skip-link:focus-visible{
+position: fixed;
+z-index: 200;
+top: 8px;
+left: 8px;
+width: auto;
+height: auto;
+min-height: 44px;
+margin: 0;
+padding: 8px 16px;
+overflow: visible;
+clip: auto;
+clip-path: none;
+white-space: normal;
+background: #141414;
+color: #ffffff;
+font-family: Inter, sans-serif;
+font-size: 15px;
+line-height: 20px;
+text-decoration: none;
+}
+
 .xo-loader-3 { --size: 10; --color: rgb(var(--color-foreground)); --duration: 1000; }
 .xo-modal-content { --width: 500px; --height: 80vh; --header-height: 70px; --footer-height: 70px; }
 .xo-modal-content__body { --width: 0; --scrollbar-thumb-padding: 0px; }

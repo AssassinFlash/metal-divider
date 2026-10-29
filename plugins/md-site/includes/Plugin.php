@@ -78,6 +78,10 @@ final class Plugin {
 		// so both register on the objects the shared renderer holds.
 		add_action( 'init', array( $this->partial_fields, 'register' ) );
 		add_action( 'init', array( $this->partials, 'register' ) );
+		// Author notes in the templates are HTML comments. WordPress expands
+		// shortcodes inside them, and the notes themselves ship in the response.
+		// The converter reads the repository files, not this response.
+		( new Presentation\HtmlComments() )->register();
 		$this->fields->register();
 		$this->schemas->register();
 		$this->catalog_robots->register();

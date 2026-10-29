@@ -135,8 +135,8 @@ Full strength, full visual impact.
 
     <!-- Trust metrics strip --><div class="mb-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-8 backdrop-blur-sm md:px-10">
         <div class="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-0"><div class="flex flex-col gap-1 md:border-r md:border-white/[0.08] md:pr-8">
-              <div class="text-lg font-bold text-white">Foshan Facility</div><div class="text-sm text-white/75">Production floor in Foshan</div></div><div class="flex flex-col gap-1 md:border-r md:border-white/[0.08] md:px-8">
-              <div class="text-lg font-bold text-white">Global Shipping</div><div class="text-sm text-white/75">Export packing and worldwide shipping</div></div><div class="flex flex-col gap-1 md:pl-8">
+              <div class="text-lg font-bold text-white">Foshan Facility</div><div class="text-sm text-white/75">15,000+ sqm production floor</div></div><div class="flex flex-col gap-1 md:border-r md:border-white/[0.08] md:px-8">
+              <div class="text-lg font-bold text-white">Global Shipping</div><div class="text-sm text-white/75">30+ countries served</div></div><div class="flex flex-col gap-1 md:pl-8">
               <div class="text-lg font-bold text-white">Zero-Waste Process</div><div class="text-sm text-white/75">100% material utilized</div></div></div>
       </div></div>
 </section>
@@ -1445,7 +1445,7 @@ for Your Screen?</h2>
               <td><span class="font-['Playfair_Display'] text-lg font-semibold text-white">Material & Finish</span></td>
               <td><span class="text-base text-white/90">SS304/316/Al + Powder/PVD/Brushed</span></td>
               <td><span class="inline-flex items-center gap-1.5 bg-[#c9a962]/10 text-[#c9a962] border border-[#c9a962]/30 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>Standard</span></td>
-              <td><span class="text-sm text-white/80">ASTM B117 salt spray, duration per project</span></td>
+              <td><span class="text-sm text-white/80">ASTM B117 500–1000 hrs</span></td>
             </tr></tbody>
         </table>
       </div>
@@ -1759,7 +1759,7 @@ for Your Screen?</h2>
 </thead>
 <tbody>
 <tr><td>304 Stainless Steel</td><td>Mill / brushed</td><td>Baseline material and finish</td><td>Interior or mild exterior</td></tr>
-<tr><td>304 Stainless Steel</td><td>Powder coat or PVD</td><td>Adds a coating step for colour or extra durability</td><td>Colour or wear resistance</td></tr>
+<tr><td>304 Stainless Steel</td><td>Powder coat or PVD</td><td>Adds a coating step for colour or extra durability</td><td>Added for color or extra durability</td></tr>
 <tr><td>316 Stainless Steel</td><td>Mill / brushed</td><td>Higher-alloy sheet for chloride exposure</td><td>Marine / coastal</td></tr>
 </tbody>
 </table>
@@ -1786,8 +1786,8 @@ for Your Screen?</h2>
 <tr><th>Material</th><th>Salt Spray Hours (typical)</th><th>Real Environment Performance</th><th>Best Applications</th></tr>
 </thead>
 <tbody>
-<tr><td>304 Stainless Steel</td><td>Confirm per project</td><td>Inland/industrial; confirm grade for salt-air sites</td><td>Interior or protected exterior</td></tr>
-<tr><td>316 Stainless Steel</td><td>Confirm per project</td><td>Coastal/marine: confirm grade and finish per project</td><td>Exterior facades, high-humidity, saltwater exposure</td></tr>
+<tr><td>304 Stainless Steel</td><td>500–1,000 hours</td><td>Good in inland/industrial; pitting risk in salt air after 5–10 years</td><td>Interior or protected exterior</td></tr>
+<tr><td>316 Stainless Steel</td><td>1,000–2,000+ hours</td><td>Superior in coastal/marine; 20+ years with minimal maintenance</td><td>Exterior facades, high-humidity, saltwater exposure</td></tr>
 </tbody>
 </table>
 <ul>
@@ -1990,7 +1990,12 @@ class="xo-section xo-section--template--22084675240189__expanded-contact md-t156
               <h3 class="mb-1 font-['Playfair_Display'] text-xl text-white">Send My Panel Brief</h3>
               <p class="mb-6 text-sm text-white/75">Reply within 24 hours with material, finish, and next steps.</p>
 
-              [lc_get_partial slug="md-inquiry-cta"]
+              <!-- .md-inquiry is the inquiry page frame (gradient + 56px/88px
+                   padding). The card is the surface, so the same two utilities
+                   home uses clear that frame here. Not a new stylesheet. -->
+              <div class="[&_.md-inquiry]:[background:none] [&_.md-inquiry]:p-0">
+                [md_inquiry_form source_page="expanded-metal-panels" source_module="panel-brief" source_button="send-inquiry"]
+              </div>
             </div>
 
             <!-- Success state: shown after submit, replaces form -->

@@ -126,8 +126,16 @@ class="xo-container--box"
           <span class="pattern-catalog__label">Browse</span>
           <!-- md-data: the current product_cat term name (LC native archive title; the taxonomy label prefix WP adds is stripped, shared by all nine series) -->
           <h1 class="pattern-catalog__title">[lc_the_archive_title strip_label="1"]</h1>
-          
-            <p class="pattern-catalog__intro">Compare pattern families, open pattern pages, and send the selected reference with panel size and finish target.</p>
+          <!-- md-data: the old collection intro, one sentence per series. The four series that shared the generic sentence keep it; the five that had their own sentence keep that sentence. The condition selects the queried term so this shared template does not print one series' sentence on the other eight. -->
+            [lc_if condition="is_product_category" param="pattern-abstract"]<p class="pattern-catalog__intro">Compare pattern families, open pattern pages, and send the selected reference with panel size and finish target.</p>[/lc_if]
+            [lc_if condition="is_product_category" param="pattern-geometric"]<p class="pattern-catalog__intro">Compare pattern families, open pattern pages, and send the selected reference with panel size and finish target.</p>[/lc_if]
+            [lc_if condition="is_product_category" param="pattern-organic"]<p class="pattern-catalog__intro">Compare pattern families, open pattern pages, and send the selected reference with panel size and finish target.</p>[/lc_if]
+            [lc_if condition="is_product_category" param="pattern-gradient"]<p class="pattern-catalog__intro">Compare pattern families, open pattern pages, and send the selected reference with panel size and finish target.</p>[/lc_if]
+            [lc_if condition="is_product_category" param="pattern-asian"]<p class="pattern-catalog__intro">Use structured lattice patterns when the brief needs ordered privacy, radial rhythm, or filtered light without closing the panel. Start here for room dividers, feature panels, hospitality screens, and interior partitions where repeat scale, open area, finish, and mounting frame shape the quote.</p>[/lc_if]
+            [lc_if condition="is_product_category" param="pattern-landscape"]<p class="pattern-catalog__intro">Use landscape patterns when the screen needs a scenic read from distance instead of a strict repeat. Start here for garden partitions, exterior privacy screens, feature panels, and view-control projects where panel scale, open area, finish, and mounting frame shape the quote.</p>[/lc_if]
+            [lc_if condition="is_product_category" param="pattern-moroccan-arabic"]<p class="pattern-catalog__intro">Use Moroccan and Arabic lattice patterns when privacy and decorative geometry need to work together. Start here for partitions, facade screening, lounge zoning, and hospitality screens where lattice density, sightline control, finish, and viewing distance shape the quote.</p>[/lc_if]
+            [lc_if condition="is_product_category" param="pattern-perforated"]<p class="pattern-catalog__intro">Use perforated patterns when airflow, ventilation, and repeatable openings drive the brief. Start here for equipment screens, facade vents, exterior partitions, and utility zones where hole size, open area, panel thickness, and mounting frame shape the quote.</p>[/lc_if]
+            [lc_if condition="is_product_category" param="pattern-vintage-retro"]<p class="pattern-catalog__intro">Use classic motif patterns when the brief needs a traditional repeat adapted for metal panels. Start here for decorative partitions, feature panels, hospitality interiors, and restoration-style spaces where repeat rhythm, open area, finish, and mounting frame shape the quote.</p>[/lc_if]
           
         </div>
 
@@ -181,6 +189,120 @@ class="xo-container--box"
           </div>
 
           [md_pattern_pagination]
+
+          <!-- md-data: the old catalog's "Explore Other Pattern Series" block. Heading and hub link are the same on the eight series that had the block; the four family links are the old per-series set. Gradient had no block (the collection was empty), so it is not listed. The conditions are siblings, not nested, because LiveCanvas closes at the first closing tag. -->
+          [lc_if condition="is_product_category" param="pattern-abstract"]
+          <section class="pattern-catalog__cluster" aria-label="Explore Other Pattern Series">
+            <span class="pattern-catalog__label">Explore Other Pattern Series</span>
+            <h3 class="pattern-catalog__cluster-title">Compare nearby pattern directions before choosing the final reference.</h3>
+            <p class="pattern-catalog__cluster-copy">Return to the full pattern hub or open the related families that shift privacy, airflow, and visual rhythm in a different way.</p>
+            <div class="pattern-catalog__cluster-links">
+              <a class="pattern-catalog__cluster-link" href="/collections/">Browse All Pattern Series</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-organic#product-catalog">Browse Organic Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-geometric#product-catalog">Browse Geometric Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-vintage-retro#product-catalog">Browse Vintage &amp; Retro Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-asian#product-catalog">Browse Asian Inspired Patterns</a>
+            </div>
+          </section>
+          [/lc_if]
+          [lc_if condition="is_product_category" param="pattern-asian"]
+          <section class="pattern-catalog__cluster" aria-label="Explore Other Pattern Series">
+            <span class="pattern-catalog__label">Explore Other Pattern Series</span>
+            <h3 class="pattern-catalog__cluster-title">Compare nearby pattern directions before choosing the final reference.</h3>
+            <p class="pattern-catalog__cluster-copy">Return to the full pattern hub or open the related families that shift privacy, airflow, and visual rhythm in a different way.</p>
+            <div class="pattern-catalog__cluster-links">
+              <a class="pattern-catalog__cluster-link" href="/collections/">Browse All Pattern Series</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-vintage-retro#product-catalog">Browse Vintage &amp; Retro Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-moroccan-arabic#product-catalog">Browse Moroccan &amp; Arabic Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-geometric#product-catalog">Browse Geometric Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-organic#product-catalog">Browse Organic Patterns</a>
+            </div>
+          </section>
+          [/lc_if]
+          [lc_if condition="is_product_category" param="pattern-geometric"]
+          <section class="pattern-catalog__cluster" aria-label="Explore Other Pattern Series">
+            <span class="pattern-catalog__label">Explore Other Pattern Series</span>
+            <h3 class="pattern-catalog__cluster-title">Compare nearby pattern directions before choosing the final reference.</h3>
+            <p class="pattern-catalog__cluster-copy">Return to the full pattern hub or open the related families that shift privacy, airflow, and visual rhythm in a different way.</p>
+            <div class="pattern-catalog__cluster-links">
+              <a class="pattern-catalog__cluster-link" href="/collections/">Browse All Pattern Series</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-perforated#product-catalog">Browse Perforated Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-abstract#product-catalog">Browse Abstract Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-organic#product-catalog">Browse Organic Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-landscape#product-catalog">Browse Landscape Patterns</a>
+            </div>
+          </section>
+          [/lc_if]
+          [lc_if condition="is_product_category" param="pattern-landscape"]
+          <section class="pattern-catalog__cluster" aria-label="Explore Other Pattern Series">
+            <span class="pattern-catalog__label">Explore Other Pattern Series</span>
+            <h3 class="pattern-catalog__cluster-title">Compare nearby pattern directions before choosing the final reference.</h3>
+            <p class="pattern-catalog__cluster-copy">Return to the full pattern hub or open the related families that shift privacy, airflow, and visual rhythm in a different way.</p>
+            <div class="pattern-catalog__cluster-links">
+              <a class="pattern-catalog__cluster-link" href="/collections/">Browse All Pattern Series</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-perforated#product-catalog">Browse Perforated Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-geometric#product-catalog">Browse Geometric Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-organic#product-catalog">Browse Organic Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-moroccan-arabic#product-catalog">Browse Moroccan &amp; Arabic Patterns</a>
+            </div>
+          </section>
+          [/lc_if]
+          [lc_if condition="is_product_category" param="pattern-moroccan-arabic"]
+          <section class="pattern-catalog__cluster" aria-label="Explore Other Pattern Series">
+            <span class="pattern-catalog__label">Explore Other Pattern Series</span>
+            <h3 class="pattern-catalog__cluster-title">Compare nearby pattern directions before choosing the final reference.</h3>
+            <p class="pattern-catalog__cluster-copy">Return to the full pattern hub or open the related families that shift privacy, airflow, and visual rhythm in a different way.</p>
+            <div class="pattern-catalog__cluster-links">
+              <a class="pattern-catalog__cluster-link" href="/collections/">Browse All Pattern Series</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-asian#product-catalog">Browse Asian Inspired Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-vintage-retro#product-catalog">Browse Vintage &amp; Retro Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-geometric#product-catalog">Browse Geometric Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-landscape#product-catalog">Browse Landscape Patterns</a>
+            </div>
+          </section>
+          [/lc_if]
+          [lc_if condition="is_product_category" param="pattern-organic"]
+          <section class="pattern-catalog__cluster" aria-label="Explore Other Pattern Series">
+            <span class="pattern-catalog__label">Explore Other Pattern Series</span>
+            <h3 class="pattern-catalog__cluster-title">Compare nearby pattern directions before choosing the final reference.</h3>
+            <p class="pattern-catalog__cluster-copy">Return to the full pattern hub or open the related families that shift privacy, airflow, and visual rhythm in a different way.</p>
+            <div class="pattern-catalog__cluster-links">
+              <a class="pattern-catalog__cluster-link" href="/collections/">Browse All Pattern Series</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-abstract#product-catalog">Browse Abstract Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-geometric#product-catalog">Browse Geometric Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-landscape#product-catalog">Browse Landscape Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-moroccan-arabic#product-catalog">Browse Moroccan &amp; Arabic Patterns</a>
+            </div>
+          </section>
+          [/lc_if]
+          [lc_if condition="is_product_category" param="pattern-perforated"]
+          <section class="pattern-catalog__cluster" aria-label="Explore Other Pattern Series">
+            <span class="pattern-catalog__label">Explore Other Pattern Series</span>
+            <h3 class="pattern-catalog__cluster-title">Compare nearby pattern directions before choosing the final reference.</h3>
+            <p class="pattern-catalog__cluster-copy">Return to the full pattern hub or open the related families that shift privacy, airflow, and visual rhythm in a different way.</p>
+            <div class="pattern-catalog__cluster-links">
+              <a class="pattern-catalog__cluster-link" href="/collections/">Browse All Pattern Series</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-geometric#product-catalog">Browse Geometric Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-landscape#product-catalog">Browse Landscape Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-moroccan-arabic#product-catalog">Browse Moroccan &amp; Arabic Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-organic#product-catalog">Browse Organic Patterns</a>
+            </div>
+          </section>
+          [/lc_if]
+          [lc_if condition="is_product_category" param="pattern-vintage-retro"]
+          <section class="pattern-catalog__cluster" aria-label="Explore Other Pattern Series">
+            <span class="pattern-catalog__label">Explore Other Pattern Series</span>
+            <h3 class="pattern-catalog__cluster-title">Compare nearby pattern directions before choosing the final reference.</h3>
+            <p class="pattern-catalog__cluster-copy">Return to the full pattern hub or open the related families that shift privacy, airflow, and visual rhythm in a different way.</p>
+            <div class="pattern-catalog__cluster-links">
+              <a class="pattern-catalog__cluster-link" href="/collections/">Browse All Pattern Series</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-asian#product-catalog">Browse Asian Inspired Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-abstract#product-catalog">Browse Abstract Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-moroccan-arabic#product-catalog">Browse Moroccan &amp; Arabic Patterns</a>
+              <a class="pattern-catalog__cluster-link" href="/collections/pattern-geometric#product-catalog">Browse Geometric Patterns</a>
+            </div>
+          </section>
+          [/lc_if]
         </div>
       </div>
     </section>
@@ -661,7 +783,7 @@ class="xo-section xo-section--template--21844031570173__pattern-contact md-t156d
               <h3 class="mb-1 font-['Playfair_Display'] text-xl text-white">Send your pattern brief</h3>
               <p class="mb-6 text-sm text-white/75">Reply within 24 hours with pattern direction, material, finish, and next steps.</p>
 
-              [lc_get_partial slug="md-inquiry-cta"]
+              [md_inquiry_form source_page="series-archive" source_module="pattern-brief" source_button="send-inquiry"]
             </div>
 
             <!-- Success state: shown after submit, replaces form -->

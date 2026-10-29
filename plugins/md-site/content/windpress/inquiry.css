@@ -653,6 +653,68 @@
   line-height: 1.6;
   color: var(--md-gold);
 }
+.inquiry-flow-kicker {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--md-gold);
+}
+.inquiry-flow-points {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.inquiry-flow-points li {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.7);
+}
+.inquiry-flow-points li::marker {
+  color: var(--md-gold);
+}
+.inquiry-flow-list .inquiry-flow-label {
+  margin: 14px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--md-gold);
+}
+.inquiry-flow-list .inquiry-flow-value {
+  margin: 2px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+}
+.inquiry-flow-figure {
+  display: block;
+  height: 168px;
+  margin: 14px 0 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #141414;
+}
+.inquiry-flow-figure img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.inquiry-flow-close {
+  margin-top: 22px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+}
+.inquiry-flow-close a {
+  color: var(--md-gold);
+  font-weight: 600;
+  text-decoration: none;
+}
+.inquiry-flow-close a:hover,
+.inquiry-flow-close a:focus-visible {
+  text-decoration: underline;
+}
 
 .inquiry-faq-list {
   display: grid;
@@ -745,4 +807,28 @@
     left: 18px;
     top: 20px;
   }
+  .inquiry-flow-figure {
+    height: 140px;
+  }
+}
+
+/* The form inside a page card, outside the inquiry page.
+ *
+ * `.md-inquiry` above is the inquiry PAGE's frame: a page-tall gradient and
+ * 56px/88px vertical padding. Every closing card on this site ("Send your
+ * brief", "Send Us a Message", "Send My Panel Brief") places the same form
+ * inside a bordered card that is already a surface, so the frame drew a second
+ * box inside the first and added 144px of empty height above the first label.
+ *
+ * The inquiry page itself must keep the frame, and the footer's dialog already
+ * clears it in chrome.css. `:not(#md-inquiry *)` is the exclusion: the inquiry
+ * page's form lives inside `<section class="md-inquiry" id="md-inquiry">`, no
+ * card does. Complex selectors inside :not are Selectors Level 4, supported by
+ * Chrome 88+ — the only engine this site is measured in.
+ *
+ * Only the frame goes. Every field, action and note rule in this file is
+ * scoped `.md-inquiry …`, so they keep applying. */
+.md-inquiry-app:not(#md-inquiry *) .md-inquiry {
+  background: none;
+  padding: 0;
 }
