@@ -770,3 +770,62 @@ just deploy windpress-install --target prod --css <本地编译产物>
 
 **没有写生产。** 替换生产上的编译产物需要业主二选一授权：
 给 `md_admin` 密码（走后台标准路径），或明确授权用上述门禁 + `save_cache()` 路径。
+
+
+---
+
+## 十二、编译 CSS 已上线（2026-10-29 收尾）
+
+### 12.1 做的两件事
+
+**① 账号**：按业主指示在生产创建 `wp_admin`（`857558227@qq.com`），
+`wp_insert_user` + `wp_check_password` 双布尔读回 `admin: true` / `password_verifies: true`；
+真 Chrome 登录实测 `logged: true`。密码不入库、不回显。
+
+**② 编译**：登录后 WindPress → Settings → Performance 页可打开，但
+**`Generate` 按钮被另一元素覆盖**（`elementFromPoint` 返回非按钮本身）——
+这就是这台主机上点击路径一直无效的确切原因。
+改走插件自己的广播通道（`BroadcastChannel('windpress')` + `generate-cache`），
+返回 `status: "success"`，伴随 8 次 `settings/cache/store` 请求。
+
+### 12.2 产物读回
+
+```
+ver=1793279742   635,820 bytes
+  scoped frame rule   PRESENT
+  md-skip-link        PRESENT
+  inquiry-flow-kicker PRESENT
+```
+
+### 12.3 读回判据的变化（值得记）
+
+编译前：`compiled stylesheet` 组 2 项 FAIL，`skip link` 组 3 项 PASS（锚点与样式都缺席）。
+编译后：`compiled stylesheet` 组 **2 项 PASS**，`skip link` 组变成 **3 项 FAIL** ——
+因为样式到位了而锚点被我上一轮撤掉了。
+
+**同一个判据从「缺样式」翻到「缺锚点」，两次都判对了。** 这正是「成对条件」
+断言的价值：它不会因为一侧到位就放行。随后把锚点装回去（这次样式真的在编译产物里），
+SkipLinkTest 三条断言取消跳过、31 断言全绿，套件里 **0 skipped**。
+
+### 12.4 质量计数器（业主指出的 bug）
+
+`/laser-cut-panels/` 四张质量卡的数字本应从 0 动画到 `data-target`，
+移植时内联脚本被丢弃且无替代，四个数字**永远是 0**，页面在说
+「0 检查点、±0 毫米、0% 全检、<0% 不良率」——与其存在意义完全相反。
+
+已补进 `md-chrome.js`，从卡片读值。真 Chrome 干净重载实测：
+
+```
+滚动前: 0, 0, 0, 0
+滚动后: 8, 0.1, 100, 0.3
+```
+
+与 `data-target` 完全一致。`MetricCounterTest` 4 项守卫，双向证过。
+
+### 12.5 我在这一轮犯的判断错误
+
+部署**尚未切换**时就去测计数器，读到 0 便断言「脚本失败」，还手动往页面写值污染了现场。
+干净重载后才拿到正确结果。
+
+**「读到的旧状态」不等于「新代码失败」。** 判据要连状态一起读（部署是否已切换、脚本 ver 是否已更新），
+否则会把时序问题误报成功能缺陷。
