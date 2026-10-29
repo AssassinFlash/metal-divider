@@ -92,6 +92,38 @@ def check_comments(base: str) -> list[tuple[bool, str]]:
     return results
 
 
+def check_unique_ids(base: str) -> list[tuple[bool, str]]:
+    """No element id appears twice on a page.
+
+    Fails when two forms share an id, which is what happened the moment a page
+    carried a closing-card form beside the footer dialog: wp_nonce_field()
+    writes its id without a per-instance suffix, so both forms claimed
+    `md_inquiry_nonce`. Duplicate ids are invalid HTML, and getElementById plus
+    any `for=` label then resolve to whichever form rendered first, leaving the
+    second form's nonce unreachable by id.
+
+    Measured before the fix: /about-us/ 69 ids, one duplicated; /shop/ 86 and
+    /project-gallery/ 76, one each.
+    """
+    results = []
+    for path in ("/", "/about-us/", "/shop/", "/project-gallery/", "/inquiry/"):
+        try:
+            html = get(base + path)
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
+            results.append((False, f"{path} unreachable: {exc}"))
+            continue
+        ids = re.findall(r'\bid="([^"]+)"', html)
+        duplicated = sorted({i for i in ids if ids.count(i) > 1})
+        results.append(
+            (
+                not duplicated,
+                f"{path} ids={len(ids)} duplicated={len(duplicated)}"
+                + (f" {duplicated[:4]}" if duplicated else ""),
+            )
+        )
+    return results
+
+
 def check_skip_link(base: str) -> list[tuple[bool, str]]:
     """The document opens with a skip link that names a real target.
 
@@ -149,6 +181,7 @@ def check_stylesheet(base: str) -> list[tuple[bool, str]]:
 CHECKS = (
     ("closing-card forms", check_forms),
     ("no shipped comments", check_comments),
+    ("unique element ids", check_unique_ids),
     ("skip link", check_skip_link),
     ("compiled stylesheet", check_stylesheet),
 )
@@ -208,9 +241,23 @@ def self_check() -> int:
             re.search(r"\.md-skip-link", css)
         )
 
+    def ids_ok(html: str) -> bool:
+        ids = re.findall(r'\bid="([^"]+)"', html)
+        return len(ids) == len(set(ids))
+
+    fixtures["two forms, same id"] = (
+        '<input name="md_inquiry_nonce" id="md_inquiry_nonce">'
+        '<input name="md_inquiry_nonce" id="md_inquiry_nonce">'
+    )
+    fixtures["two forms, suffixed"] = (
+        '<input name="md_inquiry_nonce" id="md_inquiry_nonce">'
+        '<input name="md_inquiry_nonce" id="md_inquiry_nonce-2">'
+    )
+
     pairs = [
         ("forms", forms_ok, "band card", "form card"),
         ("comments", comments_ok, "commented page", "clean page"),
+        ("unique ids", ids_ok, "two forms, same id", "two forms, suffixed"),
         ("skip link", skip_ok, "no skip header", "skip header"),
         ("stylesheet", css_ok, "old css", "new css"),
     ]
