@@ -946,6 +946,49 @@ final class WP_Error {
 
 // phpcs:enable Universal.Files.SeparateFunctionsFromOO.Mixed, Generic.Files.OneObjectStructurePerFile.MultipleFound, PEAR.NamingConventions.ValidClassName.StartWithCapital, WordPress.WP.GlobalVariablesOverride.Prohibited, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound
 
+if ( ! class_exists( 'WP_CLI' ) ) {
+	/**
+	 * The wp-cli runtime double: add_command records what production
+	 * registered, the writers echo so tests can capture them with output
+	 * buffering, and error() throws the way the real one exits.
+	 */
+	class WP_CLI {
+		/** @var array<string, callable|string> The commands add_command registered. */
+		public static array $registered_commands = array();
+
+		/** Records the command for the dispatch tests to read back. */
+		public static function add_command( string $name, callable|string $command ): void {
+			self::$registered_commands[ $name ] = $command;
+		}
+
+		/** Prints one line, like wp-cli's log. */
+		public static function log( string $message ): void {
+			echo 'wp-cli log: ' . $message . "\n";
+		}
+
+		/** Prints one success line. */
+		public static function success( string $message ): void {
+			echo 'wp-cli success: ' . $message . "\n";
+		}
+
+		/** Prints one warning line. */
+		public static function warning( string $message ): void {
+			echo 'wp-cli warning: ' . $message . "\n";
+		}
+
+		/** Exits like wp-cli's error, as a catchable exception instead. */
+		public static function error( string $message ): void {
+			throw new WP_CLI\ExitException( $message );
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_CLI\ExitException' ) ) {
+	class WP_CLI_ExitException extends Exception {
+	}
+	class_alias( WP_CLI_ExitException::class, 'WP_CLI\\ExitException' );
+}
+
 require_once dirname( __DIR__, 2 ) . '/md-deploy-reset.php';
 require_once dirname( __DIR__, 2 ) . '/md-error-recorder.php';
 require_once dirname( __DIR__, 2 ) . '/md-wecom-notify.php';

@@ -1149,7 +1149,7 @@ const MD_KB_ENDPOINT_PAGE_HOSTS = array(
  * already named a pattern.
  *
  * @param mixed $page_url The request's page_url, untrusted.
- * @return array{context: string} The compact facts, or an empty context.
+ * @return array{context: string, sources?: non-empty-list<string>} The compact facts, or an empty context.
  */
 function md_kb_endpoint_page_context( mixed $page_url ): array {
 	$empty = array( 'context' => '' );
@@ -1893,3 +1893,86 @@ function md_kb_endpoint_respond( $request ) {
 	);
 	return new \WP_REST_Response( $out['body'], $out['status'] );
 }
+
+/**
+ * Register the knowledge-gap read-back command when WP-CLI loads.
+ *
+ * @return void
+ */
+function md_kb_endpoint_register_cli(): void {
+	if ( ! class_exists( 'WP_CLI' ) ) {
+		return;
+	}
+	\WP_CLI::add_command( 'md-chat kb-gaps', 'md_kb_endpoint_cli_kb_gaps' );
+}
+
+/**
+ * List the questions the knowledge base could not answer, newest first.
+ *
+ * Reads the same raplsaich_unanswered_log option the endpoint writes
+ * (md_kb_endpoint_log_unanswered) — until now it had no consumer. One line
+ * per entry: the asked-at time (UTC), the repeat count, the gap reason,
+ * then the question itself. An empty log answers with a clear line, not
+ * an error.
+ *
+ * ## OPTIONS
+ *
+ * [--limit=<n>]
+ * : Entries to print at most. Default 50, maximum 50.
+ *
+ * ## EXAMPLES
+ *
+ *     wp md-chat kb-gaps
+ *     wp md-chat kb-gaps --limit=10
+ *
+ * @param array<int, string>   $args       Positional arguments, none expected.
+ * @param array<string, mixed> $assoc_args Associative arguments.
+ * @return void
+ */
+function md_kb_endpoint_cli_kb_gaps( array $args, array $assoc_args ): void {
+	$limit = isset( $assoc_args['limit'] ) ? (int) $assoc_args['limit'] : 50;
+	$limit = max( 1, min( 50, $limit ) );
+
+	$log = get_option( 'raplsaich_unanswered_log', array() );
+	if ( ! is_array( $log ) || array() === $log ) {
+		\WP_CLI::log( 'No gaps recorded.' );
+		return;
+	}
+
+	$entries = array();
+	foreach ( $log as $entry ) {
+		if ( ! is_array( $entry ) ) {
+			continue;
+		}
+		$entries[] = array(
+			'q'      => isset( $entry['q'] ) && is_string( $entry['q'] ) ? $entry['q'] : '',
+			't'      => isset( $entry['t'] ) && is_int( $entry['t'] ) ? $entry['t'] : 0,
+			'n'      => isset( $entry['n'] ) && is_int( $entry['n'] ) ? $entry['n'] : 1,
+			'reason' => isset( $entry['reason'] ) && is_string( $entry['reason'] ) ? $entry['reason'] : '',
+		);
+	}
+	// The writer keeps its store newest-first; sorting by the entry time
+	// makes the read-back hold even if that writer detail changes.
+	usort( $entries, static fn ( array $a, array $b ): int => $b['t'] <=> $a['t'] );
+
+	$printed = 0;
+	foreach ( $entries as $entry ) {
+		if ( $printed >= $limit ) {
+			break;
+		}
+		++$printed;
+		\WP_CLI::log(
+			sprintf(
+				'%s UTC  x%d  %s  %s',
+				gmdate( 'Y-m-d H:i:s', $entry['t'] ),
+				$entry['n'],
+				$entry['reason'],
+				str_replace( "\n", ' ', $entry['q'] )
+			)
+		);
+	}
+
+	\WP_CLI::success( sprintf( '%d gaps recorded.', count( $entries ) ) );
+}
+
+add_action( 'cli_init', 'md_kb_endpoint_register_cli' );
