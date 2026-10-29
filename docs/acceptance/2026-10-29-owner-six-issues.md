@@ -435,3 +435,57 @@ opencli 有时把 200 的 body 记成 `null`（实测到过），此时判断交
 | 编译产物读回 | `md-inquiry-app:not` 命中 1；mtime `1793135171 → 1793274209`；624,407 → 635,827 字节 |
 | 真 Chrome 几何 | about 1363=1363、gallery 1426=1426、manufacturing 1363=1363 等高；6 页 `overflowX=0` |
 | 反向验证 | `/inquiry/` 的 `section#md-inquiry` 仍 `padding: 56px 0px 88px` + 渐变，未被新规则误伤 |
+
+---
+
+## 七、部署与线上读回（2026-10-29 收尾）
+
+### 7.1 部署已归档
+
+批次 `20261029T121302678380Z-9b8574d`，10 项 `deploy-verify` 全部通过，
+页面缓存 GET `/` 两轮 miss → hit，备份按 rename 归档并只保留最近一组。
+
+### 7.2 线上读回：12 / 14 项通过
+
+判据是 `tools/audit/batch_2026_10_29_readback.py`，四组全部**读产物、不读源码**，
+`--self-check` 要求每条对仓库里的修复前文本变红、修复后变绿。
+
+| 组 | 结果 |
+|---|---|
+| 收尾卡有表单、无 band | **7/7 通过** —— `/about-us/`、`/project-gallery/`、`/manufacturing-process/`、`/shop/`、`/collections/pattern-abstract/`、`/stainless-steel-screens/`、`/glass-hybrid-screens/` 全部 `forms=2 bands=0` |
+| 页面不夹带注释 | **4/4 通过** —— `/`、`/about-us/`、`/shop/`、`/inquiry/` 最长注释 **61 字节**（修复前同页 8,949 字节） |
+| 跳过链接 | **3/3 通过** —— `/`、`/shop/`、`/inquiry/` 均 `<a class="md-skip-link" href="#theme-main">`，且 `id="theme-main"` 在同页存在 |
+| 编译 CSS | **0/2 通过** —— `.md-inquiry-app:not(#md-inquiry *)` 与 `.md-skip-link` 均未进编译产物 |
+
+`forms=2` 是对的：收尾卡 1 个 + 页脚报价弹层 1 个。修复前是 `forms=1 / bands=1`。
+
+### 7.3 未通过的两项：原因与已确认的事实
+
+WindPress 的编译只能在 admin 里跑（Tailwind v4 无服务端构建）。生产 admin 登录返回
+**`ERROR: Stop guessing!`** —— 防猜测拦截，且 `~/Downloads/wp-admin.txt` 里是 **hPanel 账号**，
+不是 WP 管理员（仓库多处记载生产管理员为 `md_admin / martinfu127@gmail.com`）。
+按纪律**不猜密码**，这一项如实挂起。
+
+**但「能不能把本地编译产物推上去」已经用可验证的方式答了：能。**
+
+把两边的 CSS 按规则块拆开逐块比字面：
+
+| 方向 | 块数 |
+|---|---:|
+| 生产 | 5,463 |
+| 本地实例 | 5,280 |
+| 生产有、本地没有 | **0** |
+| 本地有、生产没有 | **15** |
+
+生产是本地编译产物的**严格子集**；差的 15 块正是本批次新增
+（`.md-skip-link` 2 块、`.inquiry-flow-kicker` / `.inquiry-flow-points` 4 块、作用域规则等）。
+所以推送本地产物不会覆盖丢失任何既有规则 —— 但**这一步尚未执行**，因为仓库规定的
+生产编译路径是经 admin，绕开它需要业主授权。
+
+### 7.4 阻塞项
+
+需要业主二选一：
+
+1. 提供 `md_admin` 的密码（或直接在后台点一次 WindPress → Settings → Performance → Generate）；
+2. 授权把本地编译产物直接写入生产的 `wp-content/uploads/windpress/cache/tailwind.css` ——
+   依据是上面 7.3 的子集证明，风险已量化（0 块会丢）。
