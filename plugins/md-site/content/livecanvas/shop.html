@@ -115,7 +115,12 @@ class="xo-container--box"
       
     </aside>
 
-    <main class="pattern-catalog__content">
+    <!-- A <div>, not a <main>: the theme skeleton already renders
+         <main id="theme-main"> around this template, and HTML forbids
+         nesting main inside main. Serving both made screen readers and
+         crawlers see two main regions on this page (measured
+         2026-10-29: /shop/ and all nine series archives). -->
+    <div class="pattern-catalog__content">
       <div class="pattern-catalog__toolbar">
         <div>
           <span class="pattern-catalog__label">Browse</span>
@@ -175,7 +180,7 @@ class="xo-container--box"
           </div>
 
           [md_pattern_pagination]
-        </main>
+        </div>
       </div>
     </section>
 
