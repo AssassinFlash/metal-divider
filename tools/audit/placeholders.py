@@ -136,6 +136,11 @@ FIXTURE = """<!doctype html><meta charset="utf-8"><title>placeholder self check<
   <h2>Meter</h2>
   <progress max="100"></progress>
   <progress max="100" value="42"></progress>
+
+  <h2>Hidden by an ancestor</h2>
+  <div style="opacity:0"><img src="" width="40" height="40"></div>
+  <div inert><img src="" width="40" height="40"></div>
+  <div style="display:none"><img src="" width="40" height="40"></div>
 </main>
 """
 

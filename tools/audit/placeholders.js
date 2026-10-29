@@ -16,10 +16,27 @@
 // finding carries the evidence a reader needs to tell those apart.
 (() => {
   const norm = (s) => (s || '').replace(/\s+/g, ' ').trim();
+  // Visible means visible to a person, which includes the ancestors.
+  //
+  // The first version read only the element's own computed style, so a closed
+  // dialog hidden by an ancestor's `opacity: 0` counted as visible. That reported
+  // eighteen "empty" images inside the pattern lightbox on
+  // /custom-metal-divider-screens/ — every one of them a correct pre-open state
+  // whose src is filled on the first show() (verified: naturalWidth 900 once the
+  // lightbox opens). A judge that counts what nobody can see produces findings
+  // nobody can act on.
   const shown = (el) => {
     if (!el || !el.isConnected) return false;
-    const cs = getComputedStyle(el);
-    if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.02) return false;
+    if (el.closest('[inert]')) return false;
+    let node = el;
+    let opacity = 1;
+    for (let i = 0; i < 12 && node && node.nodeType === 1; i++) {
+      const cs = getComputedStyle(node);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+      opacity *= parseFloat(cs.opacity);
+      if (opacity < 0.02) return false;
+      node = node.parentElement;
+    }
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0;
   };
