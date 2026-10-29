@@ -59,6 +59,24 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-30 竞品基准映射落地(业主裁定:事实=竞品取平均,人家不说我们不说)
+
+**裁定方法**:四路并行 Apify 调研 8 家头部竞品(parasoleil / mozdesigns / cambridgearchitectural / gkdmetalfabrics / amico / hendrick / bokmodern / bankerwire),原始报告 `.scratch/competitor-2026-10-30/`。映射与执行:
+
+| 待决项 | 竞品基准 | 处置(已上线读回) |
+|---|---|---|
+| 询盘回复时限 | 3/8 明示,均值=24h | 4 处非 24h 口径改齐(`one business day`/`same day` 承诺);QC 工序 same-day 保留 |
+| 隐私保留年限 | 7/8 不写数字 | 隐私页删「5 年」,保留定性 |
+| 社媒链接 | 8/8 页脚,中位 4 平台 | 页脚加社媒;**我站唯一确认真实账号 = Facebook `stainlesssteeleverywhere`**(复查推翻此前「旧站有 IG/LI/YT 链接」——旧站页面已无实链) |
+| 聊天挂件 | 1/8(且隐藏) | **rapls-ai-chatbot 生产停用**(可逆);CSP 违规、`undefined/session` 404、39KB/页、16 处控件遮挡随之消失 |
+| 照片半透明白字 | 0/8,竞品全不透明 | 12 模板 343 处照片直压白字改不透明;渐变遮罩/深色面板上的 /75–/80 次级文字属复刻设计语言,保留 |
+| meta 卖点 | 竞品 meta 不写回复时限/下载卖点 | 删「Send a DXF」卖点;27 条超长 description 落在竞品区间 113–241 内,不改 |
+| 确认信 Reply-To | 可观测规范=同域 | `sales@sunriverinverter.com` → `info@metal-divider.com`;内部通知路由不变(业主明令) |
+
+**部署与读回**:提交 `8393b48` 归档(备份只留最近一份);WindPress 重编译(教训:**正确消息协议是 `{task:"generate-cache", source:"windpress/dashboard", target:"windpress/compiler"}`,旧记的 `{type}` 格式无效;入口=SPA Settings→Performance 页 Generate 按钮,admin 栏 Recompile 只管 SASS);产物 636,185B 含 `.md-footer__social`,CSS ver `1793295133`。公开面读回:隐私 5年=0、定制页 24-hour quote=1、页脚社媒=1、Emails.php REPLY_TO=info@、时限 stray=0、meta DXF=0。新增守卫 3 条(时限 24h 全站禁令+放行清单、隐私禁数字年限、页脚社媒锁账号与 44px),均实证放回即红;php-test 758 项、just check 全绿。
+
+**状态变化**:此前「需要业主裁定」的 7 项全部按竞品基准闭环。剩余开口 = 业主一次访问确认(截图问题是否随缓存修复消失)+ 业主最终验收。
+
 ### 2026-10-29 询盘链全要素生产实走 + HTML 7 天浏览器缓存根因修复
 
 **询盘链「第四次提交」完成(真 Chrome/opencli,生产)**。此前三次防护层(无 nonce / 蜜罐有值 / 无令牌)均正确拦截;本次全要素通过:真 Turnstile 令牌自动注入(794 字符,`interaction-only` 无挑战)→ 提交 → 记录 1801(`md_new`,16 字段无损)→ 队列两行均 `sent`(attempts=1,零错误):内部通知 `["sales@sunriverinverter.com","info@metal-divider.com"]`、客户确认发提交邮箱。测试数据已回收(记录与队列行删除,读回 0/0),只发这一封。**接替 10-28「完整提交仍待业主实走」的待决。**
