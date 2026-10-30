@@ -1400,3 +1400,12 @@ PreparedSQL 批量整改)——Batch 3 工具硬化;④staging 手工 state flip
 6. **Collections 对照对无效**(旧 URL 404 误抓):正确对照 = 旧 `/collections/pattern-geometric` vs 新 `/collections/pattern-geometric/`,待重拍;核查归档页 9 个带计数分类页签、排序、结果计数是否复刻。
 
 **已回绝的建议**:补回 WhatsApp 入口(与当日裁定冲突)。**关于 FAQ 默认态**:无 JS 修复的等效替代 = 出厂选中一个分类 + 锚点仍可达,既能复刻旧站又不破坏无 JS 可读——待业主点头即实施。
+
+### 2026-10-30(深夜 2)业主裁决:六页型处置 + URL 语义去 Shopify 化
+
+**逐项裁决**:FAQ 按等效方案(出厂单分类+锚点可达);PDP 尺寸可接受,相邻卡不一致要查哪个逻辑对并采用对的;PDP Footer 补地址电话;About 表单/证言不管;定制双页脚是错误必须调;工艺需调;Collections 对照不用管。
+
+**新裁定(URL 语义)**:Shopify 语义不得照搬——`/shop/` → **`/patterns/`**;`/collections/<slug>` → **`/pattern-category/<slug>`**。涉及:Woo 商店页与商品分类 permalink 基底、全站内链、守卫断言(如 MobileChromeTest 的 href='/collections/')、sitemap/canonical、旧 URL 301(GSC 刚提交 sitemap,现在是改 URL 的正确时机)。
+
+**批次六(立即实施)**:①FAQ 默认单分类+锚点;②PDP Footer 补地址电话+相邻卡逻辑核对(产品目录归类 vs 旧站 family 归类,采用对的);③定制页删 landing-footer(`custom-screens.html:1964`)+计数口径统一为 146(页脚 88 查来源);④工艺页收尾段压回 ≤1400、Quality +310 查因、Mid CTA 恢复薄带。
+**批次七(结构性,单独做)**:URL 语义去 Shopify 化(上面全套)。
