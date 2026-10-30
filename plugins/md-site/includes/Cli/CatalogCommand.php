@@ -324,7 +324,8 @@ final class CatalogCommand {
 				$max    = max( $max, 0.2126 * $red + 0.7152 * $green + 0.0722 * $blue );
 			}
 		}
-		\imagedestroy( $image );
+		// PHP 8.3 deprecates imagedestroy(): GD frees the handle at scope exit.
+		unset( $image );
 		return $max < 20.0;
 	}
 

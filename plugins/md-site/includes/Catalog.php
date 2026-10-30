@@ -683,6 +683,75 @@ final class Catalog {
 		return array_map( 'intval', $ids );
 	}
 	/**
+	 * The adjacent patterns of one pattern: its own series' other members.
+	 *
+	 * The PDP's heading reads "Adjacent patterns in this family", and that is
+	 * what this returns — the patterns in the same `product_cat` series, in
+	 * the owner's curated `menu_order`, minus the pattern itself.
+	 *
+	 * Why not `wc_get_related_products()`: that function unions the shared
+	 * categories with the shared *tags* and then shuffles the result
+	 * (wc-product-functions.php: `woocommerce_product_related_posts_relate_by_tag`,
+	 * `woocommerce_product_related_posts_shuffle`), so its answer can leave
+	 * the family the heading names and can differ on every page load.
+	 * Measured 2026-10-30 on the dev store: BirdBlindC (Abstract, term 18)
+	 * returned Arboreal I, Bluestem, Dora and Creative Moment, while the old
+	 * site's own page for that pattern returned Apiary, Zelda, Winter
+	 * Branches and Wild Spinach — all Abstract members, curated order. The
+	 * heading, the old behaviour and this site's single source of pattern
+	 * classification (the Woo series) all say "same family", so that is what
+	 * this returns.
+	 *
+	 * @param int $post_id The pattern whose neighbours to list.
+	 * @param int $limit   Maximum neighbours.
+	 * @return int[] The neighbouring product ids, empty when the pattern has no series.
+	 */
+	public function adjacent( int $post_id, int $limit ): array {
+		$out = array();
+		foreach ( $this->series_slugs( $post_id ) as $slug ) {
+			foreach ( $this->series_member_ids( $slug ) as $id ) {
+				if ( $id === $post_id || in_array( $id, $out, true ) ) {
+					continue;
+				}
+				$out[] = $id;
+				if ( $limit > 0 && count( $out ) >= $limit ) {
+					return $out;
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * The `product_cat` slugs a pattern belongs to.
+	 *
+	 * A pattern can sit in more than one series; the first is its own family
+	 * and the rest are cross-listings. They are returned in the term order
+	 * WordPress gives, which for this catalogue is the order the owner
+	 * assigned, so a pattern in two series leads with the one it was filed
+	 * under.
+	 *
+	 * @param int $post_id The product id.
+	 * @return string[] The series slugs, empty when the product has none.
+	 */
+	private function series_slugs( int $post_id ): array {
+		$terms = \get_the_terms( $post_id, 'product_cat' );
+		if ( ! is_array( $terms ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $terms as $term ) {
+			// get_the_terms() answers WP_Term[]; the instanceof guard this
+			// replaced was always true (PHPStan says so) and the slug check is
+			// the one that can be false.
+			if ( '' !== $term->slug ) {
+				$out[] = (string) $term->slug;
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * The `product_visibility` term ids WooCommerce's catalog excludes.
 	 *
 	 * Empty when WooCommerce is absent (the face then renders the term's

@@ -2679,6 +2679,17 @@
       var activeCat = 'all';
       var query = '';
 
+      // The category the page opens on, when it names one. A page declares
+      // it as `data-md-faq-default="<category>"` on this root, which makes
+      // the opening state a deliberate statement rather than a guess at the
+      // markup's first `active` class — honouring that class as a filter is
+      // what hid seven groups on 2026-10-27. Absent, the filter starts wide.
+      //
+      // This narrows the *script's* view only: the groups ship without
+      // `hidden`, so a visitor with no JavaScript still reads every question
+      // on the page, and the default category changes nothing for them.
+      var defaultCat = (root.getAttribute('data-md-faq-default') || '').trim();
+
       var apply = function () {
         var shown = 0;
         groups.forEach(function (group) {
@@ -2750,19 +2761,28 @@
         tab.setAttribute('aria-pressed', tab.classList.contains('active') ? 'true' : 'false');
       });
 
-      // Run the filter once at startup. The groups ship *without* `hidden` so
-      // a visitor without scripts can read all eight (before this, seven of
-      // them were hidden in the markup itself and stayed hidden forever —
-      // measured 2026-10-27: 2,919 characters with scripts, 31,656 without).
-      // Start wide: every category shown, no tab filtered in. The markup's
-      // first tab carries `active` for its own styling, and honouring it as a
-      // *filter* hid seven of the eight groups on load — a page whose job is
-      // answering questions opened showing one eighth of them (measured
-      // 2026-10-27: 7 groups hidden, 1 visible). Narrowing is the visitor's
-      // action, so it starts from "all".
+      // The startup filter: wide by default, or the page's declared category.
+      // The groups ship *without* `hidden` so a visitor without scripts can
+      // read all eight (before this, seven of them were hidden in the markup
+      // itself and stayed hidden forever — measured 2026-10-27: 2,919
+      // characters with scripts, 31,656 without). Honouring the markup's
+      // first `active` class as a *filter* hid seven of the eight groups on
+      // load — a page whose job is answering questions opened showing one
+      // eighth of them (measured 2026-10-27: 7 groups hidden, 1 visible). So
+      // the page names its opening category explicitly, and only a name that
+      // matches a real group is taken; a typo falls back to wide rather than
+      // to an empty page.
       activeCat = 'all';
+      if ( '' !== defaultCat ) {
+        var named = groups.some( function ( group ) {
+          return group.getAttribute( 'data-cat' ) === defaultCat;
+        } );
+        if ( named ) {
+          activeCat = defaultCat;
+        }
+      }
       apply();
-      syncTabs(null);
+      syncTabs( 'all' === activeCat ? null : activeCat );
 
       if (search) {
         search.addEventListener('input', function () {

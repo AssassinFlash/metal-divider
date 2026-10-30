@@ -157,7 +157,7 @@ height: calc(100dvh - var(--header-height, 80px));
 .md-td8ee4148 { font-variant-numeric: tabular-nums;font-weight: 600;font-size: 14px;color: #c9a962;min-width: 22px;text-align: right }
 .md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }
 .md-t2abb772b { width: 380px;height: 520px }
-.md-tcc07631f { padding-top: 64px;padding-bottom: 64px }
+.md-tcc07631f { padding-top: 0;padding-bottom: 0 }
 .md-t9edacfd5 { background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);padding-top: 96px;padding-bottom: 96px }
 .md-t5790ffba { display: none }
 .md-tecede96f { background-color: #141414 }
@@ -770,6 +770,63 @@ padding-bottom: calc(64px + env(safe-area-inset-bottom));
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: stretch;
 }
+/* The closing band's shape: the form beside a row of facts.
+ *
+ * Measured before this: the band was 1673px against the brief's 1400 limit,
+ * and the arithmetic says the right column was never the cause — its three
+ * cards stack to 292px (87 each) inside a 360px column, so laying them out
+ * in a row saves at most 205. The height was the left column: a 1285px well
+ * around a 1147px form, because the ten fields render as ten full-width rows
+ * in an 872px column.
+ *
+ * So two things change and the padding does not: the facts become one row
+ * across the band on wide screens, and the form takes the two-column shape
+ * its fields are built for. Nothing is removed from either.
+ */
+.md-closing-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+@media (min-width: 1024px) {
+  .md-closing-band--wide .md-closing-wrap > .grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .md-closing-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+}
+/* The form's fields: two columns, with the wide rows spanning both — the same
+   shape the home page's contact form uses (home.css carries the long note). */
+.md-closing-well .md-inquiry-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 16px;
+  row-gap: 0;
+  align-items: start;
+}
+.md-closing-well .md-inquiry-fields > .md-inquiry-field {
+  margin-bottom: 12px;
+  min-width: 0;
+}
+.md-closing-well .md-inquiry-fields > .md-inquiry-field--message,
+.md-closing-well .md-inquiry-fields > .md-inquiry-field--confirm,
+.md-closing-well .md-inquiry-fields > .md-inquiry-promise,
+.md-closing-well .md-inquiry-fields > .md-inquiry-actions,
+.md-closing-well .md-inquiry-fields > .md-inquiry-notice,
+.md-closing-well .md-inquiry-fields > .md-inquiry-pattern,
+.md-closing-well .md-inquiry-fields > .md-inquiry-turnstile,
+.md-closing-well .md-inquiry-fields > .md-inquiry-honeypot {
+  grid-column: 1 / -1;
+}
+@media (max-width: 767px) {
+  .md-closing-well .md-inquiry-fields {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+  }
+}
+
 .md-closing-well .md-inquiry-cta__primary {
   width: 100%;
   min-width: 0;

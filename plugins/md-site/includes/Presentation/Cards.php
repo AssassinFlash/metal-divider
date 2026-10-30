@@ -315,28 +315,29 @@ final class Cards {
 	}
 
 	/**
-	 * The PDP's related-pattern cards: the WooCommerce related products, one
+	 * The PDP's adjacent-pattern cards: the pattern's series neighbours, one
 	 * partial render each.
 	 *
-	 * The selection stays WooCommerce's — `wc_get_related_products()` is the
-	 * same call the previous inline renderer made, with the same count and the
-	 * same guard — so which patterns are related, and whether any are, is
-	 * unchanged. What moved is the markup, which is now the repository
-	 * partial's.
+	 * Which patterns are listed is `Catalog::adjacent()`'s decision (the
+	 * pattern's own `product_cat` family, in the owner's curated order); this
+	 * method only draws the ids it is handed. That split exists because the
+	 * selection was the defect: WooCommerce's `wc_get_related_products()`
+	 * unions shared tags into its result and shuffles it, so the cards could
+	 * leave the family the heading names and change on every load.
 	 *
 	 * The card's alt is the product's full title (not its code) and its
-	 * heading is the code, exactly as before; the link and the heading are the
-	 * *related* product's, which is why they travel in the item scope rather
-	 * than through `[md_pattern_permalink]`/`[md_pattern_code]` (those read the
+	 * heading is the code; the link and the heading are the *adjacent*
+	 * product's, which is why they travel in the item scope rather than
+	 * through `[md_pattern_permalink]`/`[md_pattern_code]` (those read the
 	 * post being rendered, and the PDP renders one post and lists others).
 	 *
 	 * An empty `$related` renders nothing because the loop runs zero times.
-	 * A related product whose thumbnail URL is empty is skipped the same way:
-	 * the partial prints `src` unconditionally, and a missing thumbnail is
-	 * `false`, which would otherwise become `src=""`.
+	 * An adjacent product whose thumbnail URL is empty is skipped the same
+	 * way: the partial prints `src` unconditionally, and a missing thumbnail
+	 * is `false`, which would otherwise become `src=""`.
 	 *
-	 * @param int   $post_id The product whose related patterns to list.
-	 * @param int[] $related The related product ids, in WooCommerce's order.
+	 * @param int   $post_id The product whose neighbours to list.
+	 * @param int[] $related The adjacent product ids, in the family's order.
 	 * @return string The cards, empty when none of them can be drawn.
 	 */
 	public function related( int $post_id, array $related ): string {

@@ -604,12 +604,12 @@ final class ShortcodesTest extends TestCase {
 	 */
 	public function test_related_renders_the_cards(): void {
 		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $this->product_post() );
-		// No partial is deployed in a unit run, so the renderer takes the
-		// repository file — the fallback `present` exists to make unnecessary.
+		WP_Mock::userFunction( 'get_the_terms' )->zeroOrMoreTimes()->andReturn( array( self::term( 'pattern-abstract' ) ) );
+		// Two callers reach get_posts here: the family's membership query
+		// (asks for ids) and the partial lookup (asks for a lc_partial post).
 		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturnUsing(
-			static fn( array $args = array() ): array => 'ids' === ( $args['fields'] ?? '' ) ? array() : array()
+			static fn( array $args = array() ): array => 'ids' === ( $args['fields'] ?? '' ) ? array( 11 ) : array()
 		);
-		WP_Mock::userFunction( 'wc_get_related_products' )->once()->andReturn( array( 11 ) );
 		WP_Mock::userFunction( 'get_permalink' )->andReturn( 'https://site.test/pattern/zelda-architectural-metal-screen-pattern/' );
 		WP_Mock::userFunction( 'get_the_post_thumbnail_url' )->andReturn( 'https://site.test/wp-content/uploads/zelda.jpg' );
 		WP_Mock::userFunction( 'get_the_title' )->andReturn( 'Zelda | Architectural Metal Screen Pattern' );
@@ -622,68 +622,61 @@ final class ShortcodesTest extends TestCase {
 	}
 
 	/**
-	 * WooCommerce is asked for four related patterns: the old site's samples
-	 * carried three and four side by side, and four is the widest row
-	 * `pdp.css` lays out (Shortcodes::RELATED_LIMIT).
+	 * The neighbours come from the pattern's own series, capped at four.
 	 *
-	 * The limit is recorded from the call rather than pinned with `->with()`:
-	 * a wrong limit then fails as an assertion naming the number that was
-	 * actually asked for, instead of as a Mockery "no matching handler", which
-	 * says the mock was wrong rather than that the page is.
+	 * Four is the widest row `pdp.css` lays out (Shortcodes::RELATED_LIMIT);
+	 * the old site's own samples carried three and four side by side. The
+	 * selection is the family's, not WooCommerce's related set: measured
+	 * 2026-10-30, `wc_get_related_products()` unions shared *tags* into its
+	 * answer and shuffles it, so it returned four patterns that were not in
+	 * the "family" the heading names.
 	 */
-	public function test_related_asks_woocommerce_for_at_most_four(): void {
-		$asked = array();
+	public function test_related_lists_the_family_capped_at_four(): void {
 		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $this->product_post() );
+		WP_Mock::userFunction( 'get_the_terms' )->zeroOrMoreTimes()->andReturn( array( self::term( 'pattern-abstract' ) ) );
 		WP_Mock::userFunction( 'get_the_title' )->andReturn( 'Akira | Architectural Metal Screen Pattern' );
-		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturn( array() );
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( array $args = array() ): array => 'ids' === ( $args['fields'] ?? '' ) ? array( 7, 11, 12, 13, 14 ) : array()
+		);
 		WP_Mock::userFunction( 'get_permalink' )->andReturn( 'https://site.test/pattern/akira/' );
 		WP_Mock::userFunction( 'get_the_post_thumbnail_url' )->andReturn( 'https://site.test/uploads/akira.jpg' );
-		WP_Mock::userFunction( 'wc_get_related_products' )
-			->once()
-			->andReturnUsing(
-				static function ( int $id, int $limit ) use ( &$asked ): array {
-					$asked[] = $limit;
-					return array( 11, 12, 13, 14 );
-				}
-			);
 
 		$cards = ( new Shortcodes() )->related();
 
-		$this->assertSame( array( 4 ), $asked, 'the PDP asks WooCommerce for four adjacent patterns, not three' );
-		$this->assertSame( 4, Shortcodes::RELATED_LIMIT, 'the ceiling the related grid draws four tracks for' );
+		$this->assertSame( 4, Shortcodes::RELATED_LIMIT, 'the ceiling the adjacent grid draws four tracks for' );
 		$this->assertSame(
 			4,
 			substr_count( $cards, 'class="pdp-related-card gs-reveal"' ),
-			'and four related patterns render four cards'
+			'four neighbours render four cards'
 		);
+		// The pattern's own id is in the family and must not be listed. The
+		// mock answers every id with the same product, so the count is the
+		// observable: five ids minus this one leaves four, and had the self id
+		// been included the list would have held five capped to four of the
+		// wrong set with no way to see it — so the id list itself is asserted.
+		$family = ( new \MetalDivider\Site\Catalog() )->adjacent( 7, Shortcodes::RELATED_LIMIT );
+		$this->assertSame( array( 11, 12, 13, 14 ), $family, 'the pattern\'s own id is skipped before the cap applies' );
 	}
 
 	/**
-	 * Four is a ceiling and not a quota: a pattern with three neighbours
-	 * renders three cards, not three cards stretched or a fourth invented.
+	 * Four is a ceiling and not a quota: a family with three other members
+	 * renders three cards, not three stretched or a fourth invented.
 	 *
 	 * The old site's own samples ran 3 and 4, so the grid follows the cards
 	 * rather than the cards being padded to the grid.
 	 */
 	public function test_related_draws_a_short_list_as_it_is(): void {
-		$asked = array();
 		WP_Mock::userFunction( 'get_post' )->zeroOrMoreTimes()->andReturn( $this->product_post() );
+		WP_Mock::userFunction( 'get_the_terms' )->zeroOrMoreTimes()->andReturn( array( self::term( 'pattern-abstract' ) ) );
 		WP_Mock::userFunction( 'get_the_title' )->andReturn( 'Akira | Architectural Metal Screen Pattern' );
-		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturn( array() );
+		WP_Mock::userFunction( 'get_posts' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( array $args = array() ): array => 'ids' === ( $args['fields'] ?? '' ) ? array( 11, 12, 13 ) : array()
+		);
 		WP_Mock::userFunction( 'get_permalink' )->andReturn( 'https://site.test/pattern/akira/' );
 		WP_Mock::userFunction( 'get_the_post_thumbnail_url' )->andReturn( 'https://site.test/uploads/akira.jpg' );
-		WP_Mock::userFunction( 'wc_get_related_products' )
-			->once()
-			->andReturnUsing(
-				static function ( int $id, int $limit ) use ( &$asked ): array {
-					$asked[] = $limit;
-					return array( 11, 12, 13 );
-				}
-			);
 
 		$cards = ( new Shortcodes() )->related();
 
-		$this->assertSame( array( 4 ), $asked, 'WooCommerce is asked for up to four; it is the catalogue that answers three' );
 		$this->assertSame(
 			3,
 			substr_count( $cards, 'class="pdp-related-card gs-reveal"' ),
@@ -1648,6 +1641,18 @@ final class ShortcodesTest extends TestCase {
 				return 'style_blurb' === $key ? $blurb : '';
 			}
 		);
+	}
+
+	/**
+	 * A `product_cat` term, the shape `get_the_terms()` returns.
+	 *
+	 * @param string $slug The series slug.
+	 */
+	private static function term( string $slug ): \WP_Term {
+		$term       = new \WP_Term( (object) array() );
+		$term->slug = $slug;
+		$term->name = ucfirst( str_replace( 'pattern-', '', $slug ) );
+		return $term;
 	}
 
 	/**

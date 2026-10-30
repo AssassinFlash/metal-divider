@@ -478,7 +478,8 @@ final class ThumbnailCommand {
 		// render — which is how apiary ended up with a photograph of a swimming
 		// pool as the only candidate left.
 		$composited = $this->composited_luminance( $image );
-		\imagedestroy( $image );
+		// PHP 8.3 deprecates imagedestroy(): GD frees the handle at scope exit.
+		unset( $image );
 		return $composited['max'] >= self::MIN_VISIBLE_MAX;
 	}
 

@@ -862,20 +862,20 @@ final class Shortcodes {
 	}
 
 	/**
-	 * The adjacent-patterns cards: the WooCommerce related products of
-	 * the current pattern, in the replica's card markup (the exhaustion
-	 * proof is the class docblock — the native related mechanisms render
-	 * Woo's own card template, not this one).
+	 * The adjacent-patterns cards: the current pattern's own series
+	 * neighbours, in the replica's card markup (the exhaustion proof is the
+	 * class docblock — the native related mechanisms render Woo's own card
+	 * template, not this one).
 	 *
-	 * Four is a ceiling, not a quota: `wc_get_related_products()` is asked for
-	 * RELATED_LIMIT and returns however many the catalogue has for this
+	 * Four is a ceiling, not a quota: `Catalog::adjacent()` is asked for
+	 * RELATED_LIMIT and returns however many the family holds beyond this
 	 * pattern — the old site's own samples ran 3 and 4 side by side, and the
 	 * grid draws one track per card (see `pdp.css`), so a pattern with three
 	 * neighbours shows three cards in a four-track row rather than three
 	 * cards stretched across it. No product is padded in or invented to reach
 	 * four, and `Cards::related()` still drops any card whose product has no
 	 * thumbnail, which is the one case where the count can fall below what
-	 * WooCommerce returned.
+	 * the family returned.
 	 *
 	 * @param array<string, mixed>|string $atts    Shortcode attributes (unused).
 	 * @param string|null                 $content Enclosed content (unused).
@@ -884,10 +884,15 @@ final class Shortcodes {
 	public function related( $atts = array(), ?string $content = '' ): string {
 		unset( $atts, $content );
 		$post = get_post();
-		if ( null === $post || 'product' !== $post->post_type || ! function_exists( 'wc_get_related_products' ) ) {
+		if ( null === $post || 'product' !== $post->post_type ) {
 			return '';
 		}
-		return $this->cards->related( (int) $post->ID, wc_get_related_products( $post->ID, self::RELATED_LIMIT ) );
+		// The family, not WooCommerce's related set: `Catalog::adjacent()`
+		// carries the measurement and the reasons. The heading above these
+		// cards says "in this family", and this is the only selection that
+		// matches it.
+		$neighbours = ( new \MetalDivider\Site\Catalog() )->adjacent( (int) $post->ID, self::RELATED_LIMIT );
+		return $this->cards->related( (int) $post->ID, $neighbours );
 	}
 
 	/**
