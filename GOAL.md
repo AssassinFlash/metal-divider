@@ -59,6 +59,18 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-30(晚 2)WhatsApp 通道移除 + 旧站下半页设计复原规格(业主:不要平摊)
+
+**业主两道新裁定**:①保留我们自己的 AI 客服,移除整条 WhatsApp 通道(推翻 WhatsApp 单号平移裁定);②旧站下半页的精心设计被压成平铺(「平摊」),要复原设计感,不是逐像素一致。
+
+**已上线**:WhatsApp 移除(`2032d2f`,浮动钮/表单旁路/PDP CTA/结构化数据 ContactPoint/隐私条款,`WhatsApp.php` 整删,测试同步 90 项,两门禁全绿);AI 客服启动器恢复(`mu-plugins/md-chat-launcher.php` 改回)。
+
+**设计复原规格(旧站实测 vs 新站现状,下一批实施)**:
+1. 「Know what will ship before production starts」:旧站是 **1/4 轨道卡**——左右箭头、四段金色进度条、双列大图卡(大图 + 白标题 + 金色衬线引言 + 说明)。新站「Bridging vision & reality / Proof Before Production / Global Supply Chain」是三段平铺小图+文字。→ 按旧站轨道卡重建,四张卡内容沿用旧站(Full In-House Manufacturing / 20+ PVD Finishes / …)。
+2. 「Choose a Pattern Direction Before We Engineer the Panel」:旧站是**页签选择器**——Mashrabiya(金下划线)/Geometric/Floral/Custom 四页签 + 页签说明行 + 三张产品卡(金眉题 MASHRABIYA PATTERN、衬线品名、类目、meta 芯片 moroccan-arabic + Open: 58%、金色 View product →)+ Browse … Catalog 描边钮。新站「146 Ready Patterns」是无页签裸网格。→ 按旧站页签+产品卡重建。
+3. 旧站中段还有:「Every step under one roof」(CUTTING BAY 照片条 + 4 列工序)、「FEATURED PROJECTS / Shipped to 15+ countries since 2018」4 张项目卡——新站对应区同样平摊,一并按旧站复原。
+4. 垂直节奏:旧站整页 16k 内有强分段(深色块交替、照片条),新站 20k 平铺——复原时按旧站节奏。
+
 ### 2026-10-30(晚)业主判决「新站设计比不上旧站」:复刻回退批次一
 
 **业主判决**:对比 metalpartition.com,很多样式没复刻出来,体验差。**裁定:复刻旧站为先,压过此前「竞品基准映射」中对旧站设计语言的改动。**
