@@ -59,6 +59,22 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-30(晚)业主判决「新站设计比不上旧站」:复刻回退批次一
+
+**业主判决**:对比 metalpartition.com,很多样式没复刻出来,体验差。**裁定:复刻旧站为先,压过此前「竞品基准映射」中对旧站设计语言的改动。**
+
+**并排取证(新工具 `tools/audit/sbs_capture.py`)**:Playwright 驱真 Chrome,逐步滚动触发 xo-lazyload 后全页截图。**管线发现**:Chromium 全页截图超 16384px 会回卷拼接(新旧两站截图都在 16384 处重复页头),此前「新站比旧站高一倍」不成立——真实高度约 20k vs 16k(新站仍高 25%,垂直节奏待查)。旧快照手法(opencli 不滚动)拍出的全黑长图不可用。
+
+**已确认并修复(本批)**:
+1. 英雄区统计恢复旧站数字 `15+ / 20+ / ±0.1mm`(此前被无来源数字批次改为 Worldwide/PVD——这两个数字出自冻结旧站文本,数字守卫本来就放行,实测通过)。
+2. 导航恢复旧站 7 项:SCREENS / MANUFACTURING PROCESS / PATTERN / GALLERY(新增,→/project-gallery/)/ RESOURCES / ABOUT / CONTACT(原 INQUIRY)。href 指向新站对应页。旧站顺序中 PATTERN 在 MANUFACTURING PROCESS 之前,现站相反——顺序对齐记为待办。
+3. `hostinger-ai-assistant` 插件停用(mdvl-* "Ask Metal Divider" 气泡的渲染源,独立于 rapls;主机注入,可逆)。
+4. 守卫同步:`MobileChromeTest` 两条锁旧 IA 的断言(Gallery 不进主导航 / 必须 >Inquiry<)改为复刻契约,注明裁定依据。php-test 758 项、just check 全绿。
+
+**待办(下一批)**:Facade 应用区恢复旧站暗色(现为蓝天图+白色路由卡);整页垂直节奏对照(新站高 25%);旧新并排逐段差清单需先修截图管线(按视口切片拼接,绕开 16384 回卷)。
+
+**部署后读回(生产实测)**:首屏导航 7 项旧标签 ✓、统计 15+/20+/±0.1mm ✓、mdvl 气泡归零 ✓。**聊天气泡第二源**:rapls 之外,`mu-plugins/md-chat-launcher.php`(AI 客服工作流的 mdvisitor launcher,自托管于 /chat/)也在渲染挂件——已按同裁定以改名 `.disabled` 可逆停用(客服工作流恢复即改回)。读回 `[class*=mdvl]`=0。生产旧导航顺序差(PATTERN 应在 MANUFACTURING PROCESS 前)记待办。
+
 ### 2026-10-30 子菜单首行贴死面板缘(业主亲报):first-child 越界
 
 **业主截图**:RESOURCES 面板 "FAQs & Download" 文字贴死面板左缘。**为什么此前全站贴边扫描没抓住**:扫描只测「视口边缘」(x=0/溢出),不测「面板内元素相对父容器的贴边」——面板悬在页中,视口扫描天然漏过它。**测量口径缺口已记录,后续贴边审计须加面板相对缘检查。**
