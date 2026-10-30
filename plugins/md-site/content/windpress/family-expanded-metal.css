@@ -356,7 +356,7 @@ grid-template-columns: 1fr 1fr;
 gap: 80px;
 }
 .emf-content-col-template--22084675240189__expanded-material-finish { order: 1; }
-.emf-img-col-template--22084675240189__expanded-material-finish     { order: 2; position: sticky; top: calc(var(--md-header-h, 113px) + 16px); }
+.emf-img-col-template--22084675240189__expanded-material-finish     { order: 2; position: sticky; top: calc(var(--md-header-h, 76px) + 16px); }
 }
 /* ── Image stack ──
    The stack is a cropping window: every panel is inset:0 and its image is

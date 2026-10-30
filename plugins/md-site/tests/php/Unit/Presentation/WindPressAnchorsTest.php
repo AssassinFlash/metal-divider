@@ -155,12 +155,22 @@ final class WindPressAnchorsTest extends TestCase {
 		// Owner ruling 2026-10-30: the WhatsApp channel is gone site-wide, so
 		// its token is no longer declared and has no anchor.
 		$this->assertNotContains( '--md-whatsapp: #25D366', $tokens, 'no WhatsApp token anchor (owner ruling 2026-10-30)' );
+		// The anchors are distinct `--md-<name>: <value>` pairs, so the volume
+		// is counted the same way: two breakpoints declaring the same value
+		// (`--md-header-h: 60px` at >=991 and >=1200 since the 2026-10-31 ruling)
+		// are one anchor, and comparing against the raw declaration count made
+		// this pass only while every tier happened to carry a distinct value.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- the plugin's own exported volume, a local file.
 		$volume = (string) file_get_contents( \MetalDivider\Site\Presentation\Tokens::path() );
+		preg_match_all( '/(--md-[a-z0-9-]+)\s*:\s*([^;{}]+);/', $volume, $declared );
+		$pairs = array();
+		foreach ( $declared[1] as $i => $name ) {
+			$pairs[ $name . ': ' . trim( $declared[2][ $i ] ) ] = true;
+		}
 		$this->assertSame(
-			(int) preg_match_all( '/(--md-[a-z0-9-]+)\s*:\s*[^;{}]+;/', $volume ),
-			count( $tokens ),
-			'every --md-* declaration of the volume is an anchor, and nothing else is'
+			array_keys( $pairs ),
+			$tokens,
+			'every distinct --md-* declaration of the volume is an anchor, and nothing else is'
 		);
 	}
 

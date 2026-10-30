@@ -33,16 +33,23 @@ final class TokensTest extends TestCase {
 	 * conscious token-layer change instead of a silent transplant.
 	 *
 	 * Re-pinned 2026-10-26 for the `--md-header-h` addition: the sticky
-	 * header band's measured height (73/76/113px across its three tiers),
-	 * which the sticky rails and every in-page anchor offset now read
-	 * instead of hard-coding a guess.
+	 * header band's measured height (73px below 991, 60px from 991 up after
+	 * the 2026-10-31 ruling), which the sticky rails and every in-page anchor
+	 * offset now read instead of hard-coding a guess.
 	 *
 	 * Re-pinned 2026-10-27 for `--md-gold-ink`: the palette had one gold and
 	 * used it for both fills and text, so every gold word on a cream or white
 	 * panel measured 2.14–3.28:1 — the whole light-surface half of the site
 	 * (`--md-gold-ink` holds 4.86:1 there). Same hue, separate role.
+	 *
+	 * Re-pinned 2026-10-31 for the header band's two upper tiers: the owner
+	 * ruled the blank above the header too tall (GOAL.md 2026-10-31). The
+	 * >=1200 tier was 113px only because the old site's 37px announcement
+	 * strip added it, and that strip held no text at any width (measured at
+	 * 1440, visitor state); it is gone from the markup and the band is 60px
+	 * from 991 up — the 44px controls plus symmetric 8px.
 	 */
-	private const NORMALIZED_SHA256 = '6f53523063e7ae70625c95c2ca4a14fb3984ed8fbf882e1e86a1703e09976fef';
+	private const NORMALIZED_SHA256 = '5f24373ddeb1d3a89c11aa39e28153acc9ad7c5dcfa5e43d67888d446e706584';
 
 	/**
 	 * The exported stylesheet carries the design tokens of the MASTER.md
@@ -69,8 +76,8 @@ final class TokensTest extends TestCase {
 		$this->assertStringContainsString( '--md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif', $css );
 		$this->assertStringContainsString( '--md-container: 1400px', $css );
 		$this->assertStringContainsString( '--md-header-h: 73px', $css, 'the sticky band height is a token the sticky rails and anchors read' );
-		$this->assertStringContainsString( '--md-header-h: 76px', $css, 'the 991–1199 tier' );
-		$this->assertStringContainsString( '--md-header-h: 113px', $css, 'the >=1200 tier carries the 37px notification strip' );
+		$this->assertStringContainsString( '--md-header-h: 60px', $css, 'the compact band from 991 up: 44px controls plus symmetric 8px (owner ruling 2026-10-31)' );
+		$this->assertStringNotContainsString( '--md-header-h: 113px', $css, 'the 37px announcement strip that made the old>=1200 tier 113px is gone' );
 		$this->assertStringContainsString( '/wp-content/plugins/md-site/assets/fonts/inter-var.woff2', $css, 'the fonts are self-hosted from this plugin (OFL), never a third-party CDN' );
 
 		$stripped   = preg_replace( '/\/\*.*?\*\//s', '', $css ) ?? '';

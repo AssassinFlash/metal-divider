@@ -196,24 +196,16 @@ text-decoration: none;
 .footer-v21__block-logo-image .xo-image img { display: block; width: 100%; height: auto; }
 .footer-v21__copyright { --xs: 12; --md: 6; --lg: 6; }
 .footer-v21__copyright-payment { --xs: 12; --md: 6; --lg: 6; }
-.header-v9-top { display: none;
-background-color: #fff;
-padding: 0; }
-@media (min-width: 1200px) {
-.header-v9-top { display: block; }
-}
-.header-v9-top__notification { display: flex;
-align-items: center;
-gap: 3px;
-justify-content: center;
-height: 37px;
-font-size: 12px;
-text-transform: uppercase;
-font-weight: 500;
-line-height: 1;
-letter-spacing: 0.32px;
-color: #000; }
-.header-v9-top__notification span { font-weight: 800; }
+/* The old site's announcement strip is gone from the markup as well as from
+   here: it held an empty `<p>` and an empty `<span>` and nothing in this site
+   ever wrote into them, so it was 37px of blank above every page (measured at
+   1440 on 2026-10-31, visitor state) and not a slot waiting for content. The
+   owner's ruling that the blank is too tall (GOAL.md 2026-10-31) is served by
+   removing it, not by hiding it: a dead band that a stylesheet suppresses is
+   one refactor away from coming back. The three declarations below are what
+   an announcement would need if one is ever designed — kept as the record of
+   the old geometry so that decision starts from measurement, not a guess —
+   and they are inert while nothing carries the classes. */
 .hover-style__link { transition: all 0.8s; }
 .hover-style:hover .hover-style__link { color: rgb(var(--color-accent)); }
 .hover-style__link { height: 100%; }
@@ -353,23 +345,9 @@ position: relative;
 z-index: 100;
 background: #fff;
 }
-/* The old header is 113px: a 37px top strip plus the 76px grid. The
-   converted top strip is empty but its height is part of the band. */
-#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top{
-display: none;
-height: 37px;
-padding: 0;
-background: #fff;
-}
-@media (min-width: 1200px){
-#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top{ display: block; }
-}
-#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top__notification{
-height: 37px;
-padding: 0;
-font-size: 12px;
-letter-spacing: .32px;
-}
+/* The old header was 113px: a 37px announcement strip plus the 76px grid.
+   The strip and its rules are gone (they are documented at their old place in
+   this file), so the header is the grid alone. */
 /* The merged class now really carries xo-section (the duplicate attribute
    used to drop it); the section's 50px rhythm must not pad the header. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-v9__inner{
@@ -399,18 +377,22 @@ padding: 0 20px;
 box-sizing: border-box;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
-min-height: var(--md-header-h, 76px);
+min-height: var(--md-header-h, 60px);
 display: grid;
 grid-template-columns: auto 1fr auto;
 align-items: center;
 gap: 28px;
 padding: 0;
 }
-/* The band the token names is this grid plus the 37px strip the >=1200
-   tier adds, so the grid takes the remainder there. */
+/* The band the token names is this grid alone: the >=1200 strip above it is
+   hidden while it holds no announcement (chrome.css), so there is no 37px to
+   subtract. The rule is kept as the place that coupling was written, now
+   stating the truth instead of an arithmetic that assumed the strip always
+   renders — measured at 1440 on 2026-10-31, an empty strip plus this
+   subtraction would have made the grid 39px and crushed the 44px controls. */
 @media (min-width: 1200px){
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
-min-height: calc(var(--md-header-h, 113px) - 37px);
+min-height: var(--md-header-h, 60px);
 }
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo{
@@ -421,7 +403,14 @@ align-items: center;
 display: flex;
 align-items: center;
 justify-content: flex-start;
-height: 56px;
+/* 56px was the tallest thing in the grid and therefore the real floor on the
+   band: measured at 1440 on 2026-10-31 the logo link was 56 while every other
+   control was 44, and the grid sat at 76. The owner's 2026-10-31 ruling
+   (GOAL.md: the header is to be compact) brings it to the 44px floor the rest
+   of the header already uses, which is what lets the band reach 60. The image
+   inside is 44 tall, so nothing is clipped; the hit box is unchanged at the
+   44px minimum a finger needs. */
+height: 44px;
 min-width: 44px;
 max-width: 140px;
 color: #000;
@@ -520,7 +509,7 @@ list-style: none;
    it was the smallest target of any control on it. `min-height` with
    `align-items:center` grows the hit box to 44px without moving the type: the
    line-height, the font size and the underline all stay where they were, so
-   the 113px band and its measured geometry are unchanged. */
+   the band and its measured geometry are unchanged. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link{
 display: flex;
 align-items: center;
@@ -644,7 +633,6 @@ font: inherit;
 @media (max-width: 990px){
 #HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display: none !important; }
 #HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display: block; }
-#HeaderV9-sections--21844031144189__header_v1_main .header-v9-top{ display: none; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
 grid-template-columns: auto 1fr auto;
 gap: 14px;
@@ -652,7 +640,7 @@ min-height: var(--md-header-h, 73px);
 padding: 0;
 }
 #HeaderV9-sections--21844031144189__header_v1_main xo-container{ padding: 0 20px; }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ height: 56px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{ height: 44px; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--desktop{ display: none; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__img--mobile{
 display: block;
@@ -663,7 +651,10 @@ max-height: 34px;
 object-fit: contain;
 }
 /* The old mobile header keeps the search entry beside the quote button
-   (40x40, 20px icon); only the desktop nav and top bar drop out. */
+   (40x40, 20px icon); only the desktop nav and top bar drop out.
+   The quote pill's own 34px height stays as the visual pill, and its hit box
+   reaches the 44px floor through the ::after expansion below — measured at
+   390 on 2026-10-31, the button was 34 tall and the floor needs 44. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn{
 display: inline-flex;
 width: 40px;
@@ -1221,7 +1212,7 @@ top:100%;
 left:0;
 width:100%;
 z-index:60;
-max-height:calc(100dvh - var(--md-header-h, 113px) - 16px);
+max-height:calc(100dvh - var(--md-header-h, 76px) - 16px);
 overflow-y:auto;
 background:#0f0f0f;
 border-top:1px solid rgba(255,255,255,.1);
@@ -1290,7 +1281,7 @@ xo-modal[xo-name="search"].is-open{
   align-items:flex-start;
   justify-content:center;
   box-sizing:border-box;
-  top:var(--md-header-h, 113px);
+  top:var(--md-header-h, 76px);
   height:auto;
   padding:12px 16px 16px;
   background:rgba(0,0,0,.45);
@@ -1314,7 +1305,7 @@ xo-modal[xo-name="search"] .xo-modal-content__inner{
   max-width:none;
   height:auto;
   min-height:0;
-  max-height:calc(100dvh - var(--md-header-h, 113px) - 24px);
+  max-height:calc(100dvh - var(--md-header-h, 76px) - 24px);
   margin:0;
   padding:20px 20px 16px;
   box-sizing:border-box;
@@ -1801,7 +1792,7 @@ z-index: 100;
    so pages do not each need their own scroll-margin. The 16px gap keeps a
    focused heading off the band's shadow edge. */
 html{
-scroll-padding-top: calc(var(--md-header-h, 113px) + 16px);
+scroll-padding-top: calc(var(--md-header-h, 76px) + 16px);
 }
 @media (prefers-reduced-motion: reduce){
 html{ scroll-behavior: auto; }
@@ -1811,12 +1802,13 @@ html{ scroll-behavior: auto; }
    home FAQ image, the family spec rails, the PDP applications lead) takes its
    top from this class instead of a Tailwind `lg:top-24`/`lg:top-10` literal:
    those resolved to 60–72px against a 73–113px band, so the rail's own first
-   lines sat under the header. `top` is inert while the element is static
+   lines sat under the header. The band is 73–76px since the empty strip
+   stopped claiming height (owner ruling 2026-10-31). `top` is inert while the element is static
    below the `lg`/`750px` breakpoints, so the class is safe at every width.
    In the components layer and not a utility, so no layer fight with a
    `top-*` class — the templates drop theirs in favour of this one. */
 .md-sticky-rail{
-top: calc(var(--md-header-h, 113px) + 16px);
+top: calc(var(--md-header-h, 76px) + 16px);
 }
 
 /* Mobile app chrome. These rules sit last so they win over the carried

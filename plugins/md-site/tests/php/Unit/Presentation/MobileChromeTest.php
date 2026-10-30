@@ -66,7 +66,7 @@ final class MobileChromeTest extends TestCase {
 		$this->assertStringContainsString( '[md_partial name="search-series-tile"]', $header );
 		$this->assertStringContainsString( 'id=\'md-search-hit\'', $header );
 		$this->assertStringNotContainsString( "min-height: 100dvh;\n    margin: 0;\n    padding: 80px 20px 24px;", $css );
-		$this->assertStringContainsString( 'max-height:calc(100dvh - var(--md-header-h, 113px) - 24px)', $css );
+		$this->assertStringContainsString( 'max-height:calc(100dvh - var(--md-header-h, 76px) - 24px)', $css );
 		$this->assertStringContainsString( 'background:#141414', $css );
 		$this->assertStringContainsString( '.md-quote-modal__card .md-inquiry-fields{', $css );
 		$this->assertStringContainsString( 'position: static;', $css );
@@ -165,6 +165,51 @@ final class MobileChromeTest extends TestCase {
 	 */
 	private function template( string $name ): string {
 		return (string) file_get_contents( Templates::path( $name, true ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+	}
+
+	/**
+	 * The header is the compact band the owner ordered, and nothing in it
+	 * costs height without earning it.
+	 *
+	 * Owner ruling, 2026-10-31 (GOAL.md): the blank above the header is the
+	 * old site's leftover and is too tall. Measured at 1440, visitor state,
+	 * before this change: the band read 113px, made of a 37px strip above a
+	 * 76px grid. The strip's whole content was
+	 * `<p class="header-v9-top__text"></p><span class="header-v9-top__sub">
+	 * </span>` — two empty elements, no text at any width, and nothing in this
+	 * site writes into them (no shortcode, no ACF field, no script). The grid
+	 * itself was held at 76 by the logo link's 56px, the only control taller
+	 * than the 44px the rest of the header already used.
+	 *
+	 * Measured at 1440 after: 60px = 44px controls + symmetric 8px, with the
+	 * logo, nav link, search button and quote all still 44 tall.
+	 *
+	 * The assertions are the four things that could regress it, not a copy of
+	 * the rules: the dead strip is gone from the markup, no volume gives it a
+	 * height, the token carries the compact band, and the 44px floor is a
+	 * maximum rather than a starting point for any header control.
+	 */
+	public function test_the_header_is_the_compact_band_without_a_dead_strip(): void {
+		$header = $this->template( 'partials/header.html' );
+		$chrome = $this->volume( 'chrome.css' );
+		$tokens = $this->volume( 'tokens.css' );
+
+		$markup = (string) preg_replace( '/<!--.*?-->/s', '', $header );
+		$this->assertStringNotContainsString( 'header-v9-top', $markup, 'the empty announcement strip is gone from the header markup' );
+		$this->assertStringNotContainsString( 'header-v9-top', (string) preg_replace( '/\/\*.*?\*\//s', '', $chrome ), 'and no volume gives it a band back' );
+
+		$this->assertStringContainsString( '--md-header-h: 60px', $tokens, 'the sticky band the rails and anchors read is the compact one' );
+		$this->assertStringNotContainsString( '--md-header-h: 113px', $tokens, 'the 113px tier was 37px of blank strip plus the old grid' );
+
+		// The logo link was what held the grid at 76: it is at the 44px floor
+		// now, and the grid's own floor follows the token.
+		$this->assertMatchesRegularExpression(
+			'/\.xo-header-logo__link\s*\{[^}]*height:\s*44px/s',
+			$chrome,
+			'the logo link sits at the 44px floor the other controls already used'
+		);
+		$this->assertStringNotContainsString( 'height: 56px;', $chrome, 'no header control is taller than the band can afford' );
+		$this->assertStringNotContainsString( 'calc(var(--md-header-h, 113px) - 37px)', $chrome, 'the strip-subtraction arithmetic went with the strip' );
 	}
 
 	/**

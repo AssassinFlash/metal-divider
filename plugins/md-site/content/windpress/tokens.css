@@ -57,18 +57,26 @@
      at 1200px and up while the header grid itself shrinks below 991px.
      chrome.css derives the band from this same token, so the two cannot
      drift; consumers read it instead of hard-coding a guess (the rails used
-     an 80px fallback, and the catalog anchors 96px, against a 113px band). */
+     an 80px fallback, and the catalog anchors 96px, against a 113px band).
+     2026-10-31 (owner ruling: the blank above the header is too tall): the
+     >=1200 tier was 113px because the notification strip added 37px, and
+     the strip holds no text — measured empty at 1440. chrome.css hides it
+     when empty, and the logo link dropped from 56 to the 44px floor every
+     other control already used, so the band is 60px from 991 up: the 44px
+     controls plus symmetric 8px padding. The tier stays a declaration of its
+     own rather than being deleted: when an announcement does land in the
+     strip, this is the one value to raise, and every rail and anchor follows. */
   --md-header-h: 73px;
 }
 
 @media (min-width: 991px) {
   :root {
-    --md-header-h: 76px;
+    --md-header-h: 60px;
   }
 }
 
 @media (min-width: 1200px) {
   :root {
-    --md-header-h: 113px;
+    --md-header-h: 60px;
   }
 }

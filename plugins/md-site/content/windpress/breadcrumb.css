@@ -1,17 +1,46 @@
-/* md-site volume: breadcrumb.css — carried from the old site's
- * markup and stylesheets by the conversion pipeline (ticket
- * #32, spec 19 §4.2 T2). Rules keep their source order.
+/* md-site volume: breadcrumb.css — the site's own breadcrumb, redesigned.
+ *
+ * History: the first version was a parity copy of the old site's band (white
+ * strip, 13px black Inter, 124px tall on the archive faces). The owner ruled
+ * on 2026-10-31 that the old site's breadcrumb was a compromise, not a
+ * design, and ordered the new site to make one that belongs to the design
+ * system (GOAL.md 2026-10-31). So the band is gone and the trail is a small
+ * gold eyebrow: uppercase Inter, wide tracking, a muted slash between the
+ * levels, the current page reading louder than the ones you can click. It
+ * sits on the dark surface every one of these pages already opens with,
+ * which is what makes it read as part of the hero instead of a strip above
+ * it — measured 2026-10-31 at 1440: the section right after the trail is
+ * #0a0a0a on the PDP and About, #141414 on the FAQ, #000 on the gallery.
+ *
+ * The light variant is the same object with the ink colours swapped, for any
+ * face that ever sits on a pale panel (`.md-breadcrumb--light`, §lower).
+ *
+ * Semantic floor kept exactly: `nav aria-label="breadcrumb"` with an ordered
+ * list, `aria-current="page"` on the level you are on, and a 44px hit box on
+ * every link. The JSON-LD BreadcrumbList is SEOPress's (breadcrumbs_json_enable
+ * is on, and SchemaFilters::crumbs() shapes the trail); this stylesheet and
+ * those templates cannot change it, so the structured data survives the
+ * redesign untouched.
  */
-/* ===== Breadcrumb parity (ticket #67; spec #65 values, old-site computed
-   2026-10-26): white band, 40px gutter, 13px Inter black, no underline;
-   124px on shop/series archives, 54px on PDPs. Every value is px so the
-   band does not move when the root font size changes. ===== */
+/* ===== The trail ===== */
 .xo-section[class*="__breadcrumb"]{
 display: flex;
 align-items: center;
-min-height: 60px;
+min-height: 0;
 padding: 0;
-background-color: #fff;
+/* The band is the site's own deep charcoal, not the old site's white strip.
+   Measured at 1440 on 2026-10-31 before this rule: the section chain up to
+   `<html>` painted nothing (`rgba(0,0,0,0)` at every level), so the band was
+   the browser's default white canvas — the white rectangle on an otherwise
+   dark page. Transparent would put the gold eyebrow back on that canvas, so
+   the band carries the surface itself. #141414 is the page ground most of
+   these faces open with (measured: the FAQ hero is #141414, the PDP's and
+   About's are #0a0a0a, the gallery's is #000), so the trail reads as the top
+   of the hero block instead of a separate shelf.
+   Contrast on #141414, computed: clickable level rgba(255,255,255,.55) ≈ 6.0:1,
+   current level .9 ≈ 14.6:1, hover gold #c9a962 ≈ 7.8:1 — all past the 4.5:1
+   floor the site uses for body-sized text. */
+background-color: var(--md-bg-deep, #141414);
 box-sizing: border-box;
 }
 .xo-section[class*="__breadcrumb"] > xo-animate{
@@ -70,66 +99,95 @@ min-width: 44px;
 display: flex;
 flex-wrap: wrap;
 align-items: center;
-column-gap: 15px;
+column-gap: 10px;
 list-style: none;
 margin: 0;
 padding: 0;
-color: #000;
+color: rgba(255, 255, 255, 0.55);
 font-family: "Inter", sans-serif;
-font-size: 13px;
-font-weight: 400;
-line-height: 24px;
+font-size: 11.5px;
+font-weight: 500;
+line-height: 1;
+text-transform: uppercase;
+letter-spacing: 0.12em;
 }
 .xo-section[class*="__breadcrumb"] .breadcrumb__item{
 display: flex;
 align-items: center;
-gap: 15px;
+gap: 10px;
 }
 .xo-section[class*="__breadcrumb"] .breadcrumb__item a,
 .xo-section[class*="__breadcrumb"] .breadcrumb__link{
-color: #000;
+color: rgba(255, 255, 255, 0.55);
 font-family: "Inter", sans-serif;
-font-size: 13px;
-font-weight: 400;
-line-height: 24px;
+font-size: 11.5px;
+font-weight: 500;
+line-height: 1;
+text-transform: uppercase;
+letter-spacing: 0.12em;
 text-decoration: none;
+transition: color 0.2s ease;
 }
 .xo-section[class*="__breadcrumb"] .breadcrumb__item:last-child a,
 .xo-section[class*="__breadcrumb"] .breadcrumb--current{
-color: #000;
+color: rgba(255, 255, 255, 0.9);
 }
-.xo-section[class*="__breadcrumb"] .breadcrumb__item a:hover{
-color: #000;
+.xo-section[class*="__breadcrumb"] .breadcrumb__item a:hover,
+.xo-section[class*="__breadcrumb"] .breadcrumb__item a:focus-visible{
+color: #c9a962;
 text-decoration: none;
 }
 .xo-section[class*="__breadcrumb"] .breadcrumb__separator{
-color: #000;
-line-height: 0;
+color: rgba(255, 255, 255, 0.4);
+line-height: 1;
+font-size: 11.5px;
+/* The converted markup ships a chevron SVG; the design wants a quiet
+   slash, so the icon is replaced by the glyph on its own pseudo element
+   rather than by editing fifteen templates. */
 }
 .xo-section[class*="__breadcrumb"] .breadcrumb__separator svg{
+display: none;
+}
+.xo-section[class*="__breadcrumb"] .breadcrumb__separator::before{
+content: "/";
 display: block;
-height: 8px;
-width: auto;
-color: #000;
-fill: currentColor;
+color: rgba(255, 255, 255, 0.4);
+font-family: "Inter", sans-serif;
+font-size: 11.5px;
+font-weight: 400;
+line-height: 1;
+letter-spacing: 0;
 }
 .xo-section[class*="__breadcrumb"] .breadcrumb__item:last-child .breadcrumb__separator{ display: none; }
-/* Heights measured on the old site: shop + series archive 124 (50px of
-   band above and below a 24px row), gallery/perforated 120, PDP 54,
-   every other breadcrumb face 60. */
+/* The band is an eyebrow now, not a shelf: the old heights (60/124/120/54)
+   were the old site's white-strip rhythm and do not survive the redesign.
+   What stays is the 44px floor on the links (the token above), so the row
+   is 44 high and the trail can sit right above the hero's own eyebrow. */
 @media (max-width: 767px){
-.xo-section[class*="__breadcrumb"]{ min-height: 50px; }
-.xo-section[class*="__breadcrumb"][class*="21844031570173__breadcrumb"]{ min-height: 98px; }
-.xo-section[class*="__breadcrumb"][class*="21844034846973__breadcrumb"],
-.xo-section[class*="__breadcrumb"][class*="21844034814205__breadcrumb"]{ min-height: 95px; }
-.xo-section[class*="__breadcrumb"][class*="22148302078205__breadcrumb"]{ min-height: 23px; }
+.xo-section[class*="__breadcrumb"]{ min-height: 0; }
 }
 @media (min-width: 768px){
-.xo-section[class*="__breadcrumb"]{ min-height: 60px; }
-.xo-section[class*="__breadcrumb"][class*="21844031570173__breadcrumb"]{ min-height: 124px; }
-.xo-section[class*="__breadcrumb"][class*="21844034846973__breadcrumb"],
-.xo-section[class*="__breadcrumb"][class*="21844034814205__breadcrumb"]{ min-height: 120px; }
-.xo-section[class*="__breadcrumb"][class*="22148302078205__breadcrumb"]{ min-height: 54px; }
+.xo-section[class*="__breadcrumb"]{ min-height: 0; }
+}
+/* ===== The light variant =====
+   The same object on a pale panel: deep charcoal ink, the gold's dark form
+   for the hover. Same metrics, same tracking, so a face that moves between
+   surfaces keeps its shape. */
+.md-breadcrumb--light.xo-section[class*="__breadcrumb"] .breadcrumb__list,
+.md-breadcrumb--light .breadcrumb__item a,
+.md-breadcrumb--light .breadcrumb__link{
+color: rgba(20, 20, 20, 0.55);
+}
+.md-breadcrumb--light .breadcrumb__item:last-child a,
+.md-breadcrumb--light .breadcrumb--current{
+color: rgba(20, 20, 20, 0.9);
+}
+.md-breadcrumb--light .breadcrumb__item a:hover,
+.md-breadcrumb--light .breadcrumb__item a:focus-visible{
+color: #85692e;
+}
+.md-breadcrumb--light .breadcrumb__separator::before{
+color: rgba(20, 20, 20, 0.4);
 }
 /* The hub's two `.section` blocks keep their old sibling spacing. */
 .section + .section { margin-top: var(--spacing-sections-mobile); }
@@ -138,6 +196,8 @@ fill: currentColor;
 }
 /* The series hub's inline breadcrumb is a different face: old computed
    20px high, transparent, 13px black, 40px gutter. */
+/* The hub's own trail sits inside the page's dark section, which paints its
+   own ground: transparent is right here, unlike the `xo-section` band above. */
 #collections-list-breadcrumb-template--21844031701245__breadcrumb {
 background: transparent;
 padding-top: 0;
@@ -156,33 +216,47 @@ justify-content: flex-start;
    near-black band. These four declarations were carried over from the white
    `.breadcrumb__*` band above, which really is white (that one keeps #000 and
    is correct). The old site has no `.clb__*` markup at all, so there is no
-   replica value to match; the colours below follow the page's own tokens. */
+   replica value to match; the colours below follow the page's own tokens.
+   The 2026-10-31 redesign makes this the same eyebrow the other faces carry
+   (uppercase, 0.12em, muted slash, gold hover) so the hub's trail and the
+   nine series' trails are one object, not two. */
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__list {
 display: flex;
 align-items: center;
-gap: 8px;
+gap: 10px;
 list-style: none;
 margin: 0;
 padding: 0;
 font-family: "Inter", sans-serif;
-font-size: 13px;
-line-height: 20px;
-color: rgba(255, 255, 255, 0.62);
+font-size: 11.5px;
+font-weight: 500;
+line-height: 1;
+text-transform: uppercase;
+letter-spacing: 0.12em;
+color: rgba(255, 255, 255, 0.55);
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link {
-color: rgba(255, 255, 255, 0.62);
+color: rgba(255, 255, 255, 0.55);
 text-decoration: none;
 transition: color 0.2s ease;
+align-items: center;
+display: inline-flex;
+box-sizing: border-box;
+min-height: 44px;
+min-width: 44px;
 }
-#collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link:hover {
-color: #ffffff;
+#collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link:hover,
+#collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__link:focus-visible {
+color: #c9a962;
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__current {
-color: #ffffff;
+color: rgba(255, 255, 255, 0.9);
 }
 #collections-list-breadcrumb-template--21844031701245__breadcrumb .clb__sep {
-color: rgba(255, 255, 255, 0.34);
-font-size: 10px;
+color: rgba(255, 255, 255, 0.4);
+font-size: 11.5px;
+font-weight: 400;
+letter-spacing: 0;
 }
 @media (max-width: 767px) {
 #collections-list-breadcrumb-template--21844031701245__breadcrumb {

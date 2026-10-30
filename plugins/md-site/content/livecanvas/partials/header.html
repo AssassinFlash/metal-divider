@@ -16,15 +16,17 @@
 >
   
   
-    <div class="header-v9-top md-te78b4640">
-      <div class="page-width">
-        <div class="header-v9-top__notification">
-          <p class="header-v9-top__text"></p>
-          <span class="header-v9-top__sub"></span>
-        </div>
-      </div>
-    </div>
-  
+  <!-- The old site's announcement strip stood here: a 37px band holding
+       `<p class="header-v9-top__text"></p><span class="header-v9-top__sub">
+       </span>`, both empty. Measured at 1440 on 2026-10-31 (visitor state):
+       the strip was 37px of pure blank above the header, and it is what the
+       owner called out when ruling the blank above the header too tall
+       (GOAL.md 2026-10-31). Nothing in this site writes into it — no shortcode,
+       no ACF field, no JS — so it is not a slot waiting for content, it is
+       converted markup whose text was stripped. Removed rather than kept
+       behind a guard: an empty band is not a feature. If an announcement is
+       ever wanted, it is a design decision with its own section, not this
+       leftover's blank. -->
 
   
   <div class="xo-header-v9__inner xo-section xo-section--sections--21844031144189__header_v1_main color-background-1 md-t546c7aa6">
