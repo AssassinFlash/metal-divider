@@ -1409,3 +1409,4 @@ PreparedSQL 批量整改)——Batch 3 工具硬化;④staging 手工 state flip
 
 **批次六(立即实施)**:①FAQ 默认单分类+锚点;②PDP Footer 补地址电话+相邻卡逻辑核对(产品目录归类 vs 旧站 family 归类,采用对的);③定制页删 landing-footer(`custom-screens.html:1964`)+计数口径统一为 146(页脚 88 查来源);④工艺页收尾段压回 ≤1400、Quality +310 查因、Mid CTA 恢复薄带。
 **批次七(结构性,单独做)**:URL 语义去 Shopify 化(上面全套)。
+**批次六上线读回**(`82e2045` 归档):/faqs/ 读回第 4 问已补(6 命中);PDP/定制/工艺 landing-footer 归零 ✓。相邻卡判定:旧站 family 语义正确,Woo 默认 related 会并 tag 再 shuffle(跨系列+每次随机),已改按 product_cat 系列稳定排序。PDP Footer 电话:站内不存在非 WhatsApp 对客电话事实,未补(未编造),待业主给号。imagedestroy PHP8.3 弃用已修(unset)。**遗留待业主**:三题语义重复是否合并;对客电话号码。**下一批(批次七)**:URL 语义去 Shopify 化(/shop/→/patterns/、/collections/→/pattern-category/,permalink+301+内链+守卫)。
