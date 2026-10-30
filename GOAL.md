@@ -1387,3 +1387,16 @@ PreparedSQL 批量整改)——Batch 3 工具硬化;④staging 手工 state flip
 **批次四上线读回**:六条路线背景与旧站映射逐一核对——5 条本已同图(kirra/hotel-lobby-gold/fluted-gold 与旧站同源),唯一差异 Gate Inserts 已换 `leaf-skeleton-front-gate`(生产读回 ✓,`53f2655` 归档)。过程教训:批次三的 verify/archive 被超时打断留下标记,下一批被拒——`resume-deploy` 补完后重deploy 即可,标记是设计好的防堆叠机制不是故障。
 **批次五上线读回**:垂直节奏收紧 −706px 上线(`7b3a9f0` 归档),WindPress 重编译(631,716B 含新选择器)→ purge → 生产实测 Facade 暗图保持 ✓、Ready-to-Start 1681→1310(目标 1197,余差=10字段vs7字段+50px触控标准,已在批次五说明)。剩余 2427px 差额=1.6倍间距步长,属业主间距尺度决策。
 **五批复刻回归复验(2026-10-30 深夜)**:大改首页结构后跑既有审计——panel_flush 1440/390 全 0、overflow 1440 ok 0 failed、spacing 1440 edge=0 tight=0。复刻五批无新增缺陷。
+
+### 2026-10-30(深夜)其他页型旧新对照盘点(回应业主「不止首页」)
+
+六页型并排截图 + 6 路并行盘点,原始图 `/tmp/md-sbs3/`。**实锤清单(按影响)**:
+
+1. **FAQ 页(最大压平点)**:旧站默认单分类 651px vs 新站 8 组 39 问全平铺 5532px(整页 2.47 倍)。注意:默认全开是 10-27 无 JS 修复的有意决策,与复刻冲突——**需裁决:默认态回单分类(无 JS 用出厂锚点),还是保持全开**。另:旧站第 4 问 "Can I send my own pattern design?" 漏迁移(40→39);4 组语义重复问答;行距 md:py-11 → py-7。
+2. **PDP 相邻图案节**:旧 3 列两行 1312px vs 新 4 列一行 719px(压掉 593px);且相邻卡集合与旧站不一致(Apiary/Zelda… vs BirdBlind/Cellular…),需查归类逻辑;新站 4 卡中 2-4 疑似纯色块(需前台复验懒加载);Footer 缺地址与电话(漏迁移)。
+3. **About**:证言从通栏滚动改容器内横滑且末卡裁切;表单双列→单列(压平);四步步距 192 vs 120。
+4. **Custom-screens 硬缺陷**:landing footer 与全站页脚**叠加两个**(两个©行,`custom-screens.html:1964` 删 landing-footer);表单缺国家码下拉;计数口径三套并存(146/88/200+)。注:该 agent 建议补回 WhatsApp 三入口——**不采纳**,WhatsApp 移除是业主当日裁定。
+5. **Manufacturing**:基本复刻到位;收尾段 1.5 屏(+876,WhatsApp 撤除所致)、Quality 段 +310 待查、Mid CTA 薄带变厚。
+6. **Collections 对照对无效**(旧 URL 404 误抓):正确对照 = 旧 `/collections/pattern-geometric` vs 新 `/collections/pattern-geometric/`,待重拍;核查归档页 9 个带计数分类页签、排序、结果计数是否复刻。
+
+**已回绝的建议**:补回 WhatsApp 入口(与当日裁定冲突)。**关于 FAQ 默认态**:无 JS 修复的等效替代 = 出厂选中一个分类 + 锚点仍可达,既能复刻旧站又不破坏无 JS 可读——待业主点头即实施。
