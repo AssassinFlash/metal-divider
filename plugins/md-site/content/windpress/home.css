@@ -800,32 +800,63 @@ font-size: 11px;
   }
 }
 
-/* Decorative-panel index, desktop.
+/* Decorative-panel route index, desktop: the old site's dark list.
  *
- * Measured over the facade photograph: inactive labels were
- * rgba(255,255,255,.5), so five of six rows failed 4.5:1 (worst
- * 1.25:1, rgb(91) on rgb(75)) and flipped readable mid-word where
- * the photo went from metal to soffit. The numbers also failed to
- * share a column — each row was only as wide as its label, a 180px
- * spread of right edges. The panel is opaque and only as large as
- * the list, so the photograph outside it is unchanged and the pixel
- * behind every glyph is the panel, not the photo. */
+ * This block used to be an opaque panel — background #0e0e0e, a 1px
+ * rgba(255,255,255,.14) hairline, a 16px radius, a drop shadow and
+ * rgba(201,169,98,.12) behind the active row. It was put there for a real
+ * reason: over the facade photograph the inactive labels at
+ * rgba(255,255,255,.5) measured 1.25:1 (rgb(91) on rgb(75)) and five of six
+ * rows failed 4.5:1, so the panel guaranteed every glyph sat on #0e0e0e.
+ *
+ * The owner's ruling of 2026-10-30 (batch two) is that the card is the
+ * defect: the old site draws the same six routes as bare white words over a
+ * darkened photograph, and the opaque box reads as a card pinned onto the
+ * picture. The panel is gone. The contrast is bought at its actual source —
+ * the label's own opacity — instead of by a box underneath it.
+ *
+ * Measured after the change, per label's own text box, against the photograph
+ * pixels behind it (1440 viewport, nav width hidden and the page re-shot so
+ * the sample is the photo and not the glyphs; worst pixel in each box):
+ *
+ *   Facade Screens           bgmax  87  label 5.90:1
+ *   Balcony Privacy Screens  bgmax 103  label 4.71:1
+ *   Interior Partitions      bgmax 101  label 4.82:1
+ *   Railing & Fence Infill   bgmax 101  label 4.80:1
+ *   Gate Inserts             bgmax  52  label 9.66:1
+ *   Wall Cladding            bgmax  58  label 8.94:1
+ *
+ * All six clear 4.5:1, which the .5 value did not (2.66:1 at bg 103). The
+ * gold numbers are 2.53–5.53:1 by the same measure: they are indexes the
+ * label already spells out, they are the brand accent the owner asked to
+ * keep, and the old site drew them at this colour too.
+ *
+ * What stays from the old site is the part the owner asked to keep: the 2px
+ * gold rule down the left of the active row and the gold tabular numbers,
+ * both already in this volume's base rules. What is added is the hairline
+ * between rows — the old capture stacks six white words with a thin rule
+ * under each, which is what reads as a list without a box.
+ */
 @media (min-width: 992px) {
   .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty {
     align-items: stretch;
-    gap: 4px;
+    gap: 0;
     width: max-content;
     min-width: 320px;
     max-width: 420px;
-    padding: 20px;
-    background: #0e0e0e;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 16px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
   .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty > li {
     display: flex;
     width: 100%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  }
+  .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty > li:last-child {
+    border-bottom: 0;
   }
   .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty .emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty {
     display: grid;
@@ -834,9 +865,17 @@ font-size: 11px;
     column-gap: 16px;
     width: 100%;
     min-height: 44px;
-    padding: 8px 4px 8px 12px;
+    padding: 4px 4px 4px 12px;
     justify-content: stretch;
-    color: #f3f3f3;
+    /* Near-white, and the value is not cosmetic. The old capture sets these
+       labels at rgba(255,255,255,.5), which works over its own photograph
+       (that section's picture measures mean 62, p99 145 in the 1440
+       capture). This site's facade photograph is about twice as bright
+       (mean 156, p99 213 before the scrim), so .5 renders at 2.66:1 over the
+       brightest route-list pixel here — the value that failed. .86 is what
+       clears 4.5:1 on this photograph; the numbers above are that
+       measurement, not a preference. */
+    color: rgba(255, 255, 255, 0.86);
     background: transparent;
     border-left: 2px solid transparent;
     white-space: nowrap;
@@ -855,7 +894,7 @@ font-size: 11px;
   .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty .emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty.emt-active {
     color: #fff;
     border-left-color: #c9a962;
-    background: rgba(201, 169, 98, 0.12);
+    background: transparent;
   }
 }
 
