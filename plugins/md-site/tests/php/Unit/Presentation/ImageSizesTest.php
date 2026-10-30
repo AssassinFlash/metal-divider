@@ -516,8 +516,12 @@ final class ImageSizesTest extends TestCase {
 			'our-aspen-villa-garden-screen-hero' => '100vw',
 			// The spec-map card: 4 columns at 1280+, 2 at 768+, one below.
 			'our-park-hyatt-mesh-screen-hero'    => '(min-width: 1400px) 330px',
-			// The horizontal outcomes carousel: min-w-[82vw] slides.
-			'ext-pp-cnc-turret-punching'         => '(min-width: 1024px) 692px',
+			// The proof carousel: one two-column card per screen, the photo in
+			// the left column. The column is `minmax(0, 691px)` and the track's
+			// content box is 1320px at 1440 (1400 max, 40px gutters, the
+			// track's own -mx-10/px-10 pulled back in), so the photo renders
+			// its declared width from 1180 up and goes full-bleed below it.
+			'ext-pp-cnc-turret-punching'         => '(min-width: 1180px) 691px',
 			// The fixed-width factory scroller — and the same asset reused in
 			// the restored Proof grid, which draws a 258px cell. Both slots are
 			// real, so the assertion is satisfied by either measured width.

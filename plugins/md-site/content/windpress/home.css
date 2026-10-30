@@ -276,14 +276,123 @@ animation: none;
 [class^="emt-nav-btn"],[class*=" emt-nav-btn"]{ display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
 
 /* =========================
+   The proof carousel's card: one two-column card per screen
+   The owner's restored form (GOAL.md 2026-10-30 late-2, item 1; also the
+   brief's own words) is a single card per screen laid out in two columns —
+   the photograph at ~691px on the left, the title, the gold serif quote and
+   the description stacked on the right — stepped by the two round arrows
+   with the four gold progress bars and the "1 / 4" counter underneath.
+
+   The capture renders this section as two narrower cards side by side, each
+   with its photo above its text (measured on 1440-old-home.png: left photo
+   x25–720, right photo x770–1345, both texts below at y13258+). The written
+   spec asks for the two-column card instead, and it is the more specific
+   instruction, so that is what this rule builds; the copy, the photographs
+   and the controls are the capture's own either way.
+
+   The 691px is the capture's own `sizes` value for this photo ("(min-width:
+   1024px) 692px"), not a new number.
+   ========================= */
+[data-home-outcomes-track]{
+/* One full-width card per screen: the gap would only add scroll the step
+   arithmetic has to correct for. */
+column-gap: 0;
+}
+.home-outcomes-card{
+flex: 0 0 100%;
+min-width: 100%;
+display: grid;
+gap: 24px;
+scroll-snap-align: start;
+}
+@media (min-width: 1180px){
+.home-outcomes-card{
+grid-template-columns: minmax(0, 691px) minmax(0, 1fr);
+gap: 40px;
+align-items: center;
+}
+}
+.home-outcomes-media img{
+display: block;
+}
+@media (min-width: 1180px){
+/* The photo fills the left column's own height instead of holding the 16/7
+   letterbox the stacked layout uses. */
+.home-outcomes-media{
+height: 100%;
+}
+.home-outcomes-media > div{
+height: 100%;
+}
+.home-outcomes-media img{
+height: 100%;
+}
+}
+.home-outcomes-body{
+padding-left: 0;
+padding-right: 0;
+}
+@media (min-width: 1180px){
+.home-outcomes-body{
+padding-top: 0;
+}
+}
+
+/* =========================
+   The proof carousel's serif quote line
+   The old section (why_choose_us_DeyqPH) set the four card quotes in the
+   body face at font-medium; the owner's restored design calls for the gold
+   serif the rest of the page gives a pull quote (.home-outcomes-quote
+   replaces the utility stack so the colour and face live in one rule).
+   Measured against the capture's own quote band (y 13290–13314 on the
+   1440 PNG): ~22px, near-white. Gold is the ask, so the rule is the accent
+   and the size stays the utility stack's.
+   ========================= */
+.home-outcomes-quote{
+font-family: "Playfair Display", Georgia, serif;
+font-style: italic;
+font-weight: 500;
+color: #d9bc82;
+}
+/* The card's left hairline belonged to the multi-card rail the capture draws
+   (each slide carried `border-l border-white/10`). One full-width card has no
+   left edge to mark, so the rail's own vertical rule and this colour rule went
+   with it — keeping either would have drawn a gold line down the section's
+   left margin with nothing on the other side. */
+/* Arrows: the shipped h-11/w-11 utilities resolve through the 62.5% root,
+   so the painted circle is 27.5px even though home.css already grew the hit
+   area at <=767. Give the desktop circle its 44px too — a 27.5px target at
+   1440 is the same miss the mobile rule was written for. */
+.home-outcomes-arrow{
+min-width: 44px;
+min-height: 44px;
+}
+.home-outcomes-arrow:disabled{
+opacity: .35;
+cursor: default;
+}
+.home-outcomes-arrow:focus-visible{
+outline: 2px solid #c9a962;
+outline-offset: 3px;
+}
+
+/* =========================
    Home pattern-library tab strip (.hpl__*)
    The conversion carried the markup but no rules for these classes (no
    volume ever defined .hpl__*; measured 2026-10-26: <xo-tabs> computed
    `display:inline`, the four triggers ran together as one line of inline
-   text at 20px tall). The skin below uses the section's own vocabulary —
-   #141414/#1a1a1a ground, the #c9a962 accent, the white/[0.06] hairline the
-   cards use — and gives every trigger a 44px target. It is presentation
-   only: the roles, roving tabindex and arrow keys are md-chrome.js's.
+   text at 20px tall).
+
+   The old site's own <style> block (home_pattern_library, line 4941 of the
+   capture) is the form the owner asked to restore: a row of large words —
+   18px, 22px at 750, 26px at 990 — with no box at all, the selected one in
+   white and marked by a 2px gold underline that grows from the left, the
+   rest at 75% white and no underline. Reviewing the new site against it, the
+   shipped skin was a run of filled gold pills, which reads as a filter bar
+   rather than as the section's four directions. Presentation only: roles,
+   roving tabindex and arrow keys are md-chrome.js's, and the `.is-active`
+   class is what that engine toggles (the capture's `[xo-active]` selector
+   cannot apply here, because the engine owns the state).
    ========================= */
 .hpl__tabs{
 display: block;
@@ -291,48 +400,63 @@ width: 100%;
 }
 .hpl__tablist{
 display: flex;
-flex-wrap: wrap;
 justify-content: center;
-gap: 8px;
-margin: 0 auto 40px;
+gap: 16px;
+margin: 0 auto 32px;
 max-width: 100%;
+overflow-x: auto;
+padding-bottom: 4px;
+scrollbar-width: none;
+}
+.hpl__tablist::-webkit-scrollbar{
+display: none;
 }
 .hpl__tab{
+position: relative;
 display: inline-flex;
 align-items: center;
 justify-content: center;
+flex: 0 0 auto;
 min-height: 44px;
-padding: 10px 24px;
-border: 1px solid rgba(255,255,255,.12);
-border-radius: 999px;
-background: rgba(255,255,255,.03);
-color: rgba(255,255,255,.8);
+padding: 8px 0 12px;
+border: 0;
+background: transparent;
+color: rgba(255,255,255,.75);
 font-family: "Inter", sans-serif;
-font-size: 14px;
+font-size: 18px;
 font-weight: 600;
-letter-spacing: .04em;
-line-height: 1.2;
+line-height: 1.15;
 white-space: nowrap;
 cursor: pointer;
-transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+transition: color .18s ease;
 }
 .hpl__tab:hover{
-border-color: rgba(201,169,98,.45);
 color: #fff;
 }
-.hpl__tab.is-active{
-border-color: #c9a962;
+/* The selected tab's gold rule: the capture's ::after scaleX pair. */
+.hpl__tab::after{
+content: "";
+position: absolute;
+left: 0;
+right: 0;
+bottom: 0;
+height: 2px;
 background: #c9a962;
-color: #1a1a1a;
+transform: scaleX(0);
+transform-origin: left;
+transition: transform .18s ease-out;
+}
+.hpl__tab.is-active{
+color: #fff;
+}
+.hpl__tab.is-active::after{
+transform: scaleX(1);
 }
 /* The strip's own focus ring: the carried outline is 3px in the foreground
    colour, which is invisible on the dark ground. */
 .hpl__tab:focus-visible{
 outline: 2px solid #c9a962;
-outline-offset: 3px;
-}
-.hpl__tab.is-active:focus-visible{
-outline-color: #fff;
+outline-offset: 4px;
 }
 .hpl__content{
 display: block;
@@ -347,18 +471,26 @@ display: none !important;
 outline: 2px solid #c9a962;
 outline-offset: 8px;
 }
-@media (max-width: 767px){
+@media (min-width: 750px){
 .hpl__tablist{
-gap: 6px;
-margin-bottom: 28px;
+gap: 28px;
+margin-bottom: 40px;
 }
 .hpl__tab{
-padding: 10px 16px;
-font-size: 13px;
+font-size: 22px;
+}
+}
+@media (min-width: 990px){
+.hpl__tablist{
+gap: 34px;
+}
+.hpl__tab{
+font-size: 26px;
 }
 }
 @media (prefers-reduced-motion: reduce){
-.hpl__tab{ transition: none; }
+.hpl__tab,
+.hpl__tab::after{ transition: none; }
 }
 
 /* Mobile app pass: one viewport, no overlapping layers. The sticky stage

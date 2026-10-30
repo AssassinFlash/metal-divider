@@ -64,6 +64,22 @@ def check_volume(css_text: str) -> list[str]:
             in_comment = True
             i += 2
             continue
+        # A closing marker outside a comment: CSS has no meaning for it, and a
+        # parser opens with it does not open a comment. The danger is that it
+        # *skips into* the next comment's opener — `… */ \n /* next` becomes
+        # "close, then open", which is exactly right, but `… */ \n prose \n
+        # ========================= */ \n .rule{…}` swallows the rule after it
+        # silently: the prose had no opener, so the second `*/` closes nothing
+        # and every rule up to the next `/*` disappears. That is how a rule
+        # disappeared from home.css on 2026-10-30 with all four gates green, so
+        # the walk reports the marker rather than trusting the parse.
+        if ch == "*" and i + 1 < n and css_text[i + 1] == "/":
+            problems.append(
+                f"line {line}: '*/' closes a comment that no '/*' opened — "
+                f"the rules after it are swallowed by the next comment"
+            )
+            i += 2
+            continue
         if ch in "\"'":
             in_string = ch
             i += 1
