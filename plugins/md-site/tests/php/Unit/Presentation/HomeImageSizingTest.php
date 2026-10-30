@@ -104,7 +104,14 @@ final class HomeImageSizingTest extends TestCase {
 	 * declare the viewport they actually cover.
 	 */
 	public function test_the_full_bleed_heroes_offer_a_srcset_and_a_viewport_sized_sizes(): void {
-		foreach ( array( 'ext-pp-hero-perforated-facade', 'our-aspen-villa-garden-screen-hero' ) as $stem ) {
+		// 2026-10-30: the Facade background returned to the old site's dark
+		// `ext-perforated-triangle-gate-screens`, which exists on disk in only
+		// two tiers (480/702) — sizes follow the files the pipeline actually
+		// produced, so its ladder is shorter than the five-tier heroes.
+		foreach ( array(
+			'ext-perforated-triangle-gate-screens' => array( 480, 702 ),
+			'our-aspen-villa-garden-screen-hero'   => self::TIERS,
+		) as $stem => $expected_widths ) {
 			$images = $this->images_naming( $stem );
 			$this->assertCount( 1, $images, "the home face renders {$stem} once" );
 			$image = $images[0];
@@ -112,7 +119,7 @@ final class HomeImageSizingTest extends TestCase {
 			$this->assertArrayHasKey( 'srcset', $image, "{$stem} carries a srcset" );
 			$widths = array_keys( $this->candidates( $image['srcset'] ) );
 			sort( $widths );
-			$this->assertSame( self::TIERS, $widths, "{$stem} offers every final tier" );
+			$this->assertSame( $expected_widths, $widths, "{$stem} offers every final tier" );
 
 			$this->assertArrayHasKey( 'sizes', $image, "{$stem} declares its sizes" );
 			$this->assertSame( '100vw', trim( $image['sizes'] ), "{$stem} covers the viewport edge to edge" );
@@ -187,7 +194,7 @@ final class HomeImageSizingTest extends TestCase {
 		}
 
 		$checked = 0;
-		foreach ( array( 'ext-pp-hero-perforated-facade', 'our-aspen-villa-garden-screen-hero', 'our-park-hyatt-mesh-screen-hero' ) as $stem ) {
+		foreach ( array( 'ext-perforated-triangle-gate-screens', 'our-aspen-villa-garden-screen-hero', 'our-park-hyatt-mesh-screen-hero' ) as $stem ) {
 			foreach ( $this->images_naming( $stem ) as $image ) {
 				foreach ( array_keys( $this->candidates( (string) ( $image['srcset'] ?? '' ) ) ) as $width ) {
 					$name = "{$stem}-{$width}w.webp";
@@ -196,6 +203,7 @@ final class HomeImageSizingTest extends TestCase {
 				}
 			}
 		}
-		$this->assertSame( 15, $checked, 'the three slots name five tiers each' );
+		// Triangle-gate carries two tiers (480/702), the other two five each.
+		$this->assertSame( 12, $checked, 'the three slots name their on-disk tiers' );
 	}
 }

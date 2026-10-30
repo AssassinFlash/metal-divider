@@ -512,7 +512,7 @@ final class ImageSizesTest extends TestCase {
 		$expected = array(
 			// Full-bleed hero backgrounds: the layer is inset:0 over the
 			// viewport, so 100vw is exactly right.
-			'ext-pp-hero-perforated-facade'      => '100vw',
+			'ext-perforated-triangle-gate-screens' => '100vw',
 			'our-aspen-villa-garden-screen-hero' => '100vw',
 			// The spec-map card: 4 columns at 1280+, 2 at 768+, one below.
 			'our-park-hyatt-mesh-screen-hero'    => '(min-width: 1400px) 330px',
