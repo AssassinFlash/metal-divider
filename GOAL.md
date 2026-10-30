@@ -59,6 +59,14 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-30 子菜单首行贴死面板缘(业主亲报):first-child 越界
+
+**业主截图**:RESOURCES 面板 "FAQs & Download" 文字贴死面板左缘。**为什么此前全站贴边扫描没抓住**:扫描只测「视口边缘」(x=0/溢出),不测「面板内元素相对父容器的贴边」——面板悬在页中,视口扫描天然漏过它。**测量口径缺口已记录,后续贴边审计须加面板相对缘检查。**
+
+**根因(真 Chrome 计算值坐实)**:子菜单首行的计算 padding 是 `0 15px 0 0`(左 0),第二行正常 15px。来源 `chrome.css:542` `item:first-child > link{padding-left:0}`——本意是让顶栏第一项对齐容器缘,但无作用域的 `:first-child` 同时命中了**每个子菜单 ul 的第一行**。全文件仅此一处该模式,其他 `:first-child` 无。
+
+**修法**:限定为顶栏菜单直接子项 `ul.xo-menu-horizontal-v1 > .item:first-child > .link`。复测点:三处子菜单(Stainless/Patterns/Resources)首行 padding 应为 `0 15px`,顶栏 "Screens" 保持左对齐。
+
 ### 2026-10-30 竞品基准映射落地(业主裁定:事实=竞品取平均,人家不说我们不说)
 
 **裁定方法**:四路并行 Apify 调研 8 家头部竞品(parasoleil / mozdesigns / cambridgearchitectural / gkdmetalfabrics / amico / hendrick / bokmodern / bankerwire),原始报告 `.scratch/competitor-2026-10-30/`。映射与执行:

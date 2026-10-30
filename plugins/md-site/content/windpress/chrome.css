@@ -539,7 +539,13 @@ line-height: 16px;
 text-decoration: none;
 transition: color .3s ease;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item:first-child > .xo-menu-horizontal-v1__link{ padding-left: 0; }
+/* The zero left padding is for the first TOP-LEVEL nav row only (aligning
+   "Screens" with the container edge). Scoped to the top menu's direct item:
+   an unscoped :first-child also matched the first row of every submenu
+   panel, zeroing its left padding and printing "FAQs & Download" flush
+   against the panel edge (owner-reported 2026-10-30; measured computed
+   padding was `0 15px 0 0` on that row). */
+#HeaderV9-sections--21844031144189__header_v1_main ul.xo-menu-horizontal-v1 > .xo-menu-horizontal-v1__item:first-child > .xo-menu-horizontal-v1__link{ padding-left: 0; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__label{
 margin: 0;
 padding: 0;
