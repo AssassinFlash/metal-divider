@@ -97,8 +97,8 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
-	 * WhatsApp and back-to-top stay on screen when content passes under them.
-	 * Overlap is not a hide. An open surface still covers them (next test).
+	 * The back-to-top control stays on screen when content passes under it.
+	 * Overlap is not a hide. An open surface still covers it (next test).
 	 */
 	public function test_floats_stay_visible_when_content_passes_under_them(): void {
 		$js  = (string) file_get_contents( dirname( __DIR__, 4 ) . '/assets/js/md-chrome.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
@@ -110,20 +110,22 @@ final class MobileChromeTest extends TestCase {
 		$this->assertStringNotContainsString( 'md-float-yield', $css );
 		$this->assertStringContainsString( 'function setupFloats()', $js );
 		$this->assertStringContainsString( 'window.scrollY < 400', $js, 'back-to-top still appears after the first viewport' );
-		$this->assertStringContainsString( '.md-whatsapp-float', $css );
+		// Owner ruling 2026-10-30: the WhatsApp channel is gone site-wide, so
+		// only the back-to-top control remains in this floating row.
+		$this->assertStringNotContainsString( '.md-whatsapp-float', $css, 'no WhatsApp float (owner ruling 2026-10-30)' );
 		$this->assertStringContainsString( '.md-back-to-top', $css );
 	}
 
 	/**
-	 * Floating controls yield to an open drawer and sit above the safe area,
-	 * and the inquiry page does not stack a second WhatsApp button on the form.
+	 * The floating control yields to an open drawer and sits above the safe
+	 * area.
 	 */
 	public function test_floating_controls_yield_when_a_surface_is_open(): void {
 		$css = $this->volume( 'chrome.css' );
 
 		$this->assertStringContainsString( 'env(safe-area-inset-bottom)', $css );
-		$this->assertStringContainsString( 'html.md-modal-open :is(.md-whatsapp-float, .md-back-to-top)', $css );
-		$this->assertStringContainsString( 'body:has(#md-inquiry) .md-whatsapp-float', $css );
+		$this->assertStringContainsString( 'html.md-modal-open .md-back-to-top', $css );
+		$this->assertStringNotContainsString( 'md-whatsapp-float', $css, 'no WhatsApp float (owner ruling 2026-10-30)' );
 		$this->assertStringContainsString( '.md-quote-modal__card .md-inquiry-actions', $css );
 	}
 

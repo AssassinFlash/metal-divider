@@ -1,7 +1,7 @@
 <!-- The inquiry face (spec 07 D2, spec 19 §2.2 R2): one page, one
      step. The form itself is the inquiry plugin's assembly — the
-     md_inquiry_form shortcode renders the fields, the Turnstile slot
-     and the WhatsApp switch (ticket #33); this template owns the page
+     md_inquiry_form shortcode renders the fields and the Turnstile slot;
+     this template owns the page
      around it: the heading, the reply promise and the reassurance
      copy, per the approved prototype docs/prototypes/2026-10-24-inquiry/.
      Chrome: the site partials. Styles: content/windpress/inquiry.css.
@@ -19,7 +19,6 @@
     <div class="quote-panel" id="quotePanel">
       <div class="quote-inner">
         [md_inquiry_form source_page="inquiry" source_module="contact-hub" source_button="send-inquiry"]
-        <p class="form-note">Prefer chat? The WhatsApp button in the form opens a message pre-filled with your details. Nothing is submitted through this page.</p>
       </div>
     </div>
     <div class="inquiry-side">
@@ -34,7 +33,6 @@
       <div class="inquiry-side-card">
         <h2>Direct contact</h2>
         <p class="inquiry-contact-row"><span>Email</span> <a class="inquiry-mail" href="mailto:info@metal-divider.com">info@metal-divider.com</a></p>
-        <p class="inquiry-contact-row"><span>Phone / WhatsApp</span> <a class="inquiry-wa" href="https://wa.me/85264731687" rel="noopener">+852 6473 1687</a></p>
         <p class="inquiry-contact-row"><span>Factory base</span> <span>Foshan, Guangdong, China</span></p>
         <p class="inquiry-contact-row"><span>Response window</span> <span>Within 24 hours</span></p>
       </div>

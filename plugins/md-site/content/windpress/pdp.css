@@ -278,13 +278,6 @@ width: auto;
 flex: 1 1 auto;
 min-width: 0;
 }
-body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .md-whatsapp-float {
-left: 16px;
-right: auto;
-bottom: calc(10px + env(safe-area-inset-bottom));
-width: 48px;
-height: 48px;
-}
 body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .md-back-to-top {
 left: auto;
 right: 16px;

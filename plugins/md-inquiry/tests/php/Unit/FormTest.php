@@ -83,7 +83,7 @@ final class FormTest extends TestCase {
 	/**
 	 * The form with a pattern: the context row, the repopulatable fields with
 	 * their limits, the hidden source triple and pattern slug, the nonce, the
-	 * honeypot, the WhatsApp alternate — and not one inline style.
+	 * honeypot — and not one inline style.
 	 */
 	public function test_the_form_assembles_the_patterned_shape(): void {
 		$html = $this->render( 'apiary-architectural-metal-screen-pattern', array() );
@@ -116,11 +116,14 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( '<div class="md-inquiry-notice" role="alert" aria-live="polite"></div>', $html );
 		$this->assertStringContainsString( 'id="md-inquiry-message-hint"', $html );
 		$this->assertStringContainsString( 'aria-describedby="md-inquiry-message-hint"', $html );
-		$this->assertStringContainsString( '%0A', $html, 'the WhatsApp href keeps the encoded line break' );
 		$this->assertStringContainsString( 'name="website"', $html, 'the honeypot' );
 		$this->assertStringContainsString( 'class="md-inquiry-submit"', $html );
 		$this->assertStringContainsString( 'class="md-inquiry-fields"', $html, 'fields scroll independently of the sticky actions' );
-		$this->assertStringContainsString( 'class="md-inquiry-whatsapp" href="https://wa.me/85264731687?text=', $html );
+		// Owner ruling 2026-10-30: the WhatsApp channel is gone site-wide. The
+		// form offers one path — submit — and no second, off-site one.
+		$this->assertStringNotContainsString( 'wa.me', $html, 'no WhatsApp bypass (owner ruling 2026-10-30)' );
+		$this->assertStringNotContainsString( 'md-inquiry-whatsapp', $html, 'no WhatsApp bypass (owner ruling 2026-10-30)' );
+		$this->assertStringNotContainsString( 'WhatsApp', $html, 'no WhatsApp copy (owner ruling 2026-10-30)' );
 		$this->assertStringNotContainsString( ' style=', $html, 'zero inline styles, always' );
 		$this->assertStringNotContainsString( '<script', $html, 'no inline script: the CSP closes that door' );
 
@@ -271,11 +274,9 @@ final class FormTest extends TestCase {
 
 		$this->assertStringNotContainsString( 'this pattern', $html );
 		$this->assertStringNotContainsString( 'md-inquiry-pattern', $html );
-		$this->assertStringContainsString( 'pre-filled with your details.', $html );
 		$this->assertStringContainsString( 'value="inquiry"', $html );
 		$this->assertStringContainsString( 'value="contact-hub"', $html );
 		$this->assertStringContainsString( 'value="send-inquiry"', $html );
-		$this->assertStringContainsString( 'inquiry%2Fcontact-hub%2Fwhatsapp', $html );
 	}
 
 	/**
@@ -526,7 +527,6 @@ function app(sitekey) {
 	var appEl = el('div', 'md-inquiry-app');
 	appEl.setAttribute('data-md-inquiry', JSON.stringify({
 		turnstile: true,
-		waNumber: '85264731687',
 		i18n: {
 			turnstileExpired: 'expired-for-this-form',
 			turnstileError: 'error-for-this-form'

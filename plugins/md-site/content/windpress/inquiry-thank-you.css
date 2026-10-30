@@ -18,8 +18,8 @@
 .md-inquiry-ty .ty { max-width: 720px; }
 .md-inquiry-ty .check {
   align-items: center;
-  background: rgba(37, 211, 102, 0.12);
-  border: 1px solid var(--md-whatsapp);
+  background: rgba(201, 169, 98, 0.12);
+  border: 1px solid var(--md-gold);
   border-radius: 999px;
   display: inline-flex;
   height: 56px;
@@ -29,7 +29,7 @@
 }
 .md-inquiry-ty .check svg {
   height: 26px;
-  stroke: var(--md-whatsapp);
+  stroke: var(--md-gold);
   width: 26px;
 }
 .md-inquiry-ty h1 {
@@ -76,11 +76,6 @@
 .md-inquiry-ty .ty-card ul {
   margin: 8px 0 0;
   padding-left: 20px;
-}
-.md-inquiry-ty .inquiry-wa {
-  color: var(--md-whatsapp);
-  font-weight: 600;
-  text-decoration: none;
 }
 .md-inquiry-ty .inquiry-mail {
   color: var(--md-gold);

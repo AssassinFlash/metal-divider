@@ -27,22 +27,6 @@
 .md-inquiry-cta__primary:hover {
   background: var(--md-gold-light);
 }
-.md-inquiry-cta__whatsapp {
-  align-items: center;
-  border: 1px solid var(--md-whatsapp);
-  border-radius: 10px;
-  color: var(--md-whatsapp);
-  display: inline-flex;
-  font-weight: 600;
-  font-size: 15px;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0 24px;
-  text-decoration: none;
-}
-.md-inquiry-cta__whatsapp:hover {
-  background: rgba(37, 211, 102, 0.1);
-}
 .md-inquiry-cta__note {
   color: rgba(255, 255, 255, 0.55);
   flex-basis: 100%;

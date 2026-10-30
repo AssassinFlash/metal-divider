@@ -43,15 +43,15 @@ remove_action( 'wp_head', 'rsd_link' );
  * headers are the site's own policy: nothing frames the site (and the CSP's
  * frame-ancestors says the same to browsers that understand it), and browsers
  * keep the declared content types and the referrer's origin — an inquiry URL
- * carries three source parameters, and wa.me is a plain link, so only the
- * origin ever reaches it. The only external face is Turnstile: scripts,
+ * carries three source parameters, so only the origin ever leaves the site
+ * with a click. The only external face is Turnstile: scripts,
  * frames and connections from challenges.cloudflare.com. Frames allow
  * 'self' too: the chat launcher opens its card as a same-origin /chat/
  * iframe, and without 'self' in frame-src the browser kills the widget —
  * the 2026-10-28 production regression was exactly this entry missing
  * while the chat plane was live. CookieYes is not
- * on the site, so none of its hosts are allowed. wa.me needs no entry,
- * being a navigation, and scripts carry no 'unsafe-inline' or
+ * on the site, so none of its hosts are allowed. Outbound links need no
+ * entry, being navigations, and scripts carry no 'unsafe-inline' or
  * 'unsafe-eval' — the value is pinned by test, and inline styles remain
  * the one allowed fallback
  * (docs/specs/23-mu-plugins.md §2.2).

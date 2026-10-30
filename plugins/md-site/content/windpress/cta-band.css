@@ -582,7 +582,9 @@ background: rgba(255,255,255,0.05);
   container-type: inline-size;
   display: grid;
   gap: 12px 16px;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  /* One action since the WhatsApp entry was removed (owner ruling
+     2026-10-30); the reply line fills the row under it. */
+  grid-template-columns: minmax(0, 1fr);
   padding: 20px;
   width: 100%;
 }
@@ -603,30 +605,10 @@ background: rgba(255,255,255,0.05);
 .md-inquiry-cta__primary:hover {
   background: var(--md-gold-light);
 }
-.md-inquiry-cta__whatsapp {
-  align-items: center;
-  border: 1px solid var(--md-whatsapp);
-  border-radius: 10px;
-  color: var(--md-whatsapp);
-  display: inline-flex;
-  font-weight: 600;
-  font-size: 15px;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0 24px;
-  text-decoration: none;
-}
-.md-inquiry-cta__whatsapp:hover {
-  background: rgba(37, 211, 102, 0.1);
-}
 .md-inquiry-cta .md-inquiry-cta__primary {
   color: var(--md-bg-darkest);
 }
-.md-inquiry-cta .md-inquiry-cta__whatsapp {
-  color: var(--md-whatsapp);
-}
-.md-inquiry-cta__primary,
-.md-inquiry-cta__whatsapp {
+.md-inquiry-cta__primary {
   box-sizing: border-box;
   width: 100%;
 }
@@ -640,17 +622,11 @@ background: rgba(255,255,255,0.05);
   text-align: center;
 }
 /* Wide wells (measured 1658px, with ~862px of empty black beside a
-   747px action cluster): the reply line joins the row so the buttons
-   grow into the space instead of sitting in the top-left. Below this
-   width the two buttons already share the full row. */
-@container inquiry-cta (max-width: 519px) {
-  .md-inquiry-cta {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
+   747px action cluster): the reply line joins the row so the action
+   grows into the space instead of sitting in the top-left. */
 @container inquiry-cta (min-width: 880px) {
   .md-inquiry-cta {
-    grid-template-columns: minmax(200px, 1fr) minmax(220px, 1fr) max-content;
+    grid-template-columns: minmax(200px, 1fr) max-content;
   }
   .md-inquiry-cta__note {
     grid-column: auto;

@@ -1572,19 +1572,14 @@ min-height: 44px;
 .pattern-catalog__search-button{ min-width: 44px; min-height: 44px; }
 .pdp-faq-q{ min-height: 44px; }
 
-/* Mobile CTA density: the templates size the WhatsApp and quote CTAs with
-   Tailwind py-3/py-3.5 — 30-35px of padding-plus-text at the 62.5% root,
-   measured 36-39px tall on 390 (2026-10-26, real Chrome, home / shop /
-   manufacturing / family pages). The site's own mobile primaries (the
-   drawer CTA, the quote dialog's submit, .md-inquiry-cta__*) are 48px, and
-   these anchors are the same class of action. Phone widths only: the
-   footer's inline wa.me link takes its 44px hit area from the footer pass
-   above, the float and the inquiry-cta partial already meet the minimum,
-   and desktop keeps the converted sizes. */
+/* Mobile CTA density: the templates size the quote CTAs with Tailwind
+   py-3/py-3.5 — 30-35px of padding-plus-text at the 62.5% root, measured
+   36-39px tall on 390 (2026-10-26, real Chrome, home / shop / manufacturing
+   / family pages). The site's own mobile primaries (the drawer CTA, the quote
+   dialog's submit, .md-inquiry-cta__*) are 48px, and these anchors are the
+   same class of action. Phone widths only: desktop keeps the converted
+   sizes. */
 @media (max-width: 767px) {
-a[href^="https://wa.me/"]:not(footer *):not(.md-whatsapp-float):not(.md-inquiry-cta__whatsapp) {
-min-height: 48px;
-}
 a[data-quote-source] {
 min-height: 48px;
 }
@@ -1592,50 +1587,11 @@ min-height: 48px;
 
 /* =========================
    First-party floating chrome (ticket #67, spec #65)
-   The WhatsApp entry and the back-to-top control are plain anchors in the
-   footer partial; no third-party script is loaded. The back-to-top sits
-   above the WhatsApp button so the two never overlap.
+   The back-to-top control is a plain anchor in the footer partial; no
+   third-party script is loaded. The WhatsApp float that shared this row was
+   removed site-wide by the owner's ruling of 2026-10-30, so the control
+   sits at the corner on its own.
    ========================= */
-.md-whatsapp-float{
-position: fixed;
-right: 24px;
-bottom: 24px;
-z-index: 900;
-display: flex;
-align-items: center;
-justify-content: center;
-width: 56px;
-height: 56px;
-border-radius: 50%;
-background: #25d366;
-color: #fff;
-box-shadow: 0 8px 24px rgba(0,0,0,.22);
-text-decoration: none;
-transition: transform .2s ease, box-shadow .2s ease;
-}
-.md-whatsapp-float:hover{
-transform: translateY(-2px);
-box-shadow: 0 12px 28px rgba(0,0,0,.28);
-}
-.md-whatsapp-float svg{ display: block; width: 30px; height: 30px; }
-
-/* WhatsApp's brand green takes a dark glyph, not a white one.
- *
- * White on #25d366 measures 1.98:1 — well under the 4.5:1 a 14px label needs,
- * and under even the 3:1 large-text floor. The same pair is used by every
- * in-page "Chat Now" / "Chat on WhatsApp" button across nine faces (measured
- * on the dev instance 2026-10-26), so the label was hard to read everywhere
- * the brand colour appears. The green itself stays: it is the recognition
- * cue. Only the ink changes, to #0a2e14, which measures 8.6:1 on the same
- * green — the same pairing WhatsApp's own product uses for text on brand. */
-.md-whatsapp-float{ color: #0a2e14; }
-/* `!important` because these buttons carry Tailwind's `text-white` utility,
-   which is what was painting the unreadable label in the first place. */
-a[href^="https://wa.me/"][class*="bg-[#25D366]"],
-a[href^="https://wa.me/"][class*="bg-emerald-500"],
-a[href^="https://wa.me/"].md-ta43cb577 {
-color: #0a2e14 !important;
-}
 .md-back-to-top{
 position: fixed;
 right: 30px;
@@ -1654,13 +1610,6 @@ box-shadow: 0 6px 18px rgba(0,0,0,.24);
 }
 .md-back-to-top[hidden]{ display: none; }
 @media (max-width: 990px){
-.md-whatsapp-float{
-right: 16px;
-bottom: 16px;
-width: 52px;
-height: 52px;
-}
-.md-whatsapp-float svg{ width: 28px; height: 28px; }
 .md-back-to-top{
 right: 16px;
 bottom: 80px;
@@ -1764,8 +1713,7 @@ max-width: 100%;
 flex-direction: column;
 align-items: stretch;
 }
-.md-quote-modal__card .md-inquiry-submit,
-.md-quote-modal__card .md-inquiry-whatsapp{
+.md-quote-modal__card .md-inquiry-submit{
 width: 100%;
 }
 }
@@ -2114,25 +2062,16 @@ top: calc(var(--md-header-h, 113px) + 16px);
   #md-footer {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
-  .md-whatsapp-float {
-    right: 16px;
-    bottom: calc(16px + env(safe-area-inset-bottom));
-    width: 48px;
-    height: 48px;
-  }
   .md-back-to-top {
     right: 16px;
     bottom: calc(72px + env(safe-area-inset-bottom));
     width: 44px;
     height: 44px;
   }
-  html.md-modal-open :is(.md-whatsapp-float, .md-back-to-top),
-  body:has(xo-modal[xo-name*="hamburger"].is-open) :is(.md-whatsapp-float, .md-back-to-top) {
+  html.md-modal-open .md-back-to-top,
+  body:has(xo-modal[xo-name*="hamburger"].is-open) .md-back-to-top {
     visibility: hidden;
     pointer-events: none;
-  }
-  body:has(#md-inquiry) .md-whatsapp-float {
-    display: none;
   }
   body:has(#md-inquiry) .md-back-to-top {
     bottom: calc(148px + env(safe-area-inset-bottom));
@@ -2179,8 +2118,7 @@ top: calc(var(--md-header-h, 113px) + 16px);
     background: rgba(20, 20, 20, 0.94);
     backdrop-filter: blur(16px);
   }
-  .md-quote-modal__card .md-inquiry-submit,
-  .md-quote-modal__card .md-inquiry-whatsapp {
+  .md-quote-modal__card .md-inquiry-submit {
     width: 100%;
     min-height: 48px;
   }

@@ -777,13 +777,6 @@ min-height: 48px;
 padding: 12px 16px;
 text-align: center;
 }
-body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) .md-whatsapp-float {
-bottom: calc(10px + env(safe-area-inset-bottom));
-height: 48px;
-left: 16px;
-right: auto;
-width: 48px;
-}
 body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) .md-back-to-top {
 background: #c9a962;
 bottom: calc(12px + env(safe-area-inset-bottom));

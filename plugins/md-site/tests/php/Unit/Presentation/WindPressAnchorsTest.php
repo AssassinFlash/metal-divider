@@ -152,7 +152,9 @@ final class WindPressAnchorsTest extends TestCase {
 		}
 		$this->assertContains( '--md-gold: #c9a962', $tokens, 'the gold anchor of spec 17 §4.4' );
 		$this->assertContains( '--md-container: 1400px', $tokens );
-		$this->assertContains( '--md-whatsapp: #25D366', $tokens, 'the value keeps its source casing: the compile normalises it, the anchor does not' );
+		// Owner ruling 2026-10-30: the WhatsApp channel is gone site-wide, so
+		// its token is no longer declared and has no anchor.
+		$this->assertNotContains( '--md-whatsapp: #25D366', $tokens, 'no WhatsApp token anchor (owner ruling 2026-10-30)' );
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- the plugin's own exported volume, a local file.
 		$volume = (string) file_get_contents( \MetalDivider\Site\Presentation\Tokens::path() );
 		$this->assertSame(
@@ -211,8 +213,8 @@ final class WindPressAnchorsTest extends TestCase {
 
 	/**
 	 * The token comparison is CSS-equivalent: the compiler minifies, so
-	 * `--md-whatsapp: #25D366` reaches the cache as `--md-whatsapp:#25d366`, and
-	 * a byte comparison would report every upper-case value missing forever.
+	 * `--md-gold-light: #d4b878` reaches the cache as `--md-gold-light:#d4b878`,
+	 * and a byte comparison would report every upper-case value missing forever.
 	 */
 	public function test_a_minified_token_declaration_still_matches(): void {
 		$this->cache( $this->compiled( minify: true ) );

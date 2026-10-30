@@ -1,6 +1,6 @@
 {
 	"name": "metal-divider/md-inquiry",
-	"description": "The inquiry chain of metal-divider.com: the form, the notifications, the WhatsApp route, and the outbound queue.",
+	"description": "The inquiry chain of metal-divider.com: the form, the notifications, and the outbound queue.",
 	"type": "wordpress-plugin",
 	"license": "proprietary",
 	"require": {

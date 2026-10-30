@@ -42,7 +42,7 @@ final class TokensTest extends TestCase {
 	 * panel measured 2.14–3.28:1 — the whole light-surface half of the site
 	 * (`--md-gold-ink` holds 4.86:1 there). Same hue, separate role.
 	 */
-	private const NORMALIZED_SHA256 = 'b88b51007b5df807785b2e327fac2e13cce746064e91d469848094e9d0c22be4';
+	private const NORMALIZED_SHA256 = '6f53523063e7ae70625c95c2ca4a14fb3984ed8fbf882e1e86a1703e09976fef';
 
 	/**
 	 * The exported stylesheet carries the design tokens of the MASTER.md
@@ -62,7 +62,9 @@ final class TokensTest extends TestCase {
 		$this->assertStringContainsString( '--md-gold-dark: #a88a4a', $css );
 		$this->assertStringContainsString( '--md-gold-accent: #d4af37', $css );
 		$this->assertStringContainsString( '--md-cream: #faf9f7', $css );
-		$this->assertStringContainsString( '--md-whatsapp: #25D366', $css );
+		// Owner ruling 2026-10-30: the WhatsApp channel is gone site-wide, so
+		// the brand token went with it.
+		$this->assertStringNotContainsString( '--md-whatsapp', $css, 'no WhatsApp token (owner ruling 2026-10-30)' );
 		$this->assertStringContainsString( '--md-font-display: "Playfair Display", Georgia, serif', $css );
 		$this->assertStringContainsString( '--md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif', $css );
 		$this->assertStringContainsString( '--md-container: 1400px', $css );

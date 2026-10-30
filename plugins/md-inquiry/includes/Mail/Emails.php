@@ -108,8 +108,8 @@ final class Emails {
 	}
 
 	/**
-	 * The customer confirmation: the receipt, the reply promise, and the two
-	 * faster channels.
+	 * The customer confirmation: the receipt, the reply promise, and the
+	 * faster channel.
 	 *
 	 * @param array<string, mixed> $record The inquiry record's values.
 	 * @return array{to: list<string>, subject: string, body: string, headers: list<string>}
@@ -129,8 +129,7 @@ final class Emails {
 		$lines[] = '';
 		$lines[] = 'Our team replies within 24 hours on business days with pattern availability, material options and pricing. If you sent dimensions, quantities or a timeline, we will address them in that reply. If you have drawings or site photos, attaching them to your reply helps us quote faster.';
 		$lines[] = '';
-		$lines[] = 'Need to reach us sooner? Reply directly to this email, or use:';
-		$lines[] = '- WhatsApp: +852 6473 1687 — https://wa.me/85264731687';
+		$lines[] = 'Need to reach us sooner? Reply directly to this email, or write to us at:';
 		$lines[] = '- Email: info@metal-divider.com';
 		$lines[] = '';
 		$lines[] = 'Kind regards,';

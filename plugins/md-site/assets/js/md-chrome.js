@@ -4156,8 +4156,8 @@
 
   // The back-to-top control is part of the first-party floating chrome
   // (ticket #67): it appears after the first viewport and returns to the
-  // top. The WhatsApp float needs no script. Overlap is not a reason to hide
-  // either control — they stay visible and discoverable.
+  // top. It is the only float since the WhatsApp entry was removed
+  // (owner ruling 2026-10-30).
   // The footer's tab dock.
   //
   // Ported from de-linker's footer (its inline `footer-app.js`) at the

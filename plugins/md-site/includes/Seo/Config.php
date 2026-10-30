@@ -147,8 +147,8 @@ final class Config {
 
 	/**
 	 * The Knowledge Graph and social card fields (spec 22 §2.1 and
-	 * §3.3: Organization with name, email and WhatsApp — no address,
-	 * so no LocalBusiness; OG on with the page's own meta and image).
+	 * §3.3: Organization with name and email — no address, so no
+	 * LocalBusiness; OG on with the page's own meta and image).
 	 *
 	 * @param string|null $logo_url The logo attachment's URL, null when no attachment exists yet.
 	 * @return array<string, mixed> The full social option value.

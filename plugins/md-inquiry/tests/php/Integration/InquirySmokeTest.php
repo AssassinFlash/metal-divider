@@ -155,7 +155,6 @@ final class InquirySmokeTest extends TestCase {
 			'name="md_inquiry_nonce"',
 			'name="website"',
 			'class="md-inquiry-submit"',
-			'https://wa.me/85264731687?text=',
 		) as $needle ) {
 			self::assertStringContainsString( $needle, $html['body'], $needle );
 		}

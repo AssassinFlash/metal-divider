@@ -26,7 +26,7 @@ use MetalDivider\Site\Tests\TestCase;
  * The fix places `[md_inquiry_form]` in the dialog. The shortcode resolves the
  * pattern from the current post (`Form::render()` → `Pattern::from_current_post()`),
  * so the dialog inherits the PDP's pattern with no per-page wiring, and brings
- * the plugin's own fields, honeypot, Turnstile slot and WhatsApp alternate.
+ * the plugin's own fields, honeypot and Turnstile slot.
  *
  * These are markup guards, not behaviour tests: they hold the template shape
  * the real-browser acceptance depends on, and fail loudly if the dialog is

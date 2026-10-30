@@ -1788,7 +1788,7 @@ function md_kb_endpoint_log_unanswered( string $question, string $reason ): bool
  * @return string The fallback message.
  */
 function md_kb_endpoint_fallback_message(): string {
-	return "Sorry — I can't look that up right now. Please try again in a moment, or reach our team on WhatsApp at +852 6473 1687.";
+	return "Sorry — I can't look that up right now. Please try again in a moment, or email our team at info@metal-divider.com.";
 }
 
 /**

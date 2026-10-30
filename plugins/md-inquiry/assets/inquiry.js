@@ -1,4 +1,4 @@
-/* md-inquiry's behavior file: the Turnstile wiring, the live WhatsApp link,
+/* md-inquiry's behavior file: the Turnstile wiring
  * and the two client-side validations. It carries no style and no markup of
  * its own — the classes it toggles (md-inquiry-*) are styled by the theme's
  * WindPress volume, and its configuration arrives in the app element's
@@ -8,7 +8,7 @@
  * quote dialog on pages that have no form of their own, and a section that
  * asks for a quote in place. This file used to bind `document.querySelector`
  * — the first one only — so every other form on the page was inert: no
- * validation, no WhatsApp text, no Turnstile status. Each app is now bound on
+ * validation, no Turnstile status. Each app is now bound on
  * its own, and its lookups stay inside its own form.
  *
  * Turnstile is explicit and per form. api.js loads with render=explicit and
@@ -68,17 +68,11 @@
 		}
 
 		var submit = form.querySelector('.md-inquiry-submit');
-		var waLink = form.querySelector('.md-inquiry-whatsapp');
 		var statusEl = form.querySelector('.md-inquiry-turnstile-status');
 		var container = form.querySelector('.md-inquiry-turnstile');
 
 		function field(name) {
 			return fieldIn(form, name);
-		}
-
-		function source(part) {
-			var input = form.querySelector('[name="md_inquiry_source_' + part + '"]');
-			return input ? input.value : '';
 		}
 
 		function value(key) {
@@ -199,39 +193,6 @@
 			return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 		}
 
-		function waText() {
-			var name = value('name');
-			var company = value('company');
-			var message = value('message');
-			var lines = [];
-			if (name) {
-				lines.push("Hi, I'm " + name + (company ? ' (' + company + ')' : '') + '.');
-			}
-			if (cfg.pattern) {
-				lines.push("I'd like a quote for this pattern:");
-				lines.push(cfg.pattern.name + ' (' + cfg.pattern.code + ')');
-			}
-			if (message) {
-				lines.push(message);
-			}
-			lines.push('Ref: ' + source('page') + '/' + source('module') + '/' + source('button'));
-			return lines.join('\n');
-		}
-
-		function updateWhatsApp() {
-			if (!waLink || !cfg.waNumber) {
-				return;
-			}
-			waLink.href = 'https://wa.me/' + cfg.waNumber + '?text=' + encodeURIComponent(waText());
-		}
-
-		['name', 'company', 'message'].forEach(function (key) {
-			var input = field(key);
-			if (input) {
-				input.addEventListener('input', updateWhatsApp);
-			}
-		});
-
 		function keyFrom(control) {
 			var name = control.getAttribute('name') || '';
 			return name.indexOf('md_inquiry_') === 0 ? name.slice('md_inquiry_'.length) : '';
@@ -270,8 +231,6 @@
 				first.focus();
 			}
 		});
-
-		updateWhatsApp();
 
 		var widgetId = null;
 		var rendering = false;

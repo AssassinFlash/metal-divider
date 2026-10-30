@@ -419,7 +419,7 @@
 .md-footer__email-grid {
 	display: grid;
 	gap: 10px;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-columns: minmax(0, 1fr);
 	margin-top: 14px;
 }
 
@@ -485,33 +485,6 @@
 .md-footer__copy svg {
 	height: 16px;
 	width: 16px;
-}
-
-.md-footer__phone {
-	align-items: center;
-	background: rgba(255, 255, 255, 0.05);
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	border-radius: 12px;
-	display: flex;
-	font-size: 12px;
-	gap: 9px;
-	justify-content: center;
-	margin-top: 12px;
-	min-height: 42px;
-	padding: 9px 13px;
-	width: fit-content;
-}
-
-.md-footer__phone svg {
-	color: var(--md-gold, #c9a962);
-	height: 15px;
-	width: 15px;
-}
-
-#md-footer .md-footer__phone:hover,
-#md-footer .md-footer__phone:focus-visible {
-	border-color: rgba(201, 169, 98, 0.45);
-	color: #ffffff;
 }
 
 /* `#md-footer a` is (1, 0, 1) and sets color: inherit, so a class-only
@@ -793,12 +766,6 @@
 	.md-footer__copy svg {
 		height: 13px;
 		width: 13px;
-	}
-
-	.md-footer__phone {
-		font-size: 11px;
-		margin-top: 10px;
-		min-height: 39px;
 	}
 
 	.md-footer__bar {
