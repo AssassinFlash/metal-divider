@@ -184,7 +184,7 @@ final class ConfigTest extends TestCase {
 		$this->assertCount( 18, $metas );
 		$this->assertSame(
 			array(
-				'collections',
+				'pattern-category',
 				'inquiry',
 				'faqs',
 				'about-us',
@@ -214,7 +214,7 @@ final class ConfigTest extends TestCase {
 		);
 		$this->assertSame(
 			array(
-				'collections'                       => 'Decorative metal screen pattern series. Choose a family by privacy, airflow, light, and project use, then send a reference.',
+				'pattern-category'                  => 'Decorative metal screen pattern series. Choose a family by privacy, airflow, light, and project use, then send a reference.',
 				'inquiry'                           => 'Request your quote. Write what the project needs. A person replies with questions, or with a quote.',
 				'faqs'                              => 'Answers on 304 and 316 stainless steel, panel sizes, lead times, and installation for architectural screens.',
 				'about-us'                          => 'Laser-cut screens finished in your chosen PVD color, checked before they ship, and delivered exactly as approved.',
@@ -354,7 +354,7 @@ final class ConfigTest extends TestCase {
 		$this->assertStringContainsString( 'schema md-schema-article (articles): created', $joined );
 		$this->assertStringContainsString( 'schema faq: /faqs/ is not installed', $joined );
 		$this->assertStringContainsString( 'redirect /pages → /: created', $joined );
-		$this->assertStringNotContainsString( 'redirect /collections/pattern-gradient', $joined, 'the gradient series is live (issue #25): no 301 may take its visitors away' );
+		$this->assertStringNotContainsString( 'redirect /pattern-category/pattern-gradient', $joined, 'the gradient series is live (issue #25): no 301 may take its visitors away' );
 		$this->assertStringContainsString( 'page inquiry: not installed', $joined );
 		$this->assertStringContainsString( 'page inquiry/thank-you: not installed', $joined );
 		$this->assertStringNotContainsString( 'page pages:', $joined, 'the shell is a redirect, never a page the apply waits on' );

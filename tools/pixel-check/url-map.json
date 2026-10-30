@@ -10,7 +10,7 @@
       "products": "3f19c439fdb1da8c662abe837596fc2c67a135eea8988c089fb000e47f006f0c"
     }
   },
-  "rules": "spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /shop/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7; collections/pattern-gradient retired from this map only (issue #25 cancelled D8 — the series is live with no 301 — and the old empty collection has no comparable baseline)",
+  "rules": "spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /patterns/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7; collections/pattern-gradient retired from this map only (issue #25 cancelled D8 — the series is live with no 301 — and the old empty collection has no comparable baseline)",
   "summary": {
     "total": 182,
     "active": 170,
@@ -1396,7 +1396,7 @@
       "type": "collections",
       "slug": "pattern-abstract",
       "status": "active",
-      "path": "/collections/pattern-abstract",
+      "path": "/pattern-category/pattern-abstract",
       "ledger": "L3",
       "baseline_url": "https://metalpartition.com/collections/pattern-abstract"
     },
@@ -1404,7 +1404,7 @@
       "type": "collections",
       "slug": "pattern-asian",
       "status": "active",
-      "path": "/collections/pattern-asian",
+      "path": "/pattern-category/pattern-asian",
       "ledger": "L3",
       "baseline_url": "https://metalpartition.com/collections/pattern-asian"
     },
@@ -1412,7 +1412,7 @@
       "type": "collections",
       "slug": "pattern-geometric",
       "status": "active",
-      "path": "/collections/pattern-geometric",
+      "path": "/pattern-category/pattern-geometric",
       "ledger": "L3",
       "baseline_url": "https://metalpartition.com/collections/pattern-geometric"
     },
@@ -1428,7 +1428,7 @@
       "type": "collections",
       "slug": "pattern-landscape",
       "status": "active",
-      "path": "/collections/pattern-landscape",
+      "path": "/pattern-category/pattern-landscape",
       "ledger": "L3",
       "baseline_url": "https://metalpartition.com/collections/pattern-landscape"
     },
@@ -1436,7 +1436,7 @@
       "type": "collections",
       "slug": "pattern-moroccan-arabic",
       "status": "active",
-      "path": "/collections/pattern-moroccan-arabic",
+      "path": "/pattern-category/pattern-moroccan-arabic",
       "ledger": "L3",
       "baseline_url": "https://metalpartition.com/collections/pattern-moroccan-arabic"
     },
@@ -1444,7 +1444,7 @@
       "type": "collections",
       "slug": "pattern-organic",
       "status": "active",
-      "path": "/collections/pattern-organic",
+      "path": "/pattern-category/pattern-organic",
       "ledger": "L3",
       "baseline_url": "https://metalpartition.com/collections/pattern-organic"
     },
@@ -1452,7 +1452,7 @@
       "type": "collections",
       "slug": "pattern-perforated",
       "status": "active",
-      "path": "/collections/pattern-perforated",
+      "path": "/pattern-category/pattern-perforated",
       "ledger": "L3",
       "baseline_url": "https://metalpartition.com/collections/pattern-perforated"
     },
@@ -1460,7 +1460,7 @@
       "type": "collections",
       "slug": "pattern-vintage-retro",
       "status": "active",
-      "path": "/collections/pattern-vintage-retro",
+      "path": "/pattern-category/pattern-vintage-retro",
       "ledger": "L3",
       "baseline_url": "https://metalpartition.com/collections/pattern-vintage-retro"
     },
@@ -1468,7 +1468,7 @@
       "type": "collections-index",
       "slug": "index",
       "status": "active",
-      "path": "/collections/",
+      "path": "/pattern-category/",
       "ledger": "L4",
       "baseline_url": "https://metalpartition.com/collections/"
     },
@@ -1476,7 +1476,7 @@
       "type": "collections-index",
       "slug": "all",
       "status": "active",
-      "path": "/shop/",
+      "path": "/patterns/",
       "ledger": "L18 (R4)",
       "baseline_url": "https://metalpartition.com/collections/all"
     }

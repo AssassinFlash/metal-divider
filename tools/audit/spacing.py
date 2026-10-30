@@ -27,7 +27,7 @@ way narrow_viewport.py does it.
 
 Usage:
     python3 tools/audit/spacing.py --width 390 --base https://metal-divider.com \
-        --pages / /shop/ --out /tmp/md-space
+        --pages / /patterns/ --out /tmp/md-space
 """
 
 from __future__ import annotations

@@ -142,7 +142,7 @@ def main():
         for slug, _, new_path in PAGES:
             enqueue(NEW, slug, new_path, "new")
         for col in COLLECTIONS:
-            enqueue(NEW, "col-" + col, "/collections/" + col + "/", "new")
+            enqueue(NEW, "col-" + col, "/pattern-category/" + col + "/", "new")
 
     # One session per parallel worker: opencli serialises work inside a session,
     # so jobs are grouped by session rather than interleaved.

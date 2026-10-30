@@ -196,7 +196,7 @@ final class SeoCommandTest extends TestCase {
 		$blog          = 103;
 		$thank_you     = 104;
 		$faqs          = 105;
-		$collections   = 106;
+		$hub           = 106;
 		$about         = 107;
 		$manufacturing = 108;
 		$gallery       = 109;
@@ -242,8 +242,8 @@ final class SeoCommandTest extends TestCase {
 				'type'  => 'page',
 				'title' => 'FAQs & Downloads',
 			),
-			'collections'                       => array(
-				'id'    => $collections,
+			'pattern-category'                  => array(
+				'id'    => $hub,
 				'type'  => 'page',
 				'title' => 'Pattern series hub',
 			),
@@ -329,7 +329,7 @@ final class SeoCommandTest extends TestCase {
 			$privacy       => $page_metas['privacy'],
 			$blog          => $page_metas['blog'],
 			$thank_you     => $page_metas['inquiry/thank-you'],
-			$collections   => $page_metas['collections'],
+			$hub           => $page_metas['pattern-category'],
 			$faqs          => $page_metas['faqs'],
 			$about         => $page_metas['about-us'],
 			$manufacturing => $page_metas['manufacturing-process'],

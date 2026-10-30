@@ -40,12 +40,12 @@ OPENCLI = "opencli"
 CHROME_MIN_WIDTH = 578
 
 DEFAULT_PAGES = [
-    "/", "/collections/", "/shop/", "/faqs/", "/inquiry/", "/about-us/",
+    "/", "/pattern-category/", "/patterns/", "/faqs/", "/inquiry/", "/about-us/",
     "/manufacturing-process/", "/project-gallery/", "/blog/",
     "/laser-cut-geometric-metal-screens/", "/perforated-panels/",
     "/custom-metal-divider-screens/",
     "/pattern/agave-architectural-metal-screen-pattern/",
-    "/collections/pattern-abstract/",
+    "/pattern-category/pattern-abstract/",
 ]
 
 # The project's own floor, from GOAL.md's 320px audit: a tap target is 44px.

@@ -12,7 +12,7 @@ this script measures from the document, not to the height requested.
 
 Usage:
     python3 tools/audit/capture_narrow.py --width 320 --out /tmp/md320
-    python3 tools/audit/capture_narrow.py --width 390 --out /tmp/md390 --pages / /shop/
+    python3 tools/audit/capture_narrow.py --width 390 --out /tmp/md390 --pages / /patterns/
 """
 
 from __future__ import annotations
@@ -31,8 +31,8 @@ OPENCLI = "opencli"
 # One page per type the goal's coverage matrix names.
 DEFAULT_PAGES = [
     ("home", "/"),
-    ("collections", "/collections/"),
-    ("shop", "/shop/"),
+    ("pattern-category", "/pattern-category/"),
+    ("patterns", "/patterns/"),
     ("inquiry", "/inquiry/"),
     ("thank-you", "/inquiry/thank-you/"),
     ("privacy", "/privacy/"),
@@ -50,8 +50,8 @@ DEFAULT_PAGES = [
     ("family-perforated", "/perforated-panels/"),
     ("family-expanded", "/expanded-metal-panels/"),
     ("custom", "/custom-metal-divider-screens/"),
-    ("series-abstract", "/collections/pattern-abstract/"),
-    ("series-geometric", "/collections/pattern-geometric/"),
+    ("series-abstract", "/pattern-category/pattern-abstract/"),
+    ("series-geometric", "/pattern-category/pattern-geometric/"),
     ("pdp-agave", "/pattern/agave-architectural-metal-screen-pattern/"),
     ("pdp-apiary", "/pattern/apiary-architectural-metal-screen-pattern/"),
 ]

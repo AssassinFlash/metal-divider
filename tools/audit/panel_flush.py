@@ -248,7 +248,7 @@ def main() -> int:
     ap.add_argument(
         "--pages",
         nargs="+",
-        default=["/", "/shop/", "/faqs/", "/inquiry/", "/collections/"],
+        default=["/", "/patterns/", "/faqs/", "/inquiry/", "/pattern-category/"],
     )
     ap.add_argument("--self-check", action="store_true")
     args = ap.parse_args()

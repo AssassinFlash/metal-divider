@@ -10,20 +10,20 @@ declare( strict_types = 1 );
 namespace MetalDivider\Site\Seo;
 
 /**
- * The catalog faces (`/shop/`, `/collections/<series>/`) carry the archive
+ * The catalog faces (`/patterns/`, `/pattern-category/<series>/`) carry the archive
  * tools: a `pattern_search` box and a `sort_by` menu, both plain GET forms
  * that `Catalog::filter_query()` turns into the main query. Every result of
  * those forms is a *filtered view of a page that already has a canonical
  * URL*, so the view itself must not be indexed: a search result like
- * `/shop/?pattern_search=lattice` is an unbounded set of thin duplicates,
- * each canonicalising to `/shop/` — an index-then-canonical-elsewhere pair
+ * `/patterns/?pattern_search=lattice` is an unbounded set of thin duplicates,
+ * each canonicalising to `/patterns/` — an index-then-canonical-elsewhere pair
  * that Search Console reports as "Duplicate, Google chose different
  * canonical" and that spends crawl budget on URLs nobody links to.
  *
  * The rule here is deliberately narrow, because the alternative (indexing
  * the filtered views) was the shipped behaviour and both halves matter:
  *
- * - **The plain catalog stays indexed.** `/shop/` and every series archive
+ * - **The plain catalog stays indexed.** `/patterns/` and every series archive
  *   keep `index, follow`; the rule fires only when a tool parameter is
  *   actually in the request.
  * - **The canonical is untouched.** SEOPress suppresses `<link rel=

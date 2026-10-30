@@ -449,22 +449,22 @@ function get_permalink( int $post_id = 0 ): string {
  * @return \WP_Post|null The planted post, null when nothing matches.
  */
 /**
- * parse_url() with the keys WordPress returns, enough for the page URL
- * the endpoint accepts. A URL it cannot parse is false, as WordPress.
+ * parse_url() with the component argument it documents: PHP_URL_PATH and
+ * friends are integers, and the parts array is keyed by their names, so the
+ * component has to be handed to parse_url() itself rather than used as an
+ * index (which answered null for every component and made a caller read ''
+ * as a request path). A URL it cannot parse is false, as WordPress.
  *
- * @param string $url The URL.
- * @return array<string, mixed>|false The parts, or false.
+ * @param string $url       The URL.
+ * @param int    $component The PHP_URL_* component, -1 for all of them.
+ * @return array<string, mixed>|string|int|false|null The parts, or the component.
  */
 if ( ! defined( 'OBJECT' ) ) {
 	define( 'OBJECT', 'OBJECT' );
 }
 
 function wp_parse_url( string $url, int $component = -1 ): array|string|int|false|null {
-	$parts = parse_url( $url );
-	if ( -1 !== $component ) {
-		return is_array( $parts ) ? ( $parts[ $component ] ?? null ) : false;
-	}
-	return is_array( $parts ) ? $parts : false;
+	return parse_url( $url, $component );
 }
 
 /**
@@ -556,6 +556,66 @@ function wp_normalize_path( string $path ): string {
  */
 function wp_unslash( mixed $value ): mixed {
 	return $value;
+}
+
+/**
+ * The series lookup the legacy-URL alias makes: a `product_cat` term by slug,
+ * from the slugs the test plants in $GLOBALS['md_mu_test_series'].
+ *
+ * @param string $field    The field; only 'slug' is served.
+ * @param string $value    The slug.
+ * @param string $taxonomy The taxonomy; only 'product_cat' answers terms.
+ * @return \WP_Term|false The term, false when no series carries the slug.
+ */
+function get_term_by( string $field, string $value, string $taxonomy = '' ): \WP_Term|false {
+	unset( $field );
+	if ( 'product_cat' !== $taxonomy ) {
+		return false;
+	}
+	foreach ( (array) ( $GLOBALS['md_mu_test_series'] ?? array() ) as $slug ) {
+		if ( (string) $slug === $value ) {
+			return new \WP_Term( $value, $value );
+		}
+	}
+	return false;
+}
+
+/**
+ * Whether the request is an AJAX one, overridable per test.
+ *
+ * @return bool
+ */
+function wp_doing_ajax(): bool {
+	return $GLOBALS['md_mu_test_doing_ajax'] ?? false;
+}
+
+/**
+ * The site's address for a path, recorded so the alias's destination can be
+ * asserted.
+ *
+ * @param string $path The path, leading slash included.
+ * @return string The absolute address.
+ */
+function home_url( string $path = '' ): string {
+	return 'https://site.test' . $path;
+}
+
+/**
+ * WordPress's redirect-and-continue, recorded instead of sending a header: the
+ * tests read the status and the target off $GLOBALS['md_mu_test_redirect'].
+ *
+ * The answer is `true` — WordPress's own is too — and that is what lets the
+ * plugin stop the request. `$GLOBALS['md_mu_test_redirect_fails']` makes it
+ * answer false, the state a site is in when headers are already written: the
+ * plugin must then leave the page it was on alone rather than print nothing.
+ *
+ * @param string $location The destination.
+ * @param int    $status   The status code.
+ * @return bool Whether the redirect was issued.
+ */
+function wp_safe_redirect( string $location, int $status = 302 ): bool {
+	$GLOBALS['md_mu_test_redirect'] = array( $location, $status );
+	return empty( $GLOBALS['md_mu_test_redirect_fails'] );
 }
 
 function get_page_by_path( string $page_path, string $output = OBJECT, string|array $post_type = 'page' ): ?\WP_Post {
@@ -955,3 +1015,4 @@ require_once dirname( __DIR__, 2 ) . '/md-kb-endpoint.php';
 require_once dirname( __DIR__, 2 ) . '/md-chat-email.php';
 require_once dirname( __DIR__, 2 ) . '/md-chat-delete.php';
 require_once dirname( __DIR__, 2 ) . '/md-chat-launcher.php';
+require_once dirname( __DIR__, 2 ) . '/md-legacy-urls.php';

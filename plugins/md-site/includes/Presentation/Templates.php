@@ -85,7 +85,7 @@ final class Templates {
 	 */
 	private const PAGES = array(
 		'md-home'                       => array( 'home', 'Home', 'home' ),
-		'md-hub'                        => array( 'hub', 'Pattern series hub', 'collections' ),
+		'md-hub'                        => array( 'hub', 'Pattern series hub', 'pattern-category' ),
 		'md-family-laser-cut-geometric' => array( 'family-laser-cut-geometric', 'Laser-cut geometric screens', 'laser-cut-geometric-metal-screens' ),
 		'md-family-glass-hybrid'        => array( 'family-glass-hybrid', 'Glass hybrid screens', 'glass-hybrid-screens' ),
 		'md-family-outdoor-privacy'     => array( 'family-outdoor-privacy', 'Outdoor privacy screens', 'outdoor-privacy-landscape-screens' ),

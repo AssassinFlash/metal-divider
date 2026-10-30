@@ -88,7 +88,7 @@ def main() -> int:
 
     # 2. The catalog grid. Before: repeat(auto-fill, minmax(min(100%,300px),340px))
     #    which cannot grow, leaving the row partly empty on a wide monitor.
-    shop = get(base, "/shop/", bust)
+    shop = get(base, "/patterns/", bust)
     css = ""
     for match in re.finditer(r"(?is)<link[^>]+rel=['\"]stylesheet['\"][^>]*>", shop):
         tag = match.group(0)

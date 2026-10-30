@@ -3371,7 +3371,7 @@
           results.textContent = '';
         }
         if (seeAll) {
-          seeAll.href = '/shop/?pattern_search=' + encodeURIComponent(query);
+          seeAll.href = '/patterns/?pattern_search=' + encodeURIComponent(query);
           seeAll.hidden = false;
         }
         if (!rows || !rows.length || !hitTemplate || !hitTemplate.content) {

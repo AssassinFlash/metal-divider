@@ -144,7 +144,7 @@ final class TemplatesTest extends TestCase {
 		$this->assertStringContainsString( '[md_series_nav]', $nav, 'the series links are rendered from the terms' );
 		$this->assertDoesNotMatchRegularExpression( '/Organic|Geometric|Gradient|Perforated|Landscape|Abstract|Moroccan|Asian|Vintage/i', $nav, 'the sidebar names no series' );
 		$this->assertStringNotContainsString( 'is-active', $nav, 'the active state is not a literal class in the template' );
-		$this->assertStringContainsString( 'href="/shop/"', $nav, 'the all-patterns link is the shop, not /collections/all' );
+		$this->assertStringContainsString( 'href="/patterns/"', $nav, 'the all-patterns link is the catalogue, not the old /shop/ or /collections/all' );
 	}
 
 	/**
@@ -236,9 +236,9 @@ final class TemplatesTest extends TestCase {
 		preg_match_all( "/<form action='([^']*)' method='get' role='search' class='search'>/", $header, $forms );
 		$this->assertCount( 1, $forms[0], 'the header carries exactly one site-wide search form' );
 		$this->assertSame(
-			'/shop/',
+			'/patterns/',
 			$forms[1][0],
-			'the header search submits to the shop: it is rendered on every page and has no series to preserve'
+			'the header search submits to the catalogue: it is rendered on every page and has no series to preserve'
 		);
 
 		// Comments are prose about the code, not attributes a browser parses —
@@ -265,21 +265,47 @@ final class TemplatesTest extends TestCase {
 	}
 
 	/**
-	 * No LiveCanvas template links a retired or non-canonical path:
-	 * `/pages/…` was the old site's shell prefix (every page moved to the
-	 * root level, `contact` retired to /inquiry/), and `/collections/all`
-	 * is Shopify's handle for the shop, which is /shop/ here. Both would
-	 * send visitors through a redirect — or, for /pages/contact, to a 404.
+	 * No LiveCanvas template links a retired or non-canonical path.
+	 *
+	 * Three families, one rule each:
+	 *
+	 * - `/pages/…` was the old site's shell prefix (every page moved to the
+	 *   root level, `contact` retired to /inquiry/) and would send a visitor
+	 *   through a redirect, or — for `/pages/contact` — to a 404.
+	 * - `/blogs/` was the old site's post handle; the blog index is `/blog/`.
+	 * - **Shopify's two URL words are not the site's** (owner ruling
+	 *   2026-10-30, GOAL.md 深夜 2): the catalogue is `/patterns/`, a series is
+	 *   `/pattern-category/<slug>/`, and `/shop/…`, `/collections/…` are the
+	 *   legacy aliases the 301 layer in `mu-plugins/md-legacy-urls.php`
+	 *   answers. A template that emits one of them would make every visitor
+	 *   from that template take a redirect on the site's own link, which is
+	 *   the exact defect this guard exists for. The scan covers attributes as
+	 *   well as text, because an `href` is what a visitor follows.
+	 *
+	 * Comments are prose about the code, not paths a browser resolves, so they
+	 * are stripped first — the same rule the header's search guard follows.
+	 * This guard's own file names the legacy paths in this docblock, and a
+	 * scan that refused its own documentation would be unmaintainable.
 	 */
 	public function test_no_template_links_a_retired_or_non_canonical_path(): void {
 		$dir   = dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../content/livecanvas';
 		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
 		foreach ( $files as $file ) {
-			$source   = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$raw      = (string) file_get_contents( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$source   = (string) preg_replace( '/<!--.*?-->/s', '', $raw );
 			$relative = basename( (string) $file );
 			$this->assertStringNotContainsString( '/pages/', $source, "{$relative} links the retired /pages/ prefix" );
-			$this->assertStringNotContainsString( '/collections/all', $source, "{$relative} links -> /shop/" );
 			$this->assertStringNotContainsString( '/blogs/', $source, "{$relative} links the old blog handle; the blog index is /blog/" );
+			$this->assertDoesNotMatchRegularExpression(
+				'#/shop(?:/|["\'])#',
+				$source,
+				"{$relative} links the legacy /shop/ catalogue; the ruling makes it /patterns/ (owner, 2026-10-30)"
+			);
+			$this->assertDoesNotMatchRegularExpression(
+				'#/collections(?:/|["\'])#',
+				$source,
+				"{$relative} links the legacy /collections/ series base; the ruling makes it /pattern-category/ (owner, 2026-10-30)"
+			);
 		}
 	}
 

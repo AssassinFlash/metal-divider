@@ -16,7 +16,7 @@ reading the attribute back would only confirm its own claim.
 Drives the owner's Chrome through opencli, never Playwright (AGENTS §7).
 
     python3 tools/audit/page_weight.py /            # one page
-    python3 tools/audit/page_weight.py / /shop/     # several
+    python3 tools/audit/page_weight.py / /patterns/     # several
 """
 
 from __future__ import annotations

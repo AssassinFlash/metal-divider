@@ -122,7 +122,7 @@ def main() -> int:
 
     cards: list[tuple[str, str]] = []
     for page in range(1, args.pages + 1):
-        url = f"{base}/shop/?paged={page}&mdaudit={bust}"
+        url = f"{base}/patterns/?paged={page}&mdaudit={bust}"
         try:
             html = get(url).decode("utf-8", errors="replace")
         except Exception as exc:  # noqa: BLE001

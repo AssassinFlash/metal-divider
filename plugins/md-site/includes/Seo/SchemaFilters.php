@@ -59,7 +59,7 @@ final class SchemaFilters {
 
 		// The catalogue is a page listing 146 patterns, and no SEOPress builder
 		// emits an ItemList for a page: its Product schema is per-product and
-		// its CollectionPage is a WooCommerce archive, which /shop/ is not (it
+		// its CollectionPage is a WooCommerce archive, which /patterns/ is not (it
 		// is page #6 with the default template). Without this block a search
 		// engine sees a WebPage and no list at all.
 		add_action( 'wp_head', array( $this, 'catalog_item_list' ), 99 );
@@ -73,7 +73,7 @@ final class SchemaFilters {
 	 * are the patterns' own permalinks; the order is the page's order.
 	 */
 	public function catalog_item_list(): void {
-		// `/shop/` is WooCommerce's product archive, not a page: its body class
+		// `/patterns/` is WooCommerce's product archive, not a page: its body class
 		// is `post-type-archive-product woocommerce-shop`. `is_page('shop')` is
 		// therefore always false here, which is why the first version emitted
 		// nothing and the page still had a single JSON-LD block.

@@ -908,7 +908,7 @@ font-size: 11px;
  * All twenty-one patterns stack into 23 screens at 390. The library is
  * reference material, not a reading surface: below 750 the fourth card
  * onward is hidden and each family keeps its first three, so the section
- * stays scannable and the full catalog is one tap away at /shop/. The
+ * stays scannable and the full catalog is one tap away at /patterns/. The
  * hiding is done with `:nth-child` rather than by trimming the markup,
  * because the same markup serves the desktop grid where all of them show.
  * ---------------------------------------------------------------- */

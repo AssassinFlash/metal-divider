@@ -14,7 +14,7 @@ resolves the value for one viewport, first match from the widest condition.
 
 Usage:
     python3 tools/audit/image_density.py --base https://metal-divider.com
-    python3 tools/audit/image_density.py --pages /shop/ --viewport 1440
+    python3 tools/audit/image_density.py --pages /patterns/ --viewport 1440
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ UA = {
 }
 
 DEFAULT_PAGES = [
-    "/", "/shop/", "/collections/", "/inquiry/", "/about-us/",
+    "/", "/patterns/", "/pattern-category/", "/inquiry/", "/about-us/",
     "/manufacturing-process/", "/project-gallery/", "/blog/",
     "/laser-cut-geometric-metal-screens/", "/glass-hybrid-screens/",
     "/perforated-panels/", "/expanded-metal-panels/",

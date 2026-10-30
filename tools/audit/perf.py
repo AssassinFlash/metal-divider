@@ -27,7 +27,7 @@ unavailable below ~578px so this runs at the window's own width and records it.
 
 Usage:
     python3 tools/audit/perf.py --base https://metal-divider.com
-    python3 tools/audit/perf.py --pages / /shop/ --json /tmp/perf.json
+    python3 tools/audit/perf.py --pages / /patterns/ --json /tmp/perf.json
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ OPENCLI = "opencli"
 # heaviest pages (the custom-screens library and a family page with a gallery).
 DEFAULT_PAGES = [
     "/",
-    "/shop/",
+    "/patterns/",
     "/inquiry/",
     "/faqs/",
     "/about-us/",

@@ -56,8 +56,8 @@ UA = (
 
 PAGES: list[tuple[str, str]] = [
     ("home", "/"),
-    ("collections", "/collections/"),
-    ("shop", "/shop/"),
+    ("pattern-category", "/pattern-category/"),
+    ("patterns", "/patterns/"),
     ("inquiry", "/inquiry/"),
     ("privacy", "/privacy/"),
     ("faqs", "/faqs/"),
@@ -74,7 +74,7 @@ PAGES: list[tuple[str, str]] = [
     ("family-perforated", "/perforated-panels/"),
     ("family-expanded", "/expanded-metal-panels/"),
     ("custom", "/custom-metal-divider-screens/"),
-    ("series", "/collections/pattern-abstract/"),
+    ("series", "/pattern-category/pattern-abstract/"),
     ("pdp", "/pattern/agave-architectural-metal-screen-pattern/"),
 ]
 

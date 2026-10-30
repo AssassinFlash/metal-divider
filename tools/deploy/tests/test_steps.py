@@ -295,7 +295,7 @@ def test_verify_before_the_import_checks_the_machinery_and_says_so(
     """A machinery deploy (before the import) must be able to verify and archive."""
     site = _site(
         tmp_path,
-        http_answers={"/": (200, "home"), "/collections/": (500, "")},
+        http_answers={"/": (200, "home"), "/patterns/": (500, "")},
         eval_answers={"products": ""},
     )
 
@@ -303,7 +303,7 @@ def test_verify_before_the_import_checks_the_machinery_and_says_so(
 
     assert result.notes == []
     assert any("content not imported yet" in action for action in result.actions)
-    assert not any("GET /collections/" in action for action in result.actions), (
+    assert not any("GET /patterns/" in action for action in result.actions), (
         "an entry point its content does not exist for yet is not fetched"
     )
 
@@ -313,7 +313,7 @@ def test_verify_after_the_import_checks_every_entry_point(tmp_path: Path) -> Non
         tmp_path,
         http_answers={
             path: (200, "page")
-            for path in ("/", "/collections/", "/inquiry/", "/blog/")
+            for path in ("/", "/patterns/", "/pattern-category/", "/inquiry/", "/blog/")
         }
         | {"/pattern/a-slug/": (500, "")},
         eval_answers={"products": "a-slug"},
@@ -332,7 +332,7 @@ def test_verify_checks_the_first_pattern_page_when_content_exists(
         tmp_path,
         http_answers={
             path: (200, "page")
-            for path in ("/", "/collections/", "/inquiry/", "/blog/")
+            for path in ("/", "/patterns/", "/pattern-category/", "/inquiry/", "/blog/")
         }
         | {f"/pattern/{slug}/": (200, f"the {slug}")},
         eval_answers={"products": slug},
@@ -349,7 +349,7 @@ def test_verify_flags_a_pattern_page_that_lost_its_slug(tmp_path: Path) -> None:
         tmp_path,
         http_answers={
             path: (200, "page")
-            for path in ("/", "/collections/", "/inquiry/", "/blog/")
+            for path in ("/", "/patterns/", "/pattern-category/", "/inquiry/", "/blog/")
         }
         | {"/pattern/some-slug/": (200, "not it")},
         eval_answers={"products": "some-slug"},

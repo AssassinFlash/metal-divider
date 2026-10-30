@@ -1004,8 +1004,8 @@ final class Catalog {
 	 * The address the archive's two tools submit to: this face's page one.
 	 *
 	 * Both forms carried `action=""`, which a browser resolves to the address
-	 * it is on — page 2 included. Submitting a search from `/shop/page/2/`
-	 * therefore asked for `/shop/page/2/?pattern_search=…`, and a search that
+	 * it is on — page 2 included. Submitting a search from `/patterns/page/2/`
+	 * therefore asked for `/patterns/page/2/?pattern_search=…`, and a search that
 	 * matched one pattern has no page 2: WordPress resolves the page number
 	 * against the narrowed result set and the visitor gets a 404 instead of
 	 * the pattern they searched for. The same held on every series archive

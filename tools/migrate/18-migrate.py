@@ -16,7 +16,7 @@ research/spec-data-model):
              word never reaches the PDP's h1), one series term, empty price
              (native unpurchasable), ACF groups A/B/C, SEOPress
              title/description; plus the Woo settings
-             (product base /pattern/, category base /collections/, no
+             (product base /pattern/, category base /pattern-category/, no
              checkout surface)
   media      the 1063 pattern images of the media-final sidecars: one
              attachment per source (the top tier), the other tiers as
@@ -548,7 +548,11 @@ def build_products_plan(export: dict[str, Any]) -> dict[str, Any]:
         # at zero writes (spec 08 F5 + owner ruling revision 5: /pattern/).
         "settings": {
             "product_base": "/pattern/",
-            "category_base": "collections",
+            # The series base. `/collections/` was Shopify's word, kept while
+            # the templates still spoke it; the owner replaced it on
+            # 2026-10-30 (GOAL.md 深夜 2) and every template, guard and deploy
+            # path now names a series as /pattern-category/<slug>/.
+            "category_base": "pattern-category",
             "remove_page_slugs": ["cart", "checkout", "my-account"],
         },
     }
@@ -782,6 +786,29 @@ def canonical_page_url(handle: str) -> str:
     return f"/{handle}/"
 
 
+# The two Shopify URL words the owner retired (GOAL.md, 2026-10-30 深夜 2):
+# the catalogue is /patterns/ and a series is /pattern-category/<slug>/. The
+# redirect map and the retired table were written while the site still spoke
+# Shopify's words, so their targets name the old paths — and a plan that
+# imported them literally would send a visitor through the legacy 301 layer
+# for a second hop (the no-chain rule this plan exists for).
+SHOPIFY_WORD_TARGETS = (
+    ("/collections/", "/pattern-category/"),
+    ("/collections", "/pattern-category"),
+    ("/shop/", "/patterns/"),
+    ("/shop", "/patterns"),
+)
+
+
+def site_url(target: str) -> str:
+    """A destination with the site's own URL words: /shop/ answers as
+    /patterns/, /collections/<slug> as /pattern-category/<slug>."""
+    for old, new in SHOPIFY_WORD_TARGETS:
+        if target == old or target.startswith(old if old.endswith("/") else old + "/"):
+            return new + target[len(old) :]
+    return target
+
+
 def resolve_page_move(target: str, content_pages: set[str]) -> str | None:
     """The canonical URL a /pages/<slug> target now lives at, or None when
     the target is not a page that moved. One hop only: the caller uses this
@@ -843,14 +870,18 @@ def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
         elif target.startswith("/collections/"):
             name = target[len("/collections/") :]
             # Deleted test collections (404 on the old site, verified
-            # 2026-10-24): the series hub absorbs their equity, the same
-            # destination the empty-gradient decision used.
+            # 2026-10-24): the catalogue absorbs their equity, the same
+            # destination the empty-gradient decision used. The destination is
+            # the site's own catalogue path — `/patterns/`, not the storefront
+            # word `/shop/` (owner ruling 2026-10-30, GOAL.md 深夜 2).
             entries[source] = {
                 "source": source,
-                "target": "/shop/" if name not in series and name != "all" else target,
-                "basis": "old-site redirect; deleted collection target -> /shop/"
+                "target": "/patterns/"
+                if name not in series and name != "all"
+                else site_url(target),
+                "basis": "old-site redirect; deleted collection target -> /patterns/"
                 if name not in series
-                else "old-site redirect, target kept",
+                else "old-site redirect, target kept (site URL words)",
             }
         elif target == "/pages/about":
             # The old site pointed /pages/about-us at /pages/about, which
@@ -918,9 +949,13 @@ def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
             # A redirect map row whose target is itself a moved URL resolves
             # through that move: /pages/<slug> is no longer where the page
             # lives, so the final target is the root URL and importing the
-            # map's literal value would land on a second hop.
+            # map's literal value would land on a second hop. The same
+            # resolution applies to the two Shopify URL words: a kept
+            # /collections/<series> target answers as
+            # /pattern-category/<series> here, and landing on the old path
+            # would buy the visitor the legacy 301 hop for nothing.
             resolved = resolve_page_move(target, content_pages) or target
-            if entries[source]["target"] not in (target, resolved):
+            if entries[source]["target"] not in (target, resolved, site_url(resolved)):
                 raise MigrationError(
                     f"{source}: redirect map says {target}, resolution says "
                     f"{entries[source]['target']}"
@@ -929,8 +964,8 @@ def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
         if source == "/collections/all":
             entries[source] = {
                 "source": source,
-                "target": target,
-                "basis": "redirect map: collection index -> Woo shop archive",
+                "target": site_url(target),
+                "basis": "redirect map: collection index -> the catalogue",
             }
         elif source == "/policies/privacy-policy":
             entries[source] = {
@@ -964,9 +999,11 @@ def build_redirects_plan(export: dict[str, Any]) -> dict[str, Any]:
         "entries": [entries[key] for key in sorted(entries)],
         "held": held,
         "note": (
-            "/collections/pattern-gradient keeps its live path: the gradient "
-            "series exists again (issue #25), the spec 08 D8 redirect is "
-            "cancelled"
+            "/collections/pattern-gradient keeps its live series: the gradient "
+            "series exists again (issue #25), so no 301 takes its visitors "
+            "away. Its own address answers as /pattern-category/pattern-gradient/"
+            " (owner ruling 2026-10-30); the legacy /collections/ spelling is "
+            "the 301 layer's business (mu-plugins/md-legacy-urls.php)"
         ),
     }
 

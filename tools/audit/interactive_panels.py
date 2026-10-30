@@ -38,8 +38,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # tabs) rather than only links.
 PAGES: list[tuple[str, str]] = [
     ("home", "/"),
-    ("shop", "/shop/"),
-    ("series", "/collections/pattern-abstract/"),
+    ("patterns", "/patterns/"),
+    ("series", "/pattern-category/pattern-abstract/"),
     ("pdp", "/pattern/agave-architectural-metal-screen-pattern/"),
     ("faqs", "/faqs/"),
     ("inquiry", "/inquiry/"),

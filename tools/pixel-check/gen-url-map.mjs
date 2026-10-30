@@ -12,9 +12,9 @@
  * The mapping rules are the ledger rulings of spec 08 (branch
  * research/spec-content-boundary), not data-derived:
  *   - products/<handle>  -> /pattern/<handle>      (L2; URL base /pattern/, R2)
- *   - collections/<h>    -> /collections/<h>       (L3; R3)
- *   - collections/index  -> /collections/          (L4 hub)
- *   - collections/all    -> /shop/                 (L18; R4)
+ *   - collections/<h>    -> /pattern-category/<h>  (L3; R3)
+ *   - collections/index  -> /pattern-category/     (L4 hub)
+ *   - collections/all    -> /patterns/             (L18; R4)
  *   - pages/<h>          -> /pages/<h>             (L5-L17; R5)
  *   - retired: contact (X1), custom-metal-divider-screens-thank-you (X2),
  *     metal-divider old landing (X3), the 8 Consentmo compliance pages (X4,
@@ -141,12 +141,12 @@ for (const t of manifest.targets) {
     const retired = RETIRED_COLLECTIONS[t.slug];
     row = retired
       ? { type: t.type, slug: t.slug, status: 'retired', ledger: retired.ledger, reason: retired.reason }
-      : { type: t.type, slug: t.slug, status: 'active', path: `/collections/${t.slug}`, ledger: 'L3' };
+      : { type: t.type, slug: t.slug, status: 'active', path: `/pattern-category/${t.slug}`, ledger: 'L3' };
   } else if (t.type === 'collections-index') {
     row =
       t.slug === 'index'
-        ? { type: t.type, slug: t.slug, status: 'active', path: '/collections/', ledger: 'L4' }
-        : { type: t.type, slug: t.slug, status: 'active', path: '/shop/', ledger: 'L18 (R4)' };
+        ? { type: t.type, slug: t.slug, status: 'active', path: '/pattern-category/', ledger: 'L4' }
+        : { type: t.type, slug: t.slug, status: 'active', path: '/patterns/', ledger: 'L18 (R4)' };
   } else if (t.type === 'pages') {
     if (!pages.has(t.slug)) fail(`${key}: not in shopify-public pages.json`);
     const retired = RETIRED_PAGES[t.slug];
@@ -203,7 +203,7 @@ const out = {
       products: sha256(path.join(dataDir, 'products.json')),
     },
   },
-  rules: 'spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3), /collections/all -> /shop/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7; collections/pattern-gradient retired from this map only (issue #25 cancelled D8 — the series is live with no 301 — and the old empty collection has no comparable baseline)',
+  rules: 'spec 08 (branch research/spec-content-boundary): /pattern/ base for PDPs (R2/L2), /collections/<h> kept (R3/L3, now served at /pattern-category/<h> by the owner 2026-10-30 URL ruling), /collections/all -> /patterns/ (R4/L18), /pages/<h> kept (R5), retirements X1-X4/D7; collections/pattern-gradient retired from this map only (issue #25 cancelled D8 — the series is live with no 301 — and the old empty collection has no comparable baseline)',
   summary: tally,
   entries,
 };

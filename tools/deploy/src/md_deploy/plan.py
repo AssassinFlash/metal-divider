@@ -116,10 +116,13 @@ WINDPRESS_ANCHORS = ("md-site", "windpress-anchors", "--format=json")
 # archives answer 404 by construction and a machinery deploy must still be
 # able to verify and archive). The pattern page is the first published
 # product's, read at verify time. /pattern/ is the URL base the owner ruled
-# (AGENTS.md §2, 晨间修订 5).
+# (AGENTS.md §2, 晨间修订 5); /patterns/ and /pattern-category/ are the two
+# Shopify words the owner replaced on 2026-10-30 (GOAL.md 深夜 2), so a deploy
+# that still probes /collections/ now checks a 301 instead of the page.
 HOME_PATH = "/"
 CONTENT_PATHS = (
-    "/collections/",
+    "/patterns/",
+    "/pattern-category/",
     "/inquiry/",
     "/blog/",
 )

@@ -37,8 +37,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 # One page per type the coverage matrix names.
 PAGES = [
     ("home", "/"),
-    ("collections", "/collections/"),
-    ("shop", "/shop/"),
+    ("pattern-category", "/pattern-category/"),
+    ("patterns", "/patterns/"),
     ("inquiry", "/inquiry/"),
     ("thank-you", "/inquiry/thank-you/"),
     ("privacy", "/privacy/"),
@@ -62,15 +62,15 @@ PAGES = [
     # this list). They are the same template rendering different term data, so
     # they can break independently — a series with no thumbnail or no products
     # renders an empty grid that no page-level sweep would see.
-    ("series-abstract", "/collections/pattern-abstract/"),
-    ("series-asian", "/collections/pattern-asian/"),
-    ("series-geometric", "/collections/pattern-geometric/"),
-    ("series-gradient", "/collections/pattern-gradient/"),
-    ("series-landscape", "/collections/pattern-landscape/"),
-    ("series-moroccan-arabic", "/collections/pattern-moroccan-arabic/"),
-    ("series-organic", "/collections/pattern-organic/"),
-    ("series-perforated", "/collections/pattern-perforated/"),
-    ("series-vintage-retro", "/collections/pattern-vintage-retro/"),
+    ("series-abstract", "/pattern-category/pattern-abstract/"),
+    ("series-asian", "/pattern-category/pattern-asian/"),
+    ("series-geometric", "/pattern-category/pattern-geometric/"),
+    ("series-gradient", "/pattern-category/pattern-gradient/"),
+    ("series-landscape", "/pattern-category/pattern-landscape/"),
+    ("series-moroccan-arabic", "/pattern-category/pattern-moroccan-arabic/"),
+    ("series-organic", "/pattern-category/pattern-organic/"),
+    ("series-perforated", "/pattern-category/pattern-perforated/"),
+    ("series-vintage-retro", "/pattern-category/pattern-vintage-retro/"),
     ("pdp-agave", "/pattern/agave-architectural-metal-screen-pattern/"),
     ("pdp-alhambra", "/pattern/alhambra-architectural-metal-screen-pattern/"),
     ("pdp-white-sands", "/pattern/white-sands-architectural-metal-screen-pattern/"),

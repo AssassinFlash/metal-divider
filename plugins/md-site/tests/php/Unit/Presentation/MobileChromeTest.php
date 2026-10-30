@@ -45,7 +45,10 @@ final class MobileChromeTest extends TestCase {
 		// replication, so Gallery returns to the main nav and the last item is
 		// Contact again, matching metalpartition.com's header.
 		$this->assertStringContainsString( '/project-gallery/', $header, 'gallery is back in the main nav, replicating the old site' );
-		$this->assertStringContainsString( "href='/collections/'", $header );
+		// The owner ruled on 2026-10-30 that Shopify's URL words are not the
+		// site's (GOAL.md, 深夜 2): the series index is /pattern-category/,
+		// never /collections/.
+		$this->assertStringContainsString( "href='/pattern-category/'", $header );
 		$this->assertStringContainsString( '>Contact<', $header );
 	}
 
@@ -87,7 +90,7 @@ final class MobileChromeTest extends TestCase {
 		$header = $this->template( 'partials/header.html' );
 		$css    = $this->volume( 'chrome.css' );
 
-		$this->assertStringContainsString( "<form action='/shop/' method='get' role='search' class='search'>", $header );
+		$this->assertStringContainsString( "<form action='/patterns/' method='get' role='search' class='search'>", $header );
 		$this->assertStringContainsString( "type='button' class='xo-predictive-search__clear'", $header );
 		$this->assertStringContainsString( "aria-label='Clear search'", $header );
 		$this->assertStringContainsString( "data-predictive-search-reset='header'", $header );

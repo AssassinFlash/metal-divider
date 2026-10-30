@@ -219,10 +219,10 @@ def test_redirects_consumes_every_path_changed_row() -> None:
     ):
         assert entries[f"pages/{slug}"] == "/privacy/"
     # The old-site redirects resolved: deleted test collections land on the
-    # series hub, and a page target resolves through the page move to the
-    # root URL — no chain, and no /pages/ target survives.
-    assert entries["collections/pattern-1"] == "/shop/"
-    assert entries["collections/frontpage"] == "/shop/"
+    # catalogue, and a page target resolves through the page move to the root
+    # URL — no chain, and no /pages/ target survives.
+    assert entries["collections/pattern-1"] == "/patterns/"
+    assert entries["collections/frontpage"] == "/patterns/"
     assert entries["pages/railing-fence-infill-panels"] == "/glass-hybrid-screens/"
     assert entries["pages/custom-metal-divider"] == "/custom-metal-divider-screens/"
     assert (
@@ -230,7 +230,7 @@ def test_redirects_consumes_every_path_changed_row() -> None:
         == "/custom-metal-divider-screens/"
     )
     # The two mapped rows the retirement table does not cover.
-    assert entries["collections/all"] == "/shop/"
+    assert entries["collections/all"] == "/patterns/"
     assert entries["policies/privacy-policy"] == "/privacy/"
     # The PDP base rule.
     assert plan["rule"] == {

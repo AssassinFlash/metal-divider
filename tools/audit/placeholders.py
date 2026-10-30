@@ -30,8 +30,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 PAGES: list[tuple[str, str]] = [
     ("home", "/"),
-    ("collections", "/collections/"),
-    ("shop", "/shop/"),
+    ("pattern-category", "/pattern-category/"),
+    ("patterns", "/patterns/"),
     ("inquiry", "/inquiry/"),
     ("faqs", "/faqs/"),
     ("about", "/about-us/"),
@@ -47,7 +47,7 @@ PAGES: list[tuple[str, str]] = [
     ("family-perforated", "/perforated-panels/"),
     ("family-expanded", "/expanded-metal-panels/"),
     ("custom", "/custom-metal-divider-screens/"),
-    ("series", "/collections/pattern-abstract/"),
+    ("series", "/pattern-category/pattern-abstract/"),
     ("pdp", "/pattern/agave-architectural-metal-screen-pattern/"),
 ]
 

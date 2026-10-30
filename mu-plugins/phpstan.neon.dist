@@ -18,6 +18,7 @@ parameters:
 		- md-staging-guards.php
 		- md-wecom-notify.php
 		- md-kb-endpoint.php
+		- md-legacy-urls.php
 		- tests/php
 	excludePaths:
 		# The bootstrap defines WordPress's own hook functions for the tests;

@@ -32,7 +32,7 @@ OPENCLI = "opencli"
 # The paths the goal's coverage matrix names, minus the 146 PDPs (one template;
 # two representatives is what the matrix asks for).
 DEFAULT_PAGES = [
-    "/", "/collections/", "/shop/", "/faqs/", "/inquiry/", "/privacy/",
+    "/", "/pattern-category/", "/patterns/", "/faqs/", "/inquiry/", "/privacy/",
     "/about-us/", "/manufacturing-process/", "/project-gallery/", "/blog/",
     "/laser-cut-geometric-metal-screens/", "/glass-hybrid-screens/",
     "/outdoor-privacy-landscape-screens/", "/chinese-style-artistic-screens/",
@@ -40,7 +40,7 @@ DEFAULT_PAGES = [
     "/expanded-metal-panels/", "/custom-metal-divider-screens/",
     "/pattern/agave-architectural-metal-screen-pattern/",
     "/pattern/apiary-architectural-metal-screen-pattern/",
-    "/collections/pattern-abstract/", "/collections/pattern-geometric/",
+    "/pattern-category/pattern-abstract/", "/pattern-category/pattern-geometric/",
 ]
 
 # The narrowest window Chrome will create on this Mac. Measured: asking for

@@ -10,7 +10,7 @@ declare( strict_types = 1 );
 namespace MetalDivider\Site\Seo;
 
 /**
- * Drops the archive link from the product sitemap only, so `/shop/` is listed once.
+ * Drops the archive link from the product sitemap only, so `/patterns/` is listed once.
  *
  * The shop page is a real `page` (ID 6, `publish`) that WooCommerce also adopts
  * as its shop page: `woocommerce_shop_page_id` is 6. SEOPress builds the
@@ -20,6 +20,8 @@ namespace MetalDivider\Site\Seo;
  * lists it too, as a page. Measured on production 2026-10-29:
  * `product-sitemap1.xml` held **147** entries for **146** patterns — 146
  * `/pattern/…` plus `/shop/` — and `/shop/` was in `page-sitemap1.xml` as well.
+ * (The page is now `/patterns/`; that measurement predates the owner's
+ * 2026-10-30 URL ruling and the two entries it counted are the same page.)
  *
  * A URL in two sitemaps is the "Duplicate, Google chose different canonical"
  * shape: two crawl entries for one page, with no way for either to know which

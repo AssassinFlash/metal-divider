@@ -280,7 +280,7 @@ final class Config {
 	public function page_metas( string $home ): array {
 		unset( $home );
 		return array(
-			'collections'                       => array(
+			'pattern-category'                  => array(
 				'_seopress_titles_desc' => 'Decorative metal screen pattern series. Choose a family by privacy, airflow, light, and project use, then send a reference.',
 			),
 			'inquiry'                           => array(
@@ -607,7 +607,7 @@ final class Config {
 	 * it matches) => 301 target.
 	 *
 	 * `pages` is the shell prefix (spec 22 F1 via #4). It is the only one:
-	 * `collections/pattern-gradient` is a live series, not a retired one —
+	 * `pattern-category/pattern-gradient` is a live series, not a retired one —
 	 * issue #25 restored it with its three real patterns (La Pente, Nara,
 	 * Skyfall; data/shopify-admin-export/products.json, and
 	 * build_terms_plan() expects one member in the fixtures), so a 301 there

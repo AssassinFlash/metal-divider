@@ -234,7 +234,7 @@ FIXTURE = """() => {
 
 def self_check(page, base: str) -> int:
     """Prove the rule separates legible text from invisible text."""
-    page.goto(f"{base}/collections/", wait_until="load", timeout=60000)
+    page.goto(f"{base}/pattern-category/", wait_until="load", timeout=60000)
     page.evaluate(FIXTURE)
     data = json.loads(page.evaluate(PROBE))
     texts = " ".join(f["text"] for f in data["findings"])

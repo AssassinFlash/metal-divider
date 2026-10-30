@@ -91,7 +91,7 @@ def test_products_maps_the_spec06_table() -> None:
     assert agave["seo"]["title"] == "Agave Metal Screen Pattern"
     # The Woo settings the stage writes (revision 5's /pattern/ base).
     assert plan["settings"]["product_base"] == "/pattern/"
-    assert plan["settings"]["category_base"] == "collections"
+    assert plan["settings"]["category_base"] == "pattern-category"
 
 
 def test_products_empty_open_area_and_custom_density() -> None:
