@@ -1385,3 +1385,4 @@ PreparedSQL 批量整改)——Batch 3 工具硬化;④staging 手工 state flip
 
 **批次三上线读回**:旧站暗图 triangle-gate/leaf-skeleton 已上传媒体库(附件 1841-1845),Facade 背景(路线 01)生产实测已服务 `ext-perforated-triangle-gate-screens-702w.webp`(`cd959b4` 归档);三档几何守卫同步(15→12)。剩余待办:其余路线背景图是否同批换旧站图、整页垂直节奏对照、PATTERN/PROCESS 顺序已对齐(批次二完成)。
 **批次四上线读回**:六条路线背景与旧站映射逐一核对——5 条本已同图(kirra/hotel-lobby-gold/fluted-gold 与旧站同源),唯一差异 Gate Inserts 已换 `leaf-skeleton-front-gate`(生产读回 ✓,`53f2655` 归档)。过程教训:批次三的 verify/archive 被超时打断留下标记,下一批被拒——`resume-deploy` 补完后重deploy 即可,标记是设计好的防堆叠机制不是故障。
+**批次五上线读回**:垂直节奏收紧 −706px 上线(`7b3a9f0` 归档),WindPress 重编译(631,716B 含新选择器)→ purge → 生产实测 Facade 暗图保持 ✓、Ready-to-Start 1681→1310(目标 1197,余差=10字段vs7字段+50px触控标准,已在批次五说明)。剩余 2427px 差额=1.6倍间距步长,属业主间距尺度决策。
