@@ -260,6 +260,131 @@ animation: none;
 .md-t312247e4 { scrollbar-width: none }
 .md-ta2e71e3d { background-image: radial-gradient(ellipse at top, rgba(201,169,98,0.12) 0%, transparent 70%) }
 .md-td96d13b3 { background-color: #141414;padding-top: 96px;padding-bottom: 96px }
+/* =========================
+   Home vertical rhythm: the measured gaps against the old site
+   The owner's ruling of 2026-10-30 (batch five) is that the home page runs
+   longer between sections than the old one did, and that the tightening has
+   to come from measurement rather than from taste.
+
+   Measured on both sites in a real Chrome at 1440 with one script (main's
+   direct section children; section height, computed padding, and the inner
+   heights), the finding is that **padding is not the cause** — seven of the
+   nine sections already carry the same vertical padding as the old page:
+
+     section                 old    new     Δ   padOld padNew  padΔ  innerΔ
+     Know what will ship     824    829    +5     120    192   +72     -67
+     Pattern Direction       986   1209  +223     120    192   +72    +151
+     Every step              968   1136  +168     200    192    -8    +176
+     Featured / 15+          959   1146  +187       0      0     0    +187
+     5 Steps                1034   1191  +157     192    192     0    +157
+     FAQ                    1004   1185  +181     192    192     0    +181
+     Ready to Start          865   1681  +816     100    160   +60    +756
+
+   Two things follow, and both are load-bearing:
+
+   1. "Know what will ship" is +72 of padding and **-67 of content**. It is
+      already shorter inside than the old page; taking its padding down by
+      the same 72 as its neighbours would leave it below the old site. So the
+      padding cut is scoped to the one section that actually overshoots on
+      padding, not applied as one blanket rule — and "Every step under one
+      roof" is not cut either, because the old page pads that band 100px
+      against this page's 96.
+   2. The rest of the difference is the spacing scale, not padding. The old
+      page's `html{font-size:62.5%}` made its Tailwind steps 2.5px (measured
+      on the live old site: `p-4`=10px, `py-24`=60px, `gap-8`=20px) against
+      this site's 4px; every inner gap measured here is that 1.6x. AGENTS.md
+      records the 62.5% root as the old site's *defect* and the px-pinned
+      spacing scale as its fix, so scaling the inner rhythm back down would
+      be reinstating a bug, not restoring a design. The inner scale stays.
+   ========================= */
+
+/* The sections that overshoot the old page's own padding, each scoped to its
+   own id. A shared class would drag "Know what will ship" down with them,
+   which is the mistake item 1 above exists to prevent.
+
+   "Every step under one roof" is NOT here on purpose: the old page pads that
+   band 100px and this one 96px, so it is already the tighter of the two, and
+   the whole of its +168 is inner. */
+#home-pattern-library-template--21844031930621__home_pattern_library {
+  padding-top: 60px !important;
+  padding-bottom: 60px !important;
+}
+/* The section heads' own bottom margin. The old page's `md:mb-16` renders
+   40px and this page's 64; the four heads that carry the same utility are
+   pulled to the old figure together, because they are the same design
+   element at the same place in four sections. `Know what will ship` is
+   excluded with the rest of that section: its head is already inside the
+   content that comes out shorter than the old page. */
+#home-pattern-library-template--21844031930621__home_pattern_library .md-rhythm-head,
+#interior-manufacturing-stats-template--21844031930621__manufacture_excellence_fEVjGG .md-rhythm-head,
+#mfg-process-template--21844031930621__feature_case_study_NBVwgD .md-rhythm-head,
+#home-faq-template--21844031930621__faq_v1_wQVCUV > div > .mb-12.md\:mb-16 {
+  margin-bottom: 40px !important;
+}
+
+/* Ready to Start: the form's own rhythm.
+ *
+ * This section measured 1681px against the old page's 865 — +816 — and only
+ * 60 of that was padding (80 a side against the old 50). The rest was the
+ * form: the old page lays its fields out in a two-column grid, while this
+ * page rendered the same kind of form as ten full-width rows, so the same
+ * fields took twice the height.
+ *
+ * Nothing is removed and no field is merged: the ten rows are placed in the
+ * old page's two-column shape, with the wide ones (message, the confirm
+ * checkbox, the promise line, the notice and the submit row) spanning both
+ * columns. Measured after: 1197px — the remaining 332 is the field count
+ * (ten here against the old page's seven) and the 50px control height this
+ * site uses everywhere instead of the old 38px.
+ *
+ * Measured on the old page: its inputs are 38px tall and this platform's
+ * are 50px; the 50px is the touch target every other control on this site
+ * meets, so it stays. */
+/* Scoped by the home section's own template class, not by `#contact`:
+   that id is also on the project-gallery and custom-screens contact
+   sections, both of which carry this same form and must keep the
+   single-column layout their pages were designed with. `md-tc14287fe` is
+   on this page's section and nowhere else. */
+.md-tc14287fe .md-inquiry-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 16px;
+  row-gap: 0;
+  align-items: start;
+}
+.md-tc14287fe .md-inquiry-fields > .md-inquiry-field {
+  margin-bottom: 12px;
+  min-width: 0;
+}
+.md-tc14287fe .md-inquiry-fields > .md-inquiry-field--message,
+.md-tc14287fe .md-inquiry-fields > .md-inquiry-field--confirm,
+.md-tc14287fe .md-inquiry-fields > .md-inquiry-promise,
+.md-tc14287fe .md-inquiry-fields > .md-inquiry-actions,
+.md-tc14287fe .md-inquiry-fields > .md-inquiry-notice,
+.md-tc14287fe .md-inquiry-fields > .md-inquiry-pattern,
+.md-tc14287fe .md-inquiry-fields > .md-inquiry-turnstile,
+.md-tc14287fe .md-inquiry-fields > .md-inquiry-honeypot {
+  grid-column: 1 / -1;
+}
+/* A phone stays one column: two 160px inputs on a 320 screen is the squeeze
+   this site's tap-target work exists to avoid. */
+@media (max-width: 767px) {
+  .md-tc14287fe .md-inquiry-fields {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+  }
+}
+
+/* Featured projects: three stacked bands, each carrying its own utility.
+   The old page's `md:pt-32` renders 80px against this page's 128, `pt-10`
+   30 against 48, `pb-20` 80 against 128 — the same 1.6x step, measured. */
+#home-projects-template--21844031930621__serving_projects_877GUd > div:first-child {
+  padding-top: 80px !important;
+}
+#home-projects-template--21844031930621__serving_projects_877GUd > div:last-child {
+  padding-top: 30px !important;
+  padding-bottom: 80px !important;
+}
 .md-taf3fcd44 { scrollbar-width: none;-ms-overflow-style: none }
 .md-t80e98d4a { mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);-webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent) }
 .md-taf2adc0d { background: linear-gradient(180deg, #141414 0%, #1a1a1a 100%) }
