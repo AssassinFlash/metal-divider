@@ -67,6 +67,8 @@
 
 **修法**:限定为顶栏菜单直接子项 `ul.xo-menu-horizontal-v1 > .item:first-child > .link`。复测点:三处子菜单(Stainless/Patterns/Resources)首行 padding 应为 `0 15px`,顶栏 "Screens" 保持左对齐。
 
+**部署事故与教训(本轮)**:首次部署被我的旁路 SSH 检查打断——deploy 持有 ControlMaster 复用连接期间,另开 ssh 会话触发 `mux_client_request_session: Broken pipe`,deploy 卡 9 分钟后死在 `wp core version` 探测,服务器无新批次。**部署运行期间禁止任何并行 SSH**(opencli/浏览器读回不受影响,SSH 独占)。重跑后正常。
+
 ### 2026-10-30 竞品基准映射落地(业主裁定:事实=竞品取平均,人家不说我们不说)
 
 **裁定方法**:四路并行 Apify 调研 8 家头部竞品(parasoleil / mozdesigns / cambridgearchitectural / gkdmetalfabrics / amico / hendrick / bokmodern / bankerwire),原始报告 `.scratch/competitor-2026-10-30/`。映射与执行:

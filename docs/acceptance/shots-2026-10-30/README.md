@@ -11,3 +11,4 @@
 | `04-inquiry-form-1440.png` | 表单被删改、大块空白 | 询盘表单全字段(含 quantity/confirm/Turnstile 槽)全页实拍 |
 | `05-shop-cards-1440.png` | 卡片列表空卡槽(同类) | 目录卡片 + 方图缩略正常 |
 | `06-home-1440.png` | 页面空白、内容缺失 | 首页完整区块实拍 |
+| `07-resources-submenu-fixed-1440.png` | 子菜单首行贴死面板缘(业主 2026-10-30 亲报) | 修复后 RESOURCES 面板实拍:两行 padding `0 15px`,顶栏 Screens 左对齐不变 |
