@@ -40,9 +40,13 @@ final class MobileChromeTest extends TestCase {
 		$this->assertStringContainsString( '.xo-header-actions > .xo-btn-quote', $css, 'the top-bar quote is the one the mobile rule hides' );
 		$this->assertStringContainsString( 'display: none', $css );
 		$this->assertStringContainsString( 'class="xo-btn-quote"', $header, 'desktop still has the quote in the actions row' );
-		$this->assertStringNotContainsString( '/project-gallery/', $header, 'gallery stays in the footer, not the main nav' );
+		// The 2026-10-30 verdict reverses the earlier IA call: the owner judged
+		// the rebuild inferior to the old site and ordered old-site-first
+		// replication, so Gallery returns to the main nav and the last item is
+		// Contact again, matching metalpartition.com's header.
+		$this->assertStringContainsString( '/project-gallery/', $header, 'gallery is back in the main nav, replicating the old site' );
 		$this->assertStringContainsString( "href='/collections/'", $header );
-		$this->assertStringContainsString( '>Inquiry<', $header );
+		$this->assertStringContainsString( '>Contact<', $header );
 	}
 
 	/**
