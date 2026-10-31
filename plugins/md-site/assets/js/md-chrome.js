@@ -317,12 +317,12 @@
     Array.prototype.forEach.call(list, fn);
   }
 
-  // The inquiry form a page renders for itself, outside the footer's quote
-  // dialog — the inquiry face is the only page that does. Null everywhere else.
+  // The inquiry form a page renders for itself, outside the footer's or page's
+  // quote dialog — the inquiry and custom-screens faces render an in-page form.
   function pageInquiryForm() {
     var app = null;
     each(document.querySelectorAll('.md-inquiry-app'), function (candidate) {
-      if (!app && !candidate.closest('#md-quote-modal')) {
+      if (!app && !candidate.closest('#md-quote-modal, #quote-modal')) {
         app = candidate;
       }
     });
@@ -350,7 +350,7 @@
     if (!pageForm) {
       return;
     }
-    each(document.querySelectorAll('#md-quote-modal .md-inquiry-app'), function (duplicate) {
+    each(document.querySelectorAll('#md-quote-modal .md-inquiry-app, #quote-modal .md-inquiry-app'), function (duplicate) {
       duplicate.parentNode.removeChild(duplicate);
     });
   }
@@ -2113,17 +2113,18 @@
   }
 
   // The family pages' case showcase: one track, two arrows, no dots. Six pages
-  // carry this section and none of them bound the arrows.
+  // carry this section and none of them bound the arrows (perforated-panels
+  // prefixes the same attributes with `data-pp-`).
   function setupShowcaseCarousels() {
-    each(document.querySelectorAll('[data-showcase-track]'), function (track) {
+    each(document.querySelectorAll('[data-showcase-track], [data-pp-showcase-track]'), function (track) {
       // The arrows are the track's siblings inside the section, and the
       // page-level selector would otherwise pair the first pair with every
       // track.
       var section = track.closest('section') || document;
       var scope = section;
       bindCarousel(track, {
-        prev: scope.querySelector('[data-showcase-direction="-1"]'),
-        next: scope.querySelector('[data-showcase-direction="1"]'),
+        prev: scope.querySelector('[data-showcase-direction="-1"], [data-pp-showcase-direction="-1"]'),
+        next: scope.querySelector('[data-showcase-direction="1"], [data-pp-showcase-direction="1"]'),
         label: track.getAttribute('aria-label') || 'Project showcase'
       });
     });
@@ -2715,9 +2716,10 @@
           }
         });
 
-        var empty = root.querySelector('[data-md-faq-empty]');
+        var empty = root.querySelector('[data-md-faq-empty], [id$="-faq-empty"]');
         if (empty) {
           empty.hidden = shown > 0;
+          empty.classList.toggle('hidden', shown > 0);
         }
         return shown;
       };

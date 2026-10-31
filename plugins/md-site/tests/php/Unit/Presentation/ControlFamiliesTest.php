@@ -115,6 +115,8 @@ final class ControlFamiliesTest extends TestCase {
 		foreach ( array( 'setupOutcomesCarousel', 'setupShowcaseCarousels', 'setupProjectProofCarousels' ) as $pass ) {
 			$this->assertStringContainsString( 'bindCarousel(', $this->pass( $pass ), $pass . ' uses the shared engine' );
 		}
+		$this->assertStringContainsString( 'data-pp-showcase-track', $this->pass( 'setupShowcaseCarousels' ), 'perforated showcase track is bound alongside the other showcase tracks' );
+		$this->assertStringContainsString( 'data-pp-showcase-direction', $this->pass( 'setupShowcaseCarousels' ), 'perforated showcase arrows are bound alongside the other showcase arrows' );
 	}
 
 	/**
@@ -171,6 +173,8 @@ final class ControlFamiliesTest extends TestCase {
 		$this->assertStringContainsString( 'faq-search', $body, 'search is bound' );
 		$this->assertStringContainsString( 'group-body', $body, 'groups are bound' );
 		$this->assertStringContainsString( 'aria-expanded', $body, 'answers state their state' );
+		$this->assertStringContainsString( 'data-md-faq-empty', $html, 'the empty state is wired to setupFaqFilter' );
+		$this->assertStringContainsString( 'data-md-faq-empty', $body, 'setupFaqFilter toggles the empty state' );
 	}
 
 	/**

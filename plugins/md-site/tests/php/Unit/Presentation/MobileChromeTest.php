@@ -66,7 +66,7 @@ final class MobileChromeTest extends TestCase {
 		$this->assertStringContainsString( '[md_partial name="search-series-tile"]', $header );
 		$this->assertStringContainsString( 'id=\'md-search-hit\'', $header );
 		$this->assertStringNotContainsString( "min-height: 100dvh;\n    margin: 0;\n    padding: 80px 20px 24px;", $css );
-		$this->assertStringContainsString( 'max-height:calc(100dvh - var(--md-header-h, 76px) - 24px)', $css );
+		$this->assertStringContainsString( 'max-height:calc(100dvh - var(--md-header-h, 60px) - 24px)', $css );
 		$this->assertStringContainsString( 'background:#141414', $css );
 		$this->assertStringContainsString( '.md-quote-modal__card .md-inquiry-fields{', $css );
 		$this->assertStringContainsString( 'position: static;', $css );

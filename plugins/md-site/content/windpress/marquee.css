@@ -116,7 +116,7 @@ align-items: start;
 /* 左侧信息 */
 #patterns-template--22465876033789__patterns_marquee_hqqfqz .panel-info {
 position: sticky;
-top: calc(var(--md-header-h, 76px) + 16px);
+top: calc(var(--md-header-h, 60px) + 16px);
 }
 #patterns-template--22465876033789__patterns_marquee_hqqfqz .info-category {
 color: #d4af37;

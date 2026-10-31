@@ -54,7 +54,6 @@ final class SchemaFilters {
 		add_filter( 'seopress_schemas_auto_article_json', array( $this, 'article' ) );
 		add_filter( 'seopress_pro_breadcrumbs_crumbs', array( $this, 'crumbs' ) );
 		add_filter( 'seopress_titles_title', array( $this, 'title' ) );
-		add_filter( 'seopress_titles_title', array( $this, 'title' ) );
 		add_filter( 'seopress_pro_breadcrumbs_json_remove_home', '__return_false' );
 
 		// The catalogue is a page listing 146 patterns, and no SEOPress builder

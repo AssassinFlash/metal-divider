@@ -28,7 +28,7 @@
 #md-blog-single .md-inquiry-cta .md-inquiry-cta__primary { color: var(--md-bg-darkest); text-decoration: none; }
 #md-blog-single :is(a,button,summary):focus-visible { outline: 2px solid var(--md-gold); outline-offset: 2px; }
 #md-blog-single .reader-layout { display: grid; grid-template-columns: 180px minmax(0,1fr) 240px; gap: 32px; max-width: 1440px; margin-inline: auto; padding: 0 32px 64px; align-items: start; }
-#md-blog-single :is(.reader-left,.reader-right) { position: sticky; top: calc(var(--md-header-h, 80px) + 24px); max-height: calc(100dvh - var(--md-header-h, 80px) - 48px); overflow-y: auto; }
+#md-blog-single :is(.reader-left,.reader-right) { position: sticky; top: calc(var(--md-header-h, 60px) + 24px); max-height: calc(100dvh - var(--md-header-h, 60px) - 48px); overflow-y: auto; }
 #md-blog-single .reader-toc { border-top: 1px solid var(--journal-line); }
 #md-blog-single .reader-toc summary { min-height: 44px; padding-block: 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
 #md-blog-single .md-blog-single-map-nav { display: grid; gap: 8px; padding-block: 12px; }

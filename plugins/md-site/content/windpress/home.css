@@ -207,9 +207,9 @@ transition: max-width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s;
 @media (max-width: 767px) {
 /* Stage: offset below sticky site header; dvh preserves the FAQ area */
 #emt-stage-template--21844031930621__decorative_panels_grid_gmaCty {
-top: var(--header-height, 80px);
-height: calc(100vh - var(--header-height, 80px));
-height: calc(100dvh - var(--header-height, 80px));
+top: var(--md-header-h, 60px);
+height: calc(100vh - var(--md-header-h, 60px));
+height: calc(100dvh - var(--md-header-h, 60px));
 }
 .emt-content-slot-template--21844031930621__decorative_panels_grid_gmaCty { left: 1.5rem; right: 1.5rem; }
 .emt-content-template--21844031930621__decorative_panels_grid_gmaCty { max-width: 85%; }
@@ -626,9 +626,9 @@ display: flex;
 flex-direction: column;
 justify-content: flex-start;
 gap: 12px;
-top: var(--header-height, 73px);
-height: calc(100dvh - var(--header-height, 73px));
-height: calc(100svh - var(--header-height, 73px));
+top: var(--md-header-h, 60px);
+height: calc(100dvh - var(--md-header-h, 60px));
+height: calc(100svh - var(--md-header-h, 60px));
 padding: 8px 0 calc(12px + env(safe-area-inset-bottom));
 overflow: hidden;
 }

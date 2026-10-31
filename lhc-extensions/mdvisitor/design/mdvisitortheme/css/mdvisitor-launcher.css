@@ -80,6 +80,21 @@
 	background: #faf7ef;
 }
 
+@media ( max-width: 749px ) {
+	body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) .mdvl-launcher,
+	body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher {
+		right: 16px;
+		bottom: calc( 80px + env( safe-area-inset-bottom ) );
+	}
+}
+
+html.md-modal-open .mdvl-launcher,
+html.md-catalog-filter-open .mdvl-launcher,
+body:has(xo-modal.is-open) .mdvl-launcher {
+	visibility: hidden;
+	pointer-events: none;
+}
+
 @media ( max-width: 560px ) {
 	.mdvl-launcher {
 		right: 16px;

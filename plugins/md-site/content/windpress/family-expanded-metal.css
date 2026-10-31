@@ -322,9 +322,9 @@ transition: max-width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s;
 @media (max-width: 767px) {
 /* Stage: offset below sticky site header; dvh preserves the FAQ area */
 #emt-stage-template--22084675240189__expanded-mesh-types {
-top: var(--header-height, 80px);
-height: calc(100vh - var(--header-height, 80px));
-height: calc(100dvh - var(--header-height, 80px));
+top: var(--md-header-h, 60px);
+height: calc(100vh - var(--md-header-h, 60px));
+height: calc(100dvh - var(--md-header-h, 60px));
 }
 .emt-content-slot-template--22084675240189__expanded-mesh-types { left: 1.5rem; right: 1.5rem; }
 .emt-content-template--22084675240189__expanded-mesh-types { max-width: 85%; }
@@ -356,7 +356,7 @@ grid-template-columns: 1fr 1fr;
 gap: 80px;
 }
 .emf-content-col-template--22084675240189__expanded-material-finish { order: 1; }
-.emf-img-col-template--22084675240189__expanded-material-finish     { order: 2; position: sticky; top: calc(var(--md-header-h, 76px) + 16px); }
+.emf-img-col-template--22084675240189__expanded-material-finish     { order: 2; position: sticky; top: calc(var(--md-header-h, 60px) + 16px); }
 }
 /* ── Image stack ──
    The stack is a cropping window: every panel is inset:0 and its image is
@@ -682,9 +682,9 @@ color: rgba(255,255,255,.86);
 display: flex;
 flex-direction: column;
 gap: 12px;
-top: var(--header-height, 73px);
-height: calc(100dvh - var(--header-height, 73px));
-height: calc(100svh - var(--header-height, 73px));
+top: var(--md-header-h, 60px);
+height: calc(100dvh - var(--md-header-h, 60px));
+height: calc(100svh - var(--md-header-h, 60px));
 padding: 8px 0 calc(12px + env(safe-area-inset-bottom));
 overflow: hidden;
 }
