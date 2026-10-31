@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       MetalDivider Inquiry
- * Description:       The inquiry chain of metal-divider.com: the form, the notifications, and the outbound queue.
+ * Description:       The inquiry chain of metal-divider.com: the form, the notifications, the WhatsApp route, and the outbound queue.
  * Version:           0.2.0
  * Requires at least: 7.1
  * Requires PHP:      8.3
@@ -48,6 +48,7 @@ function boot(): void {
 			new Mail\Emails( $config ),
 			$state
 		),
+		new WhatsApp(),
 		new ThankYou(),
 		new RestGuard(),
 		new Cli( $config ),

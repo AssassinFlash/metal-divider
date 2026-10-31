@@ -1179,7 +1179,7 @@ final class KbEndpointTest extends TestCase {
 	 */
 	public function test_the_fallback_message_is_the_approved_copy(): void {
 		self::assertSame(
-			"Sorry — I can't look that up right now. Please try again in a moment, or email our team at info@metal-divider.com.",
+			"Sorry — I can't look that up right now. Please try again in a moment, or reach our team on WhatsApp at +852 6473 1687.",
 			md_kb_endpoint_fallback_message()
 		);
 	}
@@ -1410,10 +1410,10 @@ final class KbEndpointTest extends TestCase {
 					'type'      => 'knowledge',
 					'source_id' => 4,
 					'title'     => 'Contact',
-					'content'   => 'Email info@metal-divider.com.',
+					'content'   => 'WhatsApp +852 6473 1687.',
 				),
 			),
-			'{"choices":[{"message":{"role":"assistant","content":"{\"answer\":\"Email us at info@metal-divider.com.\",\"handoff\":false,\"reason\":\"none\"}"}}]}'
+			'{"choices":[{"message":{"role":"assistant","content":"{\"answer\":\"Reach us on WhatsApp.\",\"handoff\":false,\"reason\":\"none\"}"}}]}'
 		);
 		$this->plant_pattern();
 
@@ -1677,7 +1677,7 @@ final class KbEndpointTest extends TestCase {
 					'type'      => 'knowledge',
 					'source_id' => 1,
 					'title'     => 'Contact details',
-					'content'   => 'Email info@metal-divider.com.',
+					'content'   => 'WhatsApp +852 6473 1687.',
 				),
 			),
 			$this->model_reply( 'I can help with that.', false, 'none' )
@@ -1985,7 +1985,7 @@ final class KbEndpointTest extends TestCase {
 					'type'      => 'knowledge',
 					'source_id' => 4,
 					'title'     => 'Contact',
-					'content'   => 'Email info@metal-divider.com.',
+					'content'   => 'WhatsApp +852 6473 1687.',
 				),
 			),
 			$this->model_reply( 'Agave is a botanical screen.', false, 'none' )
@@ -2034,7 +2034,7 @@ final class KbEndpointTest extends TestCase {
 					'type'      => 'knowledge',
 					'source_id' => 4,
 					'title'     => 'Contact',
-					'content'   => 'Email info@metal-divider.com.',
+					'content'   => 'WhatsApp +852 6473 1687.',
 				),
 			),
 			$this->model_reply( 'Agave is a botanical screen.', false, 'none' )
@@ -2252,10 +2252,10 @@ final class KbEndpointTest extends TestCase {
 					'type'      => 'knowledge',
 					'source_id' => 4,
 					'title'     => 'Contact',
-					'content'   => 'Email info@metal-divider.com.',
+					'content'   => 'WhatsApp +852 6473 1687.',
 				),
 			),
-			$this->model_reply( 'Email us at info@metal-divider.com.', false, 'none' )
+			$this->model_reply( 'Reach us on WhatsApp.', false, 'none' )
 		);
 		$this->plant_pattern();
 

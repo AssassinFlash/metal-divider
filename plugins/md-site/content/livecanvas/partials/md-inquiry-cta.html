@@ -1,7 +1,6 @@
 <!-- The inquiry-CTA band (spec 19 §5.2, the T5 replacement of spec 19
-     §4.2): the page sections' link-only CTA — one inquiry link and one reply
-     promise. The WhatsApp channel was removed site-wide by the owner's ruling
-     of 2026-10-30; the band carries no second, off-site path.
+     §4.2): the page sections' link-only CTA — one inquiry link, one WhatsApp
+     link and one reply promise.
      Styles: the md-inquiry-cta rules of the cta-band volume.
 
      This is a LINK band, not the form. Eighteen page sections include it
@@ -15,6 +14,7 @@
      (partials/footer.html) rather than this band. Do not swap this file's body
      for the form; change the dialog instead. -->
 <div class="md-inquiry-cta">
-	<a class="md-inquiry-cta__primary" href="/inquiry/">Request a quote</a>
+	<a class="md-inquiry-cta__primary" href="#open-quote" data-quote-source="cta-band" data-source-module="cta-band" data-source-button="primary_cta">Request a quote</a>
+	<a class="md-inquiry-cta__whatsapp" href="https://wa.me/85264731687?text=Hi%20Metal%20Divider%2C%20I%27d%20like%20a%20quote%20for%20stainless%20steel%20screens." target="_blank" rel="noopener">Send via WhatsApp</a>
 	<p class="md-inquiry-cta__note">We reply with quote guidance within 24 hours.</p>
 </div>

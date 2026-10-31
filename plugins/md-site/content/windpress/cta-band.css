@@ -582,18 +582,16 @@ background: rgba(255,255,255,0.05);
   container-type: inline-size;
   display: grid;
   gap: 12px 16px;
-  /* One action since the WhatsApp entry was removed (owner ruling
-     2026-10-30); the reply line fills the row under it. */
-  grid-template-columns: minmax(0, 1fr);
+  /* Two equal columns by default: the two actions share the top row,
+     and the reply line spans underneath. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   padding: 20px;
   width: 100%;
 }
-.md-inquiry-cta__primary {
+.md-inquiry-cta__primary,
+.md-inquiry-cta__whatsapp {
   align-items: center;
-  background: var(--md-gold);
-  border: 1px solid var(--md-gold);
   border-radius: 10px;
-  color: var(--md-bg-darkest);
   display: inline-flex;
   font-weight: 600;
   font-size: 15px;
@@ -602,13 +600,37 @@ background: rgba(255,255,255,0.05);
   padding: 0 24px;
   text-decoration: none;
 }
+.md-inquiry-cta__primary {
+  background: var(--md-gold);
+  border: 1px solid var(--md-gold);
+  color: var(--md-bg-darkest);
+}
 .md-inquiry-cta__primary:hover {
   background: var(--md-gold-light);
 }
+.md-inquiry-cta__whatsapp {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+.md-inquiry-cta__whatsapp:hover {
+  border-color: var(--md-gold);
+  color: var(--md-gold-light);
+}
+/* Sections that set `.contact-card a { color: inherit }` at (0, 1, 1)
+   would override these class-only button rules and turn the gold button
+   text white on gold. Raise the button selectors to (0, 2, 0). */
 .md-inquiry-cta .md-inquiry-cta__primary {
   color: var(--md-bg-darkest);
 }
-.md-inquiry-cta__primary {
+.md-inquiry-cta .md-inquiry-cta__whatsapp {
+  color: #ffffff;
+}
+.md-inquiry-cta .md-inquiry-cta__whatsapp:hover {
+  color: var(--md-gold-light);
+}
+.md-inquiry-cta__primary,
+.md-inquiry-cta__whatsapp {
   box-sizing: border-box;
   width: 100%;
 }
@@ -621,12 +643,19 @@ background: rgba(255,255,255,0.05);
   margin: 0;
   text-align: center;
 }
+/* Narrow wells (hero side card, mobile viewport, split column < 520px):
+   stack to one column so "Send via WhatsApp" never wraps to two lines. */
+@container inquiry-cta (max-width: 519px) {
+  .md-inquiry-cta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 /* Wide wells (measured 1658px, with ~862px of empty black beside a
-   747px action cluster): the reply line joins the row so the action
-   grows into the space instead of sitting in the top-left. */
+   747px button cluster): the reply line joins the row so the two
+   buttons grow into the space instead of sitting in the top-left. */
 @container inquiry-cta (min-width: 880px) {
   .md-inquiry-cta {
-    grid-template-columns: minmax(200px, 1fr) max-content;
+    grid-template-columns: minmax(200px, 1fr) minmax(220px, 1fr) max-content;
   }
   .md-inquiry-cta__note {
     grid-column: auto;

@@ -139,23 +139,24 @@ final class SchemaFilters {
 	}
 
 	/**
-	 * The Organization's contact point (spec 22 §3.3): one sales point
-	 * carrying the email, read from the Knowledge Graph field this plugin's
-	 * config wrote, never a literal of its own.
-	 *
-	 * The WhatsApp point carrying the phone went with the channel itself
-	 * (owner ruling 2026-10-30), so the phone is not published in the
-	 * structured data either.
+	 * The Organization's contact points (spec 22 §3.3): one sales
+	 * point carrying the email, one WhatsApp point carrying the phone
+	 * — both from the Knowledge Graph fields this plugin's config
+	 * wrote, never literals of their own.
 	 *
 	 * @param array<string, mixed> $schema The Organization schema.
 	 * @return array<string, mixed> The schema with the two points.
 	 */
 	public function organization( array $schema ): array {
 		$email = '';
+		$phone = '';
 		if ( function_exists( 'seopress_get_service' ) ) {
 			$social = seopress_get_service( 'SocialOption' );
 			if ( is_object( $social ) && method_exists( $social, 'getSocialKnowledgeEmail' ) ) {
 				$email = (string) $social->getSocialKnowledgeEmail();
+			}
+			if ( is_object( $social ) && method_exists( $social, 'getSocialKnowledgePhone' ) ) {
+				$phone = (string) $social->getSocialKnowledgePhone();
 			}
 		}
 		$points = array();
@@ -167,12 +168,20 @@ final class SchemaFilters {
 				'availableLanguage' => array( 'English' ),
 			);
 		}
+		if ( '' !== $phone ) {
+			$points[] = array(
+				'@type'             => 'ContactPoint',
+				'contactType'       => 'WhatsApp',
+				'telephone'         => $phone,
+				'availableLanguage' => array( 'English' ),
+			);
+		}
 		if ( array() !== $points ) {
 			$schema['contactPoint'] = $points;
 		}
-		// The builder copies the phone into a top-level telephone as well;
-		// the spec's skeleton carries it on a contact point only, and that
-		// point is gone, so no telephone is published at all.
+		// The builder copies the phone into a top-level telephone as
+		// well; the spec's skeleton carries it on the contact point
+		// only.
 		unset( $schema['telephone'] );
 		return $schema;
 	}

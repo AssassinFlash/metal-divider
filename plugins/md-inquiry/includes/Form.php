@@ -10,8 +10,8 @@ declare( strict_types = 1 );
 namespace MetalDivider\Inquiry;
 
 /**
- * Renders the inquiry form: the pattern context row, the fields and the
- * Turnstile widget.
+ * Renders the inquiry form: the pattern context row, the fields, the
+ * Turnstile widget and the WhatsApp alternate.
  *
  * The templates own the page (ticket #32): they place this form with the
  * `[md_inquiry_form]` shortcode or the `do_action( 'md_inquiry_form' )` hook,
@@ -253,7 +253,9 @@ final class Form {
 		$out        .= '<input type="hidden" name="md_inquiry_action" value="submit">';
 		$out        .= '<input type="hidden" name="md_inquiry_locale" id="' . \esc_attr( $this->id_of( 'md-inquiry-locale' ) ) . '" value="en">';
 		if ( null !== $pattern ) {
-			$out .= '<input type="hidden" name="md_inquiry_pattern_slug" value="' . \esc_attr( $this->pattern_slug_of( $pattern_slug, $pattern ) ) . '">';
+			$out .= '<input type="hidden" data-md-inquiry-pattern-input name="md_inquiry_pattern_slug" value="' . \esc_attr( $this->pattern_slug_of( $pattern_slug, $pattern ) ) . '">';
+		} else {
+			$out .= '<input type="hidden" data-md-inquiry-pattern-input name="md_inquiry_pattern_slug" value="">';
 		}
 		$out .= $this->source_input( 'page', $source['page'] );
 		$out .= $this->source_input( 'module', $source['module'] );
@@ -262,26 +264,29 @@ final class Form {
 		$out .= '<div class="md-inquiry-fields">';
 		if ( null !== $pattern ) {
 			$out .= $this->pattern_row( $pattern );
+		} else {
+			$out .= $this->empty_pattern_slot();
 		}
 		$out .= $this->notice_markup();
 		$out .= $this->field( 'name', __( 'Name', 'md-inquiry' ), 'text', true, 'name', __( 'Jane Chan', 'md-inquiry' ) );
 		$out .= $this->field( 'email', __( 'Email', 'md-inquiry' ), 'email', true, 'email', __( 'jane@studio.com', 'md-inquiry' ) );
-		$out .= $this->field( 'company', __( 'Company (optional)', 'md-inquiry' ), 'text', false, 'organization', __( 'Chan Design Studio', 'md-inquiry' ) );
-		$out .= $this->field( 'phone', __( 'Phone (optional)', 'md-inquiry' ), 'tel', false, 'tel', __( '+852 0000 0000', 'md-inquiry' ) );
-		$out .= $this->select_field( 'country', __( 'Country', 'md-inquiry' ), Validator::COUNTRIES, __( 'Select country', 'md-inquiry' ), true, 'country-name' );
-		$out .= $this->select_field( 'scope', __( 'Project scope', 'md-inquiry' ), Validator::SCOPES, __( 'Select project scope', 'md-inquiry' ), true, 'off' );
-		$out .= $this->select_field( 'route', __( 'Inquiry route', 'md-inquiry' ), Validator::ROUTES, __( 'Select inquiry route', 'md-inquiry' ), true, 'off' );
-		$out .= $this->select_field( 'quantity', __( 'Estimated quantity', 'md-inquiry' ), Validator::QUANTITIES, __( 'Select quantity range', 'md-inquiry' ), true, 'off' );
+		$out .= $this->field( 'phone', __( 'Phone / WhatsApp (optional)', 'md-inquiry' ), 'tel', false, 'tel', __( '+852 0000 0000', 'md-inquiry' ) );
 		$out .= $this->message_field( null !== $pattern );
+		$out .= $this->optional_fields();
 		$out .= $this->confirm_field();
 
 		$out .= $this->honeypot();
 		$out .= $this->turnstile( $source );
 		$out .= '<p class="md-inquiry-promise">' . \esc_html__( 'We reply within 24 hours on business days. Your details are used only to answer this inquiry — we do not share them.', 'md-inquiry' ) . '</p>';
+		$note = null !== $pattern
+			? __( 'The WhatsApp button opens a chat pre-filled with your details and this pattern. Choosing WhatsApp does not submit this form.', 'md-inquiry' )
+			: __( 'The WhatsApp button opens a chat pre-filled with your details. Choosing WhatsApp does not submit this form.', 'md-inquiry' );
+		$out .= '<p class="md-inquiry-note">' . \esc_html( $note ) . '</p>';
 		$out .= '</div>';
 
 		$out .= '<div class="md-inquiry-actions">';
 		$out .= '<button type="submit" class="md-inquiry-submit"' . ( $this->config->turnstile_is_configured() ? ' disabled' : '' ) . '>' . \esc_html__( 'Send inquiry', 'md-inquiry' ) . '</button>';
+		$out .= '<a class="md-inquiry-whatsapp" href="' . $this->whatsapp_href( WhatsApp::cta_text( $source['module'], $pattern, $source['page'] ) ) . '" target="_blank" rel="noopener">' . \esc_html__( 'Send via WhatsApp instead', 'md-inquiry' ) . '</a>';
 		$out .= '</div>';
 		$out .= '</form>';
 		$out .= '</div>';
@@ -307,18 +312,63 @@ final class Form {
 	 * @return string
 	 */
 	private function pattern_row( array $pattern ): string {
-		$out = '<figure class="md-inquiry-pattern">';
+		$out = '<figure class="md-inquiry-pattern" data-md-inquiry-pattern-slot>';
 		if ( '' !== $pattern['thumb'] ) {
-			$out .= '<img class="md-inquiry-pattern__thumb" src="' . \esc_url( $pattern['thumb'] ) . '" alt="">';
+			$out .= '<img data-md-inquiry-pattern-thumb class="md-inquiry-pattern__thumb" src="' . \esc_url( $pattern['thumb'] ) . '" alt="">';
+		} else {
+			$out .= '<img data-md-inquiry-pattern-thumb class="md-inquiry-pattern__thumb" alt="" hidden>';
 		}
 		$out .= '<figcaption class="md-inquiry-pattern__caption">';
-		$out .= '<span class="md-inquiry-pattern__name">' . \esc_html( $pattern['name'] ) . '</span>';
+		$out .= '<span data-md-inquiry-pattern-title class="md-inquiry-pattern__name">' . \esc_html( $pattern['name'] ) . '</span>';
 		if ( '' !== $pattern['code'] ) {
-			$out .= '<span class="md-inquiry-pattern__code">' . \esc_html( $pattern['code'] ) . '</span>';
+			$out .= '<span data-md-inquiry-pattern-code class="md-inquiry-pattern__code">' . \esc_html( $pattern['code'] ) . '</span>';
 		}
-		$out .= '<span class="md-inquiry-pattern__note">' . \esc_html__( 'This pattern is attached to your inquiry.', 'md-inquiry' ) . '</span>';
+		$out .= '<span data-md-inquiry-pattern-eyebrow class="md-inquiry-pattern__note">' . \esc_html__( 'This pattern is attached to your inquiry.', 'md-inquiry' ) . '</span>';
 		$out .= '</figcaption>';
 		$out .= '</figure>';
+		return $out;
+	}
+
+	/**
+	 * Hidden pattern context slot rendered when no pattern is initially
+	 * attached so the quote modal can populate it dynamically on open-quote.
+	 *
+	 * @return string
+	 */
+	private function empty_pattern_slot(): string {
+		$out  = '<div class="md-inquiry-pattern" data-md-inquiry-pattern-slot hidden>';
+		$out .= '<img class="md-inquiry-pattern__thumb" data-md-inquiry-pattern-thumb alt="" hidden>';
+		$out .= '<div class="md-inquiry-pattern__caption">';
+		$out .= '<span class="md-inquiry-pattern__note" data-md-inquiry-pattern-eyebrow>' . \esc_html__( 'Selected pattern', 'md-inquiry' ) . '</span>';
+		$out .= '<strong class="md-inquiry-pattern__name" data-md-inquiry-pattern-title></strong>';
+		$out .= '</div>';
+		$out .= '</div>';
+		return $out;
+	}
+
+	/**
+	 * Collapsible group of optional project qualification fields.
+	 *
+	 * @return string
+	 */
+	private function optional_fields(): string {
+		$open = '';
+		foreach ( array( 'company', 'country', 'scope', 'route', 'quantity' ) as $key ) {
+			if ( '' !== $this->state->value( $key ) || '' !== $this->state->error( $key ) ) {
+				$open = ' open';
+				break;
+			}
+		}
+		$out  = '<details class="md-inquiry-optional"' . $open . '>';
+		$out .= '<summary class="md-inquiry-optional__summary">' . \esc_html__( 'Project details (company, country, scope, quantity — optional)', 'md-inquiry' ) . '</summary>';
+		$out .= '<div class="md-inquiry-optional__body">';
+		$out .= $this->field( 'company', __( 'Company (optional)', 'md-inquiry' ), 'text', false, 'organization', __( 'Chan Design Studio', 'md-inquiry' ) );
+		$out .= $this->select_field( 'country', __( 'Country (optional)', 'md-inquiry' ), Validator::COUNTRIES, __( 'Select country (optional)', 'md-inquiry' ), false, 'country-name' );
+		$out .= $this->select_field( 'scope', __( 'Project scope (optional)', 'md-inquiry' ), Validator::SCOPES, __( 'Select project scope (optional)', 'md-inquiry' ), false, 'off' );
+		$out .= $this->select_field( 'route', __( 'Inquiry route (optional)', 'md-inquiry' ), Validator::ROUTES, __( 'Select inquiry route (optional)', 'md-inquiry' ), false, 'off' );
+		$out .= $this->select_field( 'quantity', __( 'Estimated quantity (optional)', 'md-inquiry' ), Validator::QUANTITIES, __( 'Select quantity range (optional)', 'md-inquiry' ), false, 'off' );
+		$out .= '</div>';
+		$out .= '</details>';
 		return $out;
 	}
 
@@ -449,12 +499,26 @@ final class Form {
 
 		$out  = '<p class="md-inquiry-field md-inquiry-field--confirm' . $invalid . '">';
 		$out .= '<label class="md-inquiry-confirm" for="' . \esc_attr( $id ) . '">';
-		$out .= '<input class="md-inquiry-confirm__input" type="checkbox" id="' . \esc_attr( $id ) . '" name="md_inquiry_confirm" value="1"' . $checked . ' required' . $this->invalid_attrs( 'confirm', $error ) . '>';
+		$out .= '<input class="md-inquiry-confirm__input" type="checkbox" id="' . \esc_attr( $id ) . '" name="md_inquiry_confirm" value="1"' . $checked . $this->invalid_attrs( 'confirm', $error ) . '>';
 		$out .= '<span class="md-inquiry-confirm__text">' . \esc_html__( 'I confirm this inquiry is for an architectural or commercial project.', 'md-inquiry' ) . '</span>';
 		$out .= '</label>';
 		$out .= $this->error_span( 'confirm', $error );
 		$out .= '</p>';
 		return $out;
+	}
+
+	/**
+	 * A wa.me href that keeps the prefilled text's line breaks.
+	 *
+	 * WordPress deletes %0A and %0D inside esc_url(). Passing the whole URL
+	 * through it glues the Ref line onto the greeting. Escape the base, then
+	 * append the already-encoded text.
+	 *
+	 * @param string $text The prefilled message.
+	 * @return string
+	 */
+	private function whatsapp_href( string $text ): string {
+		return \esc_url( 'https://wa.me/' . WhatsApp::NUMBER ) . '?text=' . \rawurlencode( $text );
 	}
 
 	/**
@@ -611,6 +675,7 @@ final class Form {
 	 */
 	private function config_json( ?array $pattern, array $source ): array {
 		return array(
+			'waNumber'  => WhatsApp::NUMBER,
 			'pattern'   => null === $pattern ? null : array(
 				'name' => $pattern['name'],
 				'code' => $pattern['code'],
@@ -644,8 +709,8 @@ final class Form {
 			'rate_limited' => __( 'You\'re sending inquiries too quickly. Please wait a few minutes and try again.', 'md-inquiry' ),
 			'nonce'        => __( 'Your form session expired. Please reload the page and try again.', 'md-inquiry' ),
 			'turnstile'    => __( 'Verification failed. Please refresh the page and try again.', 'md-inquiry' ),
-			'spam'         => __( 'We could not accept this submission. If this keeps happening, please email us at info@metal-divider.com.', 'md-inquiry' ),
-			'storage'      => __( 'Your inquiry could not be saved right now. Please try again, or email us at info@metal-divider.com.', 'md-inquiry' ),
+			'spam'         => __( 'We could not accept this submission. If this keeps happening, reach us on WhatsApp or by email.', 'md-inquiry' ),
+			'storage'      => __( 'Your inquiry could not be saved right now. Please try again, or reach us on WhatsApp or by email.', 'md-inquiry' ),
 			default        => __( 'Please complete the highlighted fields.', 'md-inquiry' ),
 		};
 	}

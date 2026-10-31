@@ -829,7 +829,8 @@ padding-bottom: calc(64px + env(safe-area-inset-bottom));
   }
 }
 
-.md-closing-well .md-inquiry-cta__primary {
+.md-closing-well .md-inquiry-cta__primary,
+.md-closing-well .md-inquiry-cta__whatsapp {
   width: 100%;
   min-width: 0;
   justify-content: center;

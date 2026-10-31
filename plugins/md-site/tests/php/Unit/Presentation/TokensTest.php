@@ -49,7 +49,7 @@ final class TokensTest extends TestCase {
 	 * 1440, visitor state); it is gone from the markup and the band is 60px
 	 * from 991 up — the 44px controls plus symmetric 8px.
 	 */
-	private const NORMALIZED_SHA256 = '5f24373ddeb1d3a89c11aa39e28153acc9ad7c5dcfa5e43d67888d446e706584';
+	private const NORMALIZED_SHA256 = '527d7af1da6d8a2017778aa4588b01e7cc8fec56aca3b7714fcd5a9d749dfc5a';
 
 	/**
 	 * The exported stylesheet carries the design tokens of the MASTER.md
@@ -69,9 +69,7 @@ final class TokensTest extends TestCase {
 		$this->assertStringContainsString( '--md-gold-dark: #a88a4a', $css );
 		$this->assertStringContainsString( '--md-gold-accent: #d4af37', $css );
 		$this->assertStringContainsString( '--md-cream: #faf9f7', $css );
-		// Owner ruling 2026-10-30: the WhatsApp channel is gone site-wide, so
-		// the brand token went with it.
-		$this->assertStringNotContainsString( '--md-whatsapp', $css, 'no WhatsApp token (owner ruling 2026-10-30)' );
+		$this->assertStringContainsString( '--md-whatsapp: #25D366', $css );
 		$this->assertStringContainsString( '--md-font-display: "Playfair Display", Georgia, serif', $css );
 		$this->assertStringContainsString( '--md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif', $css );
 		$this->assertStringContainsString( '--md-container: 1400px', $css );

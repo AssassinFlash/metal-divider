@@ -98,11 +98,22 @@ final class Validator {
 	);
 
 	/**
-	 * One value from a fixed list: never free text, never an error.
+	 * Raw trimmed choice input before whitelist validation.
+	 *
+	 * @param array<string, mixed> $input The raw input.
+	 * @param string               $key   The field key.
+	 * @return string
+	 */
+	private function raw_choice( array $input, string $key ): string {
+		return isset( $input[ $key ] ) && \is_string( $input[ $key ] ) ? \trim( \wp_unslash( $input[ $key ] ) ) : '';
+	}
+
+	/**
+	 * One value from a fixed list: never free text, never an error when empty.
 	 *
 	 * A value outside the list becomes the empty string, which the caller's
-	 * required-check then reports — the same shape the source tokens use. The
-	 * list is the contract, so a stale option cannot reach the record.
+	 * check reports when a non-empty value was submitted. The list is the
+	 * contract, so a stale option cannot reach the record.
 	 *
 	 * @param array<string, mixed> $input   The raw input.
 	 * @param string               $key     The field key.
@@ -110,7 +121,7 @@ final class Validator {
 	 * @return string
 	 */
 	private function choice( array $input, string $key, array $allowed ): string {
-		$raw = isset( $input[ $key ] ) && \is_string( $input[ $key ] ) ? \trim( \wp_unslash( $input[ $key ] ) ) : '';
+		$raw = $this->raw_choice( $input, $key );
 		return \in_array( $raw, $allowed, true ) ? $raw : '';
 	}
 	public const COUNTRY_MAX  = 80;
@@ -164,20 +175,17 @@ final class Validator {
 		if ( '' === $values['email'] || false === \is_email( $values['email'] ) ) {
 			$errors['email'] = __( 'Please enter a valid email address.', 'md-inquiry' );
 		}
-		if ( '' === $values['country'] ) {
+		if ( '' !== $this->raw_choice( $input, 'country' ) && '' === $values['country'] ) {
 			$errors['country'] = __( 'Please choose your country.', 'md-inquiry' );
 		}
-		if ( '' === $values['scope'] ) {
+		if ( '' !== $this->raw_choice( $input, 'scope' ) && '' === $values['scope'] ) {
 			$errors['scope'] = __( 'Please choose the project scope.', 'md-inquiry' );
 		}
-		if ( '' === $values['route'] ) {
+		if ( '' !== $this->raw_choice( $input, 'route' ) && '' === $values['route'] ) {
 			$errors['route'] = __( 'Please choose an inquiry route.', 'md-inquiry' );
 		}
-		if ( '' === $values['quantity'] ) {
+		if ( '' !== $this->raw_choice( $input, 'quantity' ) && '' === $values['quantity'] ) {
 			$errors['quantity'] = __( 'Please choose a quantity range.', 'md-inquiry' );
-		}
-		if ( '1' !== $values['confirm'] ) {
-			$errors['confirm'] = __( 'Please confirm this inquiry is for an architectural or commercial project.', 'md-inquiry' );
 		}
 		if ( '' === $values['message'] && ! $has_pattern ) {
 			$errors['message'] = __( 'Please add a short message.', 'md-inquiry' );

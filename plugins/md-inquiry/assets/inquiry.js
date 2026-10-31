@@ -1,4 +1,4 @@
-/* md-inquiry's behavior file: the Turnstile wiring
+/* md-inquiry's behavior file: the Turnstile wiring, the live WhatsApp link,
  * and the two client-side validations. It carries no style and no markup of
  * its own — the classes it toggles (md-inquiry-*) are styled by the theme's
  * WindPress volume, and its configuration arrives in the app element's
@@ -8,7 +8,7 @@
  * quote dialog on pages that have no form of their own, and a section that
  * asks for a quote in place. This file used to bind `document.querySelector`
  * — the first one only — so every other form on the page was inert: no
- * validation, no Turnstile status. Each app is now bound on
+ * validation, no WhatsApp text, no Turnstile status. Each app is now bound on
  * its own, and its lookups stay inside its own form.
  *
  * Turnstile is explicit and per form. api.js loads with render=explicit and
@@ -68,11 +68,19 @@
 		}
 
 		var submit = form.querySelector('.md-inquiry-submit');
+		var waLink = form.querySelector('.md-inquiry-whatsapp');
 		var statusEl = form.querySelector('.md-inquiry-turnstile-status');
 		var container = form.querySelector('.md-inquiry-turnstile');
+		var patternSlot = form.querySelector('[data-md-inquiry-pattern-slot]');
+		var patternInput = form.querySelector('[data-md-inquiry-pattern-input]') || fieldIn(form, 'pattern_slug');
 
 		function field(name) {
 			return fieldIn(form, name);
+		}
+
+		function source(part) {
+			var input = form.querySelector('[name="md_inquiry_source_' + part + '"]');
+			return input ? input.value : '';
 		}
 
 		function value(key) {
@@ -141,7 +149,7 @@
 			describedBy(control, error.id);
 		}
 
-		var requiredKeys = ['name', 'email', 'country', 'scope', 'route', 'quantity', 'message', 'confirm'];
+		var requiredKeys = ['name', 'email', 'message'];
 
 		function messageFor(key) {
 			var i18n = cfg.i18n || {};
@@ -169,7 +177,7 @@
 			if ('email' === key) {
 				return !emailLooksValid(value('email'));
 			}
-			if ('message' === key && !control.required) {
+			if ('message' === key && (!control.required || cfg.pattern)) {
 				return false;
 			}
 			return '' === value(key);
@@ -191,6 +199,202 @@
 
 		function emailLooksValid(email) {
 			return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+		}
+
+		function waText() {
+			var name = value('name');
+			var company = value('company');
+			var message = value('message');
+			var lines = [];
+			if (name) {
+				lines.push("Hi, I'm " + name + (company ? ' (' + company + ')' : '') + '.');
+			}
+			if (cfg.pattern) {
+				lines.push("I'd like a quote for this pattern:");
+				lines.push(cfg.pattern.name + ' (' + cfg.pattern.code + ')');
+			}
+			if (cfg.intent && cfg.intent !== 'Selected pattern') {
+				lines.push('Inquiry: ' + cfg.intent);
+			}
+			if (message) {
+				lines.push(message);
+			}
+			lines.push('Ref: ' + source('page') + '/' + source('module') + '/' + source('button'));
+			return lines.join('\n');
+		}
+
+		function updateWhatsApp() {
+			if (!waLink || !cfg.waNumber) {
+				return;
+			}
+			waLink.href = 'https://wa.me/' + cfg.waNumber + '?text=' + encodeURIComponent(waText());
+		}
+
+		['name', 'company', 'message'].forEach(function (key) {
+			var input = field(key);
+			if (input) {
+				input.addEventListener('input', updateWhatsApp);
+			}
+		});
+
+		var defaultPattern = cfg.pattern ? { name: cfg.pattern.name, code: cfg.pattern.code } : null;
+		var defaultInputVal = patternInput ? patternInput.value : '';
+		var defaultSlotHidden = patternSlot ? patternSlot.hasAttribute('hidden') : true;
+		var defaultEyebrowText = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]')
+			? patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]').textContent
+			: 'Selected pattern';
+		var defaultTitleText = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-title]')
+			? patternSlot.querySelector('[data-md-inquiry-pattern-title]').textContent
+			: '';
+		var defaultCodeText = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-code]')
+			? patternSlot.querySelector('[data-md-inquiry-pattern-code]').textContent
+			: '';
+		var defaultThumbSrc = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-thumb]')
+			? (patternSlot.querySelector('[data-md-inquiry-pattern-thumb]').getAttribute('src') || '')
+			: '';
+		var defaultMsgRequired = field('message') ? field('message').hasAttribute('required') : false;
+
+		function applyQuoteDetail(detail) {
+			if (!detail || typeof detail !== 'object') {
+				return;
+			}
+			var rawCode = typeof detail.patternCode === 'string' ? detail.patternCode.trim() : '';
+			var rawSlug = typeof detail.patternSlug === 'string' ? detail.patternSlug.trim() : '';
+			var rawName = typeof detail.patternName === 'string' ? detail.patternName.trim() : '';
+			var rawThumb = typeof detail.patternThumb === 'string' ? detail.patternThumb.trim() : '';
+			var rawIntent = typeof detail.intentLabel === 'string' && detail.intentLabel.trim()
+				? detail.intentLabel.trim()
+				: (typeof detail.quoteIntent === 'string' ? detail.quoteIntent.trim() : '');
+
+			if (typeof detail.sourcePage === 'string' && detail.sourcePage.trim()) {
+				var pageInput = form.querySelector('[name="md_inquiry_source_page"]');
+				if (pageInput) {
+					pageInput.value = detail.sourcePage.trim();
+				}
+			}
+			if (typeof detail.sourceModule === 'string' && detail.sourceModule.trim()) {
+				var moduleInput = form.querySelector('[name="md_inquiry_source_module"]');
+				if (moduleInput) {
+					moduleInput.value = detail.sourceModule.trim();
+				}
+			} else if (typeof detail.source === 'string' && detail.source.trim()) {
+				var srcInput = form.querySelector('[name="md_inquiry_source_module"]');
+				if (srcInput) {
+					srcInput.value = detail.source.trim();
+				}
+			}
+			if (typeof detail.sourceButton === 'string' && detail.sourceButton.trim()) {
+				var btnInput = form.querySelector('[name="md_inquiry_source_button"]');
+				if (btnInput) {
+					btnInput.value = detail.sourceButton.trim();
+				}
+			}
+
+			if (!rawCode && !rawSlug && !rawName && !rawThumb && !rawIntent) {
+				cfg.pattern = defaultPattern ? { name: defaultPattern.name, code: defaultPattern.code } : null;
+				cfg.intent = '';
+				app.setAttribute('data-md-inquiry', JSON.stringify(cfg));
+				if (patternInput) {
+					patternInput.value = defaultInputVal;
+				}
+				var msgCtrl = field('message');
+				if (msgCtrl) {
+					msgCtrl.required = defaultMsgRequired;
+					if (defaultMsgRequired) {
+						msgCtrl.setAttribute('required', 'required');
+					} else {
+						msgCtrl.removeAttribute('required');
+					}
+				}
+				if (patternSlot) {
+					if (defaultSlotHidden) {
+						patternSlot.setAttribute('hidden', '');
+					} else {
+						patternSlot.removeAttribute('hidden');
+					}
+					var eb = patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]');
+					if (eb) {
+						eb.textContent = defaultEyebrowText;
+					}
+					var tl = patternSlot.querySelector('[data-md-inquiry-pattern-title]');
+					if (tl) {
+						tl.textContent = defaultTitleText;
+					}
+					var cd = patternSlot.querySelector('[data-md-inquiry-pattern-code]');
+					if (cd) {
+						cd.textContent = defaultCodeText;
+					}
+					var th = patternSlot.querySelector('[data-md-inquiry-pattern-thumb]');
+					if (th) {
+						if (defaultThumbSrc) {
+							th.setAttribute('src', defaultThumbSrc);
+							th.removeAttribute('hidden');
+						} else {
+							th.removeAttribute('src');
+							th.setAttribute('hidden', '');
+						}
+					}
+				}
+				updateWhatsApp();
+				return;
+			}
+
+			var slug = (rawSlug || rawCode).toLowerCase();
+			var code = (rawCode || rawSlug).toUpperCase();
+			var name = rawName || rawCode || rawSlug;
+			cfg.intent = rawIntent || '';
+
+			if (patternInput) {
+				patternInput.value = slug;
+			}
+			if (name || code) {
+				cfg.pattern = {
+					name: name,
+					code: code || name.toUpperCase()
+				};
+				app.setAttribute('data-md-inquiry', JSON.stringify(cfg));
+				var msgField = field('message');
+				if (msgField) {
+					msgField.required = false;
+					msgField.removeAttribute('required');
+				}
+			} else {
+				cfg.pattern = defaultPattern ? { name: defaultPattern.name, code: defaultPattern.code } : null;
+				app.setAttribute('data-md-inquiry', JSON.stringify(cfg));
+			}
+
+			if (patternSlot) {
+				patternSlot.removeAttribute('hidden');
+				var eyebrowEl = patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]');
+				if (eyebrowEl) {
+					eyebrowEl.textContent = rawIntent || defaultEyebrowText;
+				}
+				var titleEl = patternSlot.querySelector('[data-md-inquiry-pattern-title]');
+				var codeEl = patternSlot.querySelector('[data-md-inquiry-pattern-code]');
+				if (titleEl) {
+					if (codeEl && (name || code)) {
+						titleEl.textContent = name;
+						codeEl.textContent = code;
+					} else if (name && code && name !== code && name.indexOf(code) === -1) {
+						titleEl.textContent = name + ' (' + code + ')';
+					} else {
+						titleEl.textContent = name || code || rawIntent;
+					}
+				}
+				var thumbEl = patternSlot.querySelector('[data-md-inquiry-pattern-thumb]');
+				if (thumbEl) {
+					if (rawThumb) {
+						thumbEl.setAttribute('src', rawThumb);
+						thumbEl.setAttribute('alt', name || code || '');
+						thumbEl.removeAttribute('hidden');
+					} else {
+						thumbEl.removeAttribute('src');
+						thumbEl.setAttribute('hidden', '');
+					}
+				}
+			}
+
+			updateWhatsApp();
 		}
 
 		function keyFrom(control) {
@@ -231,6 +435,8 @@
 				first.focus();
 			}
 		});
+
+		updateWhatsApp();
 
 		var widgetId = null;
 		var rendering = false;
@@ -406,11 +612,14 @@
 		}
 
 		return {
+			app: app,
 			cfg: cfg,
 			form: form,
 			submit: submit,
 			setStatus: setStatus,
-			mountTurnstile: mountTurnstile
+			mountTurnstile: mountTurnstile,
+			applyQuoteDetail: applyQuoteDetail,
+			updateWhatsApp: updateWhatsApp
 		};
 	}
 
@@ -420,6 +629,24 @@
 			bound.push(instance);
 		}
 	});
+
+	if (typeof window.addEventListener === 'function') {
+		window.addEventListener('open-quote', function (event) {
+			var detail = event && event.detail ? event.detail : null;
+			if (!detail) {
+				return;
+			}
+			var modalTargets = bound.filter(function (instance) {
+				return instance.app && instance.app.closest && instance.app.closest('#md-quote-modal, #quote-modal');
+			});
+			var targets = modalTargets.length ? modalTargets : bound;
+			targets.forEach(function (instance) {
+				if (instance.applyQuoteDetail) {
+					instance.applyQuoteDetail(detail);
+				}
+			});
+		});
+	}
 
 
 	function hasLayout(el) {

@@ -98,6 +98,7 @@ class="xo-container--box"
               data-source-module="hero"
               data-source-button="primary_cta"
             >Request Quote</a>
+            [md_inquiry_whatsapp module="hero"]WhatsApp This Pattern[/md_inquiry_whatsapp]
             <a href="#specify" class="pdp-btn-ghost">Specify This Pattern</a>
           </div>
           <p class="pdp-hero-alt">Prefer email? <a href="/inquiry/?source_page=pattern-pdp&source_module=hero&source_button=request_quote">Send files through the contact form</a></p>
@@ -145,6 +146,10 @@ class="xo-container--box"
             <span class="pdp-open-value">[md_pdp_open_area]</span>
             <span class="pdp-open-label">open area</span>
           </div>
+          <div class="pdp-apps-actions">
+            <a href="#open-quote" class="pdp-btn-ghost" data-quote-source="pattern_pdp_apps" data-source-page="pattern-pdp" data-source-module="applications" data-source-button="quote_application">Quote for Your Application</a>
+            [md_inquiry_whatsapp module="applications"]Ask on WhatsApp[/md_inquiry_whatsapp]
+          </div>
         </div>
         <div class="pdp-apps-rows">
           <!-- The wide accent (a landscape pattern render) leads the four
@@ -170,7 +175,10 @@ class="xo-container--box"
           <h2>Specify this pattern</h2>
           <p class="pdp-body">Scale, repeat, orientation, open area, and finish adjust before fabrication, so the panel fits the drawing instead of forcing the drawing around a fixed panel.</p>
           <p class="pdp-body">Send enough project context and the material route, finish, and panel logic get checked before the quote is prepared.</p>
-          <a href="/inquiry/?source_page=pattern-pdp&source_module=specify&source_button=send_project_context" class="pdp-btn-ghost">Send Project Context</a>
+          <div class="pdp-specify-actions">
+            <a href="#open-quote" class="pdp-btn-primary" data-quote-source="pattern_pdp_specify" data-source-page="pattern-pdp" data-source-module="specify" data-source-button="send_project_context">Send Project Context</a>
+            [md_inquiry_whatsapp module="specify"]WhatsApp Drawings[/md_inquiry_whatsapp]
+          </div>
         </div>
         <div class="pdp-steps gs-reveal">
           <div class="pdp-step"><h3>Dimensions and quantities</h3><p>Overall width, height, panel count, and any pattern alignment requirement across panels.</p></div>
@@ -215,14 +223,18 @@ class="xo-container--box"
             data-source-module="faq"
             data-source-button="primary_cta"
           >Request Quote</a>
+          [md_inquiry_whatsapp module="faq"]Chat on WhatsApp[/md_inquiry_whatsapp]
           <a href="/inquiry/?source_page=pattern-pdp&source_module=faq&source_button=request_quote" class="pdp-textlink">or send files through the contact form</a>
         </div>
       </div>
     </div>
   </section>
   <div class="pdp-quote-bar">
-    <p class="pdp-quote-bar-copy">[lc_wc_product get="sku"]</p>
-    <a class="pdp-btn-primary pdp-quote-bar-action" href="#open-quote" data-quote-source="pattern_pdp_bar" data-source-page="pattern-pdp" data-source-module="mobile-bar" data-source-button="primary_cta">Request Quote</a>
+    <p class="pdp-quote-bar-copy">[lc_wc_product get="sku"] <span class="pdp-quote-bar-meta">SS 304 / 316 · Open [md_pdp_open_area]</span></p>
+    <div class="pdp-quote-bar-actions">
+      [md_inquiry_whatsapp module="sticky-bar"]WhatsApp[/md_inquiry_whatsapp]
+      <a class="pdp-btn-primary pdp-quote-bar-action" href="#open-quote" data-quote-source="pattern_pdp_bar" data-source-page="pattern-pdp" data-source-module="mobile-bar" data-source-button="primary_cta">Request Quote</a>
+    </div>
   </div>
 </section>
 

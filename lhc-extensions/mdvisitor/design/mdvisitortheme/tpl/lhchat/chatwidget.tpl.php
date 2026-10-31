@@ -121,7 +121,7 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
         <button type="button" data-mdv-fill="Can you match a pattern from my drawing?">Custom patterns</button>
         <button type="button" data-mdv-fill="Do you ship to my country?">Shipping</button>
       </div>
-      <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="mailto:info@metal-divider.com">Email</a></div>
+      <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="https://wa.me/85264731687" target="_blank" rel="noopener">WhatsApp (+852 6473 1687)</a><span class="md-foot-dot"></span><a href="mailto:info@metal-divider.com">Email</a></div>
     </div>
     <div class="md-composer md-start-composer">
 <form method="post" id="form-start-chat" action="<?php echo erLhcoreClassDesign::baseurl('chat/chatwidget')?><?php echo $append_mode?><?php $department !== false ? print '/(department)/'.$department : ''?><?php $input_data->priority !== false ? print '/(priority)/'.$input_data->priority : ''?><?php $input_data->vid !== false ? print '/(vid)/'.htmlspecialchars($input_data->vid) : ''?><?php $input_data->hash_resume !== false ? print '/(hash_resume)/'.htmlspecialchars($input_data->hash_resume) : ''?><?php $leaveamessage == true ? print '/(leaveamessage)/true' : ''?><?php $forceoffline == true ? print '/(offline)/true' : ''?><?php echo $append_mode_theme?>" onsubmit="return <?php if (isset($start_data_fields['message_auto_start']) && $start_data_fields['message_auto_start'] == true) : ?>lhinst.prestartChat('<?php echo time()?>',$(this))<?php else : ?>lhinst.addCaptchaSubmit('<?php echo time()?>',$(this))<?php endif?>">
@@ -365,7 +365,7 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
     <?php endif?>
 
 	<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_post_offline_form_multiinclude.tpl.php'));?>
-    <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="mailto:info@metal-divider.com">Email</a></div>
+    <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="https://wa.me/85264731687" target="_blank" rel="noopener">WhatsApp (+852 6473 1687)</a><span class="md-foot-dot"></span><a href="mailto:info@metal-divider.com">Email</a></div>
   </div>
   <nav class="md-tabs" aria-label="Assistant sections">
     <button class="is-active" type="button" data-mdv-go="home" aria-label="Home" aria-current="page"><span class="md-tab-icon" aria-hidden="true">⌂</span><span class="md-tab-label">Home</span></button>

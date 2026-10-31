@@ -336,8 +336,8 @@ final class WindPressAnchors {
 	 * Whether the compiled CSS declares a token with the same value.
 	 *
 	 * The comparison is CSS-equivalent, not byte-equal: the compiler minifies
-	 * (`--md-gold-light: #d4b878` becomes `--md-gold-light:#d4b878`), so
-	 * whitespace and letter case are normalised away on both sides.
+	 * (`--md-whatsapp: #25D366` becomes `--md-whatsapp:#25d366`), so whitespace
+	 * and letter case are normalised away on both sides.
 	 *
 	 * @param string $css    The compiled cache.
 	 * @param string $anchor The declaration as `name: value`.

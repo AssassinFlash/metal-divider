@@ -69,7 +69,8 @@ html #project-gallery-template--21844034846973__project_gallery_8jJr6t .project-
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: stretch;
 }
-.md-closing-well .md-inquiry-cta__primary {
+.md-closing-well .md-inquiry-cta__primary,
+.md-closing-well .md-inquiry-cta__whatsapp {
   width: 100%;
   min-width: 0;
   justify-content: center;

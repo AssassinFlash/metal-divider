@@ -50,7 +50,7 @@ return array(
 		),
 		array(
 			'key'   => 'field_md_inquiry_customer_phone',
-			'label' => '电话 Phone',
+			'label' => '电话 Phone / WhatsApp',
 			'name'  => 'customer_phone',
 			'type'  => 'text',
 		),

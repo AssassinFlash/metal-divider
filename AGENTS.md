@@ -192,6 +192,10 @@ metal-divider.com:Metal Divider 的全球 B2B 建筑金属屏风询盘站,WordPr
 
 Issues live in this repo's GitHub Issues (`gh` CLI); the engineering skills read and write there. See `docs/agents/issue-tracker.md`.
 
+### Triage labels
+
+Default five canonical labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
 ### Domain docs
 
-Single-context: one `GLOSSARY.md` at the root, ADRs under `docs/adr/` (create when first needed).
+Single-context: one `GLOSSARY.md` at the root, ADRs under `docs/adr/` (create when first needed). See `docs/agents/domain.md`.

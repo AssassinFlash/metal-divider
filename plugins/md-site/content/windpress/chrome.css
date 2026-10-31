@@ -457,6 +457,39 @@ color: #000;
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn svg path{ fill: #000; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn:hover{ background: rgba(0,0,0,.06); }
 /* The 40px pill keeps a 44px hit area without changing its visual box. */
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-whatsapp{
+position: relative;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 6px;
+height: 44px;
+min-width: 44px;
+padding: 0 14px;
+border-radius: 999px;
+box-sizing: border-box;
+background: #25d366;
+color: #0a2e14;
+font-family: "Inter", sans-serif;
+font-size: 13px;
+font-weight: 700;
+letter-spacing: .02em;
+line-height: 1;
+text-decoration: none;
+white-space: nowrap;
+transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-whatsapp svg{
+display: block;
+width: 16px;
+height: 16px;
+flex-shrink: 0;
+}
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-whatsapp:hover{
+transform: translateY(-1px);
+background: #1ebe57;
+box-shadow: 0 10px 24px rgba(37,211,102,.24);
+}
 #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote{
 position: relative;
 display: inline-flex;
@@ -1566,17 +1599,37 @@ min-height: 44px;
 .pattern-catalog__search-button{ min-width: 44px; min-height: 44px; }
 .pdp-faq-q{ min-height: 44px; }
 
-/* Mobile CTA density: the templates size the quote CTAs with Tailwind
-   py-3/py-3.5 — 30-35px of padding-plus-text at the 62.5% root, measured
-   36-39px tall on 390 (2026-10-26, real Chrome, home / shop / manufacturing
-   / family pages). The site's own mobile primaries (the drawer CTA, the quote
-   dialog's submit, .md-inquiry-cta__*) are 48px, and these anchors are the
-   same class of action. Phone widths only: desktop keeps the converted
-   sizes. */
+/* Mobile CTA density: the templates size the WhatsApp and quote CTAs with
+   Tailwind py-3/py-3.5 — 30-35px of padding-plus-text at the 62.5% root,
+   measured 36-39px tall on 390 (2026-10-26, real Chrome, home / shop /
+   manufacturing / family pages). The site's own mobile primaries (the
+   drawer CTA, the quote dialog's submit, .md-inquiry-cta__*) are 48px, and
+   these anchors are the same class of action. Phone widths only: the
+   footer's inline wa.me link takes its 44px hit area from the footer pass
+   above, the header/card micro-buttons and the inquiry-cta partial already
+   meet their floor, and desktop keeps the converted sizes. */
 @media (max-width: 767px) {
-a[data-quote-source] {
+a[href^="https://wa.me/"]:not(footer *):not(.md-inquiry-cta__whatsapp):not(.xo-btn-whatsapp):not(.pattern-card__wa-btn):not(.hpl__card-wa-btn):not(.pattern-tile-quote__wa) {
 min-height: 48px;
 }
+a[data-quote-source]:not(.pattern-card__quote-btn):not(.hpl__card-quote-btn):not(.pattern-tile-quote__btn) {
+min-height: 48px;
+}
+}
+
+/* WhatsApp's brand green takes a dark glyph, not a white one.
+ *
+ * White on #25d366 measures 1.98:1 — well under the 4.5:1 a 14px label needs,
+ * and under even the 3:1 large-text floor. The same pair is used by every
+ * in-page "Chat Now" / "Chat on WhatsApp" button across nine faces (measured
+ * on the dev instance 2026-10-26), so the label was hard to read everywhere
+ * the brand colour appears. The green itself stays: it is the recognition
+ * cue. Only the ink changes, to #0a2e14, which measures 8.6:1 on the same
+ * green — the same pairing WhatsApp's own product uses for text on brand. */
+a[href^="https://wa.me/"][class*="bg-[#25D366]"],
+a[href^="https://wa.me/"][class*="bg-emerald-500"],
+a[href^="https://wa.me/"].md-ta43cb577 {
+color: #0a2e14 !important;
 }
 
 /* =========================
@@ -1674,6 +1727,57 @@ font-size: 14px;
 line-height: 1.6;
 color: rgba(255,255,255,.75);
 }
+.md-quote-modal__pattern{
+display: grid;
+grid-template-columns: 52px minmax(0, 1fr);
+gap: 14px;
+align-items: center;
+padding: 12px 14px;
+margin: 0 0 18px;
+background: rgba(201, 169, 98, 0.08);
+border: 1px solid rgba(201, 169, 98, 0.28);
+border-radius: 12px;
+}
+.md-quote-modal__pattern[hidden]{
+display: none !important;
+}
+.md-quote-modal__pattern:not(:has(.md-quote-modal__pattern-thumb:not([hidden]))){
+grid-template-columns: minmax(0, 1fr);
+}
+.md-quote-modal__pattern-thumb{
+width: 52px;
+height: 52px;
+object-fit: cover;
+border-radius: 8px;
+background: #141414;
+display: block;
+}
+.md-quote-modal__pattern-thumb[hidden]{
+display: none !important;
+}
+.md-quote-modal__pattern-meta{
+display: flex;
+flex-direction: column;
+gap: 3px;
+min-width: 0;
+}
+.md-quote-modal__pattern-eyebrow{
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.14em;
+text-transform: uppercase;
+color: var(--md-gold-light, #d4b878);
+}
+.md-quote-modal__pattern-title{
+font-family: "Playfair Display", serif;
+font-size: 17px;
+font-weight: 600;
+color: #fff;
+line-height: 1.25;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
 
 /* The inquiry form inside the quote dialog (partials/footer.html). The
    form's own markup supplies `.md-inquiry`, and inquiry.css gives that class
@@ -1707,7 +1811,8 @@ max-width: 100%;
 flex-direction: column;
 align-items: stretch;
 }
-.md-quote-modal__card .md-inquiry-submit{
+.md-quote-modal__card .md-inquiry-submit,
+.md-quote-modal__card .md-inquiry-whatsapp{
 width: 100%;
 }
 }
@@ -1814,6 +1919,11 @@ html{ scroll-behavior: auto; }
 top: calc(var(--md-header-h, 60px) + 16px);
 }
 
+.md-drawer-cta,
+.md-drawer-whatsapp {
+  display: none;
+}
+
 /* Mobile app chrome. These rules sit last so they win over the carried
    300px drawer, the 34px quote pill and the 32px search close. The quote
    leaves the top bar (the drawer CTA carries it) and the drawer brand line
@@ -1828,6 +1938,13 @@ top: calc(var(--md-header-h, 60px) + 16px);
   }
   #HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions > .xo-btn-quote {
     display: none;
+  }
+  #HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions > .xo-btn-whatsapp {
+    height: 44px;
+    min-width: 44px;
+    padding: 0 12px;
+    border-radius: 12px;
+    font-size: 12px;
   }
   #HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn,
   #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-hamburger-style1__trigger {
@@ -1847,7 +1964,7 @@ top: calc(var(--md-header-h, 60px) + 16px);
     background: #141414;
     color: #fff;
     box-shadow: none;
-    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    padding-bottom: calc(144px + env(safe-area-inset-bottom));
   }
   .menu-hamburger-style1-top {
     position: sticky;
@@ -1928,8 +2045,29 @@ top: calc(var(--md-header-h, 60px) + 16px);
     text-decoration: none;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
   }
+  .md-drawer-whatsapp {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: calc(68px + env(safe-area-inset-bottom));
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 16px;
+    border-radius: 14px;
+    background: #25d366;
+    color: #0a2e14;
+    font-family: Inter, sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  }
   .md-drawer-close:focus-visible,
-  .md-drawer-cta:focus-visible {
+  .md-drawer-cta:focus-visible,
+  .md-drawer-whatsapp:focus-visible {
     outline: 2px solid #c9a962;
     outline-offset: 2px;
   }
@@ -2120,9 +2258,22 @@ top: calc(var(--md-header-h, 60px) + 16px);
     background: rgba(20, 20, 20, 0.94);
     backdrop-filter: blur(16px);
   }
-  .md-quote-modal__card .md-inquiry-submit {
+  .md-quote-modal__card .md-inquiry-submit,
+  .md-quote-modal__card .md-inquiry-whatsapp {
     width: 100%;
     min-height: 48px;
+  }
+}
+
+@media (max-width: 767px) {
+  #HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions > .xo-btn-whatsapp {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 12px;
+  }
+  #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-whatsapp__label {
+    display: none;
   }
 }
 

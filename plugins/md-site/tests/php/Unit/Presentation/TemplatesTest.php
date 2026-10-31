@@ -894,7 +894,7 @@ final class TemplatesTest extends TestCase {
 		preg_match_all( '/\bhref=(["\'])([^"\']*)\1/i', $source, $hrefs );
 		$external = array();
 		foreach ( $hrefs[2] as $href ) {
-			if ( preg_match( '#^(?:https?:)?//#i', $href ) ) {
+			if ( preg_match( '#^(?:https?:)?//#i', $href ) && ! str_starts_with( $href, 'https://wa.me/85264731687' ) ) {
 				$external[] = $href;
 			}
 		}

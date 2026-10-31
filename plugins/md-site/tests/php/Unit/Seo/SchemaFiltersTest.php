@@ -186,12 +186,11 @@ final class SchemaFiltersTest extends TestCase {
 	}
 
 	/**
-	 * The Organization carries one contact point — sales with the email,
-	 * read from the Knowledge Graph field. The WhatsApp point carrying the
-	 * phone went with the channel (owner ruling 2026-10-30), and no
-	 * telephone is published at all.
+	 * The Organization carries the two contact points — sales with the
+	 * email, WhatsApp with the phone — both read from the Knowledge Graph
+	 * fields, and no top-level telephone.
 	 */
-	public function test_organization_carries_the_sales_contact_point_only(): void {
+	public function test_organization_carries_the_two_contact_points(): void {
 		self::$services['SocialOption'] = $this->social_service();
 		$schema                         = ( new SchemaFilters() )->organization(
 			array(
@@ -208,9 +207,14 @@ final class SchemaFiltersTest extends TestCase {
 					'email'             => 'info@metal-divider.com',
 					'availableLanguage' => array( 'English' ),
 				),
+				array(
+					'@type'             => 'ContactPoint',
+					'contactType'       => 'WhatsApp',
+					'telephone'         => '+85264731687',
+					'availableLanguage' => array( 'English' ),
+				),
 			),
-			$schema['contactPoint'],
-			'no WhatsApp point and no phone in the structured data (owner ruling 2026-10-30)'
+			$schema['contactPoint']
 		);
 		$this->assertArrayNotHasKey( 'telephone', $schema );
 	}

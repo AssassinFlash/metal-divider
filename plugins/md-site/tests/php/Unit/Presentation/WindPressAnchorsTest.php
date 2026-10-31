@@ -152,9 +152,7 @@ final class WindPressAnchorsTest extends TestCase {
 		}
 		$this->assertContains( '--md-gold: #c9a962', $tokens, 'the gold anchor of spec 17 §4.4' );
 		$this->assertContains( '--md-container: 1400px', $tokens );
-		// Owner ruling 2026-10-30: the WhatsApp channel is gone site-wide, so
-		// its token is no longer declared and has no anchor.
-		$this->assertNotContains( '--md-whatsapp: #25D366', $tokens, 'no WhatsApp token anchor (owner ruling 2026-10-30)' );
+		$this->assertContains( '--md-whatsapp: #25D366', $tokens, 'the value keeps its source casing: the compile normalises it, the anchor does not' );
 		// The anchors are distinct `--md-<name>: <value>` pairs, so the volume
 		// is counted the same way: two breakpoints declaring the same value
 		// (`--md-header-h: 60px` at >=991 and >=1200 since the 2026-10-31 ruling)

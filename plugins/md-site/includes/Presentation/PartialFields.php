@@ -66,6 +66,11 @@ final class PartialFields {
 	public const CODE = 'md_pattern_code';
 
 	/**
+	 * The current pattern's URL slug.
+	 */
+	public const SLUG = 'md_pattern_slug';
+
+	/**
 	 * The current pattern's canonical URL.
 	 */
 	public const PERMALINK = 'md_pattern_permalink';
@@ -225,6 +230,7 @@ final class PartialFields {
 	public function register(): void {
 		\add_shortcode( self::ID, array( $this, 'id' ) );
 		\add_shortcode( self::CODE, array( $this, 'code' ) );
+		\add_shortcode( self::SLUG, array( $this, 'slug' ) );
 		\add_shortcode( self::PERMALINK, array( $this, 'permalink' ) );
 		\add_shortcode( self::FAMILY, array( $this, 'series_name' ) );
 		\add_shortcode( self::SERIES, array( $this, 'series' ) );
@@ -364,6 +370,24 @@ final class PartialFields {
 	public function code( $atts = array(), ?string $content = '' ): string {
 		unset( $atts, $content );
 		return \esc_html( PatternFacts::code( $this->current() ) );
+	}
+
+	/**
+	 * The current pattern's URL slug, derived from its canonical permalink.
+	 *
+	 * @param array<string, mixed>|string $atts    Shortcode attributes (unused).
+	 * @param string|null                 $content Enclosed content (unused).
+	 */
+	public function slug( $atts = array(), ?string $content = '' ): string {
+		unset( $atts, $content );
+		$permalink = (string) \get_permalink( $this->current() );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- native URL path extraction works in both runtime and WP_Mock unit tests.
+		$path = trim( (string) parse_url( $permalink, PHP_URL_PATH ), '/' );
+		if ( '' === $path ) {
+			return '';
+		}
+		$segments = explode( '/', $path );
+		return \esc_attr( (string) end( $segments ) );
 	}
 
 	/**

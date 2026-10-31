@@ -1729,6 +1729,7 @@ border: 1px solid rgba(255, 255, 255, 0.08);
 .md-tfb03af4e { background-color: rgba(255,255,255,0.05);border-color: rgba(255,255,255,0.1);color: inherit;--tw-ring-color: #c9a962 }
 .md-t03791691 { background-color: rgba(255,255,255,0.05);border-color: rgba(255,255,255,0.1);color: inherit;--tw-ring-color: #c9a962;background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');background-position: right 8px center;background-size: 0.6em auto }
 .md-t8efccd61 { background-color: rgba(255,255,255,0.05);border-color: rgba(255,255,255,0.1);color: inherit;--tw-ring-color: #c9a962;background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');background-position: right 16px center;background-size: 0.6em auto }
+.md-ta43cb577 { background-color: #25D366 }
 .md-t9ffc9811 { background-color: rgba(255,255,255,0.05);border-color: rgba(255,255,255,0.1) }
 .md-t6940f047 { background-color: #c9a962;color: #000 }
 
@@ -1889,7 +1890,8 @@ padding-left: 16px;
 padding-right: 16px;
 }
 #quote-modal a,
-#quote-modal .md-inquiry-cta__primary {
+#quote-modal .md-inquiry-cta__primary,
+#quote-modal .md-inquiry-cta__whatsapp {
 min-height: 48px;
 font-size: 16px;
 border-radius: 14px;
@@ -1911,6 +1913,12 @@ border-radius: 12px;
 @media (max-width: 767px) {
 #hero-section-template--22465876033789__hero_landing_yPiYEt a[href="#patterns"],
 #hero-section-template--22465876033789__hero_landing_yPiYEt a[href="#contact"] {
+min-height: 44px;
+display: inline-flex;
+align-items: center;
+}
+html:has(#hero-section-template--22465876033789__hero_landing_yPiYEt) a[href="https://wa.me/85264731687"],
+html:has(#hero-section-template--22465876033789__hero_landing_yPiYEt) a[href^="https://wa.me/85264731687"] {
 min-height: 44px;
 display: inline-flex;
 align-items: center;

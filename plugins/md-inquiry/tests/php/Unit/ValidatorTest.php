@@ -70,10 +70,11 @@ final class ValidatorTest extends TestCase {
 	}
 
 	/**
-	 * The selects are required: a brief without a route cannot be triaged to a
-	 * technical team, and one without a quantity cannot be priced.
+	 * The qualification selects are optional: a brief with only name, email
+	 * and message passes without error when the customer skips the optional
+	 * project details.
 	 */
-	public function test_the_selects_are_required(): void {
+	public function test_the_selects_are_optional(): void {
 		$checked = ( new Validator() )->validate(
 			array(
 				'name'    => 'Jane Chan',
@@ -83,8 +84,9 @@ final class ValidatorTest extends TestCase {
 			false
 		);
 
+		$this->assertSame( array(), $checked['errors'] );
 		foreach ( array( 'country', 'scope', 'route', 'quantity' ) as $field ) {
-			$this->assertArrayHasKey( $field, $checked['errors'], $field . ' must be required' );
+			$this->assertSame( '', $checked['values'][ $field ] );
 		}
 	}
 
@@ -178,10 +180,10 @@ final class ValidatorTest extends TestCase {
 
 
 	/**
-	 * The confirmation is required. An unchecked box posts nothing, and a
-	 * value other than the checkbox's own "1" is not a confirmation.
+	 * The confirmation checkbox is optional: an unchecked box posts nothing
+	 * and does not block submission, while a non-"1" value is normalized to ''.
 	 */
-	public function test_an_unconfirmed_inquiry_is_an_error(): void {
+	public function test_confirmation_is_optional(): void {
 		$checked = ( new Validator() )->validate(
 			array(
 				'name'     => 'Jane Chan',
@@ -196,7 +198,7 @@ final class ValidatorTest extends TestCase {
 			true
 		);
 
-		$this->assertArrayHasKey( 'confirm', $checked['errors'] );
+		$this->assertArrayNotHasKey( 'confirm', $checked['errors'] );
 		$this->assertSame( '', $checked['values']['confirm'] );
 
 		$tampered = ( new Validator() )->validate(
@@ -212,7 +214,8 @@ final class ValidatorTest extends TestCase {
 			),
 			true
 		);
-		$this->assertArrayHasKey( 'confirm', $tampered['errors'] );
+		$this->assertArrayNotHasKey( 'confirm', $tampered['errors'] );
+		$this->assertSame( '', $tampered['values']['confirm'] );
 	}
 
 	/**

@@ -119,6 +119,7 @@ button{cursor:pointer}
 .md-panel-foot a:hover{color:#1b3b2c;text-decoration:underline}
 .md-panel-foot a:focus-visible{outline:2px solid #c9a962;outline-offset:2px}
 .md-foot-mark{display:grid;place-items:center;width:19px;height:19px;flex:0 0 19px;border:1px solid #d8cdb8;border-radius:50%;color:#9a8357;font-family:Georgia,serif;font-size:7px}
+.md-foot-dot{width:3px;height:3px;border-radius:50%;background:#c3b69e}
 
 /* Tabs */
 .md-tabs{flex:0 0 62px;display:flex;align-items:stretch;border-top:1px solid var(--line);background:rgba(251,248,241,.98);padding-bottom:env(safe-area-inset-bottom)}

@@ -277,16 +277,15 @@ final class ReplicaPageTypesTest extends TestCase {
 	}
 
 	/**
-	 * No WhatsApp returns anywhere in the touched faces.
-	 *
-	 * The channel was removed site-wide on 2026-10-30; the manufacturing
-	 * page's closing band is the one place that could plausibly reintroduce
-	 * it while being reshaped.
+	 * Both WhatsApp and #open-quote inquiry CTAs are present across the
+	 * touched faces (owner ruling 2026-10-31: ubiquitous CTA & WhatsApp
+	 * conversion channels).
 	 */
-	public function test_no_whatsapp_returns_in_the_touched_faces(): void {
+	public function test_whatsapp_and_quote_ctas_are_present_in_the_touched_faces(): void {
 		foreach ( array( 'manufacturing', 'custom-screens', 'faqs' ) as $face ) {
 			$source = $this->template( $face );
-			$this->assertSame( 0, preg_match( '/wa\.me|whatsapp/i', $source ), "{$face} carries no WhatsApp link" );
+			$this->assertSame( 1, preg_match( '/wa\.me\/85264731687/i', $source ), "{$face} carries the official WhatsApp link" );
+			$this->assertStringContainsString( '#open-quote', $source, "{$face} carries in-place quote modal triggers" );
 		}
 	}
 }

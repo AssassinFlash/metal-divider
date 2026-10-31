@@ -22,7 +22,7 @@ use MetalDivider\Inquiry\Mail\QueueCli;
  * The inquiry chain (spec 07, branch research/spec-inquiry-chain, as revised
  * by ticket #7: PDP-initiated, single-pattern, no list): the record's post
  * type and workflow statuses, the ACF field group that presents it, the form
- * and its POST handler, the Turnstile gate, the two
+ * and its POST handler, the Turnstile gate, the WhatsApp builders, the two
  * mails behind the outbound queue, the REST anchor and the back-office
  * surfaces (the list's columns, the settings page, the WP-CLI doors).
  */
@@ -43,6 +43,7 @@ final class Plugin {
 	 * @param SettingsPage $settings    The settings page.
 	 * @param Form         $form        The form's output.
 	 * @param Submission   $submission  The form's POST handler.
+	 * @param WhatsApp     $whatsapp    The WhatsApp builders.
 	 * @param ThankYou     $thank_you   The thank-you page's helpers.
 	 * @param RestGuard    $rest_guard  The REST 404 anchor.
 	 * @param Cli          $cli         The test-mode WP-CLI command.
@@ -57,6 +58,7 @@ final class Plugin {
 		private readonly SettingsPage $settings,
 		private readonly Form $form,
 		private readonly Submission $submission,
+		private readonly WhatsApp $whatsapp,
 		private readonly ThankYou $thank_you,
 		private readonly RestGuard $rest_guard,
 		private readonly Cli $cli,
@@ -75,6 +77,7 @@ final class Plugin {
 		$this->settings->register();
 		$this->form->register();
 		$this->submission->register();
+		$this->whatsapp->register();
 		$this->thank_you->register();
 		$this->rest_guard->register();
 		$this->cli->register();

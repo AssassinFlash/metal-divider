@@ -419,7 +419,7 @@
 .md-footer__email-grid {
 	display: grid;
 	gap: 10px;
-	grid-template-columns: minmax(0, 1fr);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	margin-top: 14px;
 }
 
@@ -485,6 +485,27 @@
 .md-footer__copy svg {
 	height: 16px;
 	width: 16px;
+}
+
+.md-footer__phone {
+	align-items: center;
+	color: rgba(255, 255, 255, 0.72);
+	display: inline-flex;
+	font-size: 11px;
+	gap: 8px;
+	margin-top: 13px;
+	min-height: 44px;
+}
+
+#md-footer .md-footer__phone:hover,
+#md-footer .md-footer__phone:focus-visible {
+	color: var(--md-gold-light, #d4b878);
+}
+
+.md-footer__phone svg {
+	color: var(--md-gold, #c9a962);
+	height: 14px;
+	width: 14px;
 }
 
 /* `#md-footer a` is (1, 0, 1) and sets color: inherit, so a class-only
@@ -766,6 +787,11 @@
 	.md-footer__copy svg {
 		height: 13px;
 		width: 13px;
+	}
+
+	.md-footer__phone {
+		font-size: 12px;
+		margin-top: 10px;
 	}
 
 	.md-footer__bar {

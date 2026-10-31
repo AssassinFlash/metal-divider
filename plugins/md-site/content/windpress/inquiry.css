@@ -67,7 +67,7 @@
 
 /* --- the form's semantic classes (the plugin renders them; the volume
        styles them — AGENTS.md: plugins carry zero CSS). Selectors follow
-       md-inquiry's actual markup: md-inquiry-field*, -submit,
+       md-inquiry's actual markup: md-inquiry-field*, -submit, -whatsapp,
        -actions, -note, -notice, -pattern (verified against Form.php). --- */
 .md-inquiry .md-inquiry-field { margin-bottom: 20px; }
 .md-inquiry .md-inquiry-field__label {
@@ -193,7 +193,8 @@
   gap: 14px;
   margin-top: 8px;
 }
-.md-inquiry .md-inquiry-submit {
+.md-inquiry .md-inquiry-submit,
+.md-inquiry .md-inquiry-whatsapp {
   align-items: center;
   border-radius: 10px;
   display: inline-flex;
@@ -213,7 +214,20 @@
 }
 .md-inquiry .md-inquiry-submit:hover { background: var(--md-gold-light); }
 .md-inquiry .md-inquiry-submit:disabled { opacity: 0.55; cursor: not-allowed; }
-/* The reply promise: the old site stated the response
+.md-inquiry .md-inquiry-whatsapp {
+  background: transparent;
+  border: 1px solid var(--md-whatsapp);
+  color: var(--md-whatsapp);
+}
+.md-inquiry .md-inquiry-whatsapp:hover { background: rgba(37, 211, 102, 0.1); }
+.md-inquiry .md-inquiry-note,
+.md-inquiry .form-note {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin: 16px 0 0;
+}
+/* The reply promise, above the WhatsApp note: the old site stated the response
  * window on every page and the rebuilt form stated nothing, so a visitor had no
  * idea when to expect an answer. It is a promise, not fine print, so it reads
  * at body size and in the page's own gold rather than the muted note grey. */
@@ -336,6 +350,11 @@
   margin: 0;
   padding-left: 20px;
 }
+.md-inquiry .inquiry-wa {
+  color: var(--md-whatsapp);
+  text-decoration: none;
+  font-weight: 600;
+}
 .md-inquiry .inquiry-mail {
   color: var(--md-gold);
   text-decoration: none;
@@ -376,6 +395,8 @@
     backdrop-filter: blur(16px);
   }
   .md-inquiry .md-inquiry-submit,
+  .md-inquiry .md-inquiry-whatsapp,
+  .md-inquiry .inquiry-wa,
   .md-inquiry .inquiry-mail {
     display: flex;
     align-items: center;
@@ -429,8 +450,13 @@
     backdrop-filter: blur(16px);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
-  .md-quote-modal__card .md-inquiry-submit {
+  .md-quote-modal__card .md-inquiry-submit,
+  .md-quote-modal__card .md-inquiry-whatsapp {
     width: 100%;
+  }
+  .md-quote-modal__card .md-inquiry-note {
+    margin-top: 8px;
+    margin-bottom: 8px;
   }
 }
 

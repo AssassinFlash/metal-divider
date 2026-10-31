@@ -124,8 +124,8 @@ final class EmailsTest extends TestCase {
 
 	/**
 	 * The confirmation's wording: the receipt with the pattern named, the
-	 * 24-hour promise, the one faster channel, and the reply invitation the
-	 * Reply-To backs.
+	 * 24-hour promise, the two faster channels with the number as
+	 * people read it, and the reply invitation the Reply-To backs.
 	 */
 	public function test_the_confirmation_carries_the_reviewed_wording(): void {
 		$body = ( new Emails( new Config() ) )->confirmation( self::record() )['body'];
@@ -134,10 +134,7 @@ final class EmailsTest extends TestCase {
 		$this->assertStringContainsString( 'Thank you for your inquiry about Apiary (APIARY) — this email confirms we have received it.', $body );
 		$this->assertStringContainsString( 'replies within 24 hours on business days', $body );
 		$this->assertStringContainsString( 'Reply directly to this email', $body );
-		// Owner ruling 2026-10-30: the WhatsApp channel is gone site-wide, so
-		// the confirmation names one channel — the reply — and the email address.
-		$this->assertStringNotContainsString( 'WhatsApp', $body, 'no WhatsApp channel in the confirmation (owner ruling 2026-10-30)' );
-		$this->assertStringNotContainsString( 'wa.me', $body, 'no WhatsApp link in the confirmation (owner ruling 2026-10-30)' );
+		$this->assertStringContainsString( 'WhatsApp: +852 6473 1687 — https://wa.me/85264731687', $body, 'the number reads grouped; the link carries the wa.me digits' );
 		$this->assertStringContainsString( 'Email: info@metal-divider.com', $body );
 		$this->assertStringNotContainsString( '<', $body, 'the mail is plain text, no markup' );
 	}

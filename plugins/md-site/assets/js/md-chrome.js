@@ -218,9 +218,11 @@
           }
           var page_form = pageInquiryForm();
           if (page_form) {
+            applyQuoteContext(page_form, detail);
             focusInquiryForm(page_form);
             return;
           }
+          applyQuoteContext(this.$root, detail);
           if (this.isOpen) {
             return;
           }
@@ -317,16 +319,16 @@
     Array.prototype.forEach.call(list, fn);
   }
 
-  // The inquiry form a page renders for itself, outside the footer's or page's
-  // quote dialog — the inquiry and custom-screens faces render an in-page form.
+  // The inquiry form a page renders for itself on the dedicated /inquiry/
+  // face (#md-inquiry). Pages that only carry a closing #contact form at the
+  // bottom keep #md-quote-modal intact so card, hero, and mid-page CTAs open
+  // the modal in-place without scrolling away.
   function pageInquiryForm() {
-    var app = null;
-    each(document.querySelectorAll('.md-inquiry-app'), function (candidate) {
-      if (!app && !candidate.closest('#md-quote-modal, #quote-modal')) {
-        app = candidate;
-      }
-    });
-    return app;
+    var inquiryRoot = document.getElementById('md-inquiry');
+    if (!inquiryRoot) {
+      return null;
+    }
+    return inquiryRoot.querySelector('.md-inquiry-app');
   }
 
   // Brings the page's own form into view and puts the caret in its first
@@ -339,6 +341,30 @@
     }
     if (typeof target.focus === 'function') {
       target.focus({ preventScroll: true });
+    }
+  }
+
+  // Synchronizes the modal shell heading with the trigger's pattern or intent
+  // context; the form's own fields, pattern preview slot, and WhatsApp href
+  // are updated by inquiry.js's open-quote listener.
+  function applyQuoteContext(root, detail) {
+    if (!root) {
+      return;
+    }
+    var info = detail || {};
+    var patternCode = String(info.patternCode || '').trim();
+    var patternSlug = String(info.patternSlug || '').trim();
+    var quoteIntent = String(info.quoteIntent || info.intentLabel || '').trim();
+    var label = patternCode || quoteIntent || patternSlug;
+
+    var modalTitle = root.querySelector('.md-quote-modal__title, #md-quote-modal-title, #quote-modal-title');
+    if (modalTitle) {
+      if (!modalTitle.__mdDefaultTitle) {
+        modalTitle.__mdDefaultTitle = modalTitle.textContent;
+      }
+      modalTitle.textContent = label
+        ? 'Request a quote · ' + label
+        : modalTitle.__mdDefaultTitle;
     }
   }
 
@@ -776,9 +802,23 @@
       var quote = event.target.closest('[data-quote-source], a[href="#open-quote"]');
       if (quote && document.querySelector('[x-data^="quoteModal"]')) {
         event.preventDefault();
+        var activeLightbox = quote.closest('[data-pattern-lightbox].active');
+        if (activeLightbox && typeof activeLightbox.__mdClose === 'function') {
+          activeLightbox.__mdClose();
+        }
         window.dispatchEvent(
           new CustomEvent('open-quote', {
-            detail: { source: quote.getAttribute('data-quote-source') || 'open-quote' }
+            detail: {
+              source: quote.getAttribute('data-quote-source') || 'open-quote',
+              sourcePage: quote.getAttribute('data-source-page') || '',
+              sourceModule: quote.getAttribute('data-source-module') || '',
+              sourceButton: quote.getAttribute('data-source-button') || '',
+              patternCode: quote.getAttribute('data-pattern-code') || '',
+              patternSlug: quote.getAttribute('data-pattern-slug') || '',
+              patternThumb: quote.getAttribute('data-pattern-thumb') || quote.getAttribute('data-quote-thumb') || '',
+              patternUrl: quote.getAttribute('data-pattern-url') || '',
+              quoteIntent: quote.getAttribute('data-quote-intent') || ''
+            }
           })
         );
       }
@@ -1363,8 +1403,16 @@
         }
       };
 
-      trigger.addEventListener('click', open);
+      trigger.addEventListener('click', function (event) {
+        if (event.target && event.target.closest('a, button, .pattern-tile-quote')) {
+          return;
+        }
+        open();
+      });
       trigger.addEventListener('keydown', function (event) {
+        if (event.target !== trigger && event.target && event.target.closest('a, button, .pattern-tile-quote')) {
+          return;
+        }
         // role="button" carries no native activation, so the keys a real
         // button answers are dispatched here.
         if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {

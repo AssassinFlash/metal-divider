@@ -155,6 +155,7 @@ final class InquirySmokeTest extends TestCase {
 			'name="md_inquiry_nonce"',
 			'name="website"',
 			'class="md-inquiry-submit"',
+			'https://wa.me/85264731687?text=',
 		) as $needle ) {
 			self::assertStringContainsString( $needle, $html['body'], $needle );
 		}
@@ -286,21 +287,12 @@ final class InquirySmokeTest extends TestCase {
 
 		$fields = static fn( string $name ): string => \http_build_query(
 			array(
-				'md_inquiry_action'   => 'submit',
-				'md_inquiry_nonce'    => $nonce,
-				'website'             => '',
-				'md_inquiry_name'     => $name,
-				'md_inquiry_email'    => 'jane@studio.example',
-				'md_inquiry_message'  => 'Quantity: 40 panels.',
-				// The form requires country, scope, route, and quantity, so a
-				// payload carrying only the three free-text fields is refused
-				// by validation and never reaches the rate window. These are
-				// the same accepted values the main smoke case sends.
-				'md_inquiry_country'  => 'Hong Kong',
-				'md_inquiry_scope'    => 'Single zone',
-				'md_inquiry_route'    => 'Facade screening',
-				'md_inquiry_quantity' => '10-50 sqm',
-				'md_inquiry_confirm'  => '1',
+				'md_inquiry_action'  => 'submit',
+				'md_inquiry_nonce'   => $nonce,
+				'website'            => '',
+				'md_inquiry_name'    => $name,
+				'md_inquiry_email'   => 'jane@studio.example',
+				'md_inquiry_message' => 'Quantity: 40 panels.',
 			)
 		);
 

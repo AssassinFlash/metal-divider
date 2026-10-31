@@ -41,6 +41,7 @@
         <li><strong>Inquiry record</strong> — a successful submission also stores the UTC submission time, the page, module, and button the form came from, the IP address, a User-Agent summary of at most 300 characters, a language marker fixed to English, and a Turnstile status of verified or not configured. The Turnstile token is not stored. A failed check does not create an inquiry record. A ten-minute rate-limit counter stores timestamps under a hash of the IP address, not the address itself.</li>
         <li><strong>Mail copies</strong> — the same successful inquiry is copied into two queued emails: an internal notification with the form fields, the pattern, the source, and the verification status, and a confirmation sent to the email address entered. Those copies do not include the IP address or the User-Agent.</li>
         <li><strong>Server logs</strong> — Hostinger keeps ordinary request logs (IP address, time, and the page requested) for operating the site.</li>
+        <li><strong>WhatsApp</strong> — choosing WhatsApp does not submit the form and does not create an inquiry record. It opens a chat to +852 6473 1687. The prefilled message can include a short greeting, the pattern name and code, and a source reference. After the name, company, or message is typed, the form's WhatsApp link can also include those three. Email, phone, country, project scope, inquiry route, and quantity are not included.</li>
       </ul>
     </section>
 

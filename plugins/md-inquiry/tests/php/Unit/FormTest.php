@@ -83,14 +83,16 @@ final class FormTest extends TestCase {
 	/**
 	 * The form with a pattern: the context row, the repopulatable fields with
 	 * their limits, the hidden source triple and pattern slug, the nonce, the
-	 * honeypot — and not one inline style.
+	 * honeypot, the WhatsApp alternate — and not one inline style.
 	 */
 	public function test_the_form_assembles_the_patterned_shape(): void {
 		$html = $this->render( 'apiary-architectural-metal-screen-pattern', array() );
 
 		$this->assertStringContainsString( 'class="md-inquiry-app" data-md-inquiry="', $html, 'the behavior file reads its configuration from the data attribute — the CSP allows no inline script' );
-		$this->assertStringContainsString( 'class="md-inquiry-pattern__name">Apiary<', $html );
-		$this->assertStringContainsString( 'class="md-inquiry-pattern__code">APIARY<', $html );
+		$this->assertStringContainsString( 'class="md-inquiry-pattern__name"', $html );
+		$this->assertStringContainsString( '>Apiary<', $html );
+		$this->assertStringContainsString( 'class="md-inquiry-pattern__code"', $html );
+		$this->assertStringContainsString( '>APIARY<', $html );
 		$this->assertStringContainsString( 'This pattern is attached to your inquiry.', $html );
 		$this->assertStringContainsString( '<form class="md-inquiry-form" method="post">', $html, 'no action attribute: the form posts to the page it sits on, the CSP\'s form-action honored' );
 		// Asserted as three separate facts, not one adjacency: a real
@@ -110,20 +112,20 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'name="md_inquiry_name"', $html );
 		$this->assertStringContainsString( 'maxlength="120"', $html );
 		$this->assertStringContainsString( 'name="md_inquiry_phone"', $html );
+		$this->assertStringContainsString( 'Phone / WhatsApp (optional)', $html );
 		$this->assertStringContainsString( 'maxlength="40"', $html, 'phone is capped at PHONE_MAX, not NAME_MAX' );
+		$this->assertStringContainsString( '<details class="md-inquiry-optional">', $html );
+		$this->assertStringContainsString( 'Project details (company, country, scope, quantity — optional)', $html );
 		$this->assertStringContainsString( 'name="md_inquiry_confirm"', $html );
 		$this->assertStringContainsString( 'I confirm this inquiry is for an architectural or commercial project.', $html );
 		$this->assertStringContainsString( '<div class="md-inquiry-notice" role="alert" aria-live="polite"></div>', $html );
 		$this->assertStringContainsString( 'id="md-inquiry-message-hint"', $html );
 		$this->assertStringContainsString( 'aria-describedby="md-inquiry-message-hint"', $html );
+		$this->assertStringContainsString( '%0A', $html, 'the WhatsApp href keeps the encoded line break' );
 		$this->assertStringContainsString( 'name="website"', $html, 'the honeypot' );
 		$this->assertStringContainsString( 'class="md-inquiry-submit"', $html );
 		$this->assertStringContainsString( 'class="md-inquiry-fields"', $html, 'fields scroll independently of the sticky actions' );
-		// Owner ruling 2026-10-30: the WhatsApp channel is gone site-wide. The
-		// form offers one path — submit — and no second, off-site one.
-		$this->assertStringNotContainsString( 'wa.me', $html, 'no WhatsApp bypass (owner ruling 2026-10-30)' );
-		$this->assertStringNotContainsString( 'md-inquiry-whatsapp', $html, 'no WhatsApp bypass (owner ruling 2026-10-30)' );
-		$this->assertStringNotContainsString( 'WhatsApp', $html, 'no WhatsApp copy (owner ruling 2026-10-30)' );
+		$this->assertStringContainsString( 'class="md-inquiry-whatsapp" href="https://wa.me/85264731687?text=', $html );
 		$this->assertStringNotContainsString( ' style=', $html, 'zero inline styles, always' );
 		$this->assertStringNotContainsString( '<script', $html, 'no inline script: the CSP closes that door' );
 
@@ -253,15 +255,17 @@ final class FormTest extends TestCase {
 	public function test_the_pattern_attribute_decides_the_context(): void {
 		$html = $this->render( 'apiary', array() );
 
-		$this->assertStringContainsString( 'class="md-inquiry-pattern__name">Apiary<', $html );
+		$this->assertStringContainsString( 'class="md-inquiry-pattern__name"', $html );
+		$this->assertStringContainsString( '>Apiary<', $html );
 		$this->assertStringContainsString( 'name="md_inquiry_pattern_slug" value="apiary"', $html );
 		$this->assertStringContainsString( '"module":"pattern-actions"', $html, 'the config JSON carries the source for the behavior file' );
 	}
 
 
 	/**
-	 * Without a pattern the form must not claim one is attached, and the
-	 * inquiry page's source triple is the contact hub, not a pattern action.
+	 * Without a pattern the form must not claim one is attached, carries a
+	 * hidden dynamic pattern slot for modal re-aiming, and the inquiry page's
+	 * source triple is the contact hub, not a pattern action.
 	 */
 	public function test_a_form_without_a_pattern_does_not_claim_one(): void {
 		$config = new Config(
@@ -273,10 +277,13 @@ final class FormTest extends TestCase {
 		$html   = ( new Form( $config, new Pattern(), new FormState() ) )->render( '', 'inquiry', 'contact-hub', 'send-inquiry' );
 
 		$this->assertStringNotContainsString( 'this pattern', $html );
-		$this->assertStringNotContainsString( 'md-inquiry-pattern', $html );
+		$this->assertStringContainsString( 'class="md-inquiry-pattern" data-md-inquiry-pattern-slot hidden', $html );
+		$this->assertStringContainsString( 'data-md-inquiry-pattern-input name="md_inquiry_pattern_slug" value=""', $html );
+		$this->assertStringContainsString( 'pre-filled with your details.', $html );
 		$this->assertStringContainsString( 'value="inquiry"', $html );
 		$this->assertStringContainsString( 'value="contact-hub"', $html );
 		$this->assertStringContainsString( 'value="send-inquiry"', $html );
+		$this->assertStringContainsString( 'inquiry%2Fcontact-hub%2Fwhatsapp', $html );
 	}
 
 	/**
@@ -496,6 +503,14 @@ function matches(node, selector) {
 	if (!node || !node.attrs) {
 		return false;
 	}
+	if (selector.indexOf(',') !== -1) {
+		return selector.split(',').some(function (part) {
+			return matches(node, part.trim());
+		});
+	}
+	if (selector.charAt(0) === '#') {
+		return node.id === selector.slice(1) || node.attrs.id === selector.slice(1);
+	}
 	if (selector.charAt(0) === '.') {
 		var className = node.attrs.class || '';
 		return (' ' + className + ' ').indexOf(' ' + selector.slice(1) + ' ') !== -1;
@@ -507,6 +522,10 @@ function matches(node, selector) {
 	var idPrefix = selector.match(/^\[id\^="([^"]+)"\]$/);
 	if (idPrefix) {
 		return typeof node.attrs.id === 'string' && node.attrs.id.indexOf(idPrefix[1]) === 0;
+	}
+	var bareAttr = selector.match(/^\[([a-z0-9_-]+)\]$/i);
+	if (bareAttr) {
+		return Object.prototype.hasOwnProperty.call(node.attrs, bareAttr[1]);
 	}
 	return false;
 }
@@ -527,12 +546,30 @@ function app(sitekey) {
 	var appEl = el('div', 'md-inquiry-app');
 	appEl.setAttribute('data-md-inquiry', JSON.stringify({
 		turnstile: true,
+		waNumber: '85264731687',
 		i18n: {
 			turnstileExpired: 'expired-for-this-form',
 			turnstileError: 'error-for-this-form'
 		}
 	}));
 	var form = el('form', 'md-inquiry-form');
+	var patternInput = el('input');
+	patternInput.setAttribute('name', 'md_inquiry_pattern_slug');
+	patternInput.setAttribute('data-md-inquiry-pattern-input', '');
+	var patternSlot = el('div', 'md-inquiry-pattern');
+	patternSlot.setAttribute('data-md-inquiry-pattern-slot', '');
+	patternSlot.setAttribute('hidden', '');
+	var patternThumb = el('img', 'md-inquiry-pattern__thumb');
+	patternThumb.setAttribute('data-md-inquiry-pattern-thumb', '');
+	patternThumb.setAttribute('hidden', '');
+	var patternEyebrow = el('span', 'md-inquiry-pattern__eyebrow');
+	patternEyebrow.setAttribute('data-md-inquiry-pattern-eyebrow', '');
+	var patternTitle = el('strong', 'md-inquiry-pattern__title');
+	patternTitle.setAttribute('data-md-inquiry-pattern-title', '');
+	patternSlot.appendChild(patternThumb);
+	patternSlot.appendChild(patternEyebrow);
+	patternSlot.appendChild(patternTitle);
+	var waLink = el('a', 'md-inquiry-whatsapp');
 	var submit = el('button', 'md-inquiry-submit');
 	submit.disabled = true;
 	var status = el('p', 'md-inquiry-turnstile-status');
@@ -542,11 +579,26 @@ function app(sitekey) {
 	slot.setAttribute('data-appearance', 'interaction-only');
 	slot.setAttribute('data-theme', 'auto');
 	slot.setAttribute('data-retry', 'auto');
+	form.appendChild(patternInput);
+	form.appendChild(patternSlot);
 	form.appendChild(submit);
+	form.appendChild(waLink);
 	form.appendChild(status);
 	form.appendChild(slot);
 	appEl.appendChild(form);
-	return { app: appEl, form: form, submit: submit, status: status, slot: slot };
+	return {
+		app: appEl,
+		form: form,
+		submit: submit,
+		status: status,
+		slot: slot,
+		waLink: waLink,
+		patternInput: patternInput,
+		patternSlot: patternSlot,
+		patternThumb: patternThumb,
+		patternEyebrow: patternEyebrow,
+		patternTitle: patternTitle
+	};
 }
 
 var visible = app('visible-key');
@@ -554,6 +606,7 @@ visible.slot.rect = { top: 4000, left: 0, width: 300, height: 65, bottom: 4065, 
 body.appendChild(visible.app);
 
 var modal = el('div');
+modal.setAttribute('id', 'md-quote-modal');
 modal.setAttribute('x-cloak', '');
 var hidden = app('hidden-key');
 hidden.slot.rect = { top: 120, left: 16, width: 280, height: 65, bottom: 185, right: 296 };
@@ -609,7 +662,12 @@ function fireMutations() {
 	});
 }
 
+var windowListeners = {};
 global.window = global;
+global.addEventListener = function (type, fn) {
+	windowListeners[type] = windowListeners[type] || [];
+	windowListeners[type].push(fn);
+};
 global.document = {
 	documentElement: root,
 	querySelectorAll: function (selector) {
@@ -720,6 +778,36 @@ resets.forEach(function (args) {
 		fail('turnstile.reset was called without a widget id: ' + JSON.stringify(resets));
 	}
 });
+
+if (!windowListeners['open-quote'] || !windowListeners['open-quote'].length) {
+	fail('inquiry.js did not register an open-quote listener on window');
+}
+windowListeners['open-quote'].forEach(function (fn) {
+	fn({
+		detail: {
+			patternCode: 'APIARY',
+			patternSlug: 'apiary',
+			patternName: 'Apiary',
+			patternThumb: 'https://metal-divider.com/apiary.webp',
+			intentLabel: 'Selected pattern'
+		}
+	});
+});
+if (hidden.patternInput.value !== 'apiary') {
+	fail('open-quote did not update the modal pattern slug input');
+}
+if (hidden.patternSlot.hasAttribute('hidden')) {
+	fail('open-quote did not unhide the modal pattern slot');
+}
+if (hidden.patternTitle.textContent !== 'Apiary (APIARY)') {
+	fail('open-quote did not set the modal pattern title, got: ' + hidden.patternTitle.textContent);
+}
+if (hidden.patternThumb.getAttribute('src') !== 'https://metal-divider.com/apiary.webp' || hidden.patternThumb.hasAttribute('hidden')) {
+	fail('open-quote did not update and unhide the modal pattern thumbnail');
+}
+if (!hidden.waLink.href || hidden.waLink.href.indexOf('https://wa.me/85264731687?text=') !== 0 || hidden.waLink.href.indexOf('Apiary%20(APIARY)') === -1) {
+	fail('open-quote did not update the modal WhatsApp link href, got: ' + hidden.waLink.href);
+}
 
 console.log('ok renders=' + renders.length + ' resets=' + JSON.stringify(resets));
 TURNSTILE_BEHAVIOR;
