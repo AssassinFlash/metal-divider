@@ -1414,3 +1414,4 @@ PreparedSQL 批量整改)——Batch 3 工具硬化;④staging 手工 state flip
 **批次七 sitemap 复核**:page-sitemap1 含 /patterns/ 与 /pattern-category/ ✓、product_cat-sitemap1 全部 /pattern-category/<slug>/ ✓、PDP /pattern/<slug>/ 语义不变 ✓——GSC 已提交的 sitemap 地址不变,内容自动更新。批次七闭环。
 
 **批次八部署状态(未完待续)**:代码已部署(`f473f04`),但 **WindPress 编译产物仍是旧内容**——编译能完成(last_full_build 已更新)但读的是旧体内容:直接推送 `uploads/windpress/data/*.css` 不够,编译器的体内容另有来源(疑 DB 内 volumes,需经 admin Files 页从文件重拉或 REST 同步)。**剩余唯一一步**:让编译器吃到新体(breadcrumb/tokens/chrome 等 7 个体已推送 data 目录,0.12em/60px 在磁盘文件里实证存在)→ 重编译 → purge。此前 batch 五同流程成功过,失败模式与已知「后台标签页被节流」问题并存,待下会话用前台窗口重试或查 REST Volume::index 的读取源。
+**批次八上线(外科手术法)**:编译器读旧体的根因未除,但用「将 7 个新体追加到编译产物尾」的级联覆盖恢复了批次八生效——生产实测 headerH **113→60** ✓、面包屑底 **#fff→rgb(20,20,20)** ✓(playwright 1440 computed)。追加块待下次真正编译成功后去重。blog 页头不一致(serif 浅灰独立 header,de-linker 遗留)列为批次九。
