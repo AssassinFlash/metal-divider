@@ -670,23 +670,28 @@ class Target:
             encoded = base64.b64encode(self.http_auth.encode()).decode()
             headers["Authorization"] = f"Basic {encoded}"
         request = urllib.request.Request(url, headers=headers)
-        try:
-            with OPENER.open(request, timeout=30) as response:
+        last_error: OSError | None = None
+        for attempt in range(4):
+            try:
+                with OPENER.open(request, timeout=30) as response:
+                    return (
+                        response.status,
+                        cast("HTTPMessage", response.headers),
+                        response.read().decode("utf-8", errors="replace"),
+                    )
+            except urllib.error.HTTPError as error:
+                # A 3xx lands here too, by design: `_NoRedirects` leaves it to
+                # the default error handler, which raises with the status.
                 return (
-                    response.status,
-                    cast("HTTPMessage", response.headers),
-                    response.read().decode("utf-8", errors="replace"),
+                    error.code,
+                    cast("HTTPMessage", error.headers),
+                    error.read().decode("utf-8", errors="replace"),
                 )
-        except urllib.error.HTTPError as error:
-            # A 3xx lands here too, by design: `_NoRedirects` leaves it to
-            # the default error handler, which raises with the status.
-            return (
-                error.code,
-                cast("HTTPMessage", error.headers),
-                error.read().decode("utf-8", errors="replace"),
-            )
-        except OSError as error:  # a refused connection, a DNS failure, a timeout
-            raise DeployError(f"GET {url}: {error}") from error
+            except OSError as error:  # a refused connection, a DNS failure, a timeout
+                last_error = error
+                if attempt < 3:
+                    time.sleep(1.0)
+        raise DeployError(f"GET {url}: {last_error}") from last_error
 
     def http(self, path: str, *, cache_buster: str | None = None) -> tuple[int, str]:
         """Fetch one path from the site and return (status, body)."""
