@@ -394,3 +394,21 @@ body:has(.md-back-to-top:not([hidden])) #laser-cut-panels-faq-template--21844033
     padding-right: 0;
   }
 }
+
+@keyframes lcp-hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes lcp-hero-float-accent {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.lcp-side-float { animation: lcp-hero-float 6s ease-in-out infinite; }
+.lcp-accent-float {
+  animation: lcp-hero-float-accent 5s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lcp-side-float,
+  .lcp-accent-float { animation: none; }
+}

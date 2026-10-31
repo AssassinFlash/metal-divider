@@ -479,10 +479,10 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
 }
 
 #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes article > button > span:first-child > span:first-child {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.55) !important;
 }
 #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes article > button[aria-expanded="true"] > span:first-child > span:first-child {
-  color: #c9a962;
+  color: #c9a962 !important;
 }
 #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes article > button > span:last-child {
   margin-inline-end: 56px;
@@ -492,13 +492,13 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
     margin-inline-end: 40px;
   }
   #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes .ccm-panel > .grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) !important;
   }
   #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes .ccm-panel > .grid > :first-child {
-    display: none;
+    display: none !important;
   }
   #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes .ccm-panel .max-w-\[540px\] {
-    max-width: none;
+    max-width: none !important;
   }
 }
 #chinese-collaboration-modes-template--21873710498045__chinese_collaboration_modes .ccm-panel video,

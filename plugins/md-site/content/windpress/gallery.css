@@ -690,7 +690,7 @@ color: #d4af37;
 white-space: nowrap;
 }
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
 #project-gallery-template--21844034846973__project_gallery_8jJr6t { padding: 50px 16px; }
 #project-gallery-template--21844034846973__project_gallery_8jJr6t .projects-grid {
 grid-template-columns: 1fr;

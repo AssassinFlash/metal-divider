@@ -345,6 +345,9 @@ position: relative;
 z-index: 100;
 background: #fff;
 }
+body.admin-bar #HeaderV9-sections--21844031144189__header_v1_main {
+top: var(--wp-admin--admin-bar--height, 32px);
+}
 /* The old header was 113px: a 37px announcement strip plus the 76px grid.
    The strip and its rules are gone (they are documented at their old place in
    this file), so the header is the grid alone. */

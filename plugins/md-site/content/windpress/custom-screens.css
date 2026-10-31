@@ -54,6 +54,7 @@ text-decoration: none;
 #hero-section-template--22465876033789__hero_landing_yPiYEt .page-jumps a:focus-visible {
 color: #c9a962;
 }
+.gold-text { color: #d4af37; }
 
 .-top-20 { top:-80px }
 .-top-48 { top:-192px }
@@ -532,7 +533,7 @@ opacity: 1;
 transform: scale(1.05);
 }
 /* =========== 移动端优化的核心 CSS =========== */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
 #why-us-template--22465876033789__why_us_a7TA6d {
 padding: 60px 0;
 }

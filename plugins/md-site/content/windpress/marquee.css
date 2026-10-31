@@ -507,7 +507,7 @@ border-color: #d4af37;
 border-color: rgba(212,175,55,0.5);
 }
 .pattern-lightbox:has(.pattern-lightbox-strip:empty) .pattern-lightbox-strip { display: none; }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
 .pattern-lightbox { padding: 0; }
 .pattern-lightbox-dialog {
 max-width: 100%;
@@ -539,7 +539,7 @@ transition: none;
 }
 }
 /* 响应式 */
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
 #patterns-template--22465876033789__patterns_marquee_hqqfqz .panel-layout {
 grid-template-columns: 1fr;
 gap: 40px;
@@ -551,7 +551,7 @@ position: static;
 grid-template-columns: repeat(6, 1fr);
 }
 }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
 #patterns-template--22465876033789__patterns_marquee_hqqfqz .panel-grid {
 grid-template-columns: repeat(4, 1fr);
 gap: 10px;

@@ -90,6 +90,7 @@
   max-height: calc(100dvh - var(--md-header-h, 60px) - 48px); overflow-y: auto; padding: 16px; border: var(--journal-hairline) solid var(--journal-line); border-radius: 22px; background: var(--journal-panel);
 }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-topics { display: grid; min-width: 0; grid-template-columns: minmax(0,1fr); gap: 24px; margin-top: 24px; }
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-topics:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-topics ul { min-width: 0; list-style: none; padding: 0; margin: 0; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-topics .categories { font-size: 11px; font-weight: 600; letter-spacing: .08em; color: var(--journal-muted); }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-topics .categories > ul { display: grid; gap: 4px; margin-top: 12px; }
@@ -111,7 +112,8 @@
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-search input:focus-visible { outline: none; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-search button { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; padding: 0; border: 0; border-left: var(--journal-hairline) solid var(--journal-line); border-radius: 0 12px 12px 0; background: transparent; color: var(--journal-ink); cursor: pointer; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-search svg { width: var(--journal-search-icon); height: var(--journal-search-icon); }
-:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-content { display: grid; grid-template-columns: minmax(0,1fr); gap: 32px; }
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-content,
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-content-with-rail { display: grid; grid-template-columns: minmax(0,1fr); gap: 32px; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-stream { min-width: 0; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-feed { margin-top: 32px; }
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-feed > h2 { margin-bottom: 24px; font-size: 18px; font-weight: 600; line-height: 1.5; }
@@ -156,8 +158,12 @@
 :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-suggestions:not(:has(.journal-suggestion)) { display: none; }
 /* Existing site wide-layout band; keep the approved three-column composition. */
 @media (min-width:1280px) {
-  :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-content-with-rail { grid-template-columns: minmax(0,1fr) var(--journal-reading-rail); }
+  :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-content-with-rail:has(> .journal-suggestions:not([hidden]):has(.journal-suggestion)) { grid-template-columns: minmax(0,1fr) var(--journal-reading-rail); }
   :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-suggestions { display: block; }
+}
+@media (max-width:1024px) {
+  :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-content-with-rail,
+  :is(#md-blog-index,#md-blog-category,#md-blog-search) .journal-content-with-rail:has(> .journal-suggestions:not([hidden])) { grid-template-columns: 1fr; }
 }
 /* Below the existing 1000px desktop band, topics use the approved horizontal rail. */
 @media (max-width:999px) {

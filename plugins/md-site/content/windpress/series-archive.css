@@ -209,7 +209,7 @@ background: rgba(255, 255, 255, 0.035);
 border: 1px solid rgba(255, 255, 255, 0.10);
 border-radius: 16px;
 display: grid;
-gap: 0;
+gap: 8px;
 overflow: hidden;
 }
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__details-label {
@@ -218,11 +218,13 @@ color: rgba(255, 255, 255, 0.76);
 font-size: 13px;
 font-weight: 800;
 letter-spacing: 0.12em;
+margin-bottom: 8px;
 padding: 14px 16px;
 text-transform: uppercase;
 }
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__routes {
 display: grid;
+gap: 8px;
 }
 #pattern-application-guide-template--21844031570173__pattern-application-guide .pag__route {
 align-items: center;

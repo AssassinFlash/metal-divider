@@ -24,10 +24,11 @@ to   { transform: translateY(11rem); }
 #emt-stage-template--21844031930621__decorative_panels_grid_gmaCty {
 border-radius: 0;
 width: 100%;
-height: 100vh;
+top: var(--md-header-h, 60px);
+height: calc(100vh - var(--md-header-h, 60px));
+height: calc(100dvh - var(--md-header-h, 60px));
 margin: 0;
 position: sticky;
-top: 0;
 overflow: hidden;
 background: #141414;
 }
@@ -68,21 +69,21 @@ animation-name: emt-bg-prev-rev-template--21844031930621__decorative_panels_grid
 position: absolute;
 top: 0;
 bottom: 0;
-left: clamp(2.5rem, 4.5vw, 5.5rem);
-width: min(48vw, 48rem);
-max-width: calc(100% - 34rem);
+left: clamp(40px, 4.5vw, 88px);
+width: min(48vw, 640px);
+max-width: calc(100% - 340px);
 z-index: 3;
 pointer-events: none;
 }
 .emt-content-template--21844031930621__decorative_panels_grid_gmaCty {
 position: absolute;
-top: 44%;
+top: 38%;
 left: 0;
 width: 100%;
-max-width: 44rem;
+max-width: 600px;
 opacity: 0;
 pointer-events: none;
-transform: translateY(calc(1.5rem - 50%));
+transform: translateY(calc(24px - 50%));
 transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
 transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
@@ -95,10 +96,10 @@ transition-delay: 60ms;
 /* ── FAQ slot ── */
 .emt-faq-slot-template--21844031930621__decorative_panels_grid_gmaCty {
 position: absolute;
-bottom: 3rem;
-left: clamp(2.5rem, 4.5vw, 5.5rem);
-width: min(42vw, 34rem);
-max-width: calc(100% - 34rem);
+bottom: 24px;
+left: clamp(40px, 4.5vw, 88px);
+width: min(42vw, 480px);
+max-width: calc(100% - 340px);
 z-index: 3;
 }
 .emt-faq-template--21844031930621__decorative_panels_grid_gmaCty {
@@ -108,10 +109,10 @@ left: 0;
 width: 100%;
 display: flex;
 flex-direction: column;
-gap: 0.5rem;
+gap: 8px;
 opacity: 0;
 pointer-events: none;
-transform: translateY(1.5rem);
+transform: translateY(24px);
 transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
 transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
@@ -124,36 +125,36 @@ transform: translateY(0);
 display: flex;
 justify-content: space-between;
 align-items: center;
-gap: 1rem;
+gap: 16px;
 width: 100%;
-padding: 1rem 1.25rem;
+padding: 12px 16px;
 background: rgba(20, 20, 20, 0.5);
 backdrop-filter: blur(24px);
 -webkit-backdrop-filter: blur(24px);
 border: 1px solid rgba(255, 255, 255, 0.1);
-border-radius: 0.5rem;
+border-radius: 8px;
 color: #fff;
 text-align: left;
 cursor: pointer;
-font-size: 15px;
+font-size: 14px;
 line-height: 1.3;
 transition: filter 0.2s;
 }
 .emt-faq-btn-template--21844031930621__decorative_panels_grid_gmaCty:hover { filter: brightness(90%); }
 .emt-faq-btn-template--21844031930621__decorative_panels_grid_gmaCty[aria-expanded="true"] {
-border-radius: 0.5rem 0.5rem 0 0;
+border-radius: 8px 8px 0 0;
 border-bottom-color: transparent;
 }
 /* ── Nav ── */
 .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty {
 position: absolute;
 top: 50%;
-right: 4rem;
+right: 48px;
 transform: translateY(-50%);
 z-index: 5;
 display: flex;
 flex-direction: column;
-gap: 0.75rem;
+gap: 12px;
 list-style: none;
 margin: 0;
 padding: 0;
@@ -162,8 +163,8 @@ padding: 0;
 display: flex;
 align-items: center;
 justify-content: flex-end;
-gap: 1rem;
-padding: 0 0 0 1rem;
+gap: 16px;
+padding: 0 0 0 16px;
 font-size: 15px;
 color: rgba(255, 255, 255, 0.5);
 background: transparent;
@@ -174,8 +175,8 @@ white-space: nowrap;
 transition: color 0.3s, border-color 0.3s;
 }
 /* ── Content typography (desktop) ── */
-.emt-content-template--21844031930621__decorative_panels_grid_gmaCty h2 { font-size: 64px; }
-.emt-content-template--21844031930621__decorative_panels_grid_gmaCty p  { font-size: 21px; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty h2 { font-size: clamp(30px, 3.2vw, 44px); margin: 0 0 12px; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty p  { font-size: 16px; line-height: 1.55; margin: 0 0 18px; }
 .emt-nav-label-template--21844031930621__decorative_panels_grid_gmaCty  { font-size: 15px; }
 .emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty.emt-active {
 color: #fff;
@@ -183,14 +184,14 @@ border-left-color: #c9a962;
 }
 /* ── Tablet ── */
 @media (max-width: 991px) {
-.emt-content-slot-template--21844031930621__decorative_panels_grid_gmaCty { left: 2rem; right: 2rem; width: auto; max-width: none; }
-.emt-content-template--21844031930621__decorative_panels_grid_gmaCty { max-width: 55%; }
-.emt-content-template--21844031930621__decorative_panels_grid_gmaCty.emt-active { top: 10rem; transform: none; }
-.emt-faq-slot-template--21844031930621__decorative_panels_grid_gmaCty { left: 2.5rem; right: 2.5rem; bottom: 2.5rem; width: auto; max-width: none; }
+.emt-content-slot-template--21844031930621__decorative_panels_grid_gmaCty { left: 24px; right: 24px; width: auto; max-width: none; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty { max-width: 65%; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty.emt-active { top: 120px; transform: none; }
+.emt-faq-slot-template--21844031930621__decorative_panels_grid_gmaCty { left: 24px; right: 24px; bottom: 24px; width: auto; max-width: none; }
 .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty {
-top: 6rem; left: 2rem; right: auto; transform: none;
-flex-direction: row; gap: 1.25rem;
-border-bottom: 1px solid rgba(255, 255, 255, 0.35); padding-bottom: 0.5rem;
+top: 64px; left: 24px; right: auto; transform: none;
+flex-direction: row; gap: 16px;
+border-bottom: 1px solid rgba(255, 255, 255, 0.35); padding-bottom: 8px;
 }
 .emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty { flex-direction: row-reverse; padding: 0; border-left: none; font-size: 15px; }
 .emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty.emt-active { color: #c9a962; }
@@ -198,10 +199,10 @@ border-bottom: 1px solid rgba(255, 255, 255, 0.35); padding-bottom: 0.5rem;
 opacity: 0; max-width: 0; overflow: hidden; font-size: 13px;
 transition: max-width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s;
 }
-.emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty.emt-active .emt-nav-label-template--21844031930621__decorative_panels_grid_gmaCty { opacity: 1; max-width: 12rem; }
+.emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty.emt-active .emt-nav-label-template--21844031930621__decorative_panels_grid_gmaCty { opacity: 1; max-width: 192px; }
 #emt-stage-template--21844031930621__decorative_panels_grid_gmaCty { border-radius: 0; width: 100%; margin: 0; }
-.emt-content-template--21844031930621__decorative_panels_grid_gmaCty h2 { font-size: 38px; }
-.emt-content-template--21844031930621__decorative_panels_grid_gmaCty p  { font-size: 16px; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty h2 { font-size: 34px; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty p  { font-size: 15px; }
 }
 /* ── Mobile ── */
 @media (max-width: 767px) {
@@ -211,14 +212,14 @@ top: var(--md-header-h, 60px);
 height: calc(100vh - var(--md-header-h, 60px));
 height: calc(100dvh - var(--md-header-h, 60px));
 }
-.emt-content-slot-template--21844031930621__decorative_panels_grid_gmaCty { left: 1.5rem; right: 1.5rem; }
-.emt-content-template--21844031930621__decorative_panels_grid_gmaCty { max-width: 85%; }
-.emt-content-template--21844031930621__decorative_panels_grid_gmaCty.emt-active { top: 9rem; }
-.emt-faq-slot-template--21844031930621__decorative_panels_grid_gmaCty { left: 1.5rem; right: 1.5rem; bottom: 1.5rem; }
-.emt-nav-template--21844031930621__decorative_panels_grid_gmaCty { top: 5.5rem; left: 1.5rem; gap: 0.875rem; }
+.emt-content-slot-template--21844031930621__decorative_panels_grid_gmaCty { left: 16px; right: 16px; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty { max-width: 100%; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty.emt-active { top: 96px; }
+.emt-faq-slot-template--21844031930621__decorative_panels_grid_gmaCty { left: 16px; right: 16px; bottom: 16px; }
+.emt-nav-template--21844031930621__decorative_panels_grid_gmaCty { top: 56px; left: 16px; gap: 12px; }
 .emt-nav-btn-template--21844031930621__decorative_panels_grid_gmaCty { font-size: 14px; }
-.emt-faq-btn-template--21844031930621__decorative_panels_grid_gmaCty { font-size: 14px; padding: 0.875rem 1rem; }
-.emt-content-template--21844031930621__decorative_panels_grid_gmaCty h2 { font-size: 30px; }
+.emt-faq-btn-template--21844031930621__decorative_panels_grid_gmaCty { font-size: 14px; padding: 10px 14px; }
+.emt-content-template--21844031930621__decorative_panels_grid_gmaCty h2 { font-size: 28px; }
 .emt-content-template--21844031930621__decorative_panels_grid_gmaCty p  { font-size: 15px; }
 }
 @keyframes home-projects-marquee {
@@ -706,6 +707,13 @@ font-size: 14px;
 text-align: left;
 flex: 0 1 auto;
 }
+#emt-outer-template--21844031930621__decorative_panels_grid_gmaCty .md-t56105794 {
+position: relative;
+top: auto;
+left: auto;
+padding: 0;
+margin: 0 0 8px;
+}
 .emt-content-slot-template--21844031930621__decorative_panels_grid_gmaCty {
 position: relative;
 inset: auto;
@@ -731,6 +739,7 @@ right: 16px;
 width: auto;
 max-width: none;
 transform: none;
+transition: none;
 opacity: 0;
 pointer-events: none;
 }
@@ -741,6 +750,7 @@ right: auto;
 top: auto;
 opacity: 1;
 transform: none;
+transition: none;
 pointer-events: auto;
 }
 .emt-content-template--21844031930621__decorative_panels_grid_gmaCty h2 { font-size: 28px; }
@@ -753,7 +763,7 @@ bottom: auto;
 width: auto;
 max-width: none;
 flex: 0 0 auto;
-padding: 0 76px 0 16px;
+padding: 0 16px 16px;
 z-index: 4;
 }
 .emt-nav-template--21844031930621__decorative_panels_grid_gmaCty {
@@ -895,10 +905,10 @@ margin-top: 16px !important;
 }
 }
 .home-hero-stats .text-3xl {
-font-size: 20px;
+font-size: 20px !important;
 }
 .home-hero-stats p {
-font-size: 11px;
+font-size: 11px !important;
 }
 }
 
@@ -912,7 +922,7 @@ font-size: 11px;
  * hiding is done with `:nth-child` rather than by trimming the markup,
  * because the same markup serves the desktop grid where all of them show.
  * ---------------------------------------------------------------- */
-@media (max-width: 749px) {
+@media (max-width: 767px) {
   .pattern-family-grid > li:nth-child(n + 2) {
     display: none;
   }

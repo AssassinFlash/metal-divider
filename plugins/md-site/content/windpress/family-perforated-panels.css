@@ -43,7 +43,6 @@ padding-bottom: 80px;
 .md-tc0555a3a { background: linear-gradient(to bottom, rgba(20,20,20,0.35) 0%, rgba(20,20,20,0.55) 40%, rgba(20,20,20,0.78) 100%) }
 .md-t722f84cd { text-wrap: balance }
 .md-te73a22bd { width: 50% }
-.md-tda39a3ee {  }
 .md-t66682c10 { left: 50% }
 .md-t5e79aea9 { background-image: radial-gradient(circle, #c9a962 1px, transparent 1px);background-size: 24px 24px }
 .md-t3f9c748b { padding-top: 80px;padding-bottom: 88px }
@@ -344,19 +343,25 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
   [id*="21844034814205"] .showcase-track > article, [id*="21844034814205"] .pp-showcase-track > article, [id*="21844034814205"] .lcs-showcase-track > article {
     width: calc(100vw - 88px) !important;
   }
+  #perforated-applications-template--21844034814205__perforated-applications [data-pa-mobile-detail] {
+    background: rgba(15, 19, 25, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
 }
 
 /* FAQ rows: the Alpine object literal never ran under the CSP build, and
    x-cloak then hid every answer. These rows are native details. Closed rows
-   share one pitch; the open row is the only one with a body. The icon sits
-   72px in from the column edge so a right-side float cannot cover it. */
+   share one pitch; the open row is the only one with a body. */
 #perforated-faq-template--21844034814205__perforated_faq .md-faq-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   min-height: 72px;
-  padding: 16px 72px 16px 0;
+  padding: 16px 0;
   cursor: pointer;
   list-style: none;
   color: rgba(255, 255, 255, 0.8);
@@ -381,7 +386,7 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
   transform: rotate(45deg);
 }
 #perforated-faq-template--21844034814205__perforated_faq .md-faq-body {
-  padding: 0 72px 28px 0;
+  padding: 0 0 28px 0;
 }
 #perforated-faq-template--21844034814205__perforated_faq .md-faq-summary:focus-visible {
   outline: 2px solid #c9a962;
@@ -393,8 +398,8 @@ body:has(#perforated-faq-template--21844034814205__perforated_faq) .md-back-to-t
   bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
-/* The open-area rail starts on the first marker. That marker declares 25%;
+/* The open-area rail starts on the first marker. That marker declares 20%;
    the old utility pinned the fill at 50% until a click. */
 #perforated-applications-template--21844034814205__perforated-applications [data-pa-rail-fill] {
-  width: 25%;
+  width: 20%;
 }

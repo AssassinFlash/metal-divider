@@ -67,7 +67,7 @@ class="xo-container--wide"
 <section id="chinese-artistic-hero-template--21873710498045__chinese_artistic_hero" class="relative w-full bg-[#141414] overflow-hidden flex flex-col min-h-[100svh]" data-section-id="template--21873710498045__chinese_artistic_hero" data-section-type="chinese-artistic-hero">
   
   <!-- Main Grid (Top Image + CTA Bar) -->
-  <div class="flex flex-col flex-grow w-full">
+  <div class="flex flex-col flex-grow gap-6 lg:gap-8 w-full">
     
     <!-- Top Area (Full Bleed Image with Text Overlay) -->
     <div class="relative flex flex-col justify-end flex-grow w-full min-h-[60vh] lg:min-h-[75vh]">
@@ -1555,7 +1555,7 @@ class="xo-container--wide"
             :aria-expanded="isOpen('1')"
           >
             <span class="flex min-w-0 flex-col gap-3">
-              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-[#c9a962]">Step 01 / Pattern brief</span>
+              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-white/55" :class="isOpen('1') ? 'text-[#c9a962]' : 'text-white/55'">Step 01 / Pattern brief</span>
               <span class="font-['Playfair_Display'] text-[26px] font-semibold leading-tight text-white md:text-[36px]">
                 Share the space and pattern direction
               </span>
@@ -1566,13 +1566,13 @@ class="xo-container--wide"
           </button>
 
           <div x-show="isOpen('1')" x-cloak class="ccm-panel pt-8">
-            <div class="grid gap-7 md:grid-cols-[0.58fr_1fr_1.08fr] md:items-start">
-              <div class="flex gap-7 font-['Inter'] text-[14px] font-semibold uppercase tracking-[0.14em] md:flex-col md:gap-4">
+            <div class="grid gap-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start">
+              <div class="hidden">
                 <span class="w-fit border-b border-[#c9a962] pb-1 text-[#c9a962]">Action</span>
                 <span class="text-white/50">Output</span>
               </div>
 
-              <div class="max-w-[540px] font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
+              <div class="max-w-[540px] md:max-w-none font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
                 <p>Send room type, size, finish target, and reference images.</p>
                 <dl class="mt-7 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 md:hidden">
                   <div>
@@ -1627,7 +1627,7 @@ class="xo-container--wide"
             :aria-expanded="isOpen('2')"
           >
             <span class="flex min-w-0 flex-col gap-3">
-              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-[#c9a962]">Step 02 / Drawing & quote</span>
+              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-white/55" :class="isOpen('2') ? 'text-[#c9a962]' : 'text-white/55'">Step 02 / Drawing & quote</span>
               <span class="font-['Playfair_Display'] text-[26px] font-semibold leading-tight text-white md:text-[36px]">
                 Lock drawings, finish, and price
               </span>
@@ -1638,13 +1638,13 @@ class="xo-container--wide"
           </button>
 
           <div x-show="isOpen('2')" x-cloak class="ccm-panel pt-8">
-            <div class="grid gap-7 md:grid-cols-[0.58fr_1fr_1.08fr] md:items-start">
-              <div class="flex gap-7 font-['Inter'] text-[14px] font-semibold uppercase tracking-[0.14em] md:flex-col md:gap-4">
+            <div class="grid gap-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start">
+              <div class="hidden">
                 <span class="w-fit border-b border-[#c9a962] pb-1 text-[#c9a962]">Action</span>
                 <span class="text-white/50">Output</span>
               </div>
 
-              <div class="max-w-[540px] font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
+              <div class="max-w-[540px] md:max-w-none font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
                 <p>Confirm pattern, panel size, frame detail, finish, and lead time.</p>
                 <dl class="mt-7 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 md:hidden">
                   <div>
@@ -1699,7 +1699,7 @@ class="xo-container--wide"
             :aria-expanded="isOpen('3')"
           >
             <span class="flex min-w-0 flex-col gap-3">
-              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-[#c9a962]">Step 03 / Finish sample</span>
+              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-white/55" :class="isOpen('3') ? 'text-[#c9a962]' : 'text-white/55'">Step 03 / Finish sample</span>
               <span class="font-['Playfair_Display'] text-[26px] font-semibold leading-tight text-white md:text-[36px]">
                 Approve the pattern sample
               </span>
@@ -1710,13 +1710,13 @@ class="xo-container--wide"
           </button>
 
           <div x-show="isOpen('3')" x-cloak class="ccm-panel pt-8">
-            <div class="grid gap-7 md:grid-cols-[0.58fr_1fr_1.08fr] md:items-start">
-              <div class="flex gap-7 font-['Inter'] text-[14px] font-semibold uppercase tracking-[0.14em] md:flex-col md:gap-4">
+            <div class="grid gap-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start">
+              <div class="hidden">
                 <span class="w-fit border-b border-[#c9a962] pb-1 text-[#c9a962]">Action</span>
                 <span class="text-white/50">Output</span>
               </div>
 
-              <div class="max-w-[540px] font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
+              <div class="max-w-[540px] md:max-w-none font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
                 <p>Review cut detail, metal thickness, color, and surface finish.</p>
                 <dl class="mt-7 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 md:hidden">
                   <div>
@@ -1771,7 +1771,7 @@ class="xo-container--wide"
             :aria-expanded="isOpen('4')"
           >
             <span class="flex min-w-0 flex-col gap-3">
-              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-[#c9a962]">Step 04 / Fabrication</span>
+              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-white/55" :class="isOpen('4') ? 'text-[#c9a962]' : 'text-white/55'">Step 04 / Fabrication</span>
               <span class="font-['Playfair_Display'] text-[26px] font-semibold leading-tight text-white md:text-[36px]">
                 Cut, weld, polish, and finish
               </span>
@@ -1782,13 +1782,13 @@ class="xo-container--wide"
           </button>
 
           <div x-show="isOpen('4')" x-cloak class="ccm-panel pt-8">
-            <div class="grid gap-7 md:grid-cols-[0.58fr_1fr_1.08fr] md:items-start">
-              <div class="flex gap-7 font-['Inter'] text-[14px] font-semibold uppercase tracking-[0.14em] md:flex-col md:gap-4">
+            <div class="grid gap-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start">
+              <div class="hidden">
                 <span class="w-fit border-b border-[#c9a962] pb-1 text-[#c9a962]">Action</span>
                 <span class="text-white/50">Output</span>
               </div>
 
-              <div class="max-w-[540px] font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
+              <div class="max-w-[540px] md:max-w-none font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
                 <p>Panels move through cut, weld, polish, finish, and QC.</p>
                 <dl class="mt-7 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 md:hidden">
                   <div>
@@ -1843,7 +1843,7 @@ class="xo-container--wide"
             :aria-expanded="isOpen('5')"
           >
             <span class="flex min-w-0 flex-col gap-3">
-              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-[#c9a962]">Step 05 / Site delivery</span>
+              <span class="font-['Inter'] text-[14px] font-semibold uppercase leading-none tracking-[0.16em] text-white/55" :class="isOpen('5') ? 'text-[#c9a962]' : 'text-white/55'">Step 05 / Site delivery</span>
               <span class="font-['Playfair_Display'] text-[26px] font-semibold leading-tight text-white md:text-[36px]">
                 Pack for site installation
               </span>
@@ -1854,13 +1854,13 @@ class="xo-container--wide"
           </button>
 
           <div x-show="isOpen('5')" x-cloak class="ccm-panel pt-8">
-            <div class="grid gap-7 md:grid-cols-[0.58fr_1fr_1.08fr] md:items-start">
-              <div class="flex gap-7 font-['Inter'] text-[14px] font-semibold uppercase tracking-[0.14em] md:flex-col md:gap-4">
+            <div class="grid gap-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start">
+              <div class="hidden">
                 <span class="w-fit border-b border-[#c9a962] pb-1 text-[#c9a962]">Action</span>
                 <span class="text-white/50">Output</span>
               </div>
 
-              <div class="max-w-[540px] font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
+              <div class="max-w-[540px] md:max-w-none font-['Inter'] text-base leading-relaxed text-white/80 md:text-lg">
                 <p>QC photos, labels, tracking, export docs.</p>
                 <dl class="mt-7 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 md:hidden">
                   <div>
@@ -2287,6 +2287,25 @@ class="xo-section xo-section--template--21873710498045__chinese_contact md-t156d
               <li>• Total area and ceiling height</li>
               <li>• Finish direction and target site-arrival date</li>
             </ul>
+          </div>
+
+          <div class="rounded-xl border border-white/[0.12] bg-white/[0.04] p-5 backdrop-blur-sm">
+            <h3 class="mb-3 font-['Playfair_Display'] text-lg text-white">What happens next</h3>
+            <ol class="space-y-3 text-sm text-white/80">
+              <li class="flex gap-3">
+                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c9a962]/20 text-[13px] font-bold text-[#c9a962]">1</span>
+                <span>We review your drawing for manufacturability within 24 hours.</span>
+              </li>
+              <li class="flex gap-3">
+                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c9a962]/20 text-[13px] font-bold text-[#c9a962]">2</span>
+                <span>You receive a DFM report with feasibility notes and quote.</span>
+              </li>
+              <li class="flex gap-3">
+                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c9a962]/20 text-[13px] font-bold text-[#c9a962]">3</span>
+                <span>Approve sample. Production begins with full traceability.</span>
+              </li>
+            </ol>
+            <p class="mt-4 border-t border-white/10 pt-3 text-xs text-white/70">Prefer direct email? <a href="mailto:info@metal-divider.com" class="text-[#c9a962] underline underline-offset-4 hover:text-[#d4b878]">info@metal-divider.com</a></p>
           </div>
         </div>
       </div>
