@@ -997,7 +997,12 @@ final class Catalog {
 	 * @return string The escaped term, '' when the request names none.
 	 */
 	public function search_value(): string {
-		return \esc_attr( $this->requested_search() );
+		$term = $this->requested_search();
+		if ( '' === $term ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display of the native journal search query.
+			$term = isset( $_GET['s'] ) ? \sanitize_text_field( \wp_unslash( (string) $_GET['s'] ) ) : '';
+		}
+		return \esc_attr( $term );
 	}
 
 	/**

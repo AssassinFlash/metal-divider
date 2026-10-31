@@ -415,6 +415,11 @@ final class EditorialCardsTest extends TestCase {
 		$_GET['pattern_search'] = 'lace';
 
 		$this->assertSame( 'lace', ( new Catalog() )->search_value() );
+
+		unset( $_GET['pattern_search'] );
+		$_GET['s'] = 'stainless';
+
+		$this->assertSame( 'stainless', ( new Catalog() )->search_value() );
 	}
 
 	/**
