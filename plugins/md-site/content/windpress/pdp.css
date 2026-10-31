@@ -304,23 +304,30 @@ align-items: center;
 min-height: 44px;
 }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-quote-bar {
-gap: 10px;
-padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px;
+flex-direction: column;
+align-items: stretch;
+gap: 6px;
+padding: 8px 16px calc(10px + env(safe-area-inset-bottom)) 16px;
 }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-quote-bar-copy {
-max-width: 38%;
+display: flex;
+align-items: baseline;
+justify-content: space-between;
+gap: 8px;
+max-width: 100%;
 font-size: 14px;
 line-height: 1.2;
 }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-quote-bar-meta {
-display: block;
+display: inline;
 font-size: 11px;
 line-height: 1.2;
-margin-top: 2px;
+margin-top: 0;
 opacity: 0.78;
 }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-quote-bar-actions {
-flex: 1 1 auto;
+display: flex;
+width: 100%;
 min-width: 0;
 gap: 8px;
 }
@@ -337,17 +344,11 @@ white-space: nowrap;
 body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .md-back-to-top {
 left: auto;
 right: 16px;
-bottom: calc(12px + env(safe-area-inset-bottom));
+bottom: calc(152px + env(safe-area-inset-bottom));
 width: 44px;
 height: 44px;
 background: #c9a962;
 color: #1a1a1a;
-}
-body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic):has(.md-back-to-top:not([hidden])) #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-quote-bar {
-padding-right: 72px;
-}
-body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic):has(.md-back-to-top:not([hidden])) #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-quote-bar-copy {
-display: none;
 }
 /* Clearance for the fixed quote bar, on the footer rather than on `body`:
    WordPress prints `body{padding:0px}` unlayered from its global styles, and
@@ -355,7 +356,7 @@ display: none;
    form of this rule never applied (measured 2026-10-27: matched, in the
    cache, computed 0px). See pattern-grid.css for the same fix. */
 body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) #md-footer {
-padding-bottom: calc(76px + env(safe-area-inset-bottom));
+padding-bottom: calc(96px + env(safe-area-inset-bottom));
 }
 }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic.js-motion .gs-reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }

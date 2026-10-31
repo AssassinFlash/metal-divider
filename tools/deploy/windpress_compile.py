@@ -46,6 +46,7 @@ CLICK_JS = """(() => {{
   const node = nodes[0];
   if (!node) return JSON.stringify({{error: 'not found', wanted}});
   if (!node.id) node.id = '__md_wp_' + Math.random().toString(36).slice(2);
+  node.click();
   return JSON.stringify({{selector: '#' + node.id, count: nodes.length}});
 }})()"""
 
@@ -154,11 +155,10 @@ def click_text(
         return {"ok": False, "error": "unexpected click probe output"}
     if "error" in parsed:
         return {"ok": False, "error": parsed["error"]}
-    clicked = call(["click", str(parsed["selector"])])
     return {
         "selector": parsed["selector"],
         "count": parsed["count"],
-        "clicked": bool(clicked.get("ok", False)),
+        "clicked": True,
     }
 
 

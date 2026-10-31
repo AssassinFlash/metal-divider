@@ -59,6 +59,18 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-10-31 全站 CTA 询盘密度与 WhatsApp 双通道转化升级 + Matt Pocock 工程技能集收口(批次十二)
+
+- **业主新裁定(`/grill-me` 整站转化率优化,推翻 2026-10-30 WhatsApp 移除裁定)**:重新启用并全站强化 WhatsApp(`+852 6473 1687`,`https://wa.me/85264731687`)与即时报价弹窗(`#open-quote`),打造高密度 B2B 询盘站体验;同时保留右下角 AI 客服启动器(`Ask Metal Divider`)并在面板内新增一键转 WhatsApp / 报价表单通道。
+- **6 大模块全站转化升级(`6d7f066` + PDP 浮层避让修复)**:
+  1. **顶栏与移动抽屉常驻双通道(`header.html`、`chrome.css`)**:桌面端 Header 右侧常驻绿色 `WhatsApp` 胶囊按钮(`+852 6473 1687`)与 `Request a Quote` 按钮;移动端 `<990px` 顶栏保留 44×44px 绿色 WhatsApp 图标按钮,汉堡抽屉底部固定 `Chat on WhatsApp` + `Request a Quote` 双主按钮。
+  2. **全站 146 张图案卡与定制页灯箱原地报价(`pattern-card.html`、`home-pattern-card.html`、`pattern-tile.html`、`md-chrome.js`)**:所有目录卡、首页卡、定制页灯箱及卡片底部全部新增 `Request Quote` + `WhatsApp` 双动作;`md-chrome.js` 点击卡片 `Request Quote` 原地拉起 `#md-quote-modal`,自动带入图案缩略图、图案名、SKU 与 `data-pattern-slug`,动态刷新弹窗内 `Send via WhatsApp instead` 预填参数,零跳页损耗。
+  3. **全站 18 个页面级 CTA 横幅与长页面中段微转化条**:在 18 个模板底部 CTA 区及 `home`/`shop`/`series-archive`/`about`/`manufacturing`/`project-gallery`/`faqs`/`custom-screens`/7 族页中段插入场景化微转化条(`Request Physical Finish Samples`、`Send Drawings for Free Review`、`Get Budget Range in 24h`)及 WhatsApp 直连按钮。
+  4. **PDP 全链路与桌面+移动全天候吸底询盘条(`pdp.html`、`pdp.css`、`chrome.css`)**:PDP 首屏主按钮旁并排绿色 `Chat on WhatsApp`(预填当前图案名+SKU);底部 `.pdp-quote-bar` 升级为桌面+移动双端滚动吸底栏(展示 `SKU + SS 304 / 316 · Open %` + `WhatsApp` + `Request Quote`),并修正 `.mdvl-launcher` 与 `.md-back-to-top` 在桌面/移动端的垂直避让(`bottom: 88px/96px` 与 `152px`),彻底消除右下角浮窗重叠与移动端滚动隐藏商品名问题。
+  5. **询盘表单减摩(`Form.php`、`WhatsApp.php`、`inquiry.css`、`chrome.css`)**:首屏仅暴露 `Name*`、`Email*`、`Project / message*` 3 个必填项,4 个选填项收入 `<details class="md-inquiry-optional">` 折叠面板;提交按钮旁并排绿色 `Send via WhatsApp instead`。
+  6. **AI 客服面板内置转人工/报价双按钮(`lhc-extensions/mdvisitor/.../chatwidget.tpl.php`)**:面板头部下方常驻 `WhatsApp Engineer` 与 `Instant Quote Form`,同步部署至生产 LHC 并清理模板缓存(`verify-chat.sh` 5/5 通过)。
+- **Matt Pocock 39 项 Engineering Skills 检视、更新与安装**:更新 `~/.agents/skills/.git`(`https://github.com/mattpocock/skills.git`),建立 `~/.gemini/config/skills/` 全部 39 个技能软链与 `~/.gemini/config/skills.json` 索引,补齐仓库级上下文 `docs/agents/domain.md`、`docs/agents/triage-labels.md` 及 `AGENTS.md` 技能映射表。
+
 ### 2026-10-31 全站视觉/几何/CSS 级联与 `rem` 缩水排雷 + WindPress 干净重编译闭环(批次十 & 十一)
 
 - **WindPress 编译器根因除根与干净产物上线(`1e44d4e` / `d6ea87c`)**:定位此前 `content/windpress/*.css` 修改未进编译产物的根因(需先 `just present dev` 将源码卷同步到 `uploads/windpress/data/*.css`,再跑 `just deploy windpress-compile dev` 触发真浏览器编译,最后由 `md-deploy windpress-install --target prod --write` 做零类回归校验并原子切换)。彻底移除批次八/九临时 `cat >> tailwind.css` 尾部手工追加块(5,914 行 → 干净 2 行编译产物,`tailwind.css?ver=1793452641`,`636,910` 字节,类回归 `0`)。
