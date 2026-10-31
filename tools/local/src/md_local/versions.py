@@ -35,7 +35,7 @@ WORDPRESS_SHA1 = "b552c39cd95d89895b4e7a55af53a03687aff4f6"
 WOOCOMMERCE_VERSION = "11.2.1"
 ACF_VERSION = "6.8.10"  # ACF free (owner ruling 2026-10-24; ACF Pro is out)
 WINDPRESS_VERSION = "3.2.92"
-SEOPRESS_VERSION = "10.3"  # the free base SEOPress PRO builds on
+SEOPRESS_VERSION = "10.4"  # the free base SEOPress PRO builds on
 # The page-cache plugin of the production host (LiteSpeed Web Server runs the
 # whole Hostinger fleet, docs/specs/20-staging-deploy.md §4.1). The host is
 # the first place it does anything — the local `php -S` has no LiteSpeed
