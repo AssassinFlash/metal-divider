@@ -383,3 +383,55 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
   .md-offline-panel{padding:14px 14px calc(12px + env(safe-area-inset-bottom))}
 }
 
+/* Permanent dual conversion bar (Request Quote + Chat on WhatsApp) */
+.md-convert-bar{
+  flex:0 0 auto;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  padding:8px 14px;
+  background:#161513;
+  border-bottom:1px solid rgba(197,165,114,.32);
+}
+.md-convert-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:34px;
+  padding:0 10px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:600;
+  line-height:1.2;
+  letter-spacing:.01em;
+  text-decoration:none;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background .15s ease,border-color .15s ease,color .15s ease;
+}
+.md-convert-quote{
+  border:1px solid #d4b483;
+  background:#c5a572;
+  color:#161513;
+}
+.md-convert-quote:hover{
+  background:#d4b483;
+  border-color:#e2c696;
+}
+.md-convert-wa{
+  border:1px solid rgba(63,180,120,.55);
+  background:rgba(37,150,96,.18);
+  color:#eef9f2;
+}
+.md-convert-wa:hover{
+  background:rgba(37,150,96,.28);
+  border-color:rgba(90,209,141,.8);
+  color:#ffffff;
+}
+.md-convert-btn:focus-visible{
+  outline:2px solid #d4b483;
+  outline-offset:2px;
+}
+
+

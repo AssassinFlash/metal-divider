@@ -10,6 +10,57 @@
   var views = Array.prototype.slice.call(card.querySelectorAll('[data-mdv-view]'));
   var tabs = Array.prototype.slice.call(card.querySelectorAll('.md-tabs [data-mdv-go]'));
   var live = doc.getElementById('mdv-live');
+  var currentPageUrl = '';
+
+  function normalizePageUrl(raw) {
+    if (!raw || typeof raw !== 'string') { return ''; }
+    try {
+      var u = new URL(raw, window.location.origin);
+      if (u.origin !== window.location.origin) { return ''; }
+      if (u.pathname.indexOf('/chat/') === 0) { return ''; }
+      return u.href;
+    } catch (err) {
+      return '';
+    }
+  }
+
+  function updateWhatsAppLinks() {
+    var base = 'https://wa.me/85264731687';
+    var href = currentPageUrl
+      ? base + '?text=' + encodeURIComponent('Hi Metal Divider team, I have a question from: ' + currentPageUrl)
+      : base;
+    Array.prototype.forEach.call(doc.querySelectorAll('[data-mdv-wa]'), function (el) {
+      el.setAttribute('href', href);
+    });
+  }
+
+  function setPageUrl(candidate) {
+    var clean = normalizePageUrl(candidate);
+    if (!clean) { return; }
+    currentPageUrl = clean;
+    try {
+      window.sessionStorage.setItem('mdv:pageUrl', currentPageUrl);
+    } catch (err) {}
+    if (form) {
+      var refInput = form.querySelector('input[name="URLRefer"]');
+      if (refInput) { refInput.value = currentPageUrl; }
+    }
+    updateWhatsAppLinks();
+  }
+
+  (function initPageContext() {
+    var fromQuery = '';
+    try {
+      fromQuery = new URLSearchParams(window.location.search).get('URLReferer') || '';
+    } catch (err) {}
+    var fromSession = '';
+    try {
+      fromSession = window.sessionStorage.getItem('mdv:pageUrl') || '';
+    } catch (err) {}
+    var fromRef = doc.referrer || '';
+    setPageUrl(fromQuery || fromSession || fromRef);
+    updateWhatsAppLinks();
+  }());
 
   if (form && question && !question.classList.contains('hide')) {
     form.classList.add('mdv-has-question');
@@ -80,6 +131,17 @@
   }
 
   card.addEventListener('click', function (event) {
+    var quoteBtn = event.target.closest('[data-mdv-open-quote]');
+    if (quoteBtn) {
+      event.preventDefault();
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'mdv_open_quote', pageUrl: currentPageUrl }, window.location.origin);
+      } else {
+        window.open('/inquiry/', '_blank', 'noopener');
+      }
+      return;
+    }
+
     var go = event.target.closest('[data-mdv-go]');
     if (go) {
       event.preventDefault();
@@ -131,9 +193,17 @@
     try { saved = JSON.parse(raw); } catch (err) { return; }
     if (!saved || typeof saved.url !== 'string') { return; }
     if (saved.url.indexOf('/chat/') !== 0 || saved.url.indexOf('/chatwidgetchat/') === -1) { return; }
+    if (currentPageUrl) {
+      try { window.sessionStorage.setItem('mdv:pageUrl', currentPageUrl); } catch (err) {}
+    }
     Array.prototype.forEach.call(card.querySelectorAll('.md-resume'), function (link) {
       link.href = saved.url;
       link.hidden = false;
+      link.addEventListener('click', function () {
+        if (currentPageUrl) {
+          try { window.sessionStorage.setItem('mdv:pageUrl', currentPageUrl); } catch (err) {}
+        }
+      });
     });
     Array.prototype.forEach.call(card.querySelectorAll('.md-resume-reset'), function (button) {
       button.hidden = false;
@@ -163,6 +233,19 @@
     var initial = new URLSearchParams(window.location.search).get('view');
     if (initial === 'faq' || initial === 'home') { view(initial); }
   } catch (err) {}
+
+  window.addEventListener('message', function (event) {
+    if (event.origin !== window.location.origin) { return; }
+    if (event.data && event.data.type === 'mdv_host_context' && event.data.pageUrl) {
+      setPageUrl(event.data.pageUrl);
+    }
+  });
+
+  if (window.parent && window.parent !== window) {
+    try {
+      window.parent.postMessage({ type: 'mdv_request_host_context' }, window.location.origin);
+    } catch (err) {}
+  }
 
   doc.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') { return; }

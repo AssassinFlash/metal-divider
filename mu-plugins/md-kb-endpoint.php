@@ -82,7 +82,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 
-	if ( ! class_exists( 'RAPLSAICH_Search_Engine' ) || md_kb_endpoint_knowledge_is_empty() ) {
+	if ( md_kb_endpoint_knowledge_is_empty() ) {
 		return array(
 			'status' => 503,
 			'body'   => array(
@@ -102,6 +102,10 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 
+	$chat_id = isset( $body['chat_id'] ) && is_scalar( $body['chat_id'] ) && ctype_digit( (string) $body['chat_id'] )
+		? (int) $body['chat_id']
+		: 0;
+
 	$history = $body['history'] ?? array();
 	// Each turn is capped where it is accepted: only the last six turns
 	// reach the model, but every accepted byte reached the server and was
@@ -114,14 +118,45 @@ function md_kb_endpoint_answer( array $input ): array {
 			array_values( array_filter( $history, 'is_string' ) )
 		)
 		: array();
+	if ( array() === $history && $chat_id > 0 ) {
+		$history = md_kb_endpoint_chat_history( $chat_id, $q );
+	}
 
-	$pattern  = md_kb_endpoint_pattern_lookup( $q );
-	$page     = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null ) : array( 'context' => '' );
+	$pattern = md_kb_endpoint_pattern_lookup( $q );
+	if ( 0 === $pattern['hits'] && array() !== $history && ! md_kb_endpoint_asks_recommendation( $q ) ) {
+		$pattern = md_kb_endpoint_history_pattern_lookup( $history );
+	}
+	$page = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null ) : array( 'context' => '' );
+	if ( 0 === $pattern['hits'] && '' === $page['context'] && $chat_id > 0 ) {
+		$page = md_kb_endpoint_page_context( md_kb_endpoint_chat_referrer( $chat_id ) );
+	}
 	$resolved = '' !== $pattern['context'] ? $pattern['context'] : $page['context'];
 	// The source the answer actually used: the named pattern, else the page
 	// the visitor has open, else the knowledge rows. A page-resolved answer
 	// never cites knowledge rows the retrieval dragged in alongside it.
 	$resolved_sources = 0 < $pattern['hits'] ? $pattern['sources'] : ( isset( $page['sources'] ) ? $page['sources'] : array() );
+	if ( md_kb_endpoint_asks_prompt_injection( $q ) ) {
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'msg'     => md_kb_endpoint_injection_handoff_message(),
+				'action'  => 'transfer_operator',
+				'sources' => array(),
+			),
+		);
+	}
+	if ( md_kb_endpoint_asks_shipping( $q ) ) {
+		$shipping_sources = array_merge( $resolved_sources, array( 'Packing and shipping' ) );
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'msg'           => md_kb_endpoint_shipping_reply( $q, $resolved, $shipping_sources ),
+				'action'        => md_kb_endpoint_wants_human( $q ) ? 'transfer_operator' : '',
+				'sources'       => $shipping_sources,
+				'source_labels' => md_kb_endpoint_source_labels( $shipping_sources ),
+			),
+		);
+	}
 	// A confirmed fact the question asked for stays. Neither a commercial
 	// commitment nor an unpublished project fact is invented by the model.
 	if ( md_kb_endpoint_asks_unverified_fact( $q ) ) {
@@ -139,18 +174,8 @@ function md_kb_endpoint_answer( array $input ): array {
 			'status' => 200,
 			'body'   => array(
 				'msg'     => md_kb_endpoint_commercial_reply( $q, $resolved ),
-				'action'  => 'transfer_operator',
+				'action'  => md_kb_endpoint_wants_human( $q ) ? 'transfer_operator' : '',
 				'sources' => $resolved_sources,
-			),
-		);
-	}
-	if ( md_kb_endpoint_asks_prompt_injection( $q ) ) {
-		return array(
-			'status' => 200,
-			'body'   => array(
-				'msg'     => md_kb_endpoint_injection_handoff_message(),
-				'action'  => 'transfer_operator',
-				'sources' => array(),
 			),
 		);
 	}
@@ -176,6 +201,12 @@ function md_kb_endpoint_answer( array $input ): array {
 				'source_labels' => array( 'Thickness and weight' ),
 			),
 		);
+	}
+
+	if ( 0 === $pattern['hits'] && md_kb_endpoint_asks_recommendation( $q ) ) {
+		$pattern          = md_kb_endpoint_pattern_recommend( $q );
+		$resolved         = '' !== $pattern['context'] ? $pattern['context'] : $page['context'];
+		$resolved_sources = 0 < $pattern['hits'] ? $pattern['sources'] : ( isset( $page['sources'] ) ? $page['sources'] : array() );
 	}
 
 	list( $results, $context ) = md_kb_endpoint_retrieve( $q );
@@ -247,7 +278,22 @@ const MD_KB_ENDPOINT_PATTERN_LIMIT = 3;
  * model is not asked to invent them.
  */
 function md_kb_endpoint_commercial_handoff_message(): string {
-	return 'Pricing, lead time, minimum order and samples are confirmed by our team — I am connecting you with them.';
+	return 'Every screen is custom-fabricated in 304 or 316 stainless steel. Pricing, lead time, minimum order, and finish samples are confirmed by our team for your panel dimensions, thickness (0.8-3.0 mm), PVD finish, and quantity — use Request Quote or Chat on WhatsApp above for a formal quote within 24 hours.';
+}
+
+/**
+ * Whether the visitor explicitly asked to speak with a human agent in the
+ * same message. Commercial and shipping questions keep the AI assistant
+ * active unless the visitor also requests a human transfer.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether the visitor explicitly requested a human agent.
+ */
+function md_kb_endpoint_wants_human( string $q ): bool {
+	return 1 === preg_match(
+		'/\b(?:talk\s+to\s+(?:a\s+)?(?:human|person|agent|someone|representative|team|operator)|speak\s+(?:to|with)\s+(?:a\s+)?(?:human|person|agent|someone|representative|operator)|connect\s+me\s+(?:with|to)|real\s+person|human\s+agent|live\s+agent)\b|转人工|人工客服|找人工|真人客服/iu',
+		$q
+	);
 }
 
 /**
@@ -264,7 +310,7 @@ function md_kb_endpoint_asks_commercial( string $q ): bool {
 		return true;
 	}
 	return 1 === preg_match(
-		'/\b(?:price|pricing|quote|quotation|cost\b(?!\s*-?\s*effective)|how\s+much|lead[\s-]*time|delivery\s+(?:time|date)|moq|minimum\s+order|samples?)\b|价格|报价|交期|交货|起订|样品|多少钱|单价|费用|运费|发货/iu',
+		'/\b(?:price|pricing|quote|quotation|cost\b(?!\s*-?\s*effective)|how\s+much|lead[\s-]*time|delivery\s+(?:time|date)|moq|minimum\s+order|samples?)\b|价格|报价|交期|交货|起订|样品|多少钱|单价|费用|运费|发货(?!到)/iu',
 		$q
 	);
 }
@@ -282,6 +328,51 @@ function md_kb_endpoint_asks_ship_date( string $q ): bool {
 		'/\bwhen\s+(?:could|can|will|would)\s+(?:you|we|it|this|that)\s+ship\b|\bhow\s+soon\b|\bship(?:ping)?\s+date\b|\bwhen\s+(?:could|can|will)\s+it\s+(?:arrive|be\s+delivered)\b|什么时候.{0,8}发货|何时发货|发货时间/iu',
 		$q
 	);
+}
+
+/**
+ * Whether the visitor asks about shipping destinations, methods or terms
+ * (rather than a ship date, freight price or on-site installation).
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether the question is a shipping capability question.
+ */
+function md_kb_endpoint_asks_shipping( string $q ): bool {
+	if ( md_kb_endpoint_asks_ship_date( $q ) || md_kb_endpoint_asks_unverified_fact( $q ) || md_kb_endpoint_asks_commercial( $q ) ) {
+		return false;
+	}
+	return 1 === preg_match(
+		'/\b(?:do\s+you\s+(?:ship|deliver)|can\s+you\s+(?:ship|deliver)|ship\s+to|deliver\s+to|ship\s+(?:internationally|worldwide)|deliver\s+(?:internationally|worldwide)|shipping\s+(?:to|options|methods|terms)|freight)\b|发货到|送到|运到|发到|能发.*吗|海运|空运/iu',
+		$q
+	);
+}
+
+/**
+ * The visitor-facing sentence for packing and worldwide shipping options.
+ *
+ * @return string The shipping guidance copy.
+ */
+function md_kb_endpoint_shipping_message(): string {
+	return 'We pack custom stainless steel panels in export-grade wooden crates and ship worldwide by sea freight or air freight under EXW, FOB, CIF, or DDP terms. Use Request Quote or Chat on WhatsApp above with your destination and panel sizes so our team can confirm the freight option.';
+}
+
+/**
+ * The direct reply for packing and shipping, keeping any confirmed pattern
+ * facts the question also asked for.
+ *
+ * @param string             $q       The visitor's question.
+ * @param string             $context The resolved pattern facts, '' when none.
+ * @param array<int, string> $sources The sources to cite in the footer.
+ * @return string The visitor-facing reply.
+ */
+function md_kb_endpoint_shipping_reply( string $q, string $context, array $sources = array( 'Packing and shipping' ) ): string {
+	$parts = array();
+	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
+	if ( '' !== $facts ) {
+		$parts[] = $facts;
+	}
+	$parts[] = md_kb_endpoint_shipping_message();
+	return implode( ' ', $parts ) . md_kb_endpoint_source_footer( $sources );
 }
 
 /**
@@ -307,7 +398,7 @@ function md_kb_endpoint_commercial_reply( string $q, string $context ): string {
 
 /**
  * Whether the question asks for a project fact the public site does not
- * publish consistently: a destination or installation. A showroom visit and
+ * publish consistently: on-site installation. Shipping, showroom visits and
  * the published thickness/weight guidance are answered directly, with the
  * project-specific value still left to the team.
  *
@@ -316,7 +407,7 @@ function md_kb_endpoint_commercial_reply( string $q, string $context ): string {
  */
 function md_kb_endpoint_asks_unverified_fact( string $q ): bool {
 	return 1 === preg_match(
-		'/\b(?:ship\s+to|deliver\s+to|install(?:ation)?\s+(?:in|at|for)|do\s+you\s+install|ship\s+(?:internationally|worldwide)|deliver\s+(?:internationally|worldwide))\b|安装|发货到|送到|运到|发到/iu',
+		'/\b(?:install(?:ation)?\s+(?:in|at|for|service)|do\s+you\s+install|can\s+you\s+install)\b|安装/iu',
 		$q
 	);
 }
@@ -1285,16 +1376,386 @@ function md_kb_endpoint_pattern_lookup( string $q ): array {
 }
 
 /**
- * Search the knowledge for the question: the knowledge plugin's own engine,
- * both of its sources (the knowledge base and the site crawl) with no
- * category filter — the endpoint serves the one MVP bot, not a bot fleet —
- * and the five hits the research budgeted, as the context the model answers
- * from.
+ * Recent conversation turns from Live Helper Chat's lh_msg table when the
+ * caller sent chat_id without an explicit history array. Status payloads,
+ * the opening greeting, the trailing "Based on:" footer, and a duplicate of
+ * the current visitor message are stripped before returning up to six turns
+ * in chronological order.
+ *
+ * @param int    $chat_id The Live Helper Chat id.
+ * @param string $q       The current visitor question.
+ * @return array<int, string> Chronological history turns, at most six.
+ */
+function md_kb_endpoint_chat_history( int $chat_id, string $q ): array {
+	if ( $chat_id <= 0 ) {
+		return array();
+	}
+
+	global $wpdb;
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Live Helper Chat's message table lives in the same database without a WordPress API wrapper; one bounded read per bot turn.
+	$rows = $wpdb->get_results(
+		$wpdb->prepare(
+			'SELECT user_id, msg FROM lh_msg WHERE chat_id = %d AND user_id >= -2 ORDER BY id DESC LIMIT 8',
+			$chat_id
+		)
+	);
+	if ( ! is_array( $rows ) || array() === $rows ) {
+		return array();
+	}
+
+	$turns          = array();
+	$checked_newest = false;
+	$needle_q       = mb_strtolower( trim( $q ) );
+
+	foreach ( $rows as $row ) {
+		if ( ! is_object( $row ) ) {
+			continue;
+		}
+		$raw_msg = isset( $row->msg ) && is_scalar( $row->msg ) ? trim( (string) $row->msg ) : '';
+		if ( '' === $raw_msg || str_starts_with( $raw_msg, '{' ) ) {
+			continue;
+		}
+		if ( 1 === preg_match( '/^Hi\s*[—–-]\s*I[\'’]?m\s+Metal Divider[\'’]?s AI assistant\b/iu', $raw_msg ) ) {
+			continue;
+		}
+		$clean_msg = trim( (string) preg_replace( '/\n\nBased on:.*$/s', '', $raw_msg ) );
+		if ( '' === $clean_msg ) {
+			continue;
+		}
+		$user_id = isset( $row->user_id ) && is_scalar( $row->user_id ) ? (int) $row->user_id : 0;
+		if ( 0 === $user_id && ! $checked_newest ) {
+			$checked_newest = true;
+			if ( mb_strtolower( $clean_msg ) === $needle_q ) {
+				continue;
+			}
+		}
+		$turn    = 0 !== $user_id ? 'Assistant: ' . $clean_msg : $clean_msg;
+		$turns[] = mb_substr( $turn, 0, 2000 );
+	}
+
+	$turns = array_reverse( $turns );
+	return array_slice( $turns, -6 );
+}
+
+/**
+ * The live referrer URL stored on Live Helper Chat's lh_chat row, used as a
+ * fallback when the webhook's initial page_url has no pattern slug.
+ *
+ * @param int $chat_id The Live Helper Chat id.
+ * @return string The stored referrer URL, '' when absent.
+ */
+function md_kb_endpoint_chat_referrer( int $chat_id ): string {
+	if ( $chat_id <= 0 ) {
+		return '';
+	}
+
+	global $wpdb;
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Live Helper Chat's chat table lives in the same database without a WordPress API wrapper; one scalar read when page_url has no pattern slug.
+	$referrer = $wpdb->get_var(
+		$wpdb->prepare(
+			'SELECT referrer FROM lh_chat WHERE id = %d',
+			$chat_id
+		)
+	);
+	return is_string( $referrer ) ? trim( $referrer ) : '';
+}
+
+/**
+ * Resolves a published pattern named in an earlier conversation turn (from
+ * newest to oldest) when the current follow-up question uses pronouns such
+ * as "What is its open area?" instead of repeating the pattern name.
+ *
+ * @param array<int, string> $history Chronological history turns.
+ * @return array{context: string, sources: array<int, string>, hits: int} The pattern lookup from history.
+ */
+function md_kb_endpoint_history_pattern_lookup( array $history ): array {
+	foreach ( array_reverse( $history ) as $turn ) {
+		$cleaned = trim( (string) preg_replace( '/^Assistant:\s*/iu', '', $turn ) );
+		if ( '' === $cleaned ) {
+			continue;
+		}
+		$lookup = md_kb_endpoint_pattern_lookup( $cleaned );
+		if ( 0 < $lookup['hits'] ) {
+			return $lookup;
+		}
+	}
+	return array(
+		'context' => '',
+		'sources' => array(),
+		'hits'    => 0,
+	);
+}
+
+/**
+ * Whether the visitor is asking for pattern recommendations or filtering
+ * patterns by series, application, visual density or open area range.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether to run the catalog recommender when no single pattern was named.
+ */
+function md_kb_endpoint_asks_recommendation( string $q ): bool {
+	$explicit_recommend = 1 === preg_match(
+		'/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?|any\s+patterns?|show\s+(?:me\s+)?patterns?|looking\s+for\s+(?:a\s+)?patterns?|patterns?\s+(?:for|with|that|suitable|in))\b|推荐|哪(?:款|些|种)图案|什么图案/iu',
+		$q
+	);
+	if ( ! $explicit_recommend && 1 === preg_match( '/\bthis\s+(?:pattern|screen)\b/iu', $q ) ) {
+		return false;
+	}
+	if ( $explicit_recommend ) {
+		return true;
+	}
+	if ( 1 === preg_match( '/\b(?:grade|grades|304|316|316l|material|materials|finish|finishes|pvd|clean|cleaning|maintenance|rust|corrosion|warranty|showroom|contact|whatsapp|email)\b|材质|不锈钢|表面|清洁|保养|展厅|联系/iu', $q ) ) {
+		return false;
+	}
+	return 1 === preg_match(
+		'/\b(?:geometric|organic|abstract|moroccan|arabic|perforated|gradient|landscape|asian|chinese|vintage|retro|botanical|(?:low|medium|high|open)\s+density|dense\s+patterns?)\b|\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b.*\bopen[\s-]*area\b|\bopen[\s-]*area\b.*\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b|\b(?:low|high|medium)\s+open[\s-]*area\b|几何|有机|抽象|摩洛哥|阿拉伯|穿孔|渐变|山水|中式|复古|植物|花卉|低密度|中密度|高密度|\d{1,2}\s*%.*镂空|镂空.*\d{1,2}\s*%/iu',
+		$q
+	) || (
+		1 === preg_match( '/\b(?:outdoor|exterior|facade|privacy|partition|divider|interior|balustrade|railing|cladding|sunshade|hotel|lobby|architectural[\s-]+screening|decorative[\s-]+screening)\b|室外|户外|外墙|幕墙|隐私|隔断|屏风|室内|护栏|栏杆|遮阳|酒店|大堂/iu', $q )
+		&& 1 === preg_match( '/\b(?:patterns?|designs?|styles?|options?|suitable|fit)\b|图案|款式|适合/iu', $q )
+	);
+}
+
+/**
+ * Recommends up to three published patterns from the live WooCommerce
+ * catalog scored against the series, open area percentage, application/best
+ * fit, motifs, and visual density criteria in the visitor's question.
+ *
+ * @param string $q The visitor's question.
+ * @return array{context: string, sources: array<int, string>, hits: int} The top matching pattern facts.
+ */
+function md_kb_endpoint_pattern_recommend( string $q ): array {
+	$query = new WP_Query(
+		array(
+			'post_type'      => 'product',
+			'post_status'    => 'publish',
+			// phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- the full published pattern catalog is 146 items and must be scored in memory.
+			'posts_per_page' => 200,
+		)
+	);
+	$posts = is_array( $query->posts ) ? $query->posts : array();
+	if ( array() === $posts ) {
+		return array(
+			'context' => '',
+			'sources' => array(),
+			'hits'    => 0,
+		);
+	}
+
+	$scored = array();
+	foreach ( $posts as $post ) {
+		if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
+			continue;
+		}
+		$score = md_kb_endpoint_pattern_score( $post, $q );
+		if ( $score > 0 ) {
+			$scored[] = array(
+				'post'  => $post,
+				'score' => $score,
+				'id'    => (int) $post->ID,
+			);
+		}
+	}
+
+	if ( array() === $scored && 1 === preg_match( '/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?)\b|推荐|哪(?:款|些|种)图案|什么图案/iu', $q ) ) {
+		foreach ( $posts as $post ) {
+			if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
+				continue;
+			}
+			$id       = (int) $post->ID;
+			$raw_oa   = md_kb_endpoint_pattern_field( get_field( 'open_area', $id ) );
+			$best_fit = md_kb_endpoint_pattern_field( get_field( 'best_fit', $id ) );
+			if ( '' !== $raw_oa && is_numeric( $raw_oa ) && (float) $raw_oa > 0 && '' !== $best_fit ) {
+				$scored[] = array(
+					'post'  => $post,
+					'score' => 1,
+					'id'    => $id,
+				);
+			}
+		}
+	}
+
+	usort(
+		$scored,
+		static function ( array $a, array $b ): int {
+			if ( $b['score'] !== $a['score'] ) {
+				return $b['score'] <=> $a['score'];
+			}
+			return $a['id'] <=> $b['id'];
+		}
+	);
+
+	$blocks  = array();
+	$sources = array();
+	foreach ( array_slice( $scored, 0, MD_KB_ENDPOINT_PATTERN_LIMIT ) as $item ) {
+		$facts     = md_kb_endpoint_pattern_facts( $item['post'] );
+		$blocks[]  = $facts['context'];
+		$sources[] = $facts['source'];
+	}
+
+	return array(
+		'context' => implode( "\n\n", $blocks ),
+		'sources' => $sources,
+		'hits'    => count( $blocks ),
+	);
+}
+
+/**
+ * Scores a single published pattern against the series, open area %,
+ * application/best fit, motif, and visual density criteria in $q.
+ *
+ * @param \WP_Post $post The published product.
+ * @param string   $q    The visitor's question.
+ * @return int The match score (0 when no criterion matched).
+ */
+function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
+	$id      = (int) $post->ID;
+	$score   = 0;
+	$lower_q = mb_strtolower( $q );
+
+	$terms       = get_the_terms( $id, 'product_cat' );
+	$series_text = '';
+	if ( is_array( $terms ) ) {
+		foreach ( $terms as $term ) {
+			if ( is_object( $term ) ) {
+				$series_text .= ' ' . mb_strtolower( (string) ( $term->name ?? '' ) . ' ' . (string) ( $term->slug ?? '' ) );
+			}
+		}
+	}
+
+	$motifs    = mb_strtolower( md_kb_endpoint_pattern_field( get_field( 'motifs', $id ) ) );
+	$best_fit  = mb_strtolower( md_kb_endpoint_pattern_field( get_field( 'best_fit', $id ) ) );
+	$summary   = mb_strtolower( md_kb_endpoint_pattern_field( get_field( 'summary', $id ) ) );
+	$density   = mb_strtolower( md_kb_endpoint_pattern_field( get_field( 'visual_density', $id ) ) );
+	$title     = mb_strtolower( $post->post_title );
+	$full_text = str_replace( array( '-', '_' ), ' ', $series_text . ' ' . $motifs . ' ' . $best_fit . ' ' . $summary . ' ' . $title );
+
+	$series_map = array(
+		'geometric'  => '/\bgeometric\b|几何/iu',
+		'organic'    => '/\borganic\b|有机/iu',
+		'abstract'   => '/\babstract\b|抽象/iu',
+		'moroccan'   => '/\b(?:moroccan|arabic)\b|摩洛哥|阿拉伯/iu',
+		'arabic'     => '/\b(?:moroccan|arabic)\b|摩洛哥|阿拉伯/iu',
+		'perforated' => '/\bperforated\b|穿孔/iu',
+		'gradient'   => '/\bgradient\b|渐变/iu',
+		'landscape'  => '/\blandscape\b|山水|风景/iu',
+		'asian'      => '/\b(?:asian|chinese)\b|中式|亚洲/iu',
+		'chinese'    => '/\b(?:asian|chinese)\b|中式|亚洲/iu',
+		'vintage'    => '/\b(?:vintage|retro)\b|复古/iu',
+		'retro'      => '/\b(?:vintage|retro)\b|复古/iu',
+		'botanical'  => '/\b(?:botanical|floral|leaf|plant)\b|植物|花卉/iu',
+	);
+	foreach ( $series_map as $term_needle => $regex ) {
+		if ( 1 === preg_match( $regex, $q ) && ( str_contains( $series_text, $term_needle ) || str_contains( $motifs, $term_needle ) ) ) {
+			$score += 6;
+			break;
+		}
+	}
+
+	$raw_oa = md_kb_endpoint_pattern_field( get_field( 'open_area', $id ) );
+	if ( '' !== $raw_oa && is_numeric( $raw_oa ) && (float) $raw_oa > 0 ) {
+		$oa = (float) $raw_oa;
+		if ( 1 === preg_match( '/(\d{1,2}(?:\.\d+)?)\s*(?:%|percent)?\s*(?:-|to|–|~|到|至)\s*(\d{1,2}(?:\.\d+)?)\s*(?:%|percent|镂空)/iu', $q, $range_match ) ) {
+			$min_oa = min( (float) $range_match[1], (float) $range_match[2] );
+			$max_oa = max( (float) $range_match[1], (float) $range_match[2] );
+			if ( $oa >= $min_oa && $oa <= $max_oa ) {
+				$score += 12;
+			} elseif ( $oa >= ( $min_oa - 5.0 ) && $oa <= ( $max_oa + 5.0 ) ) {
+				$score += 8;
+			}
+		} elseif ( 1 === preg_match( '/(\d{1,2}(?:\.\d+)?)\s*(?:%|percent)/iu', $q, $single_match ) ) {
+			$target_oa = (float) $single_match[1];
+			$diff      = abs( $oa - $target_oa );
+			if ( $diff <= 5.0 ) {
+				$score += 12;
+			} elseif ( $diff <= 12.0 ) {
+				$score += 8;
+			}
+		}
+	}
+
+	$keyword_map = array(
+		'privacy'       => array( 'privacy', 'private', '隐私' ),
+		'facade'        => array( 'facade', 'exterior', 'outdoor', 'cladding', 'sunshade', 'architectural', '室外', '户外', '外墙', '幕墙', '遮阳' ),
+		'architectural' => array( 'architectural', 'facade', 'exterior', 'outdoor', 'cladding', 'sunshade', 'balustrade', 'railing', '室外', '户外', '外墙', '幕墙', '护栏', '栏杆' ),
+		'decorative'    => array( 'decorative', 'interior', 'partition', 'divider', 'hotel', 'lobby', '室内', '隔断', '屏风', '酒店', '大堂' ),
+		'interior'      => array( 'interior', 'partition', 'divider', 'hotel', 'lobby', '室内', '隔断', '屏风', '酒店', '大堂' ),
+		'partition'     => array( 'partition', 'divider', '隔断', '屏风' ),
+		'divider'       => array( 'divider', 'partition', '隔断', '屏风' ),
+		'botanical'     => array( 'botanical', 'floral', 'leaf', 'plant', '植物', '花卉' ),
+		'floral'        => array( 'floral', 'flower', 'blossom', '花卉' ),
+		'leaf'          => array( 'leaf', 'leaves', 'botanical', '植物' ),
+		'wave'          => array( 'wave', 'ripple', 'ocean', '波浪' ),
+		'lattice'       => array( 'lattice', 'grid', '格栅' ),
+		'arch'          => array( 'arch', 'arched', '拱' ),
+		'geometric'     => array( 'geometric', '几何' ),
+		'organic'       => array( 'organic', '有机' ),
+		'modern'        => array( 'modern', '现代' ),
+		'classic'       => array( 'classic', 'traditional', '经典', '传统' ),
+	);
+	foreach ( $keyword_map as $product_token => $query_triggers ) {
+		if ( ! str_contains( $full_text, $product_token ) ) {
+			continue;
+		}
+		foreach ( $query_triggers as $trigger ) {
+			if ( str_contains( $lower_q, $trigger ) ) {
+				$score += 3;
+				break;
+			}
+		}
+	}
+
+	$density_map = array(
+		'low'    => '/\b(?:low|open)\s+density\b|低密度/iu',
+		'open'   => '/\b(?:low|open)\s+density\b|低密度/iu',
+		'medium' => '/\bmedium\s+density\b|中密度/iu',
+		'high'   => '/\b(?:high\s+density|dense)\b|高密度/iu',
+		'dense'  => '/\b(?:high\s+density|dense)\b|高密度/iu',
+	);
+	if ( '' !== $density && isset( $density_map[ $density ] ) && 1 === preg_match( $density_map[ $density ], $q ) ) {
+		$score += 2;
+	}
+
+	return $score;
+}
+
+/**
+ * Whitelist-validated table name for the knowledge tables, using the
+ * plugin's own validator when active and the identical prefix whitelist
+ * when the plugin is deactivated on production.
+ *
+ * @param string $suffix The table suffix without prefix.
+ * @return string The backtick-quoted table name, '' when not whitelisted.
+ */
+function md_kb_endpoint_validated_table( string $suffix ): string {
+	if ( function_exists( 'raplsaich_validated_table' ) ) {
+		return raplsaich_validated_table( $suffix );
+	}
+	$allowed = array( 'raplsaich_index', 'raplsaich_knowledge' );
+	if ( ! in_array( $suffix, $allowed, true ) ) {
+		return '';
+	}
+	global $wpdb;
+	if ( ! is_object( $wpdb ) || ! isset( $wpdb->prefix ) || ! is_string( $wpdb->prefix ) ) {
+		return '';
+	}
+	return '`' . $wpdb->prefix . $suffix . '`';
+}
+
+/**
+ * Search the knowledge for the question: the knowledge plugin's own engine
+ * when active, or direct query against the knowledge table when the plugin
+ * is deactivated on production, returning up to five hits and the context.
  *
  * @param string $q The visitor's question.
  * @return array{0: array<int, array<string, mixed>>, 1: string} The search results, and the built context.
  */
 function md_kb_endpoint_retrieve( string $q ): array {
+	if ( ! class_exists( 'RAPLSAICH_Search_Engine' ) ) {
+		return md_kb_endpoint_retrieve_from_db( $q );
+	}
 	$engine = new RAPLSAICH_Search_Engine();
 	$engine->set_bot_filters( array(), true, true );
 	$results = $engine->search( $q, 5 );
@@ -1315,32 +1776,143 @@ function md_kb_endpoint_retrieve( string $q ): array {
 }
 
 /**
+ * Direct retrieval from the knowledge table when RAPLSAICH_Search_Engine is
+ * not loaded at runtime (production keeps the plugin deactivated so its
+ * duplicate frontend widget never renders).
+ *
+ * @param string $q The visitor's question.
+ * @return array{0: array<int, array<string, mixed>>, 1: string} The search results, and the built context.
+ */
+function md_kb_endpoint_retrieve_from_db( string $q ): array {
+	global $wpdb;
+	$knowledge = md_kb_endpoint_validated_table( 'raplsaich_knowledge' );
+	if ( '' === $knowledge || ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_results' ) ) {
+		return array( array(), '' );
+	}
+
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- table name comes from md_kb_endpoint_validated_table whitelist.
+	$rows = $wpdb->get_results(
+		"SELECT id, title, content FROM {$knowledge} WHERE is_active = 1 ORDER BY id ASC LIMIT 50"
+	);
+	// phpcs:enable
+	if ( ! is_array( $rows ) || array() === $rows ) {
+		return array( array(), '' );
+	}
+
+	$raw_parts = preg_split( '/[^\p{L}\p{N}]+/u', mb_strtolower( $q ) );
+	$tokens    = array_values(
+		array_unique(
+			array_filter(
+				is_array( $raw_parts ) ? $raw_parts : array(),
+				static fn ( string $token ): bool => mb_strlen( $token ) >= 2
+			)
+		)
+	);
+	$stopwords = array(
+		'the',
+		'and',
+		'for',
+		'are',
+		'you',
+		'what',
+		'how',
+		'can',
+		'with',
+		'this',
+		'that',
+		'have',
+		'from',
+		'your',
+		'our',
+		'about',
+		'does',
+		'will',
+		'would',
+		'could',
+		'please',
+		'tell',
+	);
+	$tokens    = array_values( array_diff( $tokens, $stopwords ) );
+
+	$scored = array();
+	foreach ( $rows as $row ) {
+		if ( ! is_object( $row ) ) {
+			continue;
+		}
+		$id      = (int) ( $row->id ?? 0 );
+		$title   = trim( (string) ( $row->title ?? '' ) );
+		$content = trim( (string) ( $row->content ?? '' ) );
+		if ( 0 >= $id || ( '' === $title && '' === $content ) ) {
+			continue;
+		}
+		$score = 0.0;
+		foreach ( $tokens as $token ) {
+			if ( '' !== $title && false !== mb_stripos( $title, $token ) ) {
+				$score += 6.0;
+			}
+			if ( '' !== $content && false !== mb_stripos( $content, $token ) ) {
+				$score += 2.0;
+			}
+		}
+		if ( $score > 0.0 ) {
+			$scored[] = array(
+				'score' => $score,
+				'id'    => $id,
+				'hit'   => array(
+					'type'      => 'knowledge',
+					'source_id' => $id,
+					'title'     => $title,
+					'content'   => $content,
+					'url'       => null,
+					'score'     => $score,
+				),
+			);
+		}
+	}
+
+	usort(
+		$scored,
+		static function ( array $a, array $b ): int {
+			if ( $b['score'] !== $a['score'] ) {
+				return $b['score'] <=> $a['score'];
+			}
+			return $a['id'] <=> $b['id'];
+		}
+	);
+
+	$results = array();
+	$blocks  = array();
+	foreach ( array_slice( $scored, 0, 5 ) as $entry ) {
+		$hit       = $entry['hit'];
+		$results[] = $hit;
+		$blocks[]  = '### ' . $hit['title'] . "\n" . $hit['content'];
+	}
+
+	$context = mb_substr( implode( "\n\n", $blocks ), 0, 20000 );
+	return array( $results, $context );
+}
+
+/**
  * Whether the knowledge base holds anything to answer from: the whole
  * library, not this question's hits — a question nothing matches still
  * reaches the model (which says it has nothing and hands off), while a
  * base with no crawl index row and no active knowledge entry would leave
  * the model answering from nothing at all. The counts go through the
- * knowledge plugin's own whitelist-validated table names (present exactly
- * when the plugin is), and a knowledge table too old for is_active counts
- * its rows unfiltered — the schema's active flag arrived with the
- * knowledge schema v2 (rapls-ai-chatbot 1.19 line).
+ * whitelist-validated table names, and a knowledge table too old for
+ * is_active counts its rows unfiltered.
  *
  * @return bool True when neither knowledge source holds a row.
  */
 function md_kb_endpoint_knowledge_is_empty(): bool {
-	if ( ! function_exists( 'raplsaich_validated_table' ) ) {
-		return true;
-	}
-
 	global $wpdb;
 
-	$index     = raplsaich_validated_table( 'raplsaich_index' );
-	$knowledge = raplsaich_validated_table( 'raplsaich_knowledge' );
+	$index     = md_kb_endpoint_validated_table( 'raplsaich_index' );
+	$knowledge = md_kb_endpoint_validated_table( 'raplsaich_knowledge' );
 	if ( '' === $index || '' === $knowledge ) {
 		return true;
 	}
 
-	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the table names come from the knowledge plugin's own whitelist; one count per request, no object cache to bypass.
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the table names come from md_kb_endpoint_validated_table's whitelist; one count per request, no object cache to bypass.
 	if ( 0 < (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$index}" ) ) {
 		return false;
 	}
@@ -1447,6 +2019,7 @@ function md_kb_endpoint_system_prompt(): string {
 		. 'Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. '
 		. 'Say pattern, not product. '
 		. 'Mention only the facts the visitor asked about; do not list the rest of the pattern record. '
+		. 'When multiple PATTERN FACTS are provided for a recommendation question, recommend the matching patterns with their title, code, open area, best fit, and permalink URL (when present in the facts) without inventing any extra attributes. '
 		. 'Never quote an internal CAD status such as gated or missing — say the drawing is not confirmed. '
 		. 'When part of the question is covered by the knowledge and part is not, answer the covered part and then say the remaining part is being checked with the team. '
 		. 'Set handoff true and reason to "no_knowledge". Do not discard the known fact, and do not invent the missing part. '

@@ -59,6 +59,21 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-11-01 AI 客服系统全链路升级：多轮记忆、146 款图案导购推荐、非自杀商业/物流应答与留资/报价弹窗闭环(批次十三)
+
+- **业主裁定(`/wayfinder` Q1–Q6 全票确认)**:将 AI 客服从被动 FAQ 问答器升级为懂 146 款图案导购、具备多轮上下文记忆、商业与国际运输问题给出工程级说明框架(不再一言不合触发 `stopchat` 自杀下线)、挂件全程常驻 `Request Quote` + `Chat on WhatsApp` 双按钮联动宿主页报价弹窗、且对话内留资 100% 进 `md_inquiry` 询盘库与企业微信通知闭环的 B2B 售前系统。
+- **三大平面改造与单测守卫(`mu-plugins/` + `lhc-extensions/mdvisitor/`)**:
+  1. **AI 大脑与检索升级(`mu-plugins/md-kb-endpoint.php`、`KbEndpointTest.php`)**:
+     - **多轮记忆与图案指代继承**:新增 `md_kb_endpoint_chat_history()` 在 `history` 为空时按 `chat_id` 直读 `lh_msg` 最近 6 轮对话(过滤状态 JSON 与欢迎语、剥离 `Based on:` 尾注、去重当前问题),并由 `md_kb_endpoint_history_pattern_lookup()` 支持跨轮代词追问(如先问 `Agave` 再问 `What is its open area?`);当 `page_url` 未命中图案页时,由 `md_kb_endpoint_chat_referrer()` 回退读取 `lh_chat.referrer` 实时页面上下文。
+     - **146 款图案目录条件导购推荐**:新增 `md_kb_endpoint_asks_recommendation()`、`md_kb_endpoint_pattern_recommend()` 与 `md_kb_endpoint_pattern_score()`,支持按图案系列(`product_cat`,权重 `+6`)、镂空率百分比/区间(`open_area`,权重 `+5..+7`)、应用场景/母题(`best_fit`/`motifs`/`summary`,权重 `+3`)与视觉密度(`visual_density`,权重 `+2`)从 WooCommerce 已发布图案中优选 Top 3 代表图案注入模型上下文,输出含编号、镂空率、适用场景与可点击详情页链接的导购建议。
+     - **解锁全球运输问答 + 商业问题非自杀应答框架**:新增 `md_kb_endpoint_asks_shipping()` 对 `"Do you ship to my country?"` / `"Do you deliver to Dubai?"` 等问题直接返回出口级木箱包装与海空运 `EXW/FOB/CIF/DDP` 条款并保持 AI 在线(`action: ""`);将 `md_kb_endpoint_asks_commercial()`(价格/交期/MOQ/样品)升级为返回 304/316 定制计价因素框架 + 引导点击顶部 `Request Quote` / `Chat on WhatsApp`,仅在访客显式要求人工(`md_kb_endpoint_wants_human()`)时才触发 `transfer_operator`。
+  2. **对话内留资闭环与实时页面同步(`mu-plugins/md-chat-email.php`、`mu-plugins/md-wecom-notify.php`、`ChatEmailTest.php`、`WecomNotifyTest.php`)**:
+     - **彻底消灭 Bot 态留资黑洞**:`md-wecom-notify.php` 新增 `chat.visitor_email_saved` 事件,允许 `status` 为 `0 (Pending)`、`1 (Active)` 或 `5 (Bot)` 的会话立即发送企业微信 `textcard`(60s 冷却);`md-chat-email.php` 在保存访客邮箱后自动拉取 `lh_msg` 对话摘要,同步创建 `md_inquiry` 询盘记录、入队内部销售通知与客户确认邮件(`Emails::INTERNAL` & `Emails::CONFIRMATION`),并调用 `md_wecom_notify_visitor_email()` 推送企微卡片。
+     - **新增实时页面上下文路由**:注册 `POST /wp-json/md/v1/chat/context`,校验 `chat_id` + 40 位 `hash` 能力凭证后实时更新 `lh_chat.referrer`。
+  3. **访客挂件常驻双转化栏、宿主页报价弹窗桥接与图案链接化(`lhc-extensions/mdvisitor/`)**:
+     - **全程常驻双按钮**:在启动页(`chatwidget.tpl.php` `.md-convert-bar`)与活跃对话页(`chat_status.tpl.php` `.mdv-convert-bar`)头部下方全程常驻 `Request Quote` 与 `Chat on WhatsApp`(严守按钮不写裸电话号码规范),并新增 `Recommend patterns` 快捷胶囊。
+     - **跨窗口拉起宿主页报价弹窗与实时 URL 同步**:`mdvisitor-launcher.js` 监听 `mdv_open_quote` 消息,自动收起聊天窗并触发宿主页 `#open-quote` / `#md-quote-modal`(在 PDP 页自动带入当前图案信息);打开挂件或跨页恢复会话时自动向 `/wp-json/md/v1/chat/context` 同步最新 `page_url`,并在 `chat_status.tpl.php` 中通过 `linkifyPatterns()` 将 AI 回复中的 `/pattern/<slug>/` 渲染为可点击顶层跳转链接。
+
 ### 2026-10-31 全站 CTA 询盘密度与 WhatsApp 双通道转化升级 + Matt Pocock 工程技能集收口(批次十二)
 
 - **业主新裁定(`/grill-me` 整站转化率优化,推翻 2026-10-30 WhatsApp 移除裁定)**:重新启用并全站强化 WhatsApp(`+852 6473 1687`,`https://wa.me/85264731687`)与即时报价弹窗(`#open-quote`),打造高密度 B2B 询盘站体验;同时保留右下角 AI 客服启动器(`Ask Metal Divider`)并在面板内新增一键转 WhatsApp / 报价表单通道。

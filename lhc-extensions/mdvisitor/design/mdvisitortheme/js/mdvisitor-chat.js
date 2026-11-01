@@ -11,6 +11,99 @@
   var skipKey = '';
   var started = false;
   var lastStoreKey = 'mdv:lastChat';
+  var currentPageUrl = '';
+  var syncInFlightUrl = '';
+
+  function normalizePageUrl(raw) {
+    if (!raw || typeof raw !== 'string') {
+      return '';
+    }
+    try {
+      var u = new URL(raw, window.location.origin);
+      if (u.origin !== window.location.origin) {
+        return '';
+      }
+      if (u.pathname.indexOf('/chat/') === 0) {
+        return '';
+      }
+      return u.href;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function updateWhatsAppLinks() {
+    var base = 'https://wa.me/85264731687';
+    var href = currentPageUrl
+      ? base + '?text=' + encodeURIComponent('Hi Metal Divider team, I have a question from: ' + currentPageUrl)
+      : base;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-mdv-wa]'), function (el) {
+      el.setAttribute('href', href);
+    });
+  }
+
+  function syncChatContext(pageUrl) {
+    var clean = normalizePageUrl(pageUrl);
+    if (!clean || !chatId || !chatHash) {
+      return;
+    }
+    var syncKey = 'mdv:syncedUrl:' + chatId;
+    var lastSynced = '';
+    try {
+      lastSynced = window.sessionStorage.getItem(syncKey) || '';
+    } catch (e) {}
+    if (lastSynced === clean || syncInFlightUrl === clean) {
+      return;
+    }
+    syncInFlightUrl = clean;
+    fetch(window.location.origin + '/wp-json/md/v1/chat/context', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, hash: chatHash, page_url: clean })
+    }).then(function (res) {
+      if (res.ok) {
+        try {
+          window.sessionStorage.setItem(syncKey, clean);
+        } catch (e) {}
+      }
+      if (syncInFlightUrl === clean) {
+        syncInFlightUrl = '';
+      }
+    }).catch(function () {
+      if (syncInFlightUrl === clean) {
+        syncInFlightUrl = '';
+      }
+    });
+  }
+
+  function setPageUrl(candidate) {
+    var clean = normalizePageUrl(candidate);
+    if (!clean) {
+      return;
+    }
+    currentPageUrl = clean;
+    try {
+      window.sessionStorage.setItem('mdv:pageUrl', currentPageUrl);
+    } catch (e) {}
+    updateWhatsAppLinks();
+    if (chatId && chatHash) {
+      syncChatContext(currentPageUrl);
+    }
+  }
+
+  (function initPageContext() {
+    var fromQuery = '';
+    try {
+      fromQuery = new URLSearchParams(window.location.search).get('URLReferer') || '';
+    } catch (e) {}
+    var fromSession = '';
+    try {
+      fromSession = window.sessionStorage.getItem('mdv:pageUrl') || '';
+    } catch (e) {}
+    var fromRef = document.referrer || '';
+    setPageUrl(fromQuery || fromSession || fromRef);
+  }());
 
   function readStore(key) {
     try {
@@ -128,6 +221,7 @@
             window.localStorage.removeItem(lastStoreKey);
             window.localStorage.removeItem('mdv:emailSaved:' + chatId);
             window.localStorage.removeItem('mdv:emailSkip:' + chatId);
+            window.sessionStorage.removeItem('mdv:syncedUrl:' + chatId);
           } catch (e) {
             /* private mode: nothing persisted, nothing to clear */
           }
@@ -245,7 +339,7 @@
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, hash: chatHash, email: value })
+        body: JSON.stringify({ chat_id: chatId, hash: chatHash, email: value, page_url: currentPageUrl })
       }).then(function (response) {
         return response.json().catch(function () {
           return {};
@@ -290,10 +384,33 @@
     }
   }
 
+  document.addEventListener('click', function (event) {
+    var quoteBtn = event.target && event.target.closest ? event.target.closest('[data-mdv-open-quote]') : null;
+    if (!quoteBtn) {
+      return;
+    }
+    event.preventDefault();
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'mdv_open_quote', pageUrl: currentPageUrl }, window.location.origin);
+    } else {
+      window.open('/inquiry/', '_blank', 'noopener');
+    }
+  });
+
+  window.addEventListener('message', function (event) {
+    if (event.origin !== window.location.origin) {
+      return;
+    }
+    if (event.data && event.data.type === 'mdv_host_context' && event.data.pageUrl) {
+      setPageUrl(event.data.pageUrl);
+    }
+  });
+
   function start() {
     if (started) {
       return;
     }
+    updateWhatsAppLinks();
     head = document.querySelector('.mdv-chat-head');
     if (!head) {
       return;
@@ -307,6 +424,14 @@
       return;
     }
     wireDelete();
+    if (currentPageUrl) {
+      syncChatContext(currentPageUrl);
+    }
+    if (window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage({ type: 'mdv_request_host_context' }, window.location.origin);
+      } catch (e) {}
+    }
 
     block = document.getElementById('messagesBlock');
     if (!block) {

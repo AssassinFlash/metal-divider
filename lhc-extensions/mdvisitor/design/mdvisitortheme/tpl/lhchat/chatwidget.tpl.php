@@ -1,5 +1,5 @@
 <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_pre_multiinclude.tpl.php'));?>
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor.css?v=20261028ac', ENT_QUOTES, 'UTF-8'); ?>">
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor.css?v=20261101a', ENT_QUOTES, 'UTF-8'); ?>">
 
 <?php if (isset($maintenance_mode)) : ?>
     <div class="pt-2">
@@ -92,6 +92,10 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
       <div class="md-status"><span class="md-pulse"></span><span>AI assistant</span><span class="md-status-sep">·</span><span>Team online</span></div>
       <?php endif; ?>
     </header>
+    <div class="md-convert-bar" role="region" aria-label="Direct inquiry channels">
+      <button class="md-convert-btn md-convert-quote" type="button" data-mdv-open-quote>Request Quote</button>
+      <a class="md-convert-btn md-convert-wa" href="https://wa.me/85264731687" target="_blank" rel="noopener" data-mdv-wa>Chat on WhatsApp</a>
+    </div>
     <div class="md-panel md-scroll">
       <a class="md-resume" href="#" hidden>
         <span class="md-resume-icon" aria-hidden="true">↩</span>
@@ -117,11 +121,12 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
       </button>
       <button class="md-text-link" type="button" data-mdv-go="faq">Browse common questions <span>→</span></button>
       <div class="md-chips">
+        <button type="button" data-mdv-fill="Can you recommend a geometric pattern with 30-40% open area for outdoor privacy?">Recommend patterns</button>
         <button type="button" data-mdv-fill="What is your typical lead time?">Lead time</button>
         <button type="button" data-mdv-fill="Can you match a pattern from my drawing?">Custom patterns</button>
         <button type="button" data-mdv-fill="Do you ship to my country?">Shipping</button>
       </div>
-      <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="https://wa.me/85264731687" target="_blank" rel="noopener">WhatsApp</a><span class="md-foot-dot"></span><a href="mailto:info@metal-divider.com">Email</a></div>
+      <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="https://wa.me/85264731687" target="_blank" rel="noopener" data-mdv-wa>WhatsApp</a><span class="md-foot-dot"></span><a href="mailto:info@metal-divider.com">Email</a></div>
     </div>
     <div class="md-composer md-start-composer">
 <form method="post" id="form-start-chat" action="<?php echo erLhcoreClassDesign::baseurl('chat/chatwidget')?><?php echo $append_mode?><?php $department !== false ? print '/(department)/'.$department : ''?><?php $input_data->priority !== false ? print '/(priority)/'.$input_data->priority : ''?><?php $input_data->vid !== false ? print '/(vid)/'.htmlspecialchars($input_data->vid) : ''?><?php $input_data->hash_resume !== false ? print '/(hash_resume)/'.htmlspecialchars($input_data->hash_resume) : ''?><?php $leaveamessage == true ? print '/(leaveamessage)/true' : ''?><?php $forceoffline == true ? print '/(offline)/true' : ''?><?php echo $append_mode_theme?>" onsubmit="return <?php if (isset($start_data_fields['message_auto_start']) && $start_data_fields['message_auto_start'] == true) : ?>lhinst.prestartChat('<?php echo time()?>',$(this))<?php else : ?>lhinst.addCaptchaSubmit('<?php echo time()?>',$(this))<?php endif?>">
@@ -277,7 +282,7 @@ if ($theme !== false && $theme->explain_text != '' && $onlyBotOnline == false) :
     </nav>
   </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028ab', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261101a', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 <?php if (isset($start_data_fields['pre_chat_html']) && $start_data_fields['pre_chat_html'] != '') : ?>
     <?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/post_chat_html.tpl.php'));?>
@@ -334,6 +339,10 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
     <p class="md-hero-sub">The desk is closed right now. Leave a message and the team will read it when the desk opens.</p>
     <div class="md-status"><span class="md-pulse md-pulse-off"></span><span>Desk closed</span><span class="md-status-sep">·</span><span>Leave a message</span></div>
   </header>
+  <div class="md-convert-bar" role="region" aria-label="Direct inquiry channels">
+    <button class="md-convert-btn md-convert-quote" type="button" data-mdv-open-quote>Request Quote</button>
+    <a class="md-convert-btn md-convert-wa" href="https://wa.me/85264731687" target="_blank" rel="noopener" data-mdv-wa>Chat on WhatsApp</a>
+  </div>
   <div class="md-panel md-scroll md-offline-panel">
     <a class="md-resume" href="#" hidden>
       <span class="md-resume-icon" aria-hidden="true">↩</span>
@@ -365,7 +374,7 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
     <?php endif?>
 
 	<?php include(erLhcoreClassDesign::designtpl('lhchat/chatwidget/chatwidget_post_offline_form_multiinclude.tpl.php'));?>
-    <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="https://wa.me/85264731687" target="_blank" rel="noopener">WhatsApp</a><span class="md-foot-dot"></span><a href="mailto:info@metal-divider.com">Email</a></div>
+    <div class="md-panel-foot"><span class="md-foot-mark">MD</span><a href="https://wa.me/85264731687" target="_blank" rel="noopener" data-mdv-wa>WhatsApp</a><span class="md-foot-dot"></span><a href="mailto:info@metal-divider.com">Email</a></div>
   </div>
   <nav class="md-tabs" aria-label="Assistant sections">
     <button class="is-active" type="button" data-mdv-go="home" aria-label="Home" aria-current="page"><span class="md-tab-icon" aria-hidden="true">⌂</span><span class="md-tab-label">Home</span></button>
@@ -395,7 +404,7 @@ jQuery('#id_Question').bind('keydown', 'return', function (evt){
     </nav>
   </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261028ab', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor.js?v=20261101a', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 <?php endif;?>
 

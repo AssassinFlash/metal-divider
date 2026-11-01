@@ -22,7 +22,7 @@
 
 	var START_PATH = '/chat/index.php/chat/chatwidget/(department)/1';
 	var CSS_PATH = '/chat/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-launcher.css';
-	var CSS_VERSION = '20261028e';
+	var CSS_VERSION = '20261101a';
 
 	if ( location.pathname.indexOf( '/chat/' ) === 0 ) {
 		return;
@@ -76,6 +76,22 @@
 
 		var frame = null;
 
+		function sendHostContext() {
+			if ( ! frame || ! frame.contentWindow ) {
+				return;
+			}
+			try {
+				frame.contentWindow.postMessage(
+					{
+						type: 'mdv_host_context',
+						pageUrl: window.location.href,
+						pageTitle: document.title
+					},
+					window.location.origin
+				);
+			} catch ( err ) {}
+		}
+
 		function ensureFrame() {
 			if ( frame ) {
 				return;
@@ -83,6 +99,7 @@
 			frame = document.createElement( 'iframe' );
 			frame.className = 'mdvl-frame';
 			frame.title = 'Metal Divider assistant';
+			frame.addEventListener( 'load', sendHostContext );
 			frame.src = START_PATH + '?v=' + Date.now() + '&URLReferer=' + encodeURIComponent( window.location.href ) + '&r=' + encodeURIComponent( window.location.origin );
 			card.appendChild( frame );
 		}
@@ -92,6 +109,7 @@
 			card.hidden = false;
 			launcher.setAttribute( 'aria-expanded', 'true' );
 			launcher.hidden = true;
+			sendHostContext();
 			if ( frame.contentWindow ) {
 				frame.contentWindow.focus();
 			}
@@ -124,6 +142,27 @@
 			}
 			if ( event.data === 'lhc_chat_closed_explicit' ) {
 				closeCard();
+				return;
+			}
+			if ( event.data && event.data.type === 'mdv_request_host_context' ) {
+				sendHostContext();
+				return;
+			}
+			if ( event.data === 'mdv_open_quote' || ( event.data && event.data.type === 'mdv_open_quote' ) ) {
+				closeCard();
+				var trigger = document.querySelector( '.pdp-quote-bar a[href="#open-quote"], .pdp-hero a[href="#open-quote"], a[href="#open-quote"][data-pattern-slug], a[href="#open-quote"], [data-open-quote]' );
+				if ( trigger && typeof trigger.click === 'function' ) {
+					trigger.click();
+					return;
+				}
+				var modal = document.getElementById( 'md-quote-modal' );
+				if ( modal ) {
+					modal.hidden = false;
+					modal.classList.add( 'is-open' );
+					modal.setAttribute( 'aria-hidden', 'false' );
+					return;
+				}
+				window.location.assign( '/inquiry/' );
 			}
 		} );
 

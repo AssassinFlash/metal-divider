@@ -1379,7 +1379,8 @@ final class KbEndpointTest extends TestCase {
 
 	/**
 	 * Price, lead time, MOQ and sample promises are never answered from a
-	 * product hit: the visitor is transferred, and the model is not asked.
+	 * product hit: the quoting framework is returned without calling the
+	 * model, and the bot stays active unless a human was requested.
 	 */
 	public function test_a_price_question_about_a_pattern_transfers_without_the_model(): void {
 		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
@@ -1393,7 +1394,7 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( 200, $out['status'] );
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertStringContainsString( 'team', strtolower( (string) $out['body']['msg'] ) );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 		self::assertArrayNotHasKey( 'raplsaich_unanswered_log', $GLOBALS['md_mu_test_options'] );
@@ -1453,8 +1454,8 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * The same commercial handoff in Chinese: a price or lead-time question
-	 * never reaches the model, hit or not.
+	 * The same commercial quoting guidance in Chinese: a price or lead-time
+	 * question never reaches the model, hit or not, and keeps the bot active.
 	 */
 	public function test_a_chinese_price_question_transfers_without_the_model(): void {
 		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
@@ -1467,7 +1468,7 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
@@ -1531,7 +1532,7 @@ final class KbEndpointTest extends TestCase {
 
 	/**
 	 * A Chinese ship-date question is a commercial commitment and never
-	 * reaches the model.
+	 * reaches the model, while keeping the bot active for follow-ups.
 	 */
 	public function test_a_chinese_ship_date_question_transfers_without_the_model(): void {
 		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
@@ -1544,7 +1545,7 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
@@ -1648,8 +1649,9 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * A price or lead-time question is transferred even when no pattern is
-	 * named: the model is never asked to answer a commercial number.
+	 * A price or lead-time question is answered with the quoting framework
+	 * even when no pattern is named: the model is never asked to invent a
+	 * commercial number, and the bot stays active.
 	 */
 	public function test_a_commercial_question_without_a_pattern_transfers(): void {
 		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
@@ -1661,7 +1663,7 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
@@ -1846,8 +1848,8 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * A shipping destination is not a commercial commitment, but it is not
-	 * a published fact either: the team answers it without a shipping claim.
+	 * A shipping destination is answered with the published export-crating
+	 * and worldwide freight options while keeping the bot active.
 	 */
 	public function test_a_shipping_destination_is_handed_off_without_a_claim(): void {
 		$this->configure_kb(
@@ -1862,14 +1864,17 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
-		self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), $out['body']['msg'] );
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( md_kb_endpoint_shipping_reply( 'Do you deliver to Dubai?', '' ), $out['body']['msg'] );
+		self::assertSame( array( 'Packing and shipping' ), $out['body']['sources'] );
+		self::assertSame( array( 'Packing and shipping' ), $out['body']['source_labels'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
 	/**
-	 * Installation and a shipping destination are not published facts. They
-	 * transfer without a promise, and the model is not asked.
+	 * On-site installation is not a published fact and transfers without a
+	 * promise, whereas shipping capability questions are answered with the
+	 * published freight guidance and keep the bot active.
 	 */
 	public function test_unpublished_project_facts_are_handed_off_without_a_claim(): void {
 		$this->configure_kb(
@@ -1877,20 +1882,24 @@ final class KbEndpointTest extends TestCase {
 			$this->model_reply( 'Yes, we ship worldwide.', false, 'none' )
 		);
 
-		$questions = array(
-			'Do you install screens in Iceland?',
-			'Do you ship to my country?',
+		$install = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Do you install screens in Iceland?' ),
+			)
 		);
-		foreach ( $questions as $q ) {
-			$out = md_kb_endpoint_answer(
-				array(
-					'header' => $this->bearer(),
-					'body'   => array( 'q' => $q ),
-				)
-			);
-			self::assertSame( 'transfer_operator', $out['body']['action'], $q );
-			self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), $out['body']['msg'], $q );
-		}
+		self::assertSame( 'transfer_operator', $install['body']['action'] );
+		self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), $install['body']['msg'] );
+
+		$ship = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Do you ship to my country?' ),
+			)
+		);
+		self::assertSame( '', $ship['body']['action'] );
+		self::assertSame( md_kb_endpoint_shipping_reply( 'Do you ship to my country?', '' ), $ship['body']['msg'] );
+		self::assertSame( array( 'Packing and shipping' ), $ship['body']['sources'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
@@ -2219,8 +2228,8 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * A commercial question still transfers before the model is asked, even
-	 * when the visitor is on a pattern page.
+	 * A commercial question is answered before the model is asked, even
+	 * when the visitor is on a pattern page, while keeping the bot active.
 	 */
 	public function test_a_commercial_question_on_a_pattern_page_still_transfers(): void {
 		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
@@ -2236,7 +2245,7 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
@@ -2306,7 +2315,7 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( 200, $out['status'] );
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertSame( array( 'pattern#167 Herringbone' ), $out['body']['sources'] );
 		self::assertStringContainsString( "Herringbone's published fit is architectural screening.", (string) $out['body']['msg'] );
 		self::assertStringContainsString( 'team', strtolower( (string) $out['body']['msg'] ) );
@@ -2316,8 +2325,9 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * "Ship to" names a destination, not a date, and no destination is a
-	 * published fact: the team answers it without a shipping claim.
+	 * "Ship to" names a destination, not a date, and is answered with the
+	 * published export-crating and worldwide freight guidance while keeping
+	 * the bot active.
 	 */
 	public function test_a_ship_to_destination_is_handed_off_without_a_claim(): void {
 		$this->configure_kb(
@@ -2332,8 +2342,9 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
-		self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), $out['body']['msg'] );
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( md_kb_endpoint_shipping_reply( 'Do you ship to Dubai?', '' ), $out['body']['msg'] );
+		self::assertSame( array( 'Packing and shipping' ), $out['body']['sources'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
@@ -2353,14 +2364,15 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( md_kb_endpoint_commercial_handoff_message(), $out['body']['msg'] );
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertStringNotContainsString( '32%', (string) $out['body']['msg'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
 	/**
-	 * "How much" and "samples" are commercial commitments. They transfer
-	 * without the model, and they do not invent a pattern fact.
+	 * "How much" and "samples" are commercial commitments. They answer with
+	 * the quoting framework without calling the model, and they do not
+	 * invent a pattern fact.
 	 */
 	public function test_how_much_and_samples_transfer_without_the_model(): void {
 		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
@@ -2374,12 +2386,12 @@ final class KbEndpointTest extends TestCase {
 		);
 
 		self::assertSame( md_kb_endpoint_commercial_handoff_message(), $out['body']['msg'] );
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
 	/**
-	 * An open area of "On request" is kept beside a ship-date handoff. It
+	 * An open area of "On request" is kept beside a ship-date reply. It
 	 * is not turned into zero.
 	 */
 	public function test_an_on_request_open_area_is_kept_beside_a_ship_date(): void {
@@ -2405,15 +2417,15 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertStringContainsString( "Agave's open area is On request.", (string) $out['body']['msg'] );
 		self::assertStringNotContainsString( '0%', (string) $out['body']['msg'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
 	}
 
 	/**
-	 * A published zero is not an open-area answer. The price still transfers
-	 * and the zero is not spoken.
+	 * A published zero is not an open-area answer. The price still answers
+	 * with the commercial guidance and the zero is not spoken.
 	 */
 	public function test_a_zero_open_area_is_not_spoken_beside_a_price_handoff(): void {
 		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
@@ -2444,7 +2456,7 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
-	 * The open page's published open area stays when the ship date transfers.
+	 * The open page's published open area stays when the ship date is asked.
 	 * The model is not asked to invent the date.
 	 */
 	public function test_a_page_open_area_is_kept_when_a_ship_date_transfers(): void {
@@ -2461,7 +2473,7 @@ final class KbEndpointTest extends TestCase {
 			)
 		);
 
-		self::assertSame( 'transfer_operator', $out['body']['action'] );
+		self::assertSame( '', $out['body']['action'] );
 		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
 		self::assertStringContainsString( "Agave's open area is 32%.", (string) $out['body']['msg'] );
 		self::assertSame( array(), $this->recorded( 'md_mu_test_http' ) );
@@ -2804,6 +2816,235 @@ final class KbEndpointTest extends TestCase {
 		self::assertContains( 'short turn', $contents );
 		self::assertContains( substr( $oversized, 0, 2000 ), $contents );
 		self::assertNotContains( $oversized, $contents );
+	}
+
+	/**
+	 * When history is empty and chat_id is numeric, recent turns are loaded
+	 * from lh_msg, deduplicating the newest visitor message matching q,
+	 * stripping the greeting, status JSON and "Based on:" footer, and
+	 * carrying over the pattern named in an earlier turn.
+	 */
+	public function test_chat_history_loads_from_lh_msg_and_carries_over_pattern_context(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Agave has a 32% open area.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		$GLOBALS['md_mu_test_db_responder'] = static function ( string $sql ): string|array {
+			if ( str_contains( $sql, 'FROM lh_msg' ) ) {
+				return array(
+					array(
+						'user_id' => 0,
+						'msg'     => 'What is its open area?',
+					),
+					array(
+						'user_id' => -2,
+						'msg'     => "Agave is a botanical screen.\n\nBased on: Pattern MD-101",
+					),
+					array(
+						'user_id' => 0,
+						'msg'     => 'Tell me about Agave',
+					),
+					array(
+						'user_id' => -2,
+						'msg'     => '{"status":"bot"}',
+					),
+					array(
+						'user_id' => -2,
+						'msg'     => "Hi — I'm Metal Divider's AI assistant. Ask about any pattern.",
+					),
+				);
+			}
+			return '5';
+		};
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'       => 'What is its open area?',
+					'chat_id' => '88',
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
+
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		self::assertSame( 'Tell me about Agave', $payload['messages'][1]['content'] );
+		self::assertSame( 'Assistant: Agave is a botanical screen.', $payload['messages'][2]['content'] );
+		$user = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'PATTERN FACTS (WooCommerce, current publish):', $user );
+		self::assertStringContainsString( 'MD-101', $user );
+	}
+
+	/**
+	 * When page_url has no pattern slug (for example, chat started on the
+	 * home page and the visitor navigated to a pattern page), lh_chat.referrer
+	 * supplies the live pattern page context.
+	 */
+	public function test_live_lh_chat_referrer_supplies_page_context_when_page_url_is_not_a_pattern(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'The open area of this pattern is 32%.', false, 'none' )
+		);
+		$this->plant_pattern();
+
+		$GLOBALS['md_mu_test_db_responder'] = static function ( string $sql ): string|array {
+			if ( str_contains( $sql, 'FROM lh_msg' ) ) {
+				return array();
+			}
+			if ( str_contains( $sql, 'SELECT referrer FROM lh_chat' ) ) {
+				return '//metal-divider.com/pattern/agave/';
+			}
+			return '5';
+		};
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'What is the open area of this pattern?',
+					'chat_id'  => '91',
+					'page_url' => 'https://metal-divider.com/',
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( array( 'pattern#101 MD-101' ), $out['body']['sources'] );
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'CURRENT PATTERN (the page the visitor opened the chat on):', $user );
+		self::assertStringContainsString( 'MD-101', $user );
+	}
+
+	/**
+	 * Pattern recommendation questions score published patterns by series,
+	 * open area percentage, visual density and application/best fit, feeding
+	 * the top matches into PATTERN FACTS.
+	 */
+	public function test_pattern_recommender_ranks_by_series_open_area_and_application(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'I recommend Herringbone (28% open area) for an outdoor geometric facade.', false, 'none' )
+		);
+		$this->plant_pattern();
+		$this->plant_pattern(
+			array(
+				'ID'         => 167,
+				'post_title' => 'Herringbone | Architectural Metal Screen Pattern',
+				'post_name'  => 'herringbone',
+				'sku'        => 'MD-167',
+				'fields'     => array(
+					'open_area'       => '28',
+					'visual_density'  => 'medium',
+					'repeat_behavior' => 'tile',
+					'motifs'          => array( 'geometric' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'ready',
+					'summary'         => 'A geometric screen for exterior facades.',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][167] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Geometric',
+					'slug' => 'geometric',
+				),
+			),
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q' => 'Can you recommend a geometric pattern with 25-30% open area for an outdoor facade?',
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( 'pattern#167 MD-167', $out['body']['sources'][0] );
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'PATTERN FACTS (WooCommerce, current publish):', $user );
+		self::assertStringContainsString( 'MD-167', $user );
+	}
+
+	/**
+	 * Commercial and shipping questions keep the AI assistant active
+	 * (action: '') unless the visitor also explicitly asks for a human.
+	 */
+	public function test_commercial_and_shipping_questions_keep_bot_alive_unless_human_requested(): void {
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$this->plant_pattern();
+
+		$lead_time = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is your typical lead time?' ),
+			)
+		);
+		self::assertSame( '', $lead_time['body']['action'] );
+		self::assertStringContainsString( 'custom-fabricated in 304 or 316 stainless steel', (string) $lead_time['body']['msg'] );
+
+		$shipping = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'Do you ship to my country?' ),
+			)
+		);
+		self::assertSame( '', $shipping['body']['action'] );
+		self::assertStringContainsString( 'export-grade wooden crates', (string) $shipping['body']['msg'] );
+
+		$with_human = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array( 'q' => 'What is the price of MD-101? Please connect me with a human agent.' ),
+			)
+		);
+		self::assertSame( 'transfer_operator', $with_human['body']['action'] );
+	}
+
+	/**
+	 * When the knowledge plugin is deactivated on production, direct DB
+	 * retrieval ranks active rows from raplsaich_knowledge and builds context.
+	 */
+	public function test_direct_db_retrieval_ranks_active_knowledge_rows(): void {
+		$GLOBALS['md_mu_test_db_responder'] = static function ( string $sql ): array {
+			if ( str_contains( $sql, 'FROM `wp_raplsaich_knowledge` WHERE is_active = 1' ) ) {
+				return array(
+					array(
+						'id'      => 1,
+						'title'   => 'Contact details',
+						'content' => 'Reach us on WhatsApp at +852 6473 1687.',
+					),
+					array(
+						'id'      => 5,
+						'title'   => 'Stainless steel grades',
+						'content' => 'We fabricate in 304 and 316 stainless steel for interior and coastal projects.',
+					),
+				);
+			}
+			return array();
+		};
+
+		list( $results, $context ) = md_kb_endpoint_retrieve_from_db( 'Which stainless steel grade is best for coastal outdoor projects?' );
+
+		self::assertCount( 1, $results );
+		self::assertSame( 5, $results[0]['source_id'] );
+		self::assertSame( 'Stainless steel grades', $results[0]['title'] );
+		self::assertStringContainsString( '### Stainless steel grades', $context );
+		self::assertStringContainsString( '304 and 316 stainless steel', $context );
 	}
 
 	/**

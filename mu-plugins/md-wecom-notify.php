@@ -101,7 +101,7 @@ function md_wecom_notify_handle( array $input ): array {
 		);
 	}
 
-	// The saved leave-message is not a later visitor message, so the addmsguser window does not hold it.
+	// The saved leave-message and the visitor email saved in-chat are not later visitor messages, so the addmsguser window does not hold them.
 	if ( ! in_array(
 		$event_name,
 		array(
@@ -109,6 +109,7 @@ function md_wecom_notify_handle( array $input ): array {
 			'chat.chat_transfered',
 			'chat.addmsguser',
 			'chat.chat_offline_request_saved',
+			'chat.visitor_email_saved',
 		),
 		true
 	) ) {
@@ -208,6 +209,51 @@ function md_wecom_notify_handle( array $input ): array {
 	return array(
 		'status' => 200,
 		'body'   => array( 'sent' => true ),
+	);
+}
+
+/**
+ * Sends a WeCom textcard when a visitor saves their email in the live chat
+ * widget, even while the conversation is still handled by the bot (status 5).
+ * When the connector is not configured in the current environment, returns a
+ * non-failing skipped status so the email save itself always succeeds.
+ *
+ * @param int    $chat_id  The chat that owns the email.
+ * @param string $email    The visitor's saved email address.
+ * @param string $referrer The page URL where the chat is taking place.
+ * @param string $summary  Optional latest visitor question or summary.
+ * @return array{status: int, body: array<string, mixed>} The handler's result.
+ */
+function md_wecom_notify_visitor_email( int $chat_id, string $email, string $referrer = '', string $summary = '' ): array {
+	$token = md_wecom_notify_setting( 'bearer_token' );
+	if ( '' === $token ) {
+		return array(
+			'status' => 200,
+			'body'   => array(
+				'sent'   => false,
+				'reason' => 'not_configured',
+			),
+		);
+	}
+
+	$summary = trim( $summary );
+	return md_wecom_notify_handle(
+		array(
+			'header' => 'Bearer ' . $token,
+			'body'   => array(
+				'event' => 'chat.visitor_email_saved',
+				'chat'  => array(
+					'id'       => $chat_id,
+					'status'   => 5,
+					'nick'     => $email,
+					'email'    => $email,
+					'referrer' => $referrer,
+				),
+				'msg'   => array(
+					'msg' => '' !== $summary ? 'Email left in chat: ' . $email . ' — ' . $summary : 'Email left in chat: ' . $email,
+				),
+			),
+		)
 	);
 }
 
@@ -345,6 +391,21 @@ function md_wecom_notify_gate( string $event_name, array $chat, array $body, int
 				'window' => 0,
 			);
 		}
+	}
+
+	if ( 'chat.visitor_email_saved' === $event_name ) {
+		if ( ! in_array( $status, array( 0, 1, 5 ), true ) ) {
+			return array(
+				'send'   => false,
+				'reason' => 'status_not_notifiable',
+				'window' => 0,
+			);
+		}
+		return array(
+			'send'   => true,
+			'reason' => '',
+			'window' => 60,
+		);
 	}
 
 	if ( 0 !== $status && 1 !== $status ) {

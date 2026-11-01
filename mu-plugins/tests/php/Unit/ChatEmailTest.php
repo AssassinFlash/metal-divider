@@ -82,6 +82,18 @@ final class ChatEmailTest extends TestCase {
 			),
 			$GLOBALS['md_mu_test_routes'] ?? array()
 		);
+		self::assertContains(
+			array(
+				'md/v1',
+				'/chat/context',
+				array(
+					'methods'             => 'POST',
+					'callback'            => 'md_chat_context_respond',
+					'permission_callback' => '__return_true',
+				),
+			),
+			$GLOBALS['md_mu_test_routes'] ?? array()
+		);
 	}
 
 	/**
@@ -108,17 +120,21 @@ final class ChatEmailTest extends TestCase {
 	/**
 	 * One request to the route, with the body the browser sends.
 	 *
-	 * @param int    $chat_id The chat's id.
-	 * @param string $hash The chat's hash.
-	 * @param string $email The email to store.
+	 * @param int    $chat_id  The chat's id.
+	 * @param string $hash     The chat's hash.
+	 * @param string $email    The email to store.
+	 * @param string $page_url Optional current page URL.
 	 * @return \WP_REST_Response The response.
 	 */
-	private function email_request( int $chat_id, string $hash, string $email = 'visitor@example.com' ): \WP_REST_Response {
+	private function email_request( int $chat_id, string $hash, string $email = 'visitor@example.com', string $page_url = '' ): \WP_REST_Response {
 		$body = array(
 			'chat_id' => $chat_id,
 			'hash'    => $hash,
 			'email'   => $email,
 		);
+		if ( '' !== $page_url ) {
+			$body['page_url'] = $page_url;
+		}
 		/**
 		 * The suite's WP_REST_Request double takes the decoded body as its
 		 * first parameter; WordPress's own class takes a method string
@@ -129,6 +145,32 @@ final class ChatEmailTest extends TestCase {
 		 */
 		$request = new \WP_REST_Request( $body );
 		return md_chat_email_respond( $request );
+	}
+
+	/**
+	 * One request to the /chat/context route.
+	 *
+	 * @param int    $chat_id  The chat's id.
+	 * @param string $hash     The chat's hash.
+	 * @param string $page_url The page URL to store.
+	 * @return \WP_REST_Response The response.
+	 */
+	private function context_request( int $chat_id, string $hash, string $page_url ): \WP_REST_Response {
+		$body = array(
+			'chat_id'  => $chat_id,
+			'hash'     => $hash,
+			'page_url' => $page_url,
+		);
+		/**
+		 * The suite's WP_REST_Request double takes the decoded body as its
+		 * first parameter; WordPress's own class takes a method string
+		 * there. The double is what runs, so the exception is pinned to
+		 * this line.
+		 *
+		 * @phpstan-ignore-next-line
+		 */
+		$request = new \WP_REST_Request( $body );
+		return md_chat_context_respond( $request );
 	}
 
 	/**
@@ -243,5 +285,100 @@ final class ChatEmailTest extends TestCase {
 		$_SERVER['REMOTE_ADDR'] = '203.0.113.9';
 		self::assertSame( 1, preg_match( '/^md_chat_email_failures_[0-9a-f]{64}$/', md_chat_email_failure_key() ) );
 		self::assertStringNotContainsString( '203.0.113.9', md_chat_email_failure_key() );
+	}
+
+	/**
+	 * Accepts only http/https URLs on the site's own hosts or local loopback,
+	 * and extracts the pattern slug when the path points at /pattern/<slug>/.
+	 */
+	public function test_sanitizes_page_url_and_extracts_pattern_slug(): void {
+		self::assertSame(
+			'https://metal-divider.com/pattern/breeze/',
+			md_chat_email_sanitize_page_url( '  https://metal-divider.com/pattern/breeze/  ' )
+		);
+		self::assertSame(
+			'https://staging.metal-divider.com/collections/geometric/',
+			md_chat_email_sanitize_page_url( 'https://staging.metal-divider.com/collections/geometric/' )
+		);
+		self::assertSame(
+			'http://127.0.0.1:8080/pattern/breeze/',
+			md_chat_email_sanitize_page_url( 'http://127.0.0.1:8080/pattern/breeze/' )
+		);
+		self::assertSame(
+			'https://metal-divider.com/pattern/breeze/',
+			md_chat_email_sanitize_page_url( '//metal-divider.com/pattern/breeze/' )
+		);
+		self::assertSame( '', md_chat_email_sanitize_page_url( 'https://evil.example.com/pattern/breeze/' ) );
+		self::assertSame( '', md_chat_email_sanitize_page_url( 'javascript:alert(1)' ) );
+		self::assertSame( '', md_chat_email_sanitize_page_url( 'https://user:pass@metal-divider.com/' ) );
+		self::assertSame( '', md_chat_email_sanitize_page_url( '' ) );
+		self::assertSame( '', md_chat_email_sanitize_page_url( null ) );
+
+		self::assertSame( 'breeze', md_chat_email_pattern_slug( 'https://metal-divider.com/pattern/breeze/' ) );
+		self::assertSame( '', md_chat_email_pattern_slug( 'https://metal-divider.com/collections/geometric/' ) );
+	}
+
+	/**
+	 * Stores the email (and optional page_url) on lh_chat when the hash matches.
+	 */
+	public function test_stores_email_and_optional_page_url_on_lh_chat(): void {
+		$this->answer_row_with(
+			array(
+				'id'         => 11,
+				'hash'       => $this->stored_hash(),
+				'status'     => 5,
+				'anonymized' => 0,
+			)
+		);
+
+		$response = $this->email_request( 11, $this->stored_hash(), 'architect@example.com' );
+		self::assertSame( 200, $response->status );
+		self::assertSame(
+			array(
+				'ok'          => true,
+				'email_saved' => true,
+			),
+			$response->data
+		);
+		self::assertContains( 'UPDATE lh_chat SET email WHERE id', $GLOBALS['wpdb']->queries );
+
+		$GLOBALS['md_mu_test_transients'] = array();
+		$GLOBALS['wpdb']->queries         = array();
+
+		$with_url = $this->email_request( 11, $this->stored_hash(), 'architect@example.com', 'https://metal-divider.com/pattern/breeze/' );
+		self::assertSame( 200, $with_url->status );
+		self::assertContains( 'UPDATE lh_chat SET email,referrer WHERE id', $GLOBALS['wpdb']->queries );
+	}
+
+	/**
+	 * Updates lh_chat.referrer through /chat/context when the capability hash
+	 * and page_url are valid, and refuses invalid URLs or wrong hashes.
+	 */
+	public function test_updates_referrer_via_chat_context_route(): void {
+		$this->answer_row_with(
+			array(
+				'id'         => 15,
+				'hash'       => $this->stored_hash(),
+				'status'     => 5,
+				'anonymized' => 0,
+			)
+		);
+
+		$bad_url = $this->context_request( 15, $this->stored_hash(), 'https://evil.example.com/pattern/breeze/' );
+		self::assertSame( 400, $bad_url->status );
+
+		$wrong_hash = $this->context_request( 15, str_repeat( 'x', 40 ), 'https://metal-divider.com/pattern/breeze/' );
+		self::assertSame( 403, $wrong_hash->status );
+
+		$saved = $this->context_request( 15, $this->stored_hash(), 'https://metal-divider.com/pattern/breeze/' );
+		self::assertSame( 200, $saved->status );
+		self::assertSame(
+			array(
+				'ok'             => true,
+				'referrer_saved' => true,
+			),
+			$saved->data
+		);
+		self::assertContains( 'UPDATE lh_chat SET referrer WHERE id', $GLOBALS['wpdb']->queries );
 	}
 }

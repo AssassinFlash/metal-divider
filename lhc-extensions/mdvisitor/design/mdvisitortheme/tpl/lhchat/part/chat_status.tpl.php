@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261028aj', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261101a', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -27,6 +27,10 @@
                 <div class="mdv-chat-name"><strong id="mdv-chat-title"><?php echo htmlspecialchars($mdvTitle);?></strong><small><span class="mdv-chat-state mdv-chat-state-<?php echo $mdvTone;?>"><i></i><?php echo htmlspecialchars($mdvLabel);?></span></small></div>
             </div>
             <button class="mdv-chat-close" type="button" aria-label="Close assistant" title="Close assistant" onclick="(function(){var t='';try{var a=window.location.ancestorOrigins;if(a&&a.length)t=a[0];else if(document.referrer)t=new URL(document.referrer).origin}catch(e){}if(t&&window.parent!==window){window.parent.postMessage('lhc_chat_closed_explicit',t);}else{window.close();}})()">×</button>
+        </div>
+        <div class="mdv-convert-bar" role="region" aria-label="Direct inquiry channels">
+            <button class="mdv-convert-btn mdv-convert-quote" type="button" data-mdv-open-quote>Request Quote</button>
+            <a class="mdv-convert-btn mdv-convert-wa" href="https://wa.me/85264731687" target="_blank" rel="noopener" data-mdv-wa>Chat on WhatsApp</a>
         </div>
         <?php if ($chat->status == erLhcoreClassModelChat::STATUS_CLOSED_CHAT) : ?>
         <div class="mdv-closed-actions">
@@ -64,7 +68,7 @@
 
     </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261028g', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261101a', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <script>
 (function () {
   var chip = document.querySelector('.mdv-chat-head .mdv-chat-state');
@@ -157,12 +161,64 @@
       }
     }
   }
+  function linkifyPatterns() {
+    var bodies = document.querySelectorAll('#messages .message-admin .msg-body');
+    var re = /https?:\/\/(?:www\.|staging\.)?metal-divider\.com\/[^\s)<>"']+|\/(?:pattern|product|collections)\/[a-z0-9-]+\/?/gi;
+    for (var i = 0; i < bodies.length; i += 1) {
+      var walker = document.createTreeWalker(bodies[i], NodeFilter.SHOW_TEXT, null, false);
+      var textNodes = [];
+      var n = walker.nextNode();
+      while (n) {
+        var parent = n.parentElement || n.parentNode;
+        if (parent && (!parent.closest || !parent.closest('a, .mdv-sources'))) {
+          textNodes.push(n);
+        }
+        n = walker.nextNode();
+      }
+      for (var j = 0; j < textNodes.length; j += 1) {
+        var node = textNodes[j];
+        var val = node.nodeValue || '';
+        re.lastIndex = 0;
+        if (!re.test(val)) { continue; }
+        re.lastIndex = 0;
+        var frag = document.createDocumentFragment();
+        var lastIdx = 0;
+        var match;
+        while ((match = re.exec(val)) !== null) {
+          var raw = match[0];
+          var clean = raw.replace(/[.,;:!?]+$/, '');
+          var trail = raw.slice(clean.length);
+          if (match.index > lastIdx) {
+            frag.appendChild(document.createTextNode(val.slice(lastIdx, match.index)));
+          }
+          var a = document.createElement('a');
+          a.className = 'mdv-inline-link';
+          a.href = clean;
+          a.target = '_top';
+          a.rel = 'noopener';
+          a.textContent = clean;
+          frag.appendChild(a);
+          if (trail) {
+            frag.appendChild(document.createTextNode(trail));
+          }
+          lastIdx = match.index + raw.length;
+        }
+        if (lastIdx < val.length) {
+          frag.appendChild(document.createTextNode(val.slice(lastIdx)));
+        }
+        if (node.parentNode) {
+          node.parentNode.replaceChild(frag, node);
+        }
+      }
+    }
+  }
   function initObservers() {
     tagSources();
+    linkifyPatterns();
     var messages = document.getElementById('messages');
     if (messages && window.MutationObserver && !messages.getAttribute('data-mdv-observed')) {
       messages.setAttribute('data-mdv-observed', '1');
-      new MutationObserver(function () { sync(); tagSources(); }).observe(messages, { childList: true, subtree: true, characterData: true });
+      new MutationObserver(function () { sync(); tagSources(); linkifyPatterns(); }).observe(messages, { childList: true, subtree: true, characterData: true });
     }
     var status = document.getElementById('status-chat');
     if (status && window.MutationObserver && !status.getAttribute('data-mdv-observed')) {

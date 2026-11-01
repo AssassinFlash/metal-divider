@@ -1488,4 +1488,40 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertSame( 'GET', $args['methods'] );
 		$this->assertSame( '__return_true', $args['permission_callback'] );
 	}
+
+	/**
+	 * Saving a visitor email inside the chat widget cards immediately even when
+	 * the conversation is still in STATUS_BOT_CHAT (5), with a 60-second
+	 * cooldown window; closed chats (status 2) remain non-notifiable.
+	 */
+	public function testCardsVisitorEmailSavedInBotStatus(): void {
+		$now = 1790000000;
+
+		$bot_gate = md_wecom_notify_gate( 'chat.visitor_email_saved', array( 'status' => 5 ), array(), $now );
+		$this->assertTrue( $bot_gate['send'] );
+		$this->assertSame( '', $bot_gate['reason'] );
+		$this->assertSame( 60, $bot_gate['window'] );
+
+		$closed_gate = md_wecom_notify_gate( 'chat.visitor_email_saved', array( 'status' => 2 ), array(), $now );
+		$this->assertFalse( $closed_gate['send'] );
+		$this->assertSame( 'status_not_notifiable', $closed_gate['reason'] );
+
+		$this->configure();
+		$link = 'https://lhc.test/site_admin/user/autologin/HASH_EMAIL';
+		$this->upstream_answers( $link );
+
+		$result = md_wecom_notify_visitor_email(
+			145,
+			'architect@example.com',
+			'https://metal-divider.com/pattern/breeze/',
+			'Do you ship Breeze panels to Singapore?'
+		);
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( array( 'sent' => true ), $result['body'] );
+		$this->assertCount( 3, $this->calls() );
+
+		$send_body = json_decode( (string) $this->calls()[2][1]['body'], true );
+		$this->assertStringContainsString( 'architect@example.com', (string) $send_body['textcard']['title'] );
+		$this->assertStringContainsString( 'Email left in chat: architect@example.com', (string) $send_body['textcard']['description'] );
+	}
 }
