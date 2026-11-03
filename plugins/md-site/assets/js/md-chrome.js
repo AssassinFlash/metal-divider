@@ -213,9 +213,6 @@
         detail: null,
         opener: null,
         open: function (detail) {
-          if (document.getElementById('quote-modal') && this.$root.id !== 'quote-modal') {
-            return;
-          }
           var page_form = pageInquiryForm();
           if (page_form) {
             applyQuoteContext(page_form, detail);
@@ -354,8 +351,18 @@
     var info = detail || {};
     var patternCode = String(info.patternCode || '').trim();
     var patternSlug = String(info.patternSlug || '').trim();
-    var quoteIntent = String(info.quoteIntent || info.intentLabel || '').trim();
-    var label = patternCode || quoteIntent || patternSlug;
+    var label = patternCode || patternSlug;
+    if (!label && root.querySelector) {
+      var appEl = root.querySelector('.md-inquiry-app[data-md-inquiry]');
+      if (appEl) {
+        try {
+          var cfg = JSON.parse(appEl.getAttribute('data-md-inquiry') || '{}');
+          if (cfg && cfg.pattern && cfg.pattern.code) {
+            label = String(cfg.pattern.code).trim();
+          }
+        } catch (err) {}
+      }
+    }
 
     var modalTitle = root.querySelector('.md-quote-modal__title, #md-quote-modal-title, #quote-modal-title');
     if (modalTitle) {

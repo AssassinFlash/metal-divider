@@ -257,6 +257,7 @@ final class Form {
 		} else {
 			$out .= '<input type="hidden" data-md-inquiry-pattern-input name="md_inquiry_pattern_slug" value="">';
 		}
+		$out .= '<input type="hidden" name="md_inquiry_quote_intent" value="' . \esc_attr( $this->state->value( 'quote_intent' ) ) . '">';
 		$out .= $this->source_input( 'page', $source['page'] );
 		$out .= $this->source_input( 'module', $source['module'] );
 		$out .= $this->source_input( 'button', $source['button'] );
@@ -273,7 +274,6 @@ final class Form {
 		$out .= $this->field( 'phone', __( 'Phone / WhatsApp (optional)', 'md-inquiry' ), 'tel', false, 'tel', __( '+852 0000 0000', 'md-inquiry' ) );
 		$out .= $this->message_field( null !== $pattern );
 		$out .= $this->optional_fields();
-		$out .= $this->confirm_field();
 
 		$out .= $this->honeypot();
 		$out .= $this->turnstile( $source );
@@ -353,7 +353,7 @@ final class Form {
 	 */
 	private function optional_fields(): string {
 		$open = '';
-		foreach ( array( 'company', 'country', 'scope', 'route', 'quantity' ) as $key ) {
+		foreach ( array( 'company', 'country', 'scope', 'route', 'quantity', 'confirm' ) as $key ) {
 			if ( '' !== $this->state->value( $key ) || '' !== $this->state->error( $key ) ) {
 				$open = ' open';
 				break;
@@ -367,6 +367,7 @@ final class Form {
 		$out .= $this->select_field( 'scope', __( 'Project scope (optional)', 'md-inquiry' ), Validator::SCOPES, __( 'Select project scope (optional)', 'md-inquiry' ), false, 'off' );
 		$out .= $this->select_field( 'route', __( 'Inquiry route (optional)', 'md-inquiry' ), Validator::ROUTES, __( 'Select inquiry route (optional)', 'md-inquiry' ), false, 'off' );
 		$out .= $this->select_field( 'quantity', __( 'Estimated quantity (optional)', 'md-inquiry' ), Validator::QUANTITIES, __( 'Select quantity range (optional)', 'md-inquiry' ), false, 'off' );
+		$out .= $this->confirm_field();
 		$out .= '</div>';
 		$out .= '</details>';
 		return $out;
@@ -500,7 +501,7 @@ final class Form {
 		$out  = '<p class="md-inquiry-field md-inquiry-field--confirm' . $invalid . '">';
 		$out .= '<label class="md-inquiry-confirm" for="' . \esc_attr( $id ) . '">';
 		$out .= '<input class="md-inquiry-confirm__input" type="checkbox" id="' . \esc_attr( $id ) . '" name="md_inquiry_confirm" value="1"' . $checked . $this->invalid_attrs( 'confirm', $error ) . '>';
-		$out .= '<span class="md-inquiry-confirm__text">' . \esc_html__( 'I confirm this inquiry is for an architectural or commercial project.', 'md-inquiry' ) . '</span>';
+		$out .= '<span class="md-inquiry-confirm__text">' . \esc_html__( 'I confirm this inquiry is for an architectural or commercial project. (optional)', 'md-inquiry' ) . '</span>';
 		$out .= '</label>';
 		$out .= $this->error_span( 'confirm', $error );
 		$out .= '</p>';

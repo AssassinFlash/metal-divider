@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261101a', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261103a', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -68,7 +68,7 @@
 
     </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261101a', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261103a', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <script>
 (function () {
   var chip = document.querySelector('.mdv-chat-head .mdv-chat-state');
@@ -163,7 +163,7 @@
   }
   function linkifyPatterns() {
     var bodies = document.querySelectorAll('#messages .message-admin .msg-body');
-    var re = /https?:\/\/(?:www\.|staging\.)?metal-divider\.com\/[^\s)<>"']+|\/(?:pattern|product|collections)\/[a-z0-9-]+\/?/gi;
+    var re = /\[([^\]]+)\]\((https?:\/\/(?:www\.|staging\.)?metal-divider\.com(?:\/[^\s)<>"']*)?|\/[a-z0-9][a-z0-9-\/]*)\)|https?:\/\/(?:www\.|staging\.)?metal-divider\.com\/[^\s)<>"']+|\/(?:pattern|product|collections)\/[a-z0-9-]+\/?/gi;
     for (var i = 0; i < bodies.length; i += 1) {
       var walker = document.createTreeWalker(bodies[i], NodeFilter.SHOW_TEXT, null, false);
       var textNodes = [];
@@ -186,8 +186,19 @@
         var match;
         while ((match = re.exec(val)) !== null) {
           var raw = match[0];
-          var clean = raw.replace(/[.,;:!?]+$/, '');
-          var trail = raw.slice(clean.length);
+          var mdLabel = match[1];
+          var mdUrl = match[2];
+          var clean;
+          var text;
+          var trail = '';
+          if (mdLabel && mdUrl) {
+            clean = mdUrl.replace(/[.,;:!?]+$/, '');
+            text = mdLabel;
+          } else {
+            clean = raw.replace(/[.,;:!?]+$/, '');
+            text = clean;
+            trail = raw.slice(clean.length);
+          }
           if (match.index > lastIdx) {
             frag.appendChild(document.createTextNode(val.slice(lastIdx, match.index)));
           }
@@ -196,7 +207,7 @@
           a.href = clean;
           a.target = '_top';
           a.rel = 'noopener';
-          a.textContent = clean;
+          a.textContent = text;
           frag.appendChild(a);
           if (trail) {
             frag.appendChild(document.createTextNode(trail));

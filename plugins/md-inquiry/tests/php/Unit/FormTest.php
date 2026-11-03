@@ -106,6 +106,7 @@ final class FormTest extends TestCase {
 			'the nonce field carries an id, suffixed per instance when a page has more than one form'
 		);
 		$this->assertStringContainsString( 'name="md_inquiry_pattern_slug" value="apiary-architectural-metal-screen-pattern"', $html );
+		$this->assertStringContainsString( 'name="md_inquiry_quote_intent" value=""', $html );
 		$this->assertStringContainsString( 'id="md-inquiry-source-page" name="md_inquiry_source_page" value="pattern-pdp"', $html );
 		$this->assertStringContainsString( 'id="md-inquiry-source-module" name="md_inquiry_source_module" value="pattern-actions"', $html );
 		$this->assertStringContainsString( 'id="md-inquiry-source-button" name="md_inquiry_source_button" value="request_quote"', $html );
@@ -556,6 +557,8 @@ function app(sitekey) {
 	var patternInput = el('input');
 	patternInput.setAttribute('name', 'md_inquiry_pattern_slug');
 	patternInput.setAttribute('data-md-inquiry-pattern-input', '');
+	var intentInput = el('input');
+	intentInput.setAttribute('name', 'md_inquiry_quote_intent');
 	var patternSlot = el('div', 'md-inquiry-pattern');
 	patternSlot.setAttribute('data-md-inquiry-pattern-slot', '');
 	patternSlot.setAttribute('hidden', '');
@@ -580,6 +583,7 @@ function app(sitekey) {
 	slot.setAttribute('data-theme', 'auto');
 	slot.setAttribute('data-retry', 'auto');
 	form.appendChild(patternInput);
+	form.appendChild(intentInput);
 	form.appendChild(patternSlot);
 	form.appendChild(submit);
 	form.appendChild(waLink);
@@ -594,6 +598,7 @@ function app(sitekey) {
 		slot: slot,
 		waLink: waLink,
 		patternInput: patternInput,
+		intentInput: intentInput,
 		patternSlot: patternSlot,
 		patternThumb: patternThumb,
 		patternEyebrow: patternEyebrow,
@@ -796,6 +801,9 @@ windowListeners['open-quote'].forEach(function (fn) {
 if (hidden.patternInput.value !== 'apiary') {
 	fail('open-quote did not update the modal pattern slug input');
 }
+if (visible.patternInput.value !== '') {
+	fail('open-quote mutated the non-modal inline form');
+}
 if (hidden.patternSlot.hasAttribute('hidden')) {
 	fail('open-quote did not unhide the modal pattern slot');
 }
@@ -807,6 +815,27 @@ if (hidden.patternThumb.getAttribute('src') !== 'https://metal-divider.com/apiar
 }
 if (!hidden.waLink.href || hidden.waLink.href.indexOf('https://wa.me/85264731687?text=') !== 0 || hidden.waLink.href.indexOf('Apiary%20(APIARY)') === -1) {
 	fail('open-quote did not update the modal WhatsApp link href, got: ' + hidden.waLink.href);
+}
+
+windowListeners['open-quote'].forEach(function (fn) {
+	fn({
+		detail: {
+			patternCode: '',
+			patternSlug: '',
+			patternName: '',
+			patternThumb: '',
+			quoteIntent: 'Custom size & finish quote'
+		}
+	});
+});
+if (hidden.intentInput.value !== 'Custom size & finish quote') {
+	fail('open-quote did not populate md_inquiry_quote_intent, got: ' + hidden.intentInput.value);
+}
+if (hidden.patternEyebrow.textContent !== 'Selected request') {
+	fail('open-quote with intent only did not set eyebrow to Selected request, got: ' + hidden.patternEyebrow.textContent);
+}
+if (hidden.patternTitle.textContent !== 'Custom size & finish quote') {
+	fail('open-quote with intent only did not set title to rawIntent, got: ' + hidden.patternTitle.textContent);
 }
 
 console.log('ok renders=' + renders.length + ' resets=' + JSON.stringify(resets));

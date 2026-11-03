@@ -59,6 +59,21 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
+### 2026-11-03 批次十二/十三独立深度审计排雷与全链路实测闭环(批次十四)
+
+- **业主指令(`/goal` 反偷懒/反幻觉深度自查与修复)**:针对近两批交付(批次十二 `6d7f066` 全站询盘弹窗与批次十三 `5104734` AI 客服升级)执行双路源码独立审计 + `code-review` 双轴(Standards / Spec)复审,将查出的 10 项真实缺陷、Schema 枚举偏差与单测假覆盖一次性彻底除根并上线实测:
+  1. **修复弹窗无缩略图时 `64px` 窄列文字挤压(`chrome.css`、`inquiry.css`、`inquiry.js`)**:将 `chrome.css` 中写错的 51 行 `.md-quote-modal__pattern*` 死选择器替换为真实 DOM 类名 `#md-quote-modal .md-inquiry-pattern*`,并在隐藏缩略图时切换 `.md-inquiry-pattern--no-thumb` 与 `:not(:has(.md-inquiry-pattern__thumb:not([hidden])))` 单列网格(`minmax(0, 1fr)`),彻底消除点击 `data-quote-intent` 横幅按钮时文字被挤进左列 `64px` 窄条的缺陷。
+  2. **修复 `data-quote-intent` 文案 3 次重复、补齐后端提交与保留 PDP 默认图案(`md-chrome.js`、`inquiry.js`、`Form.php`、`Submission.php`、`Emails.php`)**:仅在存在图案编号/slug 时将编号拼入 `#md-quote-modal-title`,无图案的 Intent 触发器在预览槽以 `Selected request` 眉题 + 单次 Intent 标题展示;在 PDP 页点击无 `data-pattern-slug` 的触发器时自动保留 `defaultPattern` 的 `slug` 与编号;新增 `md_inquiry_quote_intent` 隐藏域,提交后写入 `quote_intent` post meta 并在内部通知邮件输出 `Request intent: ...`。
+  3. **修复 AI 聊天窗 `Request Quote` 在目录/首页误点第一张图案卡及无卡片页打不开弹窗(`mdvisitor-launcher.js`、`md-chat-launcher.php`)**:`mdv_open_quote` 仅在 PDP 页触发 `.pdp-quote-bar / .pdp-hero` 按钮以继承当前图案,其余所有页面直接派发 `CustomEvent('open-quote', { detail: { source: 'ai_chat_widget', ... } })`,避免 `querySelector` 按 DOM 顺序误点首张目录卡或在无触发器页面失效;同步升级静态资源版本号至 `20261103a`。
+  4. **消除 `/custom-metal-divider-screens/` 双弹窗冲突与内嵌表单污染(`custom-screens.html`、`md-chrome.js`、`inquiry.js`)**:移除 `custom-screens.html` 顶部遗留的旧版 `#quote-modal` 重复节点,统一复用页脚 `#md-quote-modal`;将 `inquiry.js` 的 `open-quote` 窗口监听限定在弹窗内表单(`form.closest('#md-quote-modal, #quote-modal')`),防止打开弹窗时篡改页面底部 `#contact` 内嵌表单的隐藏域。
+  5. **修复移动端卡片按钮 `44px` 触控高度、折叠区可选确认框与聊天 Markdown 链接解析(`pattern-grid.css`、`chrome.css`、`Form.php`、`chat_status.tpl.php`)**:移除 `chrome.css` 对三类图案卡按钮的 `:not()` 高度豁免并在 `pattern-grid.css` 补齐 `@media (max-width: 767px) { min-height: 44px; }`;将非必填的 `confirm_field()` 移入 `<details class="md-inquiry-optional">`;在 `chat_status.tpl.php` 的 `linkifyPatterns()` 中优先解析 `[Label](url)` Markdown 链接,防止残留括号。
+  6. **修复 AI 推荐器 Schema 枚举偏差、户外/室内权重倒挂、单向镂空率、隐藏商品过滤与多轮历史/留资幂等(`md-kb-endpoint.php`、`md-chat-email.php`、`KbEndpointTest.php`、`ChatEmailTest.php`)**:
+     - 对齐 Woo 唯一资料源(`AGENTS.md §2`),在 `md_kb_endpoint_pattern_query()` 与 `md_kb_endpoint_pattern_recommend()` 中过滤 `product_visibility = exclude-from-catalog`;
+     - 对齐真实 9 大系列与 `motifs`(`leaf`/`floral`/`vine`/`garden`/`bamboo` 等)及 `visual_density` 四档真实枚举(`open`/`balanced`/`dense`/`custom`);
+     - 修正 `best_fit` 权重(户外查询对 `architectural-screening` 加 `+8`、对 `decorative-screening` 减 `-5`),支持 `under/below/<` 与 `over/above/>` 单向镂空率筛选,支持 `"similar to <Pattern>"` 相似推荐与通用推荐跨系列代表款抽样;
+     - `md_kb_endpoint_chat_history()` 排除 `user_id = -1` 系统消息,`md_kb_endpoint_messages()` 将 `Assistant:` 历史映射为 `'role' => 'assistant'` 并剥离 `Based on:` 尾注,`md_kb_endpoint_history_pattern_lookup()` 直接提取 URL/尾注/编号/专有名词消除 N-gram 查询风暴;
+     - `md_chat_email_record_inquiry()` 按 `_md_chat_id` 幂等更新既有 `md_inquiry` 记录、不重复建单或重发邮件,并在 `ChatEmailTest.php` 补齐真实断言覆盖;清理线上 `wp_md_inquiry_mail_queue` 中残留的 `#1940` 测试记录。
+
 ### 2026-11-01 AI 客服系统全链路升级：多轮记忆、146 款图案导购推荐、非自杀商业/物流应答与留资/报价弹窗闭环(批次十三)
 
 - **业主裁定(`/wayfinder` Q1–Q6 全票确认)**:将 AI 客服从被动 FAQ 问答器升级为懂 146 款图案导购、具备多轮上下文记忆、商业与国际运输问题给出工程级说明框架(不再一言不合触发 `stopchat` 自杀下线)、挂件全程常驻 `Request Quote` + `Chat on WhatsApp` 双按钮联动宿主页报价弹窗、且对话内留资 100% 进 `md_inquiry` 询盘库与企业微信通知闭环的 B2B 售前系统。

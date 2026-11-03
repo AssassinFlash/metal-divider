@@ -22,7 +22,7 @@
 
 	var START_PATH = '/chat/index.php/chat/chatwidget/(department)/1';
 	var CSS_PATH = '/chat/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-launcher.css';
-	var CSS_VERSION = '20261101a';
+	var CSS_VERSION = '20261103a';
 
 	if ( location.pathname.indexOf( '/chat/' ) === 0 ) {
 		return;
@@ -150,19 +150,22 @@
 			}
 			if ( event.data === 'mdv_open_quote' || ( event.data && event.data.type === 'mdv_open_quote' ) ) {
 				closeCard();
-				var trigger = document.querySelector( '.pdp-quote-bar a[href="#open-quote"], .pdp-hero a[href="#open-quote"], a[href="#open-quote"][data-pattern-slug], a[href="#open-quote"], [data-open-quote]' );
-				if ( trigger && typeof trigger.click === 'function' ) {
-					trigger.click();
+				var pdpTrigger = document.querySelector( '.pdp-quote-bar a[href="#open-quote"], .pdp-hero a[href="#open-quote"]' );
+				if ( pdpTrigger && typeof pdpTrigger.click === 'function' ) {
+					pdpTrigger.click();
 					return;
 				}
-				var modal = document.getElementById( 'md-quote-modal' );
-				if ( modal ) {
-					modal.hidden = false;
-					modal.classList.add( 'is-open' );
-					modal.setAttribute( 'aria-hidden', 'false' );
-					return;
-				}
-				window.location.assign( '/inquiry/' );
+				window.dispatchEvent(
+					new CustomEvent( 'open-quote', {
+						detail: {
+							source: 'ai_chat_widget',
+							patternCode: '',
+							patternSlug: '',
+							patternThumb: '',
+							quoteIntent: ''
+						}
+					} )
+				);
 			}
 		} );
 

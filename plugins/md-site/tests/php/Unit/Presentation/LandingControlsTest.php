@@ -276,7 +276,7 @@ final class LandingControlsTest extends TestCase {
 
 		$this->assertStringContainsString( 'data-quote-source="hero-landing"', $html, 'the hero button names its source' );
 		$this->assertStringNotContainsString( 'header-landing', $html, 'the second nav no longer carries its own quote button' );
-		$this->assertStringContainsString( 'x-data="quoteModal()"', $html, 'the face carries the shared quote component' );
+		$this->assertStringNotContainsString( 'id="quote-modal"', $html, 'the face uses the shared footer quote modal rather than a duplicate' );
 		$this->assertStringContainsString( 'aria-haspopup="dialog"', $html, 'the buttons announce that they open a dialog' );
 	}
 

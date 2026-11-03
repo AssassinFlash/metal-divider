@@ -74,6 +74,9 @@ final class Emails {
 			$lines[] = 'Pattern: ' . $pattern['name'] . ' (' . $pattern['code'] . ')';
 			$lines[] = 'Pattern page: ' . $record['pattern_url'];
 		}
+		if ( '' !== ( $record['quote_intent'] ?? '' ) ) {
+			$lines[] = 'Request intent: ' . $record['quote_intent'];
+		}
 		$lines[] = 'Submitted: ' . $record['submitted_time'] . ' UTC';
 		$lines[] = 'Source: ' . $record['source_page'] . '/' . $record['source_module'] . '/' . $record['source_button'];
 		$lines[] = 'Verification: ' . $record['verification'];

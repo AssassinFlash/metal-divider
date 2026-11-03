@@ -289,15 +289,25 @@
   border-radius: 12px;
   display: grid;
   gap: 14px;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 64px minmax(0, 1fr);
   margin: 0 0 24px;
   padding: 14px;
+}
+.md-inquiry .md-inquiry-pattern[hidden] {
+  display: none !important;
+}
+.md-inquiry .md-inquiry-pattern.md-inquiry-pattern--no-thumb,
+.md-inquiry .md-inquiry-pattern:not(:has(.md-inquiry-pattern__thumb:not([hidden]))) {
+  grid-template-columns: minmax(0, 1fr);
 }
 .md-inquiry .md-inquiry-pattern__thumb {
   border-radius: 8px;
   height: 64px;
   object-fit: cover;
   width: 64px;
+}
+.md-inquiry .md-inquiry-pattern__thumb[hidden] {
+  display: none !important;
 }
 .md-inquiry .md-inquiry-pattern__caption { display: flex; flex-direction: column; gap: 2px; }
 .md-inquiry .md-inquiry-pattern__name { color: #fff; font-weight: 600; }

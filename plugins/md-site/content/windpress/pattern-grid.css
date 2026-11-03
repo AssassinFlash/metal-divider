@@ -536,6 +536,16 @@ color: rgba(255, 255, 255, 0.9);
 border-color: #25d366;
 color: #25d366;
 }
+@media (max-width: 767px) {
+.pattern-card__quote-btn,
+.pattern-card__wa-btn,
+.hpl__card-quote-btn,
+.hpl__card-wa-btn,
+.pattern-tile-quote__btn,
+.pattern-tile-quote__wa {
+min-height: 44px;
+}
+}
 .pattern-lightbox-actions {
 display: flex;
 flex-wrap: wrap;

@@ -174,7 +174,7 @@ function md_chat_email_pattern_slug( string $url ): string {
 		return '';
 	}
 	$path = wp_parse_url( $url, PHP_URL_PATH );
-	if ( ! is_string( $path ) || 1 !== preg_match( '~^/pattern/([a-z0-9-]+)(?:/|$)~i', $path, $matches ) ) {
+	if ( ! is_string( $path ) || 1 !== preg_match( '~^/(?:pattern|product)/([a-z0-9-]+)(?:/|$)~i', $path, $matches ) ) {
 		return '';
 	}
 	return strtolower( $matches[1] );
@@ -280,16 +280,44 @@ function md_chat_email_record_inquiry( int $chat_id, string $email, object $row,
 	}
 
 	$submitted_time = gmdate( 'Y-m-d H:i:s' );
-	$post_id        = wp_insert_post(
-		array(
-			'post_type'   => 'md_inquiry',
-			'post_status' => 'md_new',
-			'post_title'  => $email . ' — AI Chat #' . $chat_id . ' — ' . gmdate( 'Y-m-d' ),
-		),
-		true
+	$post_title     = $email . ' — AI Chat #' . $chat_id . ' — ' . gmdate( 'Y-m-d' );
+
+	global $wpdb;
+	$wpdb_vars      = get_object_vars( $wpdb );
+	$posts_table    = isset( $wpdb_vars['posts'] ) && is_string( $wpdb_vars['posts'] ) ? $wpdb_vars['posts'] : $wpdb->prefix . 'posts';
+	$postmeta_table = isset( $wpdb_vars['postmeta'] ) && is_string( $wpdb_vars['postmeta'] ) ? $wpdb_vars['postmeta'] : $wpdb->prefix . 'postmeta';
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names come from $wpdb; lookup keeps inquiry creation idempotent per chat_id.
+	$existing_id = (int) $wpdb->get_var(
+		$wpdb->prepare(
+			"SELECT p.ID FROM {$posts_table} p INNER JOIN {$postmeta_table} pm ON p.ID = pm.post_id WHERE p.post_type = %s AND pm.meta_key = '_md_chat_id' AND pm.meta_value = %s LIMIT 1",
+			'md_inquiry',
+			(string) $chat_id
+		)
 	);
-	if ( is_wp_error( $post_id ) ) {
-		return null;
+	// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+	$is_existing = $existing_id > 0;
+	if ( $is_existing ) {
+		$post_id = $existing_id;
+		wp_update_post(
+			array(
+				'ID'         => $post_id,
+				'post_title' => $post_title,
+			)
+		);
+	} else {
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'md_inquiry',
+				'post_status' => 'md_new',
+				'post_title'  => $post_title,
+			),
+			true
+		);
+		if ( is_wp_error( $post_id ) || $post_id < 1 ) {
+			return null;
+		}
+		update_post_meta( $post_id, '_md_chat_id', (string) $chat_id );
 	}
 
 	$nick  = isset( $row->nick ) && is_string( $row->nick ) ? trim( $row->nick ) : '';
@@ -334,6 +362,10 @@ function md_chat_email_record_inquiry( int $chat_id, string $email, object $row,
 		if ( isset( $field_keys[ $meta_key ] ) && is_string( $field_keys[ $meta_key ] ) ) {
 			update_post_meta( $post_id, '_' . $meta_key, $field_keys[ $meta_key ] );
 		}
+	}
+
+	if ( $is_existing ) {
+		return $post_id;
 	}
 
 	$config_class = md_chat_email_inquiry_class( 'Config' );

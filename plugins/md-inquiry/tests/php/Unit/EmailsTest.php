@@ -171,9 +171,12 @@ final class EmailsTest extends TestCase {
 	 * and had to ask for them again.
 	 */
 	public function test_the_internal_notification_carries_every_qualified_field(): void {
-		$body = ( new Emails( new Config() ) )->internal( self::record() )['body'];
+		$record                 = self::record();
+		$record['quote_intent'] = 'Custom size & finish quote';
+		$body                   = ( new Emails( new Config() ) )->internal( $record )['body'];
 
 		foreach ( array(
+			'Request intent: Custom size & finish quote',
 			'Phone: +852 1234 5678',
 			'Country: Hong Kong',
 			'Project scope: Single zone',

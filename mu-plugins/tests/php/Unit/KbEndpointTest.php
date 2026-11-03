@@ -2026,6 +2026,7 @@ final class KbEndpointTest extends TestCase {
 		self::assertStringContainsString( 'best_fit: architectural-screening', $user );
 		self::assertLessThan( strpos( $user, 'KNOWLEDGE (Rapls):' ), strpos( $user, 'CURRENT PATTERN' ) );
 		self::assertStringContainsString( 'cad_status: ready', $user );
+		self::assertStringContainsString( 'URL: https://metal-divider.com/pattern/agave', $user );
 		self::assertStringNotContainsString( 'permalink', $user );
 		self::assertStringNotContainsString( 'series:', $user );
 		self::assertDoesNotMatchRegularExpression( '/\bprice\b|lead time|\bmoq\b/i', $user );
@@ -2839,6 +2840,10 @@ final class KbEndpointTest extends TestCase {
 						'msg'     => 'What is its open area?',
 					),
 					array(
+						'user_id' => -1,
+						'msg'     => 'Visitor has been redirected to contact form',
+					),
+					array(
 						'user_id' => -2,
 						'msg'     => "Agave is a botanical screen.\n\nBased on: Pattern MD-101",
 					),
@@ -2875,8 +2880,10 @@ final class KbEndpointTest extends TestCase {
 
 		$http    = $this->recorded( 'md_mu_test_http' );
 		$payload = json_decode( (string) $http[0][1]['body'], true );
+		self::assertSame( 'user', $payload['messages'][1]['role'] );
 		self::assertSame( 'Tell me about Agave', $payload['messages'][1]['content'] );
-		self::assertSame( 'Assistant: Agave is a botanical screen.', $payload['messages'][2]['content'] );
+		self::assertSame( 'assistant', $payload['messages'][2]['role'] );
+		self::assertSame( 'Agave is a botanical screen.', $payload['messages'][2]['content'] );
 		$user = (string) end( $payload['messages'] )['content'];
 		self::assertStringContainsString( 'PATTERN FACTS (WooCommerce, current publish):', $user );
 		self::assertStringContainsString( 'MD-101', $user );
@@ -3045,6 +3052,383 @@ final class KbEndpointTest extends TestCase {
 		self::assertSame( 'Stainless steel grades', $results[0]['title'] );
 		self::assertStringContainsString( '### Stainless steel grades', $context );
 		self::assertStringContainsString( '304 and 316 stainless steel', $context );
+	}
+
+	/**
+	 * The real visual_density enum ('balanced') matches both "balanced density"
+	 * and "medium density" queries, and motifs ('floral, leaf') match
+	 * "botanical patterns" and "floral patterns".
+	 */
+	public function test_balanced_density_and_floral_leaf_motifs_score_in_recommender(): void {
+		$this->plant_pattern(
+			array(
+				'ID'         => 210,
+				'post_title' => 'Blossom Vine | Architectural Metal Screen Pattern',
+				'post_name'  => 'blossom-vine',
+				'sku'        => 'MD-210',
+				'fields'     => array(
+					'open_area'       => '36',
+					'visual_density'  => 'balanced',
+					'repeat_behavior' => 'repeating',
+					'motifs'          => array( 'floral', 'leaf' ),
+					'best_fit'        => 'decorative-screening',
+					'cad_status'      => 'gated',
+					'summary'         => 'A floral leaf pattern.',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][210] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Organic',
+					'slug' => 'organic',
+				),
+			),
+		);
+
+		$balanced = md_kb_endpoint_pattern_recommend( 'Show me balanced density patterns' );
+		self::assertSame( array( 'pattern#210 MD-210' ), $balanced['sources'] );
+
+		$medium = md_kb_endpoint_pattern_recommend( 'Show me medium density patterns' );
+		self::assertSame( array( 'pattern#210 MD-210' ), $medium['sources'] );
+
+		$botanical = md_kb_endpoint_pattern_recommend( 'Can you recommend botanical patterns?' );
+		self::assertSame( array( 'pattern#210 MD-210' ), $botanical['sources'] );
+
+		$floral = md_kb_endpoint_pattern_recommend( 'Can you recommend floral patterns?' );
+		self::assertSame( array( 'pattern#210 MD-210' ), $floral['sources'] );
+	}
+
+	/**
+	 * Outdoor queries rank architectural-screening patterns above indoor
+	 * decorative-screening patterns even when the decorative summary mentions
+	 * "privacy".
+	 */
+	public function test_outdoor_privacy_ranks_architectural_screening_above_decorative(): void {
+		$this->plant_pattern(
+			array(
+				'ID'         => 211,
+				'post_title' => 'Indoor Privacy Screen | Architectural Metal Screen Pattern',
+				'post_name'  => 'indoor-privacy',
+				'sku'        => 'MD-211',
+				'fields'     => array(
+					'open_area'       => '25',
+					'visual_density'  => 'dense',
+					'repeat_behavior' => 'repeating',
+					'motifs'          => array( 'geometric' ),
+					'best_fit'        => 'decorative-screening',
+					'cad_status'      => 'gated',
+					'summary'         => 'An interior room divider for privacy.',
+				),
+			)
+		);
+		$this->plant_pattern(
+			array(
+				'ID'         => 212,
+				'post_title' => 'Exterior Guard | Architectural Metal Screen Pattern',
+				'post_name'  => 'exterior-guard',
+				'sku'        => 'MD-212',
+				'fields'     => array(
+					'open_area'       => '25',
+					'visual_density'  => 'dense',
+					'repeat_behavior' => 'repeating',
+					'motifs'          => array( 'geometric' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'gated',
+					'summary'         => 'An architectural screen.',
+				),
+			)
+		);
+
+		$recommended = md_kb_endpoint_pattern_recommend( 'Recommend a pattern for outdoor privacy' );
+		self::assertNotEmpty( $recommended['sources'] );
+		self::assertSame( 'pattern#212 MD-212', $recommended['sources'][0] );
+	}
+
+	/**
+	 * Directional open-area queries ("under 25% open area", "over 45% open area")
+	 * enforce upper and lower bounds without falling through to single-value proximity.
+	 */
+	public function test_directional_open_area_queries_respect_upper_and_lower_bounds(): void {
+		$this->plant_pattern(
+			array(
+				'ID'         => 221,
+				'post_title' => 'DenseTwenty | Architectural Metal Screen Pattern',
+				'post_name'  => 'dense-twenty',
+				'sku'        => 'MD-221',
+				'fields'     => array(
+					'open_area'      => '20',
+					'visual_density' => 'dense',
+					'best_fit'       => 'architectural-screening',
+				),
+			)
+		);
+		$this->plant_pattern(
+			array(
+				'ID'         => 222,
+				'post_title' => 'MidThirtyTwo | Architectural Metal Screen Pattern',
+				'post_name'  => 'mid-thirty-two',
+				'sku'        => 'MD-222',
+				'fields'     => array(
+					'open_area'      => '32',
+					'visual_density' => 'balanced',
+					'best_fit'       => 'architectural-screening',
+				),
+			)
+		);
+		$this->plant_pattern(
+			array(
+				'ID'         => 223,
+				'post_title' => 'OpenFiftyTwo | Architectural Metal Screen Pattern',
+				'post_name'  => 'open-fifty-two',
+				'sku'        => 'MD-223',
+				'fields'     => array(
+					'open_area'      => '52',
+					'visual_density' => 'open',
+					'best_fit'       => 'architectural-screening',
+				),
+			)
+		);
+
+		$under = md_kb_endpoint_pattern_recommend( 'Show me patterns with under 25% open area' );
+		self::assertSame( array( 'pattern#221 MD-221' ), $under['sources'] );
+
+		$over = md_kb_endpoint_pattern_recommend( 'Show me patterns with over 45% open area' );
+		self::assertSame( array( 'pattern#223 MD-223' ), $over['sources'] );
+	}
+
+	/**
+	 * Asking for patterns similar to a named pattern returns both the named
+	 * reference pattern and recommended alternatives from the catalog.
+	 */
+	public function test_recommend_patterns_similar_to_named_pattern_returns_both_reference_and_alternatives(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'Apiary is an abstract screen (40% open area), and Zelda is a similar abstract option.', false, 'none' )
+		);
+		$this->plant_pattern(
+			array(
+				'ID'         => 231,
+				'post_title' => 'Apiary | Architectural Metal Screen Pattern',
+				'post_name'  => 'apiary',
+				'sku'        => 'MD-231',
+				'fields'     => array(
+					'open_area'       => '40',
+					'visual_density'  => 'balanced',
+					'repeat_behavior' => 'repeating',
+					'motifs'          => array( 'abstract' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'gated',
+					'summary'         => 'An abstract cellular pattern.',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][231] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Abstract',
+					'slug' => 'abstract',
+				),
+			),
+		);
+
+		$this->plant_pattern(
+			array(
+				'ID'         => 232,
+				'post_title' => 'Zelda | Architectural Metal Screen Pattern',
+				'post_name'  => 'zelda',
+				'sku'        => 'MD-232',
+				'fields'     => array(
+					'open_area'       => '42',
+					'visual_density'  => 'balanced',
+					'repeat_behavior' => 'repeating',
+					'motifs'          => array( 'abstract' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'gated',
+					'summary'         => 'An abstract geometric screen.',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][232] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Abstract',
+					'slug' => 'abstract',
+				),
+			),
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q' => 'Can you recommend patterns similar to Apiary?',
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame(
+			array( 'pattern#231 MD-231', 'pattern#232 MD-232' ),
+			$out['body']['sources']
+		);
+		$http    = $this->recorded( 'md_mu_test_http' );
+		$payload = json_decode( (string) $http[0][1]['body'], true );
+		$user    = (string) end( $payload['messages'] )['content'];
+		self::assertStringContainsString( 'MD-231', $user );
+		self::assertStringContainsString( 'MD-232', $user );
+	}
+
+	/**
+	 * Generic recommendation questions diversify fallback patterns across
+	 * different product_cat series and prepend clarifying guidance. Also
+	 * excludes products carrying exclude-from-catalog.
+	 */
+	public function test_generic_recommendation_diversifies_series_and_excludes_hidden_catalog_products(): void {
+		$this->plant_pattern(
+			array(
+				'ID'         => 241,
+				'post_title' => 'GeoOne | Architectural Metal Screen Pattern',
+				'post_name'  => 'geo-one',
+				'sku'        => 'MD-241',
+				'fields'     => array(
+					'open_area' => '30',
+					'best_fit'  => 'architectural-screening',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][241] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Geometric',
+					'slug' => 'geometric',
+				),
+			),
+		);
+
+		$this->plant_pattern(
+			array(
+				'ID'         => 242,
+				'post_title' => 'GeoTwo | Architectural Metal Screen Pattern',
+				'post_name'  => 'geo-two',
+				'sku'        => 'MD-242',
+				'fields'     => array(
+					'open_area' => '35',
+					'best_fit'  => 'architectural-screening',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][242] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Geometric',
+					'slug' => 'geometric',
+				),
+			),
+		);
+
+		$this->plant_pattern(
+			array(
+				'ID'         => 243,
+				'post_title' => 'OrgOne | Architectural Metal Screen Pattern',
+				'post_name'  => 'org-one',
+				'sku'        => 'MD-243',
+				'fields'     => array(
+					'open_area' => '40',
+					'best_fit'  => 'decorative-screening',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][243] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Organic',
+					'slug' => 'organic',
+				),
+			),
+		);
+
+		$this->plant_pattern(
+			array(
+				'ID'         => 244,
+				'post_title' => 'AbsOne | Architectural Metal Screen Pattern',
+				'post_name'  => 'abs-one',
+				'sku'        => 'MD-244',
+				'fields'     => array(
+					'open_area' => '45',
+					'best_fit'  => 'architectural-screening',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][244] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Abstract',
+					'slug' => 'abstract',
+				),
+			),
+		);
+
+		$this->plant_pattern(
+			array(
+				'ID'         => 245,
+				'post_title' => 'HiddenPattern | Architectural Metal Screen Pattern',
+				'post_name'  => 'hidden-pattern',
+				'sku'        => 'MD-245',
+				'fields'     => array(
+					'open_area' => '30',
+					'best_fit'  => 'architectural-screening',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][245] = array(
+			'product_cat'        => array(
+				(object) array(
+					'name' => 'Perforated',
+					'slug' => 'perforated',
+				),
+			),
+			'product_visibility' => array(
+				(object) array(
+					'name' => 'exclude-from-catalog',
+					'slug' => 'exclude-from-catalog',
+				),
+			),
+		);
+
+		$rec = md_kb_endpoint_pattern_recommend( 'Can you recommend a pattern for my project?' );
+		self::assertSame(
+			array( 'pattern#241 MD-241', 'pattern#243 MD-243', 'pattern#244 MD-244' ),
+			$rec['sources']
+		);
+		self::assertStringContainsString(
+			'Visitor asked a general recommendation question without specifying interior/exterior or open area.',
+			$rec['context']
+		);
+		self::assertSame( array(), md_kb_endpoint_pattern_query( 'MD-245' ) );
+	}
+
+	/**
+	 * Long assistant history turns extract /pattern/<slug> or Based on:
+	 * Pattern <Name> directly without triggering an n-gram query storm.
+	 */
+	public function test_long_assistant_history_turn_extracts_slug_without_ngram_storm(): void {
+		$this->plant_pattern(
+			array(
+				'ID'         => 251,
+				'post_title' => 'Apiary | Architectural Metal Screen Pattern',
+				'post_name'  => 'apiary',
+				'sku'        => 'MD-251',
+			)
+		);
+		$GLOBALS['md_mu_test_queries'] = array();
+
+		$long_assistant_turn = 'Assistant: For your exterior facade project we fabricate panels in 304 and 316 stainless steel with custom PVD finishes and export crating. You can view our recommended pattern at https://metal-divider.com/pattern/apiary/ for full details and specifications.';
+		$lookup              = md_kb_endpoint_history_pattern_lookup( array( $long_assistant_turn ) );
+
+		self::assertSame( 1, $lookup['hits'] );
+		self::assertSame( array( 'pattern#251 MD-251' ), $lookup['sources'] );
+		self::assertCount( 1, $this->recorded( 'md_mu_test_queries' ) );
 	}
 
 	/**

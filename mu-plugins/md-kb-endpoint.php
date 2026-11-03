@@ -203,8 +203,19 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 
-	if ( 0 === $pattern['hits'] && md_kb_endpoint_asks_recommendation( $q ) ) {
-		$pattern          = md_kb_endpoint_pattern_recommend( $q );
+	if ( md_kb_endpoint_asks_recommendation( $q ) ) {
+		if ( 0 === $pattern['hits'] ) {
+			$pattern = md_kb_endpoint_pattern_recommend( $q );
+		} else {
+			$exclude_ids = md_kb_endpoint_pattern_source_ids( $pattern['sources'] );
+			$recommend_q = md_kb_endpoint_augment_recommendation_query( $q, $exclude_ids );
+			$recommended = md_kb_endpoint_pattern_recommend( $recommend_q, $exclude_ids );
+			if ( 0 < $recommended['hits'] ) {
+				$pattern['context'] = $pattern['context'] . "\n\n" . $recommended['context'];
+				$pattern['sources'] = array_values( array_unique( array_merge( $pattern['sources'], $recommended['sources'] ) ) );
+				$pattern['hits']    = count( $pattern['sources'] );
+			}
+		}
 		$resolved         = '' !== $pattern['context'] ? $pattern['context'] : $page['context'];
 		$resolved_sources = 0 < $pattern['hits'] ? $pattern['sources'] : ( isset( $page['sources'] ) ? $page['sources'] : array() );
 	}
@@ -1050,9 +1061,81 @@ function md_kb_endpoint_pattern_candidates( string $q ): array {
 }
 
 /**
+ * The `product_visibility` term ids WooCommerce's catalog excludes, matching
+ * Catalog::catalog_excluded_term_ids().
+ *
+ * @return array<int, int> The excluded term taxonomy ids.
+ */
+function md_kb_endpoint_catalog_excluded_term_ids(): array {
+	if ( ! function_exists( 'wc_get_product_visibility_term_ids' ) ) {
+		return array();
+	}
+	$ids = wc_get_product_visibility_term_ids();
+	if ( ! is_array( $ids ) || empty( $ids['exclude-from-catalog'] ) ) {
+		return array();
+	}
+	return array( (int) $ids['exclude-from-catalog'] );
+}
+
+/**
+ * The tax_query clause that excludes products hidden from the WooCommerce
+ * catalog (`exclude-from-catalog`), matching Catalog.php:658-667.
+ *
+ * @return array<int, array<string, mixed>> The tax_query array.
+ */
+function md_kb_endpoint_catalog_tax_query(): array {
+	$excluded = md_kb_endpoint_catalog_excluded_term_ids();
+	if ( array() !== $excluded ) {
+		return array(
+			array(
+				'taxonomy'         => 'product_visibility',
+				'field'            => 'term_taxonomy_id',
+				'terms'            => $excluded,
+				'operator'         => 'NOT IN',
+				'include_children' => false,
+			),
+		);
+	}
+	return array(
+		array(
+			'taxonomy'         => 'product_visibility',
+			'field'            => 'name',
+			'terms'            => array( 'exclude-from-catalog' ),
+			'operator'         => 'NOT IN',
+			'include_children' => false,
+		),
+	);
+}
+
+/**
+ * Whether a product carries the `exclude-from-catalog` visibility term.
+ *
+ * @param int $post_id The product ID.
+ * @return bool True when excluded from the catalog.
+ */
+function md_kb_endpoint_is_catalog_excluded( int $post_id ): bool {
+	$terms = get_the_terms( $post_id, 'product_visibility' );
+	if ( ! is_array( $terms ) ) {
+		return false;
+	}
+	foreach ( $terms as $term ) {
+		if ( ! is_object( $term ) ) {
+			continue;
+		}
+		$slug = strtolower( (string) ( $term->slug ?? '' ) );
+		$name = strtolower( (string) ( $term->name ?? '' ) );
+		if ( 'exclude-from-catalog' === $slug || 'exclude-from-catalog' === $name ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * The published products a candidate names: a WooCommerce search, then the
  * exact code or title-prefix matches ahead of the rest, three at most.
- * A non-publish product is never in the query, so a draft cannot be cited.
+ * A non-publish or catalog-excluded product is never in the query, so a
+ * draft or hidden product cannot be cited.
  *
  * @param string $candidate The code or name.
  * @return array<int, \WP_Post> The matches, exact ones first.
@@ -1064,6 +1147,8 @@ function md_kb_endpoint_pattern_query( string $candidate ): array {
 			'post_status'    => 'publish',
 			's'              => $candidate,
 			'posts_per_page' => 10,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- excludes products hidden from the WooCommerce catalog.
+			'tax_query'      => md_kb_endpoint_catalog_tax_query(),
 		)
 	);
 	$posts  = is_array( $query->posts ) ? $query->posts : array();
@@ -1071,7 +1156,7 @@ function md_kb_endpoint_pattern_query( string $candidate ): array {
 	$prefix = array();
 	$needle = mb_strtolower( $candidate );
 	foreach ( $posts as $post ) {
-		if ( ! $post instanceof WP_Post ) {
+		if ( ! $post instanceof WP_Post || md_kb_endpoint_is_catalog_excluded( (int) $post->ID ) ) {
 			continue;
 		}
 		$title = mb_strtolower( $post->post_title );
@@ -1337,8 +1422,12 @@ function md_kb_endpoint_page_facts( WP_Post $post ): string {
 	}
 	// CAD status is included even when empty, so an unverified drawing
 	// question on the open page transfers instead of being invented.
-	$cad     = md_kb_endpoint_cad_status_wording( md_kb_endpoint_pattern_field( get_field( 'cad_status', $id ) ) );
-	$lines[] = 'cad_status: ' . $cad;
+	$cad       = md_kb_endpoint_cad_status_wording( md_kb_endpoint_pattern_field( get_field( 'cad_status', $id ) ) );
+	$lines[]   = 'cad_status: ' . $cad;
+	$permalink = get_permalink( $id );
+	if ( is_string( $permalink ) && '' !== $permalink ) {
+		$lines[] = 'URL: ' . $permalink;
+	}
 	return implode( "\n", $lines );
 }
 
@@ -1396,7 +1485,7 @@ function md_kb_endpoint_chat_history( int $chat_id, string $q ): array {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Live Helper Chat's message table lives in the same database without a WordPress API wrapper; one bounded read per bot turn.
 	$rows = $wpdb->get_results(
 		$wpdb->prepare(
-			'SELECT user_id, msg FROM lh_msg WHERE chat_id = %d AND user_id >= -2 ORDER BY id DESC LIMIT 8',
+			'SELECT user_id, msg FROM lh_msg WHERE chat_id = %d AND (user_id = 0 OR user_id = -2 OR user_id > 0) ORDER BY id DESC LIMIT 8',
 			$chat_id
 		)
 	);
@@ -1412,6 +1501,10 @@ function md_kb_endpoint_chat_history( int $chat_id, string $q ): array {
 		if ( ! is_object( $row ) ) {
 			continue;
 		}
+		$user_id = isset( $row->user_id ) && is_scalar( $row->user_id ) ? (int) $row->user_id : 0;
+		if ( -1 === $user_id ) {
+			continue;
+		}
 		$raw_msg = isset( $row->msg ) && is_scalar( $row->msg ) ? trim( (string) $row->msg ) : '';
 		if ( '' === $raw_msg || str_starts_with( $raw_msg, '{' ) ) {
 			continue;
@@ -1423,14 +1516,13 @@ function md_kb_endpoint_chat_history( int $chat_id, string $q ): array {
 		if ( '' === $clean_msg ) {
 			continue;
 		}
-		$user_id = isset( $row->user_id ) && is_scalar( $row->user_id ) ? (int) $row->user_id : 0;
 		if ( 0 === $user_id && ! $checked_newest ) {
 			$checked_newest = true;
 			if ( mb_strtolower( $clean_msg ) === $needle_q ) {
 				continue;
 			}
 		}
-		$turn    = 0 !== $user_id ? 'Assistant: ' . $clean_msg : $clean_msg;
+		$turn    = 0 !== $user_id ? 'Assistant: ' . $raw_msg : $clean_msg;
 		$turns[] = mb_substr( $turn, 0, 2000 );
 	}
 
@@ -1467,12 +1559,23 @@ function md_kb_endpoint_chat_referrer( int $chat_id ): string {
  * newest to oldest) when the current follow-up question uses pronouns such
  * as "What is its open area?" instead of repeating the pattern name.
  *
+ * For assistant turns, direct references (`/pattern/<slug>/`, `Based on:
+ * Pattern <Name>`, or SKU codes) are extracted first so long assistant
+ * paragraphs never trigger a 1-6 word n-gram query storm.
+ *
  * @param array<int, string> $history Chronological history turns.
  * @return array{context: string, sources: array<int, string>, hits: int} The pattern lookup from history.
  */
 function md_kb_endpoint_history_pattern_lookup( array $history ): array {
 	foreach ( array_reverse( $history ) as $turn ) {
-		$cleaned = trim( (string) preg_replace( '/^Assistant:\s*/iu', '', $turn ) );
+		if ( 1 === preg_match( '/^Assistant:\s*(.*)$/isu', $turn, $assistant_match ) ) {
+			$lookup = md_kb_endpoint_assistant_turn_pattern_lookup( $turn, trim( $assistant_match[1] ) );
+			if ( 0 < $lookup['hits'] ) {
+				return $lookup;
+			}
+			continue;
+		}
+		$cleaned = trim( $turn );
 		if ( '' === $cleaned ) {
 			continue;
 		}
@@ -1489,15 +1592,147 @@ function md_kb_endpoint_history_pattern_lookup( array $history ): array {
 }
 
 /**
+ * Extracts pattern candidates from an assistant turn without running
+ * multi-word n-grams across long prose paragraphs.
+ *
+ * @param string $raw_turn     The raw turn string (may include Based on: footer).
+ * @param string $cleaned_turn The turn with the Assistant: prefix stripped.
+ * @return array{context: string, sources: array<int, string>, hits: int} The pattern lookup result.
+ */
+function md_kb_endpoint_assistant_turn_pattern_lookup( string $raw_turn, string $cleaned_turn ): array {
+	$candidates = array();
+	if ( preg_match_all( '~/pattern/([a-z0-9-]+)~i', $raw_turn, $slug_matches ) ) {
+		foreach ( $slug_matches[1] as $slug ) {
+			$candidates[] = strtolower( $slug );
+		}
+	}
+	if ( preg_match_all( '/Based on:\s*([^\n]+)/iu', $raw_turn, $footer_matches ) ) {
+		foreach ( $footer_matches[1] as $footer_line ) {
+			foreach ( explode( ';', $footer_line ) as $part ) {
+				if ( 1 === preg_match( '/^Pattern\s+(.+)$/iu', trim( $part ), $pat_match ) ) {
+					$candidates[] = trim( $pat_match[1] );
+				}
+			}
+		}
+	}
+	if ( preg_match_all( '/\b[A-Z]{1,6}-\d{2,6}\b/i', $cleaned_turn, $code_matches ) ) {
+		foreach ( $code_matches[0] as $code ) {
+			$candidates[] = $code;
+		}
+	}
+	// When no explicit URL, Based on: footer, or SKU code is present, check
+	// capitalized proper-noun tokens (up to 8) without running 1-6 word n-grams.
+	if ( array() === $candidates ) {
+		if ( preg_match_all( '/\b[A-Z][A-Za-z0-9]{2,}\b/', $cleaned_turn, $cap_matches ) ) {
+			$stopwords = md_kb_endpoint_pattern_stopwords();
+			foreach ( $cap_matches[0] as $word ) {
+				if ( ! in_array( mb_strtolower( $word ), $stopwords, true ) ) {
+					$candidates[] = $word;
+					if ( count( $candidates ) >= 8 ) {
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	$seen    = array();
+	$blocks  = array();
+	$sources = array();
+	$unique  = array();
+	foreach ( $candidates as $candidate ) {
+		$key = mb_strtolower( trim( $candidate ) );
+		if ( '' !== $key && ! isset( $unique[ $key ] ) ) {
+			$unique[ $key ] = trim( $candidate );
+		}
+	}
+	foreach ( $unique as $candidate ) {
+		foreach ( md_kb_endpoint_pattern_query( $candidate ) as $post ) {
+			if ( isset( $seen[ $post->ID ] ) ) {
+				continue;
+			}
+			$seen[ $post->ID ] = true;
+			$facts             = md_kb_endpoint_pattern_facts( $post );
+			$blocks[]          = $facts['context'];
+			$sources[]         = $facts['source'];
+			if ( count( $blocks ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
+				break 2;
+			}
+		}
+	}
+	return array(
+		'context' => implode( "\n\n", $blocks ),
+		'sources' => $sources,
+		'hits'    => count( $blocks ),
+	);
+}
+
+/**
+ * Extracts numeric product post IDs from pattern source strings (`pattern#<id> ...`).
+ *
+ * @param array<int, string> $sources The pattern sources.
+ * @return array<int, int> The product post IDs.
+ */
+function md_kb_endpoint_pattern_source_ids( array $sources ): array {
+	$ids = array();
+	foreach ( $sources as $source ) {
+		if ( 1 === preg_match( '/^pattern#(\d+)\b/', $source, $match ) ) {
+			$ids[] = (int) $match[1];
+		}
+	}
+	return array_values( array_unique( $ids ) );
+}
+
+/**
+ * Augments a recommendation query with the series, motifs, open area and
+ * best fit of already-matched reference patterns (e.g., "similar to Apiary").
+ *
+ * @param string          $q           The visitor's question.
+ * @param array<int, int> $matched_ids The matched product IDs.
+ * @return string The augmented query string for scoring alternatives.
+ */
+function md_kb_endpoint_augment_recommendation_query( string $q, array $matched_ids ): string {
+	$parts = array( $q );
+	foreach ( $matched_ids as $id ) {
+		$terms = get_the_terms( $id, 'product_cat' );
+		if ( is_array( $terms ) ) {
+			foreach ( $terms as $term ) {
+				if ( is_object( $term ) ) {
+					$parts[] = (string) ( $term->slug ?? '' );
+					$parts[] = (string) ( $term->name ?? '' );
+				}
+			}
+		}
+		$motifs = md_kb_endpoint_pattern_field( get_field( 'motifs', $id ) );
+		if ( '' !== $motifs ) {
+			$parts[] = $motifs;
+		}
+		$raw_oa = md_kb_endpoint_pattern_field( get_field( 'open_area', $id ) );
+		if ( '' !== $raw_oa && is_numeric( $raw_oa ) && (float) $raw_oa > 0 ) {
+			$parts[] = $raw_oa . '%';
+		}
+		$best_fit = md_kb_endpoint_pattern_field( get_field( 'best_fit', $id ) );
+		if ( '' !== $best_fit ) {
+			$parts[] = str_replace( '-', ' ', $best_fit );
+		}
+		$density = md_kb_endpoint_pattern_field( get_field( 'visual_density', $id ) );
+		if ( '' !== $density ) {
+			$parts[] = $density . ' density';
+		}
+	}
+	return implode( ' ', array_filter( $parts ) );
+}
+
+/**
  * Whether the visitor is asking for pattern recommendations or filtering
  * patterns by series, application, visual density or open area range.
  *
  * @param string $q The visitor's question.
- * @return bool Whether to run the catalog recommender when no single pattern was named.
+ * @return bool Whether to run the catalog recommender.
  */
 function md_kb_endpoint_asks_recommendation( string $q ): bool {
 	$explicit_recommend = 1 === preg_match(
-		'/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?|any\s+patterns?|show\s+(?:me\s+)?patterns?|looking\s+for\s+(?:a\s+)?patterns?|patterns?\s+(?:for|with|that|suitable|in))\b|推荐|哪(?:款|些|种)图案|什么图案/iu',
+		'/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?|any\s+patterns?|show\s+(?:me\s+)?patterns?|looking\s+for\s+(?:a\s+)?patterns?|patterns?\s+(?:for|with|that|suitable|in|like|similar)|similar\s+(?:patterns?\s+)?to|alternatives?\s+to)\b|推荐|哪(?:款|些|种)图案|什么图案|类似/iu',
 		$q
 	);
 	if ( ! $explicit_recommend && 1 === preg_match( '/\bthis\s+(?:pattern|screen)\b/iu', $q ) ) {
@@ -1510,10 +1745,10 @@ function md_kb_endpoint_asks_recommendation( string $q ): bool {
 		return false;
 	}
 	return 1 === preg_match(
-		'/\b(?:geometric|organic|abstract|moroccan|arabic|perforated|gradient|landscape|asian|chinese|vintage|retro|botanical|(?:low|medium|high|open)\s+density|dense\s+patterns?)\b|\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b.*\bopen[\s-]*area\b|\bopen[\s-]*area\b.*\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b|\b(?:low|high|medium)\s+open[\s-]*area\b|几何|有机|抽象|摩洛哥|阿拉伯|穿孔|渐变|山水|中式|复古|植物|花卉|低密度|中密度|高密度|\d{1,2}\s*%.*镂空|镂空.*\d{1,2}\s*%/iu',
+		'/\b(?:geometric|organic|abstract|moroccan(?:[\s-]+arabic)?|arabic|perforated|gradient|landscape|asian|chinese|vintage(?:[\s-]+retro)?|retro|botanical|floral|mural|emt|expanded\s+metal|glass[\s-]+hybrid|laminated\s+glass|repeat(?:ing)?\s+patterns?|(?:low|medium|balanced|high|open|custom)\s+density|dense\s+patterns?)\b|\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b.*\bopen[\s-]*area\b|\bopen[\s-]*area\b.*\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b|\b(?:low|high|medium|balanced)\s+open[\s-]*area\b|几何|有机|抽象|摩洛哥|阿拉伯|穿孔|渐变|山水|中式|复古|植物|花卉|壁画|扩张网|夹胶玻璃|低密度|中密度|均衡密度|高密度|定制密度|\d{1,2}\s*%.*镂空|镂空.*\d{1,2}\s*%/iu',
 		$q
 	) || (
-		1 === preg_match( '/\b(?:outdoor|exterior|facade|privacy|partition|divider|interior|balustrade|railing|cladding|sunshade|hotel|lobby|architectural[\s-]+screening|decorative[\s-]+screening)\b|室外|户外|外墙|幕墙|隐私|隔断|屏风|室内|护栏|栏杆|遮阳|酒店|大堂/iu', $q )
+		1 === preg_match( '/\b(?:outdoor|exterior|facade|privacy|partition|divider|interior|indoor|room\s+divider|balustrade|railing|cladding|sunshade|weather|hotel|lobby|architectural[\s-]+screening|decorative[\s-]+screening|repeat)\b|室外|户外|外墙|幕墙|隐私|隔断|屏风|室内|护栏|栏杆|遮阳|酒店|大堂|循环/iu', $q )
 		&& 1 === preg_match( '/\b(?:patterns?|designs?|styles?|options?|suitable|fit)\b|图案|款式|适合/iu', $q )
 	);
 }
@@ -1523,16 +1758,19 @@ function md_kb_endpoint_asks_recommendation( string $q ): bool {
  * catalog scored against the series, open area percentage, application/best
  * fit, motifs, and visual density criteria in the visitor's question.
  *
- * @param string $q The visitor's question.
+ * @param string          $q           The visitor's question.
+ * @param array<int, int> $exclude_ids Product IDs to exclude (e.g. a named reference pattern).
  * @return array{context: string, sources: array<int, string>, hits: int} The top matching pattern facts.
  */
-function md_kb_endpoint_pattern_recommend( string $q ): array {
+function md_kb_endpoint_pattern_recommend( string $q, array $exclude_ids = array() ): array {
 	$query = new WP_Query(
 		array(
 			'post_type'      => 'product',
 			'post_status'    => 'publish',
 			// phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- the full published pattern catalog is 146 items and must be scored in memory.
 			'posts_per_page' => 200,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- excludes products hidden from the WooCommerce catalog.
+			'tax_query'      => md_kb_endpoint_catalog_tax_query(),
 		)
 	);
 	$posts = is_array( $query->posts ) ? $query->posts : array();
@@ -1549,43 +1787,82 @@ function md_kb_endpoint_pattern_recommend( string $q ): array {
 		if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
 			continue;
 		}
+		$id = (int) $post->ID;
+		if ( in_array( $id, $exclude_ids, true ) || md_kb_endpoint_is_catalog_excluded( $id ) ) {
+			continue;
+		}
 		$score = md_kb_endpoint_pattern_score( $post, $q );
 		if ( $score > 0 ) {
 			$scored[] = array(
 				'post'  => $post,
 				'score' => $score,
-				'id'    => (int) $post->ID,
+				'id'    => $id,
 			);
 		}
 	}
 
-	if ( array() === $scored && 1 === preg_match( '/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?)\b|推荐|哪(?:款|些|种)图案|什么图案/iu', $q ) ) {
+	$is_generic_fallback = false;
+	if ( array() === $scored && 1 === preg_match( '/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?|any\s+patterns?|show\s+(?:me\s+)?patterns?|looking\s+for\s+(?:a\s+)?patterns?)\b|推荐|哪(?:款|些|种)图案|什么图案/iu', $q ) ) {
+		$is_generic_fallback = true;
+		$candidates          = array();
 		foreach ( $posts as $post ) {
 			if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
 				continue;
 			}
-			$id       = (int) $post->ID;
+			$id = (int) $post->ID;
+			if ( in_array( $id, $exclude_ids, true ) || md_kb_endpoint_is_catalog_excluded( $id ) ) {
+				continue;
+			}
 			$raw_oa   = md_kb_endpoint_pattern_field( get_field( 'open_area', $id ) );
 			$best_fit = md_kb_endpoint_pattern_field( get_field( 'best_fit', $id ) );
 			if ( '' !== $raw_oa && is_numeric( $raw_oa ) && (float) $raw_oa > 0 && '' !== $best_fit ) {
-				$scored[] = array(
-					'post'  => $post,
-					'score' => 1,
-					'id'    => $id,
+				$candidates[] = array(
+					'post'   => $post,
+					'score'  => 1,
+					'id'     => $id,
+					'series' => md_kb_endpoint_primary_series_key( $id ),
 				);
 			}
 		}
-	}
-
-	usort(
-		$scored,
-		static function ( array $a, array $b ): int {
-			if ( $b['score'] !== $a['score'] ) {
-				return $b['score'] <=> $a['score'];
+		usort(
+			$candidates,
+			static fn ( array $a, array $b ): int => $a['id'] <=> $b['id']
+		);
+		$used_series = array();
+		$picked_ids  = array();
+		foreach ( $candidates as $candidate ) {
+			$series = $candidate['series'];
+			if ( '' !== $series && ! isset( $used_series[ $series ] ) ) {
+				$used_series[ $series ]         = true;
+				$picked_ids[ $candidate['id'] ] = true;
+				$scored[]                       = $candidate;
+				if ( count( $scored ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
+					break;
+				}
 			}
-			return $a['id'] <=> $b['id'];
 		}
-	);
+		if ( count( $scored ) < MD_KB_ENDPOINT_PATTERN_LIMIT ) {
+			foreach ( $candidates as $candidate ) {
+				if ( isset( $picked_ids[ $candidate['id'] ] ) ) {
+					continue;
+				}
+				$scored[] = $candidate;
+				if ( count( $scored ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
+					break;
+				}
+			}
+		}
+	} else {
+		usort(
+			$scored,
+			static function ( array $a, array $b ): int {
+				if ( $b['score'] !== $a['score'] ) {
+					return $b['score'] <=> $a['score'];
+				}
+				return $a['id'] <=> $b['id'];
+			}
+		);
+	}
 
 	$blocks  = array();
 	$sources = array();
@@ -1595,11 +1872,43 @@ function md_kb_endpoint_pattern_recommend( string $q ): array {
 		$sources[] = $facts['source'];
 	}
 
+	$context = implode( "\n\n", $blocks );
+	if ( $is_generic_fallback && '' !== $context ) {
+		$context = "Visitor asked a general recommendation question without specifying interior/exterior or open area. Present these representative examples across series and ask whether their project is interior or exterior and what open-area/privacy level they need:\n\n" . $context;
+	}
+
 	return array(
-		'context' => implode( "\n\n", $blocks ),
+		'context' => $context,
 		'sources' => $sources,
 		'hits'    => count( $blocks ),
 	);
+}
+
+/**
+ * Primary product_cat series key for diversifying generic fallback recommendations.
+ *
+ * @param int $post_id The product ID.
+ * @return string Lowercase series slug or name, '' when none.
+ */
+function md_kb_endpoint_primary_series_key( int $post_id ): string {
+	$terms = get_the_terms( $post_id, 'product_cat' );
+	if ( ! is_array( $terms ) ) {
+		return '';
+	}
+	foreach ( $terms as $term ) {
+		if ( ! is_object( $term ) ) {
+			continue;
+		}
+		$slug = mb_strtolower( trim( (string) ( $term->slug ?? '' ) ) );
+		if ( '' !== $slug ) {
+			return $slug;
+		}
+		$name = mb_strtolower( trim( (string) ( $term->name ?? '' ) ) );
+		if ( '' !== $name ) {
+			return $name;
+		}
+	}
+	return '';
 }
 
 /**
@@ -1629,28 +1938,78 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 	$best_fit  = mb_strtolower( md_kb_endpoint_pattern_field( get_field( 'best_fit', $id ) ) );
 	$summary   = mb_strtolower( md_kb_endpoint_pattern_field( get_field( 'summary', $id ) ) );
 	$density   = mb_strtolower( md_kb_endpoint_pattern_field( get_field( 'visual_density', $id ) ) );
+	$repeat    = mb_strtolower( md_kb_endpoint_pattern_field( get_field( 'repeat_behavior', $id ) ) );
 	$title     = mb_strtolower( $post->post_title );
-	$full_text = str_replace( array( '-', '_' ), ' ', $series_text . ' ' . $motifs . ' ' . $best_fit . ' ' . $summary . ' ' . $title );
-
-	$series_map = array(
-		'geometric'  => '/\bgeometric\b|几何/iu',
-		'organic'    => '/\borganic\b|有机/iu',
-		'abstract'   => '/\babstract\b|抽象/iu',
-		'moroccan'   => '/\b(?:moroccan|arabic)\b|摩洛哥|阿拉伯/iu',
-		'arabic'     => '/\b(?:moroccan|arabic)\b|摩洛哥|阿拉伯/iu',
-		'perforated' => '/\bperforated\b|穿孔/iu',
-		'gradient'   => '/\bgradient\b|渐变/iu',
-		'landscape'  => '/\blandscape\b|山水|风景/iu',
-		'asian'      => '/\b(?:asian|chinese)\b|中式|亚洲/iu',
-		'chinese'    => '/\b(?:asian|chinese)\b|中式|亚洲/iu',
-		'vintage'    => '/\b(?:vintage|retro)\b|复古/iu',
-		'retro'      => '/\b(?:vintage|retro)\b|复古/iu',
-		'botanical'  => '/\b(?:botanical|floral|leaf|plant)\b|植物|花卉/iu',
+	$full_text = str_replace( array( '-', '_' ), ' ', $series_text . ' ' . $motifs . ' ' . $best_fit . ' ' . $summary . ' ' . $repeat . ' ' . $title );
+	// Series/motif matching rules.
+	$series_rules    = array(
+		array(
+			'regex'   => '/\bgeometric\b|几何/iu',
+			'needles' => array( 'geometric' ),
+		),
+		array(
+			'regex'   => '/\borganic\b|有机/iu',
+			'needles' => array( 'organic' ),
+		),
+		array(
+			'regex'   => '/\babstract\b|抽象/iu',
+			'needles' => array( 'abstract' ),
+		),
+		array(
+			'regex'   => '/\b(?:moroccan(?:[\s-]+arabic)?|arabic|mashrabiya)\b|摩洛哥|阿拉伯/iu',
+			'needles' => array( 'moroccan-arabic', 'moroccan', 'arabic' ),
+		),
+		array(
+			'regex'   => '/\bperforated\b|穿孔/iu',
+			'needles' => array( 'perforated' ),
+		),
+		array(
+			'regex'   => '/\bgradient\b|渐变/iu',
+			'needles' => array( 'gradient' ),
+		),
+		array(
+			'regex'   => '/\blandscape\b|山水|风景/iu',
+			'needles' => array( 'landscape' ),
+		),
+		array(
+			'regex'   => '/\b(?:asian|chinese)\b|中式|亚洲/iu',
+			'needles' => array( 'asian', 'chinese' ),
+		),
+		array(
+			'regex'   => '/\b(?:vintage(?:[\s-]+retro)?|retro)\b|复古/iu',
+			'needles' => array( 'vintage-retro', 'vintage', 'retro' ),
+		),
+		array(
+			'regex'   => '/\b(?:botanical|floral|flower|leaf|leaves|plant|vine|garden|bamboo)\b|植物|花卉|树叶|竹/iu',
+			'needles' => array( 'leaf', 'floral', 'vine', 'garden', 'bamboo', 'botanical', 'organic' ),
+		),
+		array(
+			'regex'   => '/\bmural\b|壁画/iu',
+			'needles' => array( 'mural', 'landscape', 'flowing' ),
+		),
+		array(
+			'regex'   => '/\b(?:emt|expanded\s+metal)\b|扩张网|拉伸网/iu',
+			'needles' => array( 'emt', 'expanded metal', 'geometric', 'perforated' ),
+		),
+		array(
+			'regex'   => '/\b(?:repeat(?:ing)?)\b|循环|重复/iu',
+			'needles' => array( 'repeating', 'repeat', 'tile' ),
+		),
+		array(
+			'regex'   => '/\b(?:glass[\s-]+hybrid|laminated\s+glass)\b|夹胶玻璃|玻璃复合/iu',
+			'needles' => array( 'glass-hybrid', 'laminated glass', 'glass', 'decorative-screening' ),
+		),
 	);
-	foreach ( $series_map as $term_needle => $regex ) {
-		if ( 1 === preg_match( $regex, $q ) && ( str_contains( $series_text, $term_needle ) || str_contains( $motifs, $term_needle ) ) ) {
-			$score += 6;
-			break;
+	$structured_text = $series_text . ' ' . $motifs . ' ' . $repeat . ' ' . $best_fit;
+	foreach ( $series_rules as $rule ) {
+		if ( 1 !== preg_match( $rule['regex'], $q ) ) {
+			continue;
+		}
+		foreach ( $rule['needles'] as $term_needle ) {
+			if ( str_contains( $structured_text, $term_needle ) ) {
+				$score += 6;
+				break 2;
+			}
 		}
 	}
 
@@ -1665,6 +2024,20 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 			} elseif ( $oa >= ( $min_oa - 5.0 ) && $oa <= ( $max_oa + 5.0 ) ) {
 				$score += 8;
 			}
+		} elseif ( 1 === preg_match( '/(?:under|below|less\s+than|up\s+to|max(?:imum)?|at\s+most|<=?)\s*(\d{1,2}(?:\.\d+)?)\s*(?:%|percent|镂空)|\b(\d{1,2}(?:\.\d+)?)\s*(?:%|percent)\s*(?:or\s+less|and\s+under|以下|以内)/iu', $q, $upper_match ) ) {
+			$bound = '' !== $upper_match[1] ? (float) $upper_match[1] : (float) $upper_match[2];
+			if ( $oa <= $bound ) {
+				$score += 12;
+			} elseif ( $oa <= ( $bound + 3.0 ) ) {
+				$score += 6;
+			}
+		} elseif ( 1 === preg_match( '/(?:over|above|more\s+than|at\s+least|min(?:imum)?|>=?)\s*(\d{1,2}(?:\.\d+)?)\s*(?:%|percent|镂空)|\b(\d{1,2}(?:\.\d+)?)\s*(?:%|percent)\s*(?:or\s+more|and\s+above|以上)/iu', $q, $lower_match ) ) {
+			$bound = '' !== $lower_match[1] ? (float) $lower_match[1] : (float) $lower_match[2];
+			if ( $oa >= $bound ) {
+				$score += 12;
+			} elseif ( $oa >= ( $bound - 3.0 ) ) {
+				$score += 6;
+			}
 		} elseif ( 1 === preg_match( '/(\d{1,2}(?:\.\d+)?)\s*(?:%|percent)/iu', $q, $single_match ) ) {
 			$target_oa = (float) $single_match[1];
 			$diff      = abs( $oa - $target_oa );
@@ -1674,6 +2047,24 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 				$score += 8;
 			}
 		}
+	}
+
+	$asks_outdoor = 1 === preg_match(
+		'/\b(?:outdoor|exterior|facade|cladding|sunshade|balustrade|railing|weather)\b|室外|户外|外墙|幕墙|遮阳|护栏|栏杆/iu',
+		$q
+	);
+	$asks_indoor  = 1 === preg_match(
+		'/\b(?:indoor|interior|room\s+divider|partition|divider|lobby)\b|室内|隔断|屏风|大堂/iu',
+		$q
+	);
+	if ( $asks_outdoor ) {
+		if ( 'architectural-screening' === $best_fit ) {
+			$score += 8;
+		} elseif ( 'decorative-screening' === $best_fit ) {
+			$score -= 5;
+		}
+	} elseif ( $asks_indoor && 'decorative-screening' === $best_fit ) {
+		$score += 5;
 	}
 
 	$keyword_map = array(
@@ -1708,17 +2099,19 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 	}
 
 	$density_map = array(
-		'low'    => '/\b(?:low|open)\s+density\b|低密度/iu',
-		'open'   => '/\b(?:low|open)\s+density\b|低密度/iu',
-		'medium' => '/\bmedium\s+density\b|中密度/iu',
-		'high'   => '/\b(?:high\s+density|dense)\b|高密度/iu',
-		'dense'  => '/\b(?:high\s+density|dense)\b|高密度/iu',
+		'low'      => '/\b(?:low|open)\s+density\b|低密度/iu',
+		'open'     => '/\b(?:low|open)\s+density\b|低密度/iu',
+		'medium'   => '/\b(?:medium|balanced)\s+density\b|中密度|均衡密度/iu',
+		'balanced' => '/\b(?:medium|balanced)\s+density\b|中密度|均衡密度/iu',
+		'high'     => '/\b(?:high\s+density|dense)\b|高密度/iu',
+		'dense'    => '/\b(?:high\s+density|dense)\b|高密度/iu',
+		'custom'   => '/\bcustom\s+density\b|定制密度/iu',
 	);
 	if ( '' !== $density && isset( $density_map[ $density ] ) && 1 === preg_match( $density_map[ $density ], $q ) ) {
 		$score += 2;
 	}
 
-	return $score;
+	return max( 0, $score );
 }
 
 /**
@@ -2049,10 +2442,20 @@ function md_kb_endpoint_messages( string $q, string $context, array $history ): 
 		),
 	);
 	foreach ( array_slice( $history, -6 ) as $turn ) {
-		$messages[] = array(
-			'role'    => 'user',
-			'content' => $turn,
-		);
+		if ( 1 === preg_match( '/^Assistant:\s*(.*)$/isu', $turn, $assistant_match ) ) {
+			$clean_assistant = trim( (string) preg_replace( '/\n\nBased on:.*$/s', '', $assistant_match[1] ) );
+			if ( '' !== $clean_assistant ) {
+				$messages[] = array(
+					'role'    => 'assistant',
+					'content' => $clean_assistant,
+				);
+			}
+		} else {
+			$messages[] = array(
+				'role'    => 'user',
+				'content' => $turn,
+			);
+		}
 	}
 	$messages[] = array(
 		'role'    => 'user',

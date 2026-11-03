@@ -163,8 +163,9 @@ final class Submission {
 			$verification = 'not_configured';
 		}
 
-		$record  = $checked['values'];
-		$post_id = $this->store( $record, $pattern, $verification, $ip );
+		$record                 = $checked['values'];
+		$record['quote_intent'] = $values['quote_intent'] ?? '';
+		$post_id                = $this->store( $record, $pattern, $verification, $ip );
 		if ( false === $post_id ) {
 			$this->state->fail( $values, array(), 'storage' );
 			return;
@@ -197,6 +198,7 @@ final class Submission {
 			'confirm'       => $this->post_text( $post, 'md_inquiry_confirm' ),
 			'message'       => isset( $post['md_inquiry_message'] ) && \is_string( $post['md_inquiry_message'] ) ? \sanitize_textarea_field( \wp_unslash( $post['md_inquiry_message'] ) ) : '',
 			'pattern_slug'  => isset( $post['md_inquiry_pattern_slug'] ) && \is_string( $post['md_inquiry_pattern_slug'] ) ? \sanitize_title( \wp_unslash( $post['md_inquiry_pattern_slug'] ) ) : '',
+			'quote_intent'  => $this->post_text( $post, 'md_inquiry_quote_intent' ),
 			'source_page'   => $this->post_text( $post, 'md_inquiry_source_page' ),
 			'source_module' => $this->post_text( $post, 'md_inquiry_source_module' ),
 			'source_button' => $this->post_text( $post, 'md_inquiry_source_button' ),
@@ -274,6 +276,9 @@ final class Submission {
 			}
 		}
 		\update_post_meta( $post_id, 'inquiry_locale', $record['locale'] );
+		if ( '' !== ( $record['quote_intent'] ?? '' ) ) {
+			\update_post_meta( $post_id, 'quote_intent', $record['quote_intent'] );
+		}
 		return $post_id;
 	}
 
@@ -300,6 +305,7 @@ final class Submission {
 			'pattern_name'   => null !== $pattern ? $pattern['name'] : '',
 			'pattern_code'   => null !== $pattern ? $pattern['code'] : '',
 			'pattern_url'    => null !== $pattern ? $pattern['url'] : '',
+			'quote_intent'   => $record['quote_intent'] ?? '',
 			'source_page'    => $record['source_page'],
 			'source_module'  => $record['source_module'],
 			'source_button'  => $record['source_button'],

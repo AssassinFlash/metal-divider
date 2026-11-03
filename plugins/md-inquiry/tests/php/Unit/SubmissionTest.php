@@ -177,6 +177,7 @@ final class SubmissionTest extends TestCase {
 			'md_inquiry_confirm'      => '1',
 			'md_inquiry_message'      => '',
 			'md_inquiry_pattern_slug' => 'apiary',
+			'md_inquiry_quote_intent' => 'Custom size & finish quote',
 			'md_inquiry_locale'       => 'en',
 		);
 
@@ -192,6 +193,7 @@ final class SubmissionTest extends TestCase {
 		$this->assertSame( 'Apiary', $meta['pattern_name'], 'the snapshot, not the client\'s text' );
 		$this->assertSame( 'APIARY', $meta['pattern_code'] );
 		$this->assertSame( 42, $meta['pattern_product'] );
+		$this->assertSame( 'Custom size & finish quote', $meta['quote_intent'] );
 		$this->assertSame( 'not_configured', $meta['turnstile_status'], 'the unconfigured regime marks, never blocks' );
 		$this->assertSame( '203.0.113.7', $meta['ip_address'] );
 		$this->assertSame( 'TestAgent/1.0', $meta['user_agent'] );

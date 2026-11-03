@@ -237,8 +237,8 @@
 			}
 		});
 
-		var defaultPattern = cfg.pattern ? { name: cfg.pattern.name, code: cfg.pattern.code } : null;
 		var defaultInputVal = patternInput ? patternInput.value : '';
+		var defaultPattern = cfg.pattern ? { name: cfg.pattern.name, code: cfg.pattern.code, slug: defaultInputVal } : null;
 		var defaultSlotHidden = patternSlot ? patternSlot.hasAttribute('hidden') : true;
 		var defaultEyebrowText = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]')
 			? patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]').textContent
@@ -254,6 +254,32 @@
 			: '';
 		var defaultMsgRequired = field('message') ? field('message').hasAttribute('required') : false;
 
+		if (patternSlot) {
+			var initialThumb = patternSlot.querySelector('[data-md-inquiry-pattern-thumb]');
+			if (!initialThumb || initialThumb.hasAttribute('hidden') || !initialThumb.getAttribute('src')) {
+				patternSlot.classList.add('md-inquiry-pattern--no-thumb');
+			} else {
+				patternSlot.classList.remove('md-inquiry-pattern--no-thumb');
+			}
+		}
+
+		function syncModalTitle(activeCode) {
+			var modalRoot = form.closest ? form.closest('#md-quote-modal, #quote-modal') : null;
+			if (!modalRoot || !modalRoot.querySelector) {
+				return;
+			}
+			var modalTitle = modalRoot.querySelector('.md-quote-modal__title, #md-quote-modal-title, #quote-modal-title');
+			if (!modalTitle) {
+				return;
+			}
+			if (!modalTitle.__mdDefaultTitle) {
+				modalTitle.__mdDefaultTitle = modalTitle.textContent || 'Request a quote';
+			}
+			modalTitle.textContent = activeCode
+				? 'Request a quote · ' + activeCode
+				: modalTitle.__mdDefaultTitle;
+		}
+
 		function applyQuoteDetail(detail) {
 			if (!detail || typeof detail !== 'object') {
 				return;
@@ -265,6 +291,11 @@
 			var rawIntent = typeof detail.intentLabel === 'string' && detail.intentLabel.trim()
 				? detail.intentLabel.trim()
 				: (typeof detail.quoteIntent === 'string' ? detail.quoteIntent.trim() : '');
+
+			var intentInput = form.querySelector('[name="md_inquiry_quote_intent"]');
+			if (intentInput) {
+				intentInput.value = rawIntent;
+			}
 
 			if (typeof detail.sourcePage === 'string' && detail.sourcePage.trim()) {
 				var pageInput = form.querySelector('[name="md_inquiry_source_page"]');
@@ -306,6 +337,7 @@
 						msgCtrl.removeAttribute('required');
 					}
 				}
+				syncModalTitle(defaultPattern && defaultPattern.code ? defaultPattern.code : '');
 				if (patternSlot) {
 					if (defaultSlotHidden) {
 						patternSlot.setAttribute('hidden', '');
@@ -329,10 +361,14 @@
 						if (defaultThumbSrc) {
 							th.setAttribute('src', defaultThumbSrc);
 							th.removeAttribute('hidden');
+							patternSlot.classList.remove('md-inquiry-pattern--no-thumb');
 						} else {
 							th.removeAttribute('src');
 							th.setAttribute('hidden', '');
+							patternSlot.classList.add('md-inquiry-pattern--no-thumb');
 						}
+					} else {
+						patternSlot.classList.add('md-inquiry-pattern--no-thumb');
 					}
 				}
 				updateWhatsApp();
@@ -342,6 +378,11 @@
 			var slug = (rawSlug || rawCode).toLowerCase();
 			var code = (rawCode || rawSlug).toUpperCase();
 			var name = rawName || rawCode || rawSlug;
+			if (rawCode === '' && slug === '' && defaultPattern) {
+				slug = defaultPattern.slug || '';
+				code = defaultPattern.code || '';
+				name = defaultPattern.name || code;
+			}
 			cfg.intent = rawIntent || '';
 
 			if (patternInput) {
@@ -363,11 +404,13 @@
 				app.setAttribute('data-md-inquiry', JSON.stringify(cfg));
 			}
 
+			syncModalTitle(code || (defaultPattern && defaultPattern.code ? defaultPattern.code : ''));
+
 			if (patternSlot) {
 				patternSlot.removeAttribute('hidden');
 				var eyebrowEl = patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]');
 				if (eyebrowEl) {
-					eyebrowEl.textContent = rawIntent || defaultEyebrowText;
+					eyebrowEl.textContent = (name || code) ? (rawIntent || defaultEyebrowText) : (rawIntent ? 'Selected request' : defaultEyebrowText);
 				}
 				var titleEl = patternSlot.querySelector('[data-md-inquiry-pattern-title]');
 				var codeEl = patternSlot.querySelector('[data-md-inquiry-pattern-code]');
@@ -379,18 +422,26 @@
 						titleEl.textContent = name + ' (' + code + ')';
 					} else {
 						titleEl.textContent = name || code || rawIntent;
+						if (codeEl) {
+							codeEl.textContent = '';
+						}
 					}
 				}
 				var thumbEl = patternSlot.querySelector('[data-md-inquiry-pattern-thumb]');
 				if (thumbEl) {
-					if (rawThumb) {
-						thumbEl.setAttribute('src', rawThumb);
+					var effectiveThumb = rawThumb || ((name || code) ? defaultThumbSrc : '');
+					if (effectiveThumb) {
+						thumbEl.setAttribute('src', effectiveThumb);
 						thumbEl.setAttribute('alt', name || code || '');
 						thumbEl.removeAttribute('hidden');
+						patternSlot.classList.remove('md-inquiry-pattern--no-thumb');
 					} else {
 						thumbEl.removeAttribute('src');
 						thumbEl.setAttribute('hidden', '');
+						patternSlot.classList.add('md-inquiry-pattern--no-thumb');
 					}
+				} else {
+					patternSlot.classList.add('md-inquiry-pattern--no-thumb');
 				}
 			}
 
@@ -611,6 +662,15 @@
 			watchHidden();
 		}
 
+		if (form.closest && form.closest('#md-quote-modal, #quote-modal') && typeof window.addEventListener === 'function') {
+			window.addEventListener('open-quote', function (event) {
+				var detail = event && event.detail ? event.detail : null;
+				if (detail) {
+					applyQuoteDetail(detail);
+				}
+			});
+		}
+
 		return {
 			app: app,
 			cfg: cfg,
@@ -629,24 +689,6 @@
 			bound.push(instance);
 		}
 	});
-
-	if (typeof window.addEventListener === 'function') {
-		window.addEventListener('open-quote', function (event) {
-			var detail = event && event.detail ? event.detail : null;
-			if (!detail) {
-				return;
-			}
-			var modalTargets = bound.filter(function (instance) {
-				return instance.app && instance.app.closest && instance.app.closest('#md-quote-modal, #quote-modal');
-			});
-			var targets = modalTargets.length ? modalTargets : bound;
-			targets.forEach(function (instance) {
-				if (instance.applyQuoteDetail) {
-					instance.applyQuoteDetail(detail);
-				}
-			});
-		});
-	}
 
 
 	function hasLayout(el) {
