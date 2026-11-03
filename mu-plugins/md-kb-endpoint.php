@@ -122,7 +122,9 @@ function md_kb_endpoint_answer( array $input ): array {
 		$history = md_kb_endpoint_chat_history( $chat_id, $q );
 	}
 
-	$pattern = md_kb_endpoint_pattern_lookup( $q );
+	$direct_pattern = md_kb_endpoint_pattern_lookup( $q );
+	$direct_p_hits  = $direct_pattern['hits'];
+	$pattern        = $direct_pattern;
 	if ( 0 === $pattern['hits'] && array() !== $history && ! md_kb_endpoint_asks_recommendation( $q ) ) {
 		$pattern = md_kb_endpoint_history_pattern_lookup( $history );
 	}
@@ -269,9 +271,14 @@ function md_kb_endpoint_answer( array $input ): array {
 		md_kb_endpoint_log_unanswered( $q, $gap_reason );
 	}
 
-	$sources = array() !== $resolved_sources ? $resolved_sources : md_kb_endpoint_sources( $results );
-	$labels  = md_kb_endpoint_source_labels( $sources );
-	$msg     = $answer['answer'];
+	$kb_sources = md_kb_endpoint_sources( $results );
+	$use_kb     = 0 === $direct_p_hits
+		&& ! md_kb_endpoint_asks_recommendation( $q )
+		&& array() !== $kb_sources
+		&& ! md_kb_endpoint_answer_uses_resolved_pattern( $q, $resolved, $answer['answer'] );
+	$sources    = ( array() !== $resolved_sources && ! $use_kb ) ? $resolved_sources : $kb_sources;
+	$labels     = md_kb_endpoint_source_labels( $sources );
+	$msg        = $answer['answer'];
 	if ( ! $answer['handoff'] && array() !== $labels ) {
 		$msg .= md_kb_endpoint_source_footer( $sources );
 	}
@@ -744,6 +751,39 @@ function md_kb_endpoint_missing_fact_message( string $q, string $context, string
 		}
 	}
 	return implode( ' ', $missing );
+}
+
+/**
+ * Whether an answer in a conversation that carried ambient pattern context
+ * (from page_url or earlier history turns) actually asked about or answered
+ * about that pattern, rather than a general knowledge-base topic.
+ *
+ * @param string $q        The visitor's question.
+ * @param string $resolved The resolved pattern context.
+ * @param string $reply    The visitor-facing answer.
+ * @return bool Whether the resolved pattern should be cited.
+ */
+function md_kb_endpoint_answer_uses_resolved_pattern( string $q, string $resolved, string $reply ): bool {
+	if ( '' === $resolved ) {
+		return false;
+	}
+	if ( '' !== md_kb_endpoint_partial_fact_message( $q, $resolved ) || md_kb_endpoint_asks_cad_availability( $q ) ) {
+		return true;
+	}
+	if ( 1 === preg_match( '/\b(?:this|that|it|its|current|open\s*area|density|repeat|motif|series|best\s*fit|cad|dxf|sku)\b|这个|这款|它|它的|镂空率/iu', $q ) ) {
+		return true;
+	}
+	foreach ( md_kb_endpoint_pattern_fact_blocks( $resolved ) as $block ) {
+		$name = md_kb_endpoint_pattern_display_name( $block );
+		$code = trim( (string) ( $block['code'] ?? '' ) );
+		if ( '' !== $name && false !== mb_stripos( $reply, $name ) ) {
+			return true;
+		}
+		if ( '' !== $code && false !== mb_stripos( $reply, $code ) ) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**

@@ -3590,6 +3590,62 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * A general KB question ("What materials and finishes do you offer?")
+	 * asked while an ambient pattern is in page_url or history cites the
+	 * matched Rapls knowledge entry rather than the ambient pattern when
+	 * neither the question nor the reply references the pattern.
+	 */
+	public function test_general_kb_question_with_ambient_pattern_cites_knowledge_entry(): void {
+		$this->configure_kb(
+			array(
+				array(
+					'type'      => 'knowledge',
+					'source_id' => 3,
+					'title'     => 'Stainless steel grades and finishes',
+					'content'   => '304 stainless steel works for most interior screens, and 316 stainless steel is better for coastal and high-humidity environments.',
+					'url'       => null,
+					'score'     => 12.0,
+				),
+			),
+			$this->model_reply(
+				'We work in 304 and 316 stainless steel with brushed, mirror, bead blast, powder coat, and 20+ PVD colors.',
+				false,
+				'none'
+			)
+		);
+		$this->plant_pattern(
+			array(
+				'ID'         => 271,
+				'post_title' => 'Apiary | Architectural Metal Screen Pattern',
+				'post_name'  => 'apiary',
+				'sku'        => 'Apiary',
+				'fields'     => array(
+					'open_area' => '33',
+				),
+			)
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'What materials and finishes do you offer?',
+					'page_url' => 'https://metal-divider.com/pattern/apiary/',
+					'history'  => array(
+						'What is the open area of Apiary?',
+						"Assistant: Apiary has a published open area of 33%.\n\nBased on: Pattern Apiary",
+					),
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( array( 'knowledge#3 Stainless steel grades and finishes' ), $out['body']['sources'] );
+		self::assertStringContainsString( 'Based on: Stainless steel grades and finishes', (string) $out['body']['msg'] );
+		self::assertStringNotContainsString( 'Based on: Pattern Apiary', (string) $out['body']['msg'] );
+	}
+
+	/**
 	 * A recorded bootstrap global, reset between the tests.
 	 *
 	 * @param string $name The global's name.
