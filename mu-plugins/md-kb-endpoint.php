@@ -2936,6 +2936,33 @@ function md_kb_endpoint_register(): void {
 }
 
 /**
+ * Tunes cURL options for the upstream DeepSeek completion call so a stalled
+ * edge socket fails fast within 15s and leaves budget for the retry attempt.
+ *
+ * @param mixed                $handle      The cURL handle.
+ * @param array<string, mixed> $parsed_args The HTTP request arguments.
+ * @param string               $url         The request URL.
+ * @return void
+ */
+function md_kb_endpoint_tune_curl( mixed $handle, array $parsed_args, string $url ): void {
+	unset( $parsed_args );
+	if ( 'https://api.deepseek.com/chat/completions' !== $url || ! function_exists( 'curl_setopt' ) ) {
+		return;
+	}
+	if ( ! is_resource( $handle ) && ! ( is_object( $handle ) && 'CurlHandle' === get_class( $handle ) ) ) {
+		return;
+	}
+	// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt -- WordPress's own http_api_curl hook passes the active cURL handle for transport tuning.
+	curl_setopt( $handle, CURLOPT_CONNECTTIMEOUT, 5 );
+	curl_setopt( $handle, CURLOPT_LOW_SPEED_LIMIT, 1 );
+	curl_setopt( $handle, CURLOPT_LOW_SPEED_TIME, 15 );
+	if ( defined( 'CURL_IPRESOLVE_V4' ) ) {
+		curl_setopt( $handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4 );
+	}
+	// phpcs:enable
+}
+
+/**
  * The route's adapter, the one WordPress-object layer between the HTTP
  * request and md_kb_endpoint_answer(): the bearer gate is the endpoint's
  * own (a permission_callback would run before the body could be read, and
@@ -2945,6 +2972,16 @@ function md_kb_endpoint_register(): void {
  * @return \WP_REST_Response The status and body the contract specifies.
  */
 function md_kb_endpoint_respond( $request ) {
+	global $wpdb;
+	if ( is_object( $wpdb ) && method_exists( $wpdb, 'query' ) ) {
+		// Hostinger shared MySQL defaults wait_timeout to 20s; raise the session
+		// timeout so the connection survives a slow upstream model call.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- session variable adjustment for the current connection.
+		$wpdb->query( 'SET SESSION wait_timeout = 120, SESSION interactive_timeout = 120' );
+	}
+	if ( function_exists( 'add_action' ) ) {
+		add_action( 'http_api_curl', 'md_kb_endpoint_tune_curl', 10, 3 );
+	}
 	$out = md_kb_endpoint_answer(
 		array(
 			'header' => (string) $request->get_header( 'Authorization' ),
