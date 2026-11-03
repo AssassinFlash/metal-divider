@@ -2523,7 +2523,7 @@ function md_kb_endpoint_call_model( array $messages, float $deadline = 0.0 ): ar
 				),
 				'body'    => (string) wp_json_encode(
 					array(
-						'model'           => 'deepseek-flash',
+						'model'           => 1 === $attempts ? 'deepseek-flash' : 'deepseek-chat',
 						'messages'        => $messages,
 						'stream'          => false,
 						'response_format' => array( 'type' => 'json_object' ),
