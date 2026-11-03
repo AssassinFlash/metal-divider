@@ -886,4 +886,56 @@ TURNSTILE_BEHAVIOR;
 			'two forms on one page share element ids: ' . implode( ', ', $shared )
 		);
 	}
+
+	/**
+	 * On a WooCommerce product archive (`/patterns/` or `/pattern-category/*`),
+	 * `get_post()` still holds the last product from the archive loop when the
+	 * footer's `#md-quote-modal` renders. `Pattern::from_current_post()` and
+	 * `Form::current_page_slug()` must check `$GLOBALS['wp_query']` so the
+	 * archive dialog renders unpatterned with `patterns` as the source page.
+	 */
+	public function test_archive_query_does_not_leak_last_loop_product_into_footer_form(): void {
+		$loop_product = new \WP_Post(
+			(object) array(
+				'ID'        => 99,
+				'post_type' => 'product',
+				'post_name' => 'canyon-road-architectural-metal-screen-pattern',
+			)
+		);
+		WP_Mock::userFunction( 'get_post' )->andReturn( $loop_product );
+
+		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- test double for the main archive query.
+		$GLOBALS['wp_query'] = new class() {
+			/**
+			 * Whether the main query is for a single post.
+			 *
+			 * @param string $post_types Optional post type.
+			 * @return bool
+			 */
+			public function is_singular( string $post_types = '' ): bool {
+				unset( $post_types );
+				return false;
+			}
+
+			/**
+			 * Whether the main query is a post-type archive.
+			 *
+			 * @param string $post_types Optional post type.
+			 * @return bool
+			 */
+			public function is_post_type_archive( string $post_types = '' ): bool {
+				return 'product' === $post_types;
+			}
+		};
+
+		try {
+			$html = $this->render( '', array() );
+		} finally {
+			unset( $GLOBALS['wp_query'] );
+		}
+
+		$this->assertStringContainsString( 'name="md_inquiry_pattern_slug" value=""', $html );
+		$this->assertStringContainsString( 'name="md_inquiry_source_page" value="patterns"', $html );
+		$this->assertStringNotContainsString( 'canyon-road-architectural-metal-screen-pattern', $html );
+	}
 }

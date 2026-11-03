@@ -652,6 +652,21 @@ final class Form {
 	 * @return string
 	 */
 	private function current_page_slug(): string {
+		if ( isset( $GLOBALS['wp_query'] ) && \is_object( $GLOBALS['wp_query'] ) ) {
+			if ( \method_exists( $GLOBALS['wp_query'], 'is_post_type_archive' ) && $GLOBALS['wp_query']->is_post_type_archive( 'product' ) ) {
+				return 'patterns';
+			}
+			if ( \method_exists( $GLOBALS['wp_query'], 'is_tax' ) && $GLOBALS['wp_query']->is_tax( 'product_cat' ) && \method_exists( $GLOBALS['wp_query'], 'get_queried_object' ) ) {
+				$term = $GLOBALS['wp_query']->get_queried_object();
+				if ( \is_object( $term ) && isset( $term->slug ) && \is_string( $term->slug ) && '' !== $term->slug ) {
+					return $term->slug;
+				}
+				return 'pattern-category';
+			}
+			if ( \method_exists( $GLOBALS['wp_query'], 'is_singular' ) && ! $GLOBALS['wp_query']->is_singular() ) {
+				return 'inquiry';
+			}
+		}
 		$post = \get_post();
 		return $post instanceof \WP_Post && '' !== $post->post_name ? $post->post_name : 'inquiry';
 	}

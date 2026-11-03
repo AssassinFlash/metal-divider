@@ -56,6 +56,9 @@ final class Pattern {
 	 * @return array{post_id: int, name: string, code: string, url: string, thumb: string}|null
 	 */
 	public function from_current_post(): ?array {
+		if ( isset( $GLOBALS['wp_query'] ) && \is_object( $GLOBALS['wp_query'] ) && \method_exists( $GLOBALS['wp_query'], 'is_singular' ) && ! $GLOBALS['wp_query']->is_singular( 'product' ) ) {
+			return null;
+		}
 		$post = \get_post();
 		if ( ! $post instanceof \WP_Post || 'product' !== $post->post_type ) {
 			return null;
