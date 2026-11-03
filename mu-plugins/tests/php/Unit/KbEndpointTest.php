@@ -3542,6 +3542,54 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * When deepseek-flash returns HTTP 503 on attempt 1, attempt 2 switches
+	 * to deepseek-v4-pro; if both attempts fail, a matched Rapls knowledge
+	 * entry still answers deterministically instead of returning 502.
+	 */
+	public function test_upstream_503_switches_to_pro_model_and_falls_back_to_matched_knowledge(): void {
+		$this->configure_kb(
+			array(
+				array(
+					'type'      => 'knowledge',
+					'source_id' => 3,
+					'title'     => 'Stainless steel grades and finishes',
+					'content'   => "304 stainless steel works for most interior screens, and 316 stainless steel is better for coastal and high-humidity environments.\n\nFinish options include PVD colors, brushed, mirror, and bead blast.",
+					'url'       => null,
+					'score'     => 12.0,
+				),
+			),
+			'{}'
+		);
+		$GLOBALS['md_mu_test_http_responder'] = static fn (): array => array(
+			'response' => array(
+				'code'    => 503,
+				'message' => 'Service Unavailable',
+			),
+			'body'     => '{"error":{"message":"Service is too busy"}}',
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q' => 'What materials and finishes do you offer?',
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( '', $out['body']['action'] );
+		self::assertStringContainsString( '304 stainless steel works for most interior screens', (string) $out['body']['msg'] );
+		self::assertStringContainsString( 'Based on: Stainless steel grades and finishes', (string) $out['body']['msg'] );
+		$http = $this->recorded( 'md_mu_test_http' );
+		self::assertCount( 2, $http );
+		$first_payload  = json_decode( (string) $http[0][1]['body'], true );
+		$second_payload = json_decode( (string) $http[1][1]['body'], true );
+		self::assertSame( 'deepseek-flash', $first_payload['model'] );
+		self::assertSame( 'deepseek-v4-pro', $second_payload['model'] );
+	}
+
+	/**
 	 * A recorded bootstrap global, reset between the tests.
 	 *
 	 * @param string $name The global's name.

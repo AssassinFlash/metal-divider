@@ -231,7 +231,7 @@ function md_kb_endpoint_answer( array $input ): array {
 	$answer = md_kb_endpoint_call_model( md_kb_endpoint_messages( $q, $context, $history ) );
 
 	if ( is_string( $answer ) ) {
-		$fallback_answer = md_kb_endpoint_pattern_upstream_fallback( $q, $resolved, $pattern );
+		$fallback_answer = md_kb_endpoint_pattern_upstream_fallback( $q, $resolved, $pattern, $results );
 		if ( null === $fallback_answer ) {
 			return array(
 				'status' => 502,
@@ -747,17 +747,19 @@ function md_kb_endpoint_missing_fact_message( string $q, string $context, string
 }
 
 /**
- * Deterministic fallback from published WooCommerce pattern facts when the
- * upstream model returns a 5xx/timeout, so a visitor asking about a known
- * pattern or asking for catalog recommendations still receives a grounded
- * answer instead of a 502 chat handoff.
+ * Deterministic fallback from published WooCommerce pattern facts or top
+ * Rapls knowledge entries when the upstream model returns a 5xx/timeout,
+ * so a visitor asking about a known pattern, asking for catalog
+ * recommendations, or asking a covered FAQ question still receives a
+ * grounded answer instead of a 502 chat handoff.
  *
  * @param string                                                         $q        The visitor's question.
  * @param string                                                         $resolved The resolved pattern context.
  * @param array{context: string, sources: array<int, string>, hits: int} $pattern  The pattern lookup or recommendation result.
- * @return array{answer: string, handoff: bool, reason: string}|null The deterministic reply, or null when no pattern fact covers the question.
+ * @param array<int, mixed>                                              $results  The retrieved knowledge hits.
+ * @return array{answer: string, handoff: bool, reason: string}|null The deterministic reply, or null when no published fact covers the question.
  */
-function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, array $pattern ): ?array {
+function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, array $pattern, array $results = array() ): ?array {
 	if ( md_kb_endpoint_wants_human( $q ) || md_kb_endpoint_asks_unverified_fact( $q ) || md_kb_endpoint_asks_commercial( $q ) || md_kb_endpoint_asks_shipping( $q ) ) {
 		return null;
 	}
@@ -792,6 +794,24 @@ function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, 
 		if ( '' !== $partial ) {
 			return array(
 				'answer'  => $partial,
+				'handoff' => false,
+				'reason'  => 'none',
+			);
+		}
+	}
+	foreach ( $results as $hit ) {
+		if ( ! is_array( $hit ) || 'knowledge' !== ( $hit['type'] ?? '' ) ) {
+			continue;
+		}
+		$content = trim( (string) ( $hit['content'] ?? '' ) );
+		if ( '' === $content ) {
+			continue;
+		}
+		$paragraphs = preg_split( '/\n\s*\n/u', $content );
+		$summary    = is_array( $paragraphs ) && isset( $paragraphs[0] ) ? trim( $paragraphs[0] ) : $content;
+		if ( '' !== $summary ) {
+			return array(
+				'answer'  => $summary,
 				'handoff' => false,
 				'reason'  => 'none',
 			);
@@ -2568,9 +2588,11 @@ function md_kb_endpoint_call_model( array $messages, float $deadline = 0.0 ): ar
 		$deadline = microtime( true ) + 45.0;
 	}
 
-	$attempts = 0;
+	$attempts    = 0;
+	$last_status = 0;
 	while ( true ) {
 		++$attempts;
+		$model    = 1 < $attempts && 503 === $last_status ? 'deepseek-v4-pro' : 'deepseek-flash';
 		$response = wp_remote_post(
 			'https://api.deepseek.com/chat/completions',
 			array(
@@ -2581,7 +2603,7 @@ function md_kb_endpoint_call_model( array $messages, float $deadline = 0.0 ): ar
 				),
 				'body'    => (string) wp_json_encode(
 					array(
-						'model'           => 'deepseek-flash',
+						'model'           => $model,
 						'messages'        => $messages,
 						'stream'          => false,
 						'response_format' => array( 'type' => 'json_object' ),
@@ -2591,11 +2613,13 @@ function md_kb_endpoint_call_model( array $messages, float $deadline = 0.0 ): ar
 		);
 
 		if ( is_wp_error( $response ) ) {
-			$kind      = 'network_error';
-			$status    = 0;
-			$retryable = true;
+			$kind        = 'network_error';
+			$status      = 0;
+			$last_status = 0;
+			$retryable   = true;
 		} else {
-			$status = (int) wp_remote_retrieve_response_code( $response );
+			$status      = (int) wp_remote_retrieve_response_code( $response );
+			$last_status = $status;
 			if ( 200 === $status ) {
 				$body    = json_decode( wp_remote_retrieve_body( $response ), true );
 				$content = $body['choices'][0]['message']['content'] ?? null;
