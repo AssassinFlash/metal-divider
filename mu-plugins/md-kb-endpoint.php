@@ -2365,6 +2365,27 @@ function md_kb_endpoint_retrieve_from_db( string $q ): array {
 		'could',
 		'please',
 		'tell',
+		'do',
+		'is',
+		'in',
+		'to',
+		'of',
+		'on',
+		'at',
+		'by',
+		'or',
+		'be',
+		'as',
+		'it',
+		'we',
+		'my',
+		'me',
+		'an',
+		'so',
+		'up',
+		'if',
+		'no',
+		'us',
 	);
 	$tokens    = array_values( array_diff( $tokens, $stopwords ) );
 
@@ -2414,9 +2435,13 @@ function md_kb_endpoint_retrieve_from_db( string $q ): array {
 		}
 	);
 
-	$results = array();
-	$blocks  = array();
+	$results   = array();
+	$blocks    = array();
+	$top_score = isset( $scored[0]['score'] ) ? (float) $scored[0]['score'] : 0.0;
 	foreach ( array_slice( $scored, 0, 5 ) as $entry ) {
+		if ( $top_score > 0.0 && $entry['score'] < $top_score * 0.5 ) {
+			continue;
+		}
 		$hit       = $entry['hit'];
 		$results[] = $hit;
 		$blocks[]  = '### ' . $hit['title'] . "\n" . $hit['content'];
