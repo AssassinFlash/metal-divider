@@ -158,8 +158,9 @@ function md_wecom_notify_handle( array $input ): array {
 	}
 
 	try {
-		$notified = md_wecom_notify_notified_chats();
-		if ( array_key_exists( $chat_id, $notified ) && $now - $notified[ $chat_id ] < $gate['window'] ) {
+		$notified     = md_wecom_notify_notified_chats();
+		$cooldown_key = 'chat.visitor_email_saved' === $event_name ? 'email:' . $chat_id : $chat_id;
+		if ( array_key_exists( $cooldown_key, $notified ) && $now - $notified[ $cooldown_key ] < $gate['window'] ) {
 			md_wecom_notify_log_skip( $chat_id, $event_name, 'cooldown' );
 			return array(
 				'status' => 200,
@@ -200,7 +201,7 @@ function md_wecom_notify_handle( array $input ): array {
 			);
 		}
 
-		md_wecom_notify_remember_chat( $chat_id );
+		md_wecom_notify_remember_chat( $cooldown_key );
 		md_wecom_notify_remember_send();
 	} finally {
 		md_wecom_notify_unlock( $chat_id );
@@ -484,9 +485,11 @@ function md_wecom_notify_gate( string $event_name, array $chat, array $body, int
  * read: the map is [chat ID => the time of its last delivered card], and
  * an entry older than the hour that holds both windows is dropped. A
  * record's age, not a cron, ends a chat's cooldown; an offline event or
- * a skipped send never writes one (#154).
+ * a skipped send never writes one (#154). Email-save cards use a distinct
+ * `'email:<id>'` key so saving an email never blocks an operator transfer
+ * card (or vice versa) on the same chat.
  *
- * @return array<int, int> The chat IDs inside the horizon, each with the time it last notified.
+ * @return array<int|string, int> The chat keys inside the horizon, each with the time it last notified.
  */
 function md_wecom_notify_notified_chats(): array {
 	$stored = get_option( 'md_wecom_notify_chats', array() );
@@ -496,8 +499,13 @@ function md_wecom_notify_notified_chats(): array {
 	$horizon = time() - 3600;
 	$chats   = array();
 	foreach ( $stored as $id => $when ) {
-		if ( is_numeric( $id ) && is_int( $when ) && $when > $horizon ) {
+		if ( ! is_int( $when ) || $when <= $horizon ) {
+			continue;
+		}
+		if ( is_numeric( $id ) ) {
 			$chats[ (int) $id ] = $when;
+		} elseif ( 1 === preg_match( '/^email:\d+$/', $id ) ) {
+			$chats[ $id ] = $when;
 		}
 	}
 	return $chats;
@@ -508,11 +516,11 @@ function md_wecom_notify_notified_chats(): array {
  * records in the same write. This is the only writer: a card that did not
  * leave leaves no record, so the next event can still try.
  *
- * @param int $chat_id The chat that just received a card.
+ * @param int|string $chat_key The chat key that just received a card.
  */
-function md_wecom_notify_remember_chat( int $chat_id ): void {
-	$chats             = md_wecom_notify_notified_chats();
-	$chats[ $chat_id ] = time();
+function md_wecom_notify_remember_chat( int|string $chat_key ): void {
+	$chats              = md_wecom_notify_notified_chats();
+	$chats[ $chat_key ] = time();
 	update_option( 'md_wecom_notify_chats', $chats );
 }
 

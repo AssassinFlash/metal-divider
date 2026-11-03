@@ -210,6 +210,18 @@ function md_chat_email_transcript( int $chat_id ): string {
 		if ( -1 === $user_id ) {
 			continue;
 		}
+		if ( -2 === $user_id ) {
+			if ( str_starts_with( $text, '{' ) && str_ends_with( $text, '}' ) ) {
+				continue;
+			}
+			if ( 1 === preg_match( '/^Hi\s*[—–-]\s*I[\'’]?m\s+Metal Divider[\'’]?s AI assistant\b/iu', $text ) ) {
+				continue;
+			}
+			$text = trim( (string) preg_replace( '/(?:\R+|\s+)Based on:\s*[^\r\n]+$/u', '', $text ) );
+			if ( '' === $text ) {
+				continue;
+			}
+		}
 		$speaker = 0 === $user_id ? 'Visitor' : ( -2 === $user_id ? 'Assistant' : 'Operator' );
 		$lines[] = $speaker . ': ' . $text;
 	}

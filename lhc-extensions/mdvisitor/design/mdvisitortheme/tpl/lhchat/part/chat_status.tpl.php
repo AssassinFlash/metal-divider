@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261103b', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261103c', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -32,11 +32,9 @@
             <button class="mdv-convert-btn mdv-convert-quote" type="button" data-mdv-open-quote>Request Quote</button>
             <a class="mdv-convert-btn mdv-convert-wa" href="https://wa.me/85264731687" target="_blank" rel="noopener" data-mdv-wa>Chat on WhatsApp</a>
         </div>
-        <?php if ($chat->status == erLhcoreClassModelChat::STATUS_CLOSED_CHAT) : ?>
-        <div class="mdv-closed-actions">
+        <div class="mdv-closed-actions"<?php if ($chat->status != erLhcoreClassModelChat::STATUS_CLOSED_CHAT) : ?> hidden<?php endif; ?>>
             <a class="mdv-new-chat" href="<?php echo erLhcoreClassDesign::baseurl('chat/chatwidget')?>/(department)/<?php echo (int)$chat->dep_id;?>">Start a new chat</a>
         </div>
-        <?php endif; ?>
         <div class="mdv-danger-actions" data-mdv-start-url="<?php echo erLhcoreClassDesign::baseurl('chat/chatwidget')?>/(department)/<?php echo (int)$chat->dep_id;?>">
             <button class="mdv-delete-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mdv-delete-confirm">Delete this conversation</button>
             <div class="mdv-confirm" id="mdv-delete-confirm" role="dialog" aria-modal="true" aria-labelledby="mdv-delete-confirm-text" tabindex="-1" hidden>
@@ -68,7 +66,7 @@
 
     </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261103a', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261103b', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <script>
 (function () {
   var chip = document.querySelector('.mdv-chat-head .mdv-chat-state');
@@ -120,7 +118,16 @@
     var status = document.getElementById('status-chat');
     if (!status) { return; }
     var statusText = status.textContent || '';
-    if ((status.querySelector('h4') || status.querySelector('h6')) && /closed/i.test(statusText)) { setTitle('Metal Divider Support'); setChip('Chat closed', 'closed'); return; }
+    if ((status.querySelector('h4') || status.querySelector('h6')) && /closed/i.test(statusText)) {
+      setTitle('Metal Divider Support');
+      setChip('Chat closed', 'closed');
+      var closedBox = document.querySelector('.mdv-closed-actions');
+      if (closedBox) { closedBox.hidden = false; }
+      var emailBox = document.querySelector('.mdv-email');
+      if (emailBox) { emailBox.hidden = true; }
+      try { window.localStorage.removeItem('mdv:lastChat'); } catch (e) {}
+      return;
+    }
     if (/no logged in support staff|no support staff|no operators/i.test(statusText)) { setTitle('Metal Divider AI'); setChip('AI assistant', 'ai'); return; }
     if (/pending a support staff member|pending confirm|in the queue/i.test(statusText)) { setTitle('Metal Divider AI'); setChip('Connecting you to the team', 'pending'); return; }
     var name = operatorName(status);
@@ -182,6 +189,20 @@
               }
             }
           }
+          var prevNode = el.previousSibling;
+          var nextNode = el.nextSibling;
+          if (prevNode && prevNode.nodeType === 3 && nextNode && nextNode.nodeType === 3) {
+            var prevMatch = (prevNode.nodeValue || '').match(/\[([^\]]+)\]\s*\(\s*$/);
+            var nextMatch = (nextNode.nodeValue || '').match(/^\s*\)/);
+            if (prevMatch && nextMatch) {
+              el.textContent = prevMatch[1].replace(/\*\*/g, '').trim();
+              prevNode.nodeValue = (prevNode.nodeValue || '').slice(0, prevMatch.index);
+              nextNode.nodeValue = (nextNode.nodeValue || '').slice(nextMatch[0].length);
+            }
+          }
+          if (el.textContent && el.textContent.indexOf('**') !== -1) {
+            el.textContent = el.textContent.replace(/\*\*/g, '').trim();
+          }
           el.classList.add('mdv-inline-link');
           el.target = '_top';
           el.rel = 'noopener';
@@ -215,7 +236,7 @@
           var trail = '';
           if (mdLabel && mdUrl) {
             clean = mdUrl.replace(/[.,;:!?]+$/, '');
-            text = mdLabel;
+            text = mdLabel.replace(/\*\*/g, '').trim();
           } else {
             clean = raw.replace(/[.,;:!?]+$/, '');
             text = clean;

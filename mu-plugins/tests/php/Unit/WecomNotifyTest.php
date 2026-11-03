@@ -1524,4 +1524,31 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertStringContainsString( 'architect@example.com', (string) $send_body['textcard']['title'] );
 		$this->assertStringContainsString( 'Email left in chat: architect@example.com', (string) $send_body['textcard']['description'] );
 	}
+
+	/**
+	 * Saving a visitor email uses a separate `'email:<chat_id>'` cooldown key
+	 * so an operator transfer (`chat.genericbot_chat_command_transfer`) on the
+	 * same chat immediately afterwards still delivers its WeCom card.
+	 */
+	public function testEmailSavedDoesNotCooldownOperatorTransferOnSameChat(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH_146' );
+
+		$email_res = md_wecom_notify_visitor_email(
+			146,
+			'lead@example.com',
+			'https://metal-divider.com/pattern/agave/',
+			'Can you send CAD files?'
+		);
+		$this->assertSame( 200, $email_res['status'] );
+		$this->assertSame( array( 'sent' => true ), $email_res['body'] );
+
+		$transfer_res = md_wecom_notify_handle( $this->event( 146 ) );
+		$this->assertSame( 200, $transfer_res['status'] );
+		$this->assertSame( array( 'sent' => true ), $transfer_res['body'] );
+
+		$notified = md_wecom_notify_notified_chats();
+		$this->assertArrayHasKey( 'email:146', $notified );
+		$this->assertArrayHasKey( 146, $notified );
+	}
 }

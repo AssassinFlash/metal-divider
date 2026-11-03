@@ -328,12 +328,55 @@ WHERE d.id = $did";
  * @return void
  */
 function md_chat_delete_forget_wecom_card( int $chat_id ): void {
-	$map = get_option( 'md_wecom_notify_chats', array() );
-	if ( ! is_array( $map ) || ! array_key_exists( $chat_id, $map ) ) {
+	$map       = get_option( 'md_wecom_notify_chats', array() );
+	$email_key = 'email:' . $chat_id;
+	if ( ! is_array( $map ) || ( ! array_key_exists( $chat_id, $map ) && ! array_key_exists( $email_key, $map ) ) ) {
 		return;
 	}
-	unset( $map[ $chat_id ] );
+	unset( $map[ $chat_id ], $map[ $email_key ] );
 	update_option( 'md_wecom_notify_chats', $map, true );
+}
+
+/**
+ * Delete any md_inquiry posts, postmeta, and queued emails created from the
+ * deleted chat conversation so "Delete this conversation" removes all stored
+ * records of the chat across WordPress and Live Helper Chat.
+ *
+ * @param int $chat_id The deleted chat id.
+ * @return void
+ */
+function md_chat_delete_forget_inquiry( int $chat_id ): void {
+	if ( $chat_id < 1 ) {
+		return;
+	}
+	global $wpdb;
+	$posts_table    = $wpdb->prefix . 'posts';
+	$postmeta_table = $wpdb->prefix . 'postmeta';
+	$queue_table    = $wpdb->prefix . 'md_inquiry_mail_queue';
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- table names come from $wpdb->prefix; one cleanup run per deleted chat.
+	$inquiry_ids = $wpdb->get_col(
+		$wpdb->prepare(
+			"SELECT p.ID FROM {$posts_table} p INNER JOIN {$postmeta_table} pm ON p.ID = pm.post_id WHERE p.post_type = %s AND pm.meta_key = %s AND pm.meta_value = %s",
+			'md_inquiry',
+			'_md_chat_id',
+			(string) $chat_id
+		)
+	);
+	if ( is_array( $inquiry_ids ) ) {
+		foreach ( $inquiry_ids as $raw_id ) {
+			$post_id = (int) $raw_id;
+			if ( $post_id < 1 ) {
+				continue;
+			}
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$queue_table} WHERE inquiry_id = %d", $post_id ) );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$postmeta_table} WHERE post_id = %d", $post_id ) );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$posts_table} WHERE ID = %d AND post_type = %s", $post_id, 'md_inquiry' ) );
+			if ( function_exists( 'clean_post_cache' ) ) {
+				clean_post_cache( $post_id );
+			}
+		}
+	}
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 }
 
 /**
@@ -481,6 +524,7 @@ function md_chat_delete_respond( $request ) {
 
 	set_transient( $rate_key, 1, 60 );
 	md_chat_delete_forget_wecom_card( $chat_id );
+	md_chat_delete_forget_inquiry( $chat_id );
 
 	if ( (int) $row->user_id > 0 ) {
 		$wpdb->query( md_chat_delete_userdep_sql( (int) $row->user_id ) );

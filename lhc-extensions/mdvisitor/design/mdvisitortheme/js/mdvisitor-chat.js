@@ -384,6 +384,24 @@
     }
   }
 
+  function latestRecommendedPattern() {
+    var links = document.querySelectorAll('#messages .message-admin .msg-body a[href*="/pattern/"]');
+    for (var i = links.length - 1; i >= 0; i -= 1) {
+      var href = links[i].getAttribute('href') || '';
+      var m = href.match(/\/pattern\/([a-z0-9-]+)\/?/i);
+      if (m && m[1]) {
+        var label = (links[i].textContent || '').replace(/\*\*/g, '').trim();
+        var isUrlLabel = /^(?:https?:\/\/|\/)/i.test(label);
+        return {
+          patternSlug: m[1].toLowerCase(),
+          patternName: isUrlLabel ? '' : label,
+          patternUrl: href
+        };
+      }
+    }
+    return { patternSlug: '', patternName: '', patternUrl: '' };
+  }
+
   document.addEventListener('click', function (event) {
     var quoteBtn = event.target && event.target.closest ? event.target.closest('[data-mdv-open-quote]') : null;
     if (!quoteBtn) {
@@ -391,7 +409,14 @@
     }
     event.preventDefault();
     if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'mdv_open_quote', pageUrl: currentPageUrl }, window.location.origin);
+      var rec = latestRecommendedPattern();
+      window.parent.postMessage({
+        type: 'mdv_open_quote',
+        pageUrl: currentPageUrl,
+        patternSlug: rec.patternSlug,
+        patternName: rec.patternName,
+        patternUrl: rec.patternUrl
+      }, window.location.origin);
     } else {
       window.open('/inquiry/', '_blank', 'noopener');
     }

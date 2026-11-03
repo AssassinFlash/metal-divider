@@ -148,7 +148,9 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 	if ( md_kb_endpoint_asks_shipping( $q ) ) {
-		$shipping_sources = array_merge( $resolved_sources, array( 'Packing and shipping' ) );
+		$shipping_sources = '' !== md_kb_endpoint_partial_fact_message( $q, $resolved )
+			? array_merge( $resolved_sources, array( 'Packing and shipping' ) )
+			: array( 'Packing and shipping' );
 		return array(
 			'status' => 200,
 			'body'   => array(
@@ -158,6 +160,9 @@ function md_kb_endpoint_answer( array $input ): array {
 				'source_labels' => md_kb_endpoint_source_labels( $shipping_sources ),
 			),
 		);
+	}
+	if ( md_kb_endpoint_asks_pattern_check_prompt( $q ) ) {
+		return md_kb_endpoint_pattern_check_prompt_reply( $resolved, $resolved_sources );
 	}
 	// A confirmed fact the question asked for stays. Neither a commercial
 	// commitment nor an unpublished project fact is invented by the model.
@@ -252,9 +257,6 @@ function md_kb_endpoint_answer( array $input ): array {
 		&& $answer['handoff']
 		&& 'human_request' !== $answer['reason']
 		&& ! md_kb_endpoint_wants_human( $q )
-		&& ! md_kb_endpoint_asks_unverified_fact( $q )
-		&& ! md_kb_endpoint_asks_commercial( $q )
-		&& ! md_kb_endpoint_asks_shipping( $q )
 		&& md_kb_endpoint_no_answer_message() !== $answer['answer']
 	) {
 		$answer['handoff'] = false;
@@ -278,7 +280,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		&& ! md_kb_endpoint_answer_uses_resolved_pattern( $q, $resolved, $answer['answer'] );
 	$sources    = ( array() !== $resolved_sources && ! $use_kb ) ? $resolved_sources : $kb_sources;
 	$labels     = md_kb_endpoint_source_labels( $sources );
-	$msg        = $answer['answer'];
+	$msg        = md_kb_endpoint_normalize_links( $answer['answer'] );
 	if ( ! $answer['handoff'] && array() !== $labels ) {
 		$msg .= md_kb_endpoint_source_footer( $sources );
 	}
@@ -472,6 +474,90 @@ function md_kb_endpoint_asks_dimensions( string $q ): bool {
 }
 
 /**
+ * Whether the visitor sent the Start screen's "Ask about a pattern" starter
+ * prompt ("I have a pattern in mind. Can you help me check it?") without
+ * adding a specific pattern name or question.
+ *
+ * @param string $q The visitor's question.
+ * @return bool Whether the question is the starter prompt.
+ */
+function md_kb_endpoint_asks_pattern_check_prompt( string $q ): bool {
+	return 1 === preg_match( '/^\s*i\s+have\s+a\s+pattern\s+in\s+mind[.!]?\s+can\s+you\s+help\s+me\s+check\s+it\??\s*$/iu', $q );
+}
+
+/**
+ * Deterministic response for the "Ask about a pattern" starter prompt: if
+ * the visitor is already on a pattern page, summarizes that pattern's
+ * published facts and invites follow-up questions; otherwise asks them to
+ * name the pattern or open its page.
+ *
+ * @param string             $resolved         The resolved pattern context.
+ * @param array<int, string> $resolved_sources The resolved pattern sources.
+ * @return array{status: int, body: array<string, mixed>} The endpoint reply.
+ */
+function md_kb_endpoint_pattern_check_prompt_reply( string $resolved, array $resolved_sources ): array {
+	if ( '' !== $resolved ) {
+		$blocks = md_kb_endpoint_pattern_fact_blocks( $resolved );
+		if ( isset( $blocks[0] ) ) {
+			$block = $blocks[0];
+			$name  = md_kb_endpoint_pattern_display_name( $block );
+			$oa    = trim( (string) ( $block['open_area'] ?? '' ) );
+			$fit   = str_replace( array( '-', '_' ), ' ', trim( (string) ( $block['best_fit'] ?? '' ) ) );
+			$parts = array( 'You are viewing ' . $name . ' (' . MD_KB_ENDPOINT_MATERIAL . ')' );
+			if ( '' !== $oa ) {
+				$parts[] = 'open area: ' . $oa;
+			}
+			if ( '' !== $fit ) {
+				$parts[] = 'best fit: ' . $fit;
+			}
+			$msg    = implode( ', ', $parts ) . '. Tell me what you would like to check — or share another pattern name or code.';
+			$labels = md_kb_endpoint_source_labels( $resolved_sources );
+			if ( array() !== $labels ) {
+				$msg .= md_kb_endpoint_source_footer( $resolved_sources );
+			}
+			return array(
+				'status' => 200,
+				'body'   => array(
+					'msg'           => $msg,
+					'action'        => '',
+					'sources'       => $resolved_sources,
+					'source_labels' => $labels,
+				),
+			);
+		}
+	}
+	return array(
+		'status' => 200,
+		'body'   => array(
+			'msg'           => 'Of course — share the pattern name or code (or open the pattern page) and tell me what you would like to check, such as open area, visual density, repeat behavior, series, or application.',
+			'action'        => '',
+			'sources'       => array(),
+			'source_labels' => array(),
+		),
+	);
+}
+
+/**
+ * Normalizes markdown links in model replies so bold markers inside link
+ * labels (`[**Name**](url)`) and spaces between `]` and `(` (`[Name] (url)`)
+ * render cleanly as clickable links in the visitor widget.
+ *
+ * @param string $text The reply text.
+ * @return string The normalized reply text.
+ */
+function md_kb_endpoint_normalize_links( string $text ): string {
+	$text = (string) preg_replace_callback(
+		'/\[([^\]]+)\]\s*\((https?:\/\/[^\s)]+|\/[a-z0-9][a-z0-9-\/]*)\)/iu',
+		static function ( array $m ): string {
+			$label = trim( str_replace( '**', '', $m[1] ) );
+			return '[' . $label . '](' . $m[2] . ')';
+		},
+		$text
+	);
+	return $text;
+}
+
+/**
  * The direct reply for a showroom visit. Owner decided visits are welcome
  * (2026-10-27); no street address is invented, and the team confirms time.
  *
@@ -625,8 +711,9 @@ function md_kb_endpoint_guard_unverified_cad( string $q, string $context, array 
 	if ( ! md_kb_endpoint_unverified_cad_must_transfer( $q, $context ) ) {
 		return $answer;
 	}
+	$was_handoff       = $answer['handoff'];
 	$answer['handoff'] = true;
-	if ( 'human_request' !== $answer['reason'] && ( '' === $answer['reason'] || 'none' === $answer['reason'] ) ) {
+	if ( $was_handoff && 'human_request' !== $answer['reason'] && ( '' === $answer['reason'] || 'none' === $answer['reason'] ) ) {
 		$answer['reason'] = 'no_knowledge';
 	}
 	$reply   = md_kb_endpoint_without_drawing_promise( $answer['answer'] );
@@ -800,7 +887,14 @@ function md_kb_endpoint_answer_uses_resolved_pattern( string $q, string $resolve
  * @return array{answer: string, handoff: bool, reason: string}|null The deterministic reply, or null when no published fact covers the question.
  */
 function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, array $pattern, array $results = array() ): ?array {
-	if ( md_kb_endpoint_wants_human( $q ) || md_kb_endpoint_asks_unverified_fact( $q ) || md_kb_endpoint_asks_commercial( $q ) || md_kb_endpoint_asks_shipping( $q ) ) {
+	if ( md_kb_endpoint_wants_human( $q ) ) {
+		return array(
+			'answer'  => 'I am connecting you with our team — someone will follow up with you shortly.',
+			'handoff' => true,
+			'reason'  => 'human_request',
+		);
+	}
+	if ( md_kb_endpoint_asks_unverified_fact( $q ) || md_kb_endpoint_asks_commercial( $q ) || md_kb_endpoint_asks_shipping( $q ) ) {
 		return null;
 	}
 	if ( md_kb_endpoint_asks_recommendation( $q ) && 0 < $pattern['hits'] ) {
@@ -848,7 +942,7 @@ function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, 
 			continue;
 		}
 		$paragraphs = preg_split( '/\n\s*\n/u', $content );
-		$summary    = is_array( $paragraphs ) && isset( $paragraphs[0] ) ? trim( $paragraphs[0] ) : $content;
+		$summary    = is_array( $paragraphs ) ? trim( $paragraphs[0] ) : $content;
 		if ( '' !== $summary ) {
 			return array(
 				'answer'  => $summary,
@@ -1474,7 +1568,7 @@ function md_kb_endpoint_page_context( mixed $page_url ): array {
 	if ( ! $post instanceof WP_Post ) {
 		return $empty;
 	}
-	if ( 'publish' !== $post->post_status || 'product' !== $post->post_type ) {
+	if ( 'publish' !== $post->post_status || 'product' !== $post->post_type || md_kb_endpoint_is_catalog_excluded( (int) $post->ID ) ) {
 		return $empty;
 	}
 	$sku  = md_kb_endpoint_product_sku( (int) $post->ID );
@@ -2400,14 +2494,24 @@ function md_kb_endpoint_retrieve_from_db( string $q ): array {
 		if ( 0 >= $id || ( '' === $title && '' === $content ) ) {
 			continue;
 		}
-		$score = 0.0;
+		$score          = 0.0;
+		$matched_tokens = 0;
 		foreach ( $tokens as $token ) {
+			$token_hit = false;
 			if ( '' !== $title && false !== mb_stripos( $title, $token ) ) {
-				$score += 6.0;
+				$score    += 6.0;
+				$token_hit = true;
 			}
 			if ( '' !== $content && false !== mb_stripos( $content, $token ) ) {
-				$score += 2.0;
+				$score    += 2.0;
+				$token_hit = true;
 			}
+			if ( $token_hit ) {
+				++$matched_tokens;
+			}
+		}
+		if ( $matched_tokens >= 2 ) {
+			$score += 4.0 * ( $matched_tokens - 1 );
 		}
 		if ( $score > 0.0 ) {
 			$scored[] = array(
@@ -2439,7 +2543,7 @@ function md_kb_endpoint_retrieve_from_db( string $q ): array {
 	$blocks    = array();
 	$top_score = isset( $scored[0]['score'] ) ? (float) $scored[0]['score'] : 0.0;
 	foreach ( array_slice( $scored, 0, 5 ) as $entry ) {
-		if ( $top_score > 0.0 && $entry['score'] < $top_score * 0.5 ) {
+		if ( $top_score > 0.0 && $entry['score'] < $top_score * 0.6 ) {
 			continue;
 		}
 		$hit       = $entry['hit'];
@@ -3038,7 +3142,7 @@ function md_kb_endpoint_tune_curl( mixed $handle, array $parsed_args, string $ur
 	if ( 'https://api.deepseek.com/chat/completions' !== $url || ! function_exists( 'curl_setopt' ) ) {
 		return;
 	}
-	if ( ! is_resource( $handle ) && ! ( is_object( $handle ) && 'CurlHandle' === get_class( $handle ) ) ) {
+	if ( ! $handle instanceof \CurlHandle ) {
 		return;
 	}
 	// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt -- WordPress's own http_api_curl hook passes the active cURL handle for transport tuning.

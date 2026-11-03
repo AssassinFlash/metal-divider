@@ -353,6 +353,36 @@ final class ChatDeleteTest extends TestCase {
 	}
 
 	/**
+	 * Deleting a conversation drops both the operator-transfer cooldown key
+	 * (`$chat_id`) and the email-save cooldown key (`'email:' . $chat_id`),
+	 * and removes any md_inquiry posts, postmeta, and queued emails created
+	 * from that chat.
+	 */
+	public function test_forget_wecom_card_and_inquiry_cleanup_remove_email_cooldown_and_inquiry_rows(): void {
+		$GLOBALS['md_mu_test_options']['md_wecom_notify_chats'] = array(
+			42         => 1793121891,
+			'email:42' => 1793121895,
+			99         => 1793121900,
+		);
+		md_chat_delete_forget_wecom_card( 42 );
+		self::assertSame( array( 99 => 1793121900 ), get_option( 'md_wecom_notify_chats', array() ) );
+
+		$GLOBALS['wpdb']->queries           = array();
+		$GLOBALS['md_mu_test_db_responder'] = static function ( string $sql ): mixed {
+			if ( str_contains( $sql, "WHERE p.post_type = 'md_inquiry' AND pm.meta_key = '_md_chat_id' AND pm.meta_value = '42'" ) ) {
+				return array( '501' );
+			}
+			return 1;
+		};
+
+		md_chat_delete_forget_inquiry( 42 );
+
+		self::assertContains( 'DELETE FROM wp_md_inquiry_mail_queue WHERE inquiry_id = 501', $GLOBALS['wpdb']->queries );
+		self::assertContains( 'DELETE FROM wp_postmeta WHERE post_id = 501', $GLOBALS['wpdb']->queries );
+		self::assertContains( "DELETE FROM wp_posts WHERE ID = 501 AND post_type = 'md_inquiry'", $GLOBALS['wpdb']->queries );
+	}
+
+	/**
 	 * The window's key is a digest, not the address: reading the store
 	 * cannot learn who asked.
 	 */

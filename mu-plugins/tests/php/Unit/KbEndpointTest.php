@@ -3646,6 +3646,80 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * Covers the starter pattern-check prompt, human-request fallback on
+	 * upstream failure, shipping sources without pattern fact leakage on a PDP,
+	 * markdown link normalization, and catalog exclusion on page_url.
+	 */
+	public function test_starter_prompt_human_fallback_shipping_sources_and_link_normalization(): void {
+		$this->configure_kb( array(), $this->model_reply( 'OK', false, 'none' ) );
+
+		// 1. Starter prompt without a resolved pattern asks the visitor to name one.
+		$starter = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q' => 'I have a pattern in mind. Can you help me check it?',
+				),
+			)
+		);
+		self::assertSame( 200, $starter['status'] );
+		self::assertSame( '', $starter['body']['action'] );
+		self::assertSame( array(), $starter['body']['sources'] );
+		self::assertStringContainsString( 'share the pattern name or code', (string) $starter['body']['msg'] );
+
+		// 2. Explicit human request still transfers even when DeepSeek returns 503.
+		$GLOBALS['md_mu_test_http_responder'] = static fn (): array => array(
+			'response' => array(
+				'code'    => 503,
+				'message' => 'Service Unavailable',
+			),
+			'body'     => '',
+		);
+
+		$human_out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q' => "I'd like to speak with a person, please.",
+				),
+			)
+		);
+		self::assertSame( 200, $human_out['status'] );
+		self::assertSame( 'transfer_operator', $human_out['body']['action'] );
+		self::assertStringContainsString( 'connecting you with our team', (string) $human_out['body']['msg'] );
+
+		// 3. Shipping question on a PDP cites only Packing and shipping unless a pattern fact was asked.
+		$this->plant_pattern(
+			array(
+				'ID'         => 272,
+				'post_title' => 'Agave | Architectural Metal Screen Pattern',
+				'post_name'  => 'agave',
+				'sku'        => 'Agave',
+				'fields'     => array(
+					'open_area' => '49.1',
+				),
+			)
+		);
+		$ship_out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => 'Do you ship to my country?',
+					'page_url' => 'https://metal-divider.com/pattern/agave/',
+				),
+			)
+		);
+		self::assertSame( 200, $ship_out['status'] );
+		self::assertSame( array( 'Packing and shipping' ), $ship_out['body']['sources'] );
+
+		// 4. Link normalization strips bold markers inside markdown links and spaces before parentheses.
+		self::assertSame(
+			'Try [Acanthus](https://metal-divider.com/pattern/acanthus/) or [Apiary](/pattern/apiary/).',
+			md_kb_endpoint_normalize_links( 'Try [**Acanthus**] (https://metal-divider.com/pattern/acanthus/) or [**Apiary**](/pattern/apiary/).' )
+		);
+	}
+
+	/**
 	 * A recorded bootstrap global, reset between the tests.
 	 *
 	 * @param string $name The global's name.

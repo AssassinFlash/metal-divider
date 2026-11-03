@@ -115,21 +115,23 @@
 			}
 		}
 
-		function closeCard() {
+		function closeCard( restoreFocus ) {
 			if ( card.hidden ) {
 				return;
 			}
 			card.hidden = true;
 			launcher.setAttribute( 'aria-expanded', 'false' );
 			launcher.hidden = false;
-			launcher.focus();
+			if ( restoreFocus !== false ) {
+				launcher.focus();
+			}
 		}
 
 		launcher.addEventListener( 'click', openCard );
 
 		document.addEventListener( 'keydown', function ( event ) {
 			if ( event.key === 'Escape' ) {
-				closeCard();
+				closeCard( true );
 			}
 		} );
 
@@ -141,7 +143,7 @@
 				return;
 			}
 			if ( event.data === 'lhc_chat_closed_explicit' ) {
-				closeCard();
+				closeCard( true );
 				return;
 			}
 			if ( event.data && event.data.type === 'mdv_request_host_context' ) {
@@ -149,19 +151,41 @@
 				return;
 			}
 			if ( event.data === 'mdv_open_quote' || ( event.data && event.data.type === 'mdv_open_quote' ) ) {
-				closeCard();
+				closeCard( false );
 				var pdpTrigger = document.querySelector( '.pdp-quote-bar a[href="#open-quote"], .pdp-hero a[href="#open-quote"]' );
-				if ( pdpTrigger && typeof pdpTrigger.click === 'function' ) {
-					pdpTrigger.click();
-					return;
+				var patternCode = pdpTrigger ? ( pdpTrigger.getAttribute( 'data-pattern-code' ) || '' ) : '';
+				var patternSlug = pdpTrigger ? ( pdpTrigger.getAttribute( 'data-pattern-slug' ) || '' ) : '';
+				var patternName = pdpTrigger ? ( pdpTrigger.getAttribute( 'data-pattern-name' ) || '' ) : '';
+				var patternThumb = pdpTrigger ? ( pdpTrigger.getAttribute( 'data-pattern-thumb' ) || pdpTrigger.getAttribute( 'data-quote-thumb' ) || '' ) : '';
+				if ( !patternSlug && event.data && typeof event.data === 'object' ) {
+					var chatSlug = typeof event.data.patternSlug === 'string' ? event.data.patternSlug.trim().toLowerCase() : '';
+					var chatName = typeof event.data.patternName === 'string' ? event.data.patternName.trim() : '';
+					if ( !chatSlug && typeof event.data.pageUrl === 'string' ) {
+						var pageMatch = event.data.pageUrl.match( /\/pattern\/([a-z0-9-]+)\/?/i );
+						if ( pageMatch && pageMatch[1] ) {
+							chatSlug = pageMatch[1].toLowerCase();
+						}
+					}
+					if ( chatSlug ) {
+						patternSlug = chatSlug;
+						patternName = chatName;
+						var cardTrigger = document.querySelector( '[data-pattern-slug="' + chatSlug.replace( /["\\]/g, '' ) + '"]' );
+						if ( cardTrigger ) {
+							patternCode = cardTrigger.getAttribute( 'data-pattern-code' ) || '';
+							patternThumb = cardTrigger.getAttribute( 'data-pattern-thumb' ) || cardTrigger.getAttribute( 'data-quote-thumb' ) || '';
+						}
+					}
 				}
 				window.dispatchEvent(
 					new CustomEvent( 'open-quote', {
 						detail: {
 							source: 'ai_chat_widget',
-							patternCode: '',
-							patternSlug: '',
-							patternThumb: '',
+							sourceModule: 'ai_chat_widget',
+							sourceButton: 'request_quote',
+							patternCode: patternCode,
+							patternSlug: patternSlug,
+							patternName: patternName,
+							patternThumb: patternThumb,
 							quoteIntent: ''
 						}
 					} )

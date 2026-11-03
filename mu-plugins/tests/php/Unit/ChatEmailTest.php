@@ -477,6 +477,40 @@ namespace Md\Mu\Tests\Unit {
 
 			unset( $GLOBALS['md_mu_test_lh_msgs'] );
 		}
+
+		/**
+		 * Strips the static opening greeting, raw JSON status payloads, and
+		 * trailing "Based on:" footers from bot messages in the saved transcript.
+		 */
+		public function test_transcript_strips_bot_greeting_json_payloads_and_based_on_footer(): void {
+			$this->answer_row_with( null );
+			$GLOBALS['md_mu_test_lh_msgs'] = array(
+				array(
+					'user_id' => -2,
+					'msg'     => 'Hi — I’m Metal Divider’s AI assistant. Share a pattern name or code, or ask about 304 / 316 stainless steel and custom sizing.',
+				),
+				array(
+					'user_id' => -2,
+					'msg'     => '{"status":"pending"}',
+				),
+				array(
+					'user_id' => 0,
+					'msg'     => 'What is the open area of Apiary?',
+				),
+				array(
+					'user_id' => -2,
+					'msg'     => "Apiary has a published open area of 33%.\n\nBased on: Pattern Apiary",
+				),
+			);
+
+			$transcript = md_chat_email_transcript( 77 );
+			self::assertSame(
+				"Visitor: What is the open area of Apiary?\nAssistant: Apiary has a published open area of 33%.",
+				$transcript
+			);
+
+			unset( $GLOBALS['md_mu_test_lh_msgs'] );
+		}
 	}
 }
 
