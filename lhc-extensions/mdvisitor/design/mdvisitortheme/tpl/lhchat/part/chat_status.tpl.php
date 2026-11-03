@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261103a', ENT_QUOTES, 'UTF-8'); ?>" />
+<link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-chat.css?v=20261103b', ENT_QUOTES, 'UTF-8'); ?>" />
 <div class="row" >
     <div class="col-12">
 
@@ -165,6 +165,28 @@
     var bodies = document.querySelectorAll('#messages .message-admin .msg-body');
     var re = /\[([^\]]+)\]\((https?:\/\/(?:www\.|staging\.)?metal-divider\.com(?:\/[^\s)<>"']*)?|\/[a-z0-9][a-z0-9-\/]*)\)|https?:\/\/(?:www\.|staging\.)?metal-divider\.com\/[^\s)<>"']+|\/(?:pattern|product|collections)\/[a-z0-9-]+\/?/gi;
     for (var i = 0; i < bodies.length; i += 1) {
+      var existingLinks = bodies[i].querySelectorAll('a[href]');
+      for (var k = 0; k < existingLinks.length; k += 1) {
+        var el = existingLinks[k];
+        if (el.closest && el.closest('.mdv-sources')) { continue; }
+        var href = el.getAttribute('href') || '';
+        if (/^(?:https?:\/\/(?:www\.|staging\.)?metal-divider\.com\/|\/)/i.test(href)) {
+          var cleanHref = href.replace(/[.,;:!?]+$/, '');
+          if (cleanHref !== href) {
+            var trailHref = href.slice(cleanHref.length);
+            el.setAttribute('href', cleanHref);
+            if ((el.textContent || '') === href) {
+              el.textContent = cleanHref;
+              if (el.parentNode) {
+                el.parentNode.insertBefore(document.createTextNode(trailHref), el.nextSibling);
+              }
+            }
+          }
+          el.classList.add('mdv-inline-link');
+          el.target = '_top';
+          el.rel = 'noopener';
+        }
+      }
       var walker = document.createTreeWalker(bodies[i], NodeFilter.SHOW_TEXT, null, false);
       var textNodes = [];
       var n = walker.nextNode();

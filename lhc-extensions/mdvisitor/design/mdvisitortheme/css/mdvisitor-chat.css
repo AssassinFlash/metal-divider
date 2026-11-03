@@ -361,14 +361,16 @@ body.widget-chat .mdv-convert-btn:focus-visible{
   outline:2px solid #d4b483;
   outline-offset:2px;
 }
-body.widget-chat #messagesBlock .message-row.message-admin .msg-body a.mdv-inline-link{
+body.widget-chat #messagesBlock .message-row.message-admin .msg-body a.mdv-inline-link,
+body.widget-chat #messagesBlock .message-row.message-admin .msg-body a.link{
   color:#7a5c28;
   font-weight:600;
   text-decoration:underline;
   text-underline-offset:2px;
-  word-break:break-all;
+  overflow-wrap:break-word;
 }
-body.widget-chat #messagesBlock .message-row.message-admin .msg-body a.mdv-inline-link:hover{
+body.widget-chat #messagesBlock .message-row.message-admin .msg-body a.mdv-inline-link:hover,
+body.widget-chat #messagesBlock .message-row.message-admin .msg-body a.link:hover{
   color:#1b3b2c;
 }
 

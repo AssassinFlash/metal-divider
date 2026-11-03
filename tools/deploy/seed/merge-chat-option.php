@@ -58,7 +58,7 @@ if ($readback !== $merged) {
 // Keep lh_generic_bot_rest_api bearer tokens synchronized with the live WordPress
 // options on the target host so LHC webhook/bot calls never drift out of sync.
 $rest_sync = array(
-    'md_wecom_notify' => array('id' => 1, 'key' => 'webhook_token'),
+    'md_wecom_notify' => array('id' => 1, 'key' => 'bearer_token'),
     'md_kb_endpoint'  => array('id' => 3, 'key' => 'bearer_token'),
 );
 if (isset($rest_sync[$name])) {
@@ -82,6 +82,23 @@ if (isset($rest_sync[$name])) {
                         array('configuration' => wp_json_encode($cfg)),
                         array('id' => $rest_id)
                     );
+                }
+            }
+            if ($rest_id === 1) {
+                $raw_actions = $wpdb->get_var('SELECT actions FROM lh_generic_bot_trigger WHERE id = 1');
+                if (is_string($raw_actions) && $raw_actions !== '') {
+                    $actions = json_decode($raw_actions, true);
+                    if (is_array($actions) && isset($actions[0]['content']) && is_array($actions[0]['content'])) {
+                        if (!isset($actions[0]['content']['attr_options']) || !is_array($actions[0]['content']['attr_options'])) {
+                            $actions[0]['content']['attr_options'] = array();
+                        }
+                        $actions[0]['content']['attr_options']['no_body'] = true;
+                        $wpdb->update(
+                            'lh_generic_bot_trigger',
+                            array('actions' => wp_json_encode($actions)),
+                            array('id' => 1)
+                        );
+                    }
                 }
             }
         }

@@ -3432,6 +3432,116 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * Requesting a specific series ("geometric") ranks matching geometric
+	 * patterns above non-matching series ("abstract") even when the abstract
+	 * pattern's open area and summary match "privacy", and a recommendation
+	 * backed by published patterns keeps the AI session active (action: '').
+	 */
+	public function test_series_specific_recommendation_outscores_other_series_and_keeps_bot_active(): void {
+		$this->configure_kb(
+			array(),
+			$this->model_reply(
+				'Recommended geometric options: [Orchid Lattice](https://metal-divider.com/pattern/orchid-lattice/) (29% open area) and [Indian Nights](https://metal-divider.com/pattern/indian-nights/) (32.32% open area). Outdoor privacy suitability is being checked with the team.',
+				true,
+				'no_knowledge'
+			)
+		);
+		$this->plant_pattern(
+			array(
+				'ID'         => 261,
+				'post_title' => 'Apiary | Architectural Metal Screen Pattern',
+				'post_name'  => 'apiary',
+				'sku'        => 'Apiary',
+				'fields'     => array(
+					'open_area'       => '33',
+					'visual_density'  => 'balanced',
+					'repeat_behavior' => 'repeating',
+					'motifs'          => array( 'abstract' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'gated',
+					'summary'         => 'A honeycomb-inspired architectural metal screen pattern for shade and balanced privacy.',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][261] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Abstract',
+					'slug' => 'pattern-abstract',
+				),
+			),
+		);
+
+		$this->plant_pattern(
+			array(
+				'ID'         => 262,
+				'post_title' => 'Orchid Lattice | Architectural Metal Screen Pattern',
+				'post_name'  => 'orchid-lattice',
+				'sku'        => 'Orchid Lattice',
+				'fields'     => array(
+					'open_area'       => '29',
+					'visual_density'  => 'balanced',
+					'repeat_behavior' => 'repeating',
+					'motifs'          => array( 'lattice' ),
+					'best_fit'        => 'architectural-screening',
+					'cad_status'      => 'gated',
+					'summary'         => '',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][262] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Geometric',
+					'slug' => 'pattern-geometric',
+				),
+			),
+		);
+
+		$this->plant_pattern(
+			array(
+				'ID'         => 263,
+				'post_title' => 'Indian Nights | Architectural Metal Screen Pattern',
+				'post_name'  => 'indian-nights',
+				'sku'        => 'Indian Nights',
+				'fields'     => array(
+					'open_area'       => '32.32',
+					'visual_density'  => 'balanced',
+					'repeat_behavior' => 'repeating',
+					'motifs'          => array( 'geometric' ),
+					'best_fit'        => 'decorative-screening',
+					'cad_status'      => 'gated',
+					'summary'         => '',
+				),
+			)
+		);
+		$GLOBALS['md_mu_test_terms'][263] = array(
+			'product_cat' => array(
+				(object) array(
+					'name' => 'Geometric',
+					'slug' => 'pattern-geometric',
+				),
+			),
+		);
+
+		$out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q' => 'Can you recommend a geometric pattern with 30-40% open area for outdoor privacy?',
+				),
+			)
+		);
+
+		self::assertSame( 200, $out['status'] );
+		self::assertSame( '', $out['body']['action'] );
+		self::assertSame( 'pattern#262 Orchid Lattice', $out['body']['sources'][0] );
+		self::assertSame( 'pattern#263 Indian Nights', $out['body']['sources'][1] );
+		self::assertStringNotContainsString( 'being checked with the team', (string) $out['body']['msg'] );
+		self::assertStringContainsString( 'Based on: Pattern Orchid Lattice; Pattern Indian Nights', (string) $out['body']['msg'] );
+	}
+
+	/**
 	 * A recorded bootstrap global, reset between the tests.
 	 *
 	 * @param string $name The global's name.

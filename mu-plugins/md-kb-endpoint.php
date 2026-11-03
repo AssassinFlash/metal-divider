@@ -240,6 +240,22 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 
+	if (
+		md_kb_endpoint_asks_recommendation( $q )
+		&& 0 < $pattern['hits']
+		&& $answer['handoff']
+		&& 'human_request' !== $answer['reason']
+		&& ! md_kb_endpoint_wants_human( $q )
+		&& ! md_kb_endpoint_asks_unverified_fact( $q )
+		&& ! md_kb_endpoint_asks_commercial( $q )
+		&& ! md_kb_endpoint_asks_shipping( $q )
+		&& md_kb_endpoint_no_answer_message() !== $answer['answer']
+	) {
+		$answer['handoff'] = false;
+		$answer['reason']  = 'none';
+		$answer['answer']  = trim( (string) preg_replace( '/\s+[^.?!]*\bbe(?:ing)?\s+checked\s+with\s+the\s+team\b[^.?!]*[.?!]?$/iu', '', $answer['answer'] ) );
+	}
+
 	$answer = md_kb_endpoint_preserve_known_facts( $q, $resolved, $answer );
 
 	// A question that kept a published fact is not an unanswered gap, even when the rest transfers.
@@ -1942,7 +1958,7 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 	$title     = mb_strtolower( $post->post_title );
 	$full_text = str_replace( array( '-', '_' ), ' ', $series_text . ' ' . $motifs . ' ' . $best_fit . ' ' . $summary . ' ' . $repeat . ' ' . $title );
 	// Series/motif matching rules.
-	$series_rules    = array(
+	$series_rules     = array(
 		array(
 			'regex'   => '/\bgeometric\b|几何/iu',
 			'needles' => array( 'geometric' ),
@@ -2000,17 +2016,24 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 			'needles' => array( 'glass-hybrid', 'laminated glass', 'glass', 'decorative-screening' ),
 		),
 	);
-	$structured_text = $series_text . ' ' . $motifs . ' ' . $repeat . ' ' . $best_fit;
+	$structured_text  = $series_text . ' ' . $motifs . ' ' . $repeat . ' ' . $best_fit;
+	$requested_series = false;
+	$matched_series   = false;
 	foreach ( $series_rules as $rule ) {
 		if ( 1 !== preg_match( $rule['regex'], $q ) ) {
 			continue;
 		}
+		$requested_series = true;
 		foreach ( $rule['needles'] as $term_needle ) {
 			if ( str_contains( $structured_text, $term_needle ) ) {
-				$score += 6;
+				$score         += 20;
+				$matched_series = true;
 				break 2;
 			}
 		}
+	}
+	if ( $requested_series && ! $matched_series ) {
+		$score -= 12;
 	}
 
 	$raw_oa = md_kb_endpoint_pattern_field( get_field( 'open_area', $id ) );
@@ -2412,7 +2435,7 @@ function md_kb_endpoint_system_prompt(): string {
 		. 'Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. '
 		. 'Say pattern, not product. '
 		. 'Mention only the facts the visitor asked about; do not list the rest of the pattern record. '
-		. 'When multiple PATTERN FACTS are provided for a recommendation question, recommend the matching patterns with their title, code, open area, best fit, and permalink URL (when present in the facts) without inventing any extra attributes. '
+		. 'When multiple PATTERN FACTS are provided for a recommendation question, recommend the matching patterns with their title, code, open area, best fit, and permalink URL formatted as a Markdown link [Code](permalink) (when present in the facts) without inventing any extra attributes, and keep handoff false unless the visitor also asks for a human or asks for unconfirmed specifics like price, lead time, shipping, or CAD drawings. '
 		. 'Never quote an internal CAD status such as gated or missing — say the drawing is not confirmed. '
 		. 'When part of the question is covered by the knowledge and part is not, answer the covered part and then say the remaining part is being checked with the team. '
 		. 'Set handoff true and reason to "no_knowledge". Do not discard the known fact, and do not invent the missing part. '
