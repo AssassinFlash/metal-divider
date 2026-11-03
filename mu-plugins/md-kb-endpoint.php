@@ -231,13 +231,17 @@ function md_kb_endpoint_answer( array $input ): array {
 	$answer = md_kb_endpoint_call_model( md_kb_endpoint_messages( $q, $context, $history ) );
 
 	if ( is_string( $answer ) ) {
-		return array(
-			'status' => 502,
-			'body'   => array(
-				'error' => array( 'code' => $answer ),
-				'msg'   => md_kb_endpoint_fallback_message(),
-			),
-		);
+		$fallback_answer = md_kb_endpoint_pattern_upstream_fallback( $q, $resolved, $pattern );
+		if ( null === $fallback_answer ) {
+			return array(
+				'status' => 502,
+				'body'   => array(
+					'error' => array( 'code' => $answer ),
+					'msg'   => md_kb_endpoint_fallback_message(),
+				),
+			);
+		}
+		$answer = $fallback_answer;
 	}
 
 	if (
@@ -740,6 +744,60 @@ function md_kb_endpoint_missing_fact_message( string $q, string $context, string
 		}
 	}
 	return implode( ' ', $missing );
+}
+
+/**
+ * Deterministic fallback from published WooCommerce pattern facts when the
+ * upstream model returns a 5xx/timeout, so a visitor asking about a known
+ * pattern or asking for catalog recommendations still receives a grounded
+ * answer instead of a 502 chat handoff.
+ *
+ * @param string                                                         $q        The visitor's question.
+ * @param string                                                         $resolved The resolved pattern context.
+ * @param array{context: string, sources: array<int, string>, hits: int} $pattern  The pattern lookup or recommendation result.
+ * @return array{answer: string, handoff: bool, reason: string}|null The deterministic reply, or null when no pattern fact covers the question.
+ */
+function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, array $pattern ): ?array {
+	if ( md_kb_endpoint_wants_human( $q ) || md_kb_endpoint_asks_unverified_fact( $q ) || md_kb_endpoint_asks_commercial( $q ) || md_kb_endpoint_asks_shipping( $q ) ) {
+		return null;
+	}
+	if ( md_kb_endpoint_asks_recommendation( $q ) && 0 < $pattern['hits'] ) {
+		$items = array();
+		foreach ( md_kb_endpoint_pattern_fact_blocks( $pattern['context'] ) as $block ) {
+			$name    = md_kb_endpoint_pattern_display_name( $block );
+			$url     = trim( (string) ( $block['permalink'] ?? '' ) );
+			$link    = '' !== $url ? '[' . $name . '](' . $url . ')' : $name;
+			$details = array();
+			if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['series'] ?? '' ) ) ) {
+				$details[] = trim( (string) $block['series'] ) . ' series';
+			}
+			if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['open_area'] ?? '' ) ) ) {
+				$details[] = trim( (string) $block['open_area'] ) . ' open area';
+			}
+			if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['best_fit'] ?? '' ) ) ) {
+				$details[] = 'best fit: ' . str_replace( array( '-', '_' ), ' ', trim( (string) $block['best_fit'] ) );
+			}
+			$items[] = $link . ( array() !== $details ? ' (' . implode( ', ', $details ) . ')' : '' );
+		}
+		if ( array() !== $items ) {
+			return array(
+				'answer'  => 'Here are the closest matching patterns from our catalog: ' . implode( '; ', $items ) . '.',
+				'handoff' => false,
+				'reason'  => 'none',
+			);
+		}
+	}
+	if ( '' !== $resolved ) {
+		$partial = md_kb_endpoint_partial_fact_message( $q, $resolved );
+		if ( '' !== $partial ) {
+			return array(
+				'answer'  => $partial,
+				'handoff' => false,
+				'reason'  => 'none',
+			);
+		}
+	}
+	return null;
 }
 
 /**
@@ -2523,7 +2581,7 @@ function md_kb_endpoint_call_model( array $messages, float $deadline = 0.0 ): ar
 				),
 				'body'    => (string) wp_json_encode(
 					array(
-						'model'           => 1 === $attempts ? 'deepseek-flash' : 'deepseek-chat',
+						'model'           => 'deepseek-flash',
 						'messages'        => $messages,
 						'stream'          => false,
 						'response_format' => array( 'type' => 'json_object' ),

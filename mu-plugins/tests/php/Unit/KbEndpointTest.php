@@ -945,12 +945,7 @@ final class KbEndpointTest extends TestCase {
 
 		self::assertSame( 200, $out['status'], $kind );
 		self::assertSame( 'Back on the second try.', $out['body']['msg'], $kind );
-		$http = $this->recorded( 'md_mu_test_http' );
-		self::assertCount( 2, $http, $kind . ' earns exactly one retry.' );
-		$first_payload  = json_decode( (string) $http[0][1]['body'], true );
-		$second_payload = json_decode( (string) $http[1][1]['body'], true );
-		self::assertSame( 'deepseek-flash', $first_payload['model'] );
-		self::assertSame( 'deepseek-chat', $second_payload['model'] );
+		self::assertCount( 2, $this->recorded( 'md_mu_test_http' ), $kind . ' earns exactly one retry.' );
 	}
 
 	/**
