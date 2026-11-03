@@ -55,4 +55,37 @@ if ($readback !== $merged) {
     );
 }
 
+// Keep lh_generic_bot_rest_api bearer tokens synchronized with the live WordPress
+// options on the target host so LHC webhook/bot calls never drift out of sync.
+$rest_sync = array(
+    'md_wecom_notify' => array('id' => 1, 'key' => 'webhook_token'),
+    'md_kb_endpoint'  => array('id' => 3, 'key' => 'bearer_token'),
+);
+if (isset($rest_sync[$name])) {
+    $token = $merged[$rest_sync[$name]['key']] ?? '';
+    if (is_string($token) && $token !== '') {
+        global $wpdb;
+        if (isset($wpdb) && is_object($wpdb) && method_exists($wpdb, 'get_var') && method_exists($wpdb, 'update')) {
+            $rest_id = (int) $rest_sync[$name]['id'];
+            $raw_cfg = $wpdb->get_var(
+                $wpdb->prepare('SELECT configuration FROM lh_generic_bot_rest_api WHERE id = %d', $rest_id)
+            );
+            if (is_string($raw_cfg) && $raw_cfg !== '') {
+                $cfg = json_decode($raw_cfg, true);
+                if (is_array($cfg)) {
+                    $cfg['auth_bearer'] = $token;
+                    if (isset($cfg['parameters'][0]) && is_array($cfg['parameters'][0])) {
+                        $cfg['parameters'][0]['auth_bearer'] = $token;
+                    }
+                    $wpdb->update(
+                        'lh_generic_bot_rest_api',
+                        array('configuration' => wp_json_encode($cfg)),
+                        array('id' => $rest_id)
+                    );
+                }
+            }
+        }
+    }
+}
+
 WP_CLI::line('OK ' . $name . ' merged=' . count($seed) . ' total=' . count($merged));
