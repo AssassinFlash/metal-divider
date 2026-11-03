@@ -2493,7 +2493,7 @@ function md_kb_endpoint_system_prompt(): string {
 		. 'Never mention knowledge, documents or context to the visitor — the visitor sees only your answer. '
 		. 'Say pattern, not product. '
 		. 'Mention only the facts the visitor asked about; do not list the rest of the pattern record. '
-		. 'When multiple PATTERN FACTS are provided for a recommendation question, recommend the matching patterns with their title, code, open area, best fit, and permalink URL formatted as a Markdown link [Code](permalink) (when present in the facts) without inventing any extra attributes, and keep handoff false unless the visitor also asks for a human or asks for unconfirmed specifics like price, lead time, shipping, or CAD drawings. '
+		. 'When PATTERN FACTS are provided for a recommendation question, present all provided candidate patterns (including close open-area or application matches, noting each pattern\'s published open area and best fit so the visitor can compare) with their short pattern name (strip any trailing " | Architectural Metal Screen Pattern" suffix) linked as [Pattern Name](permalink) (when permalink is present in the facts) without inventing any extra attributes, and keep handoff false unless the visitor also asks for a human or asks for unconfirmed specifics like price, lead time, shipping, or CAD drawings. '
 		. 'Never quote an internal CAD status such as gated or missing — say the drawing is not confirmed. '
 		. 'When part of the question is covered by the knowledge and part is not, answer the covered part and then say the remaining part is being checked with the team. '
 		. 'Set handoff true and reason to "no_knowledge". Do not discard the known fact, and do not invent the missing part. '
