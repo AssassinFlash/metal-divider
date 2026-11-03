@@ -385,18 +385,24 @@
   }
 
   function latestRecommendedPattern() {
-    var links = document.querySelectorAll('#messages .message-admin .msg-body a[href*="/pattern/"]');
-    for (var i = links.length - 1; i >= 0; i -= 1) {
-      var href = links[i].getAttribute('href') || '';
-      var m = href.match(/\/pattern\/([a-z0-9-]+)\/?/i);
-      if (m && m[1]) {
-        var label = (links[i].textContent || '').replace(/\*\*/g, '').trim();
-        var isUrlLabel = /^(?:https?:\/\/|\/)/i.test(label);
-        return {
-          patternSlug: m[1].toLowerCase(),
-          patternName: isUrlLabel ? '' : label,
-          patternUrl: href
-        };
+    var bodies = document.querySelectorAll('#messages .message-admin .msg-body');
+    for (var b = bodies.length - 1; b >= 0; b -= 1) {
+      var links = bodies[b].querySelectorAll('a[href*="/pattern/"]');
+      for (var i = 0; i < links.length; i += 1) {
+        var href = links[i].getAttribute('href') || '';
+        var m = href.match(/\/pattern\/([a-z0-9-]+)\/?/i);
+        if (m && m[1]) {
+          var label = (links[i].textContent || '').replace(/\*\*/g, '').trim();
+          var isUrlLabel = /^(?:https?:\/\/|\/)/i.test(label);
+          var cleanName = isUrlLabel
+            ? ''
+            : label.replace(/\s*(?:\|.*|Laser\s+Cut\s+Screens?|Architectural\s+Metal\s+Screen\s+Patterns?)\s*$/i, '').trim();
+          return {
+            patternSlug: m[1].toLowerCase(),
+            patternName: cleanName || (isUrlLabel ? '' : label),
+            patternUrl: href
+          };
+        }
       }
     }
     return { patternSlug: '', patternName: '', patternUrl: '' };

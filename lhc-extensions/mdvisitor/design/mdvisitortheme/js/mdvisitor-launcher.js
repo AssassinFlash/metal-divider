@@ -174,6 +174,9 @@
 							patternCode = cardTrigger.getAttribute( 'data-pattern-code' ) || '';
 							patternThumb = cardTrigger.getAttribute( 'data-pattern-thumb' ) || cardTrigger.getAttribute( 'data-quote-thumb' ) || '';
 						}
+						if ( !patternCode && chatName ) {
+							patternCode = chatName;
+						}
 					}
 				}
 				window.dispatchEvent(

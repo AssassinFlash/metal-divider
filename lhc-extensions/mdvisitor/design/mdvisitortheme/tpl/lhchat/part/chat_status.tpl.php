@@ -66,7 +66,7 @@
 
     </div>
 </div>
-<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261103b', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars(rtrim(erLhcoreClassSystem::instance()->wwwDir(), '/') . '/extension/mdvisitor/design/mdvisitortheme/js/mdvisitor-chat.js?v=20261103c', ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <script>
 (function () {
   var chip = document.querySelector('.mdv-chat-head .mdv-chat-state');
