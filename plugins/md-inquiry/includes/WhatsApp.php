@@ -101,7 +101,13 @@ final class WhatsApp {
 	public static function cta_text( string $module, ?array $pattern, string $page ): string {
 		$lines = array( self::GREETING );
 		if ( null !== $pattern ) {
-			$lines[] = 'Pattern: ' . $pattern['name'] . ' (' . $pattern['code'] . ')';
+			// The title's SEO suffix is not a pattern name, and a SKU that
+			// repeats the cleaned name ("Agave" for "Agave | Architectural
+			// Metal Screen Pattern") is not a second fact. Either would put
+			// the suffix or the name twice in the customer's chat.
+			$pattern_name = Pattern::clean_title( $pattern['name'] );
+			$suffix       = ( '' === $pattern['code'] || $pattern['code'] === $pattern_name ) ? '' : ' (' . $pattern['code'] . ')';
+			$lines[]      = 'Pattern: ' . $pattern_name . $suffix;
 		}
 		$lines[] = 'Ref: ' . $page . '/' . Validator::source_token( $module ) . '/whatsapp';
 		return \implode( "\n", $lines );
@@ -125,8 +131,10 @@ final class WhatsApp {
 			$lines[] = "Hi, I'm " . $name . ( '' !== $company ? ' (' . $company . ')' : '' ) . '.';
 		}
 		if ( null !== $pattern ) {
-			$lines[] = 'I\'d like a quote for this pattern:';
-			$lines[] = $pattern['name'] . ' (' . $pattern['code'] . ')';
+			$pattern_name = Pattern::clean_title( $pattern['name'] );
+			$suffix       = ( '' === $pattern['code'] || $pattern['code'] === $pattern_name ) ? '' : ' (' . $pattern['code'] . ')';
+			$lines[]      = 'I\'d like a quote for this pattern:';
+			$lines[]      = $pattern_name . $suffix;
 		}
 		if ( '' !== $message ) {
 			$lines[] = $message;

@@ -67,6 +67,24 @@ final class Pattern {
 	}
 
 	/**
+	 * A product title without its SEO suffix.
+	 *
+	 * Production titles carry the pattern's name and a keyword suffix after a
+	 * pipe: "Agave | Architectural Metal Screen Pattern". The suffix belongs
+	 * to the page's title tag, not to the pattern. Every surface this context
+	 * feeds — the form's pattern row, the prefilled WhatsApp texts, the stored
+	 * record and the notification emails — names the pattern, so only the
+	 * first segment is used.
+	 *
+	 * @param string $title The raw product title.
+	 * @return string The name segment, trimmed.
+	 */
+	public static function clean_title( string $title ): string {
+		$parts = \explode( '|', $title );
+		return \trim( $parts[0] );
+	}
+
+	/**
 	 * Assembles one product's context.
 	 *
 	 * @param int $post_id The product's ID.
@@ -76,7 +94,7 @@ final class Pattern {
 		$thumb = \get_the_post_thumbnail_url( $post_id, 'thumbnail' );
 		return array(
 			'post_id' => $post_id,
-			'name'    => \get_the_title( $post_id ),
+			'name'    => self::clean_title( (string) \get_the_title( $post_id ) ),
 			'code'    => (string) \get_post_meta( $post_id, '_sku', true ),
 			'url'     => (string) \get_permalink( $post_id ),
 			'thumb'   => \is_string( $thumb ) ? $thumb : '',

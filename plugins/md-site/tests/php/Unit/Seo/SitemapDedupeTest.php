@@ -221,4 +221,52 @@ final class SitemapDedupeTest extends TestCase {
 		$this->assertStringNotContainsString( 'category-sitemap1.xml', $out, 'a taxonomy with zero posts anywhere is not worth indexing' );
 		$this->assertStringContainsString( 'product_cat-sitemap1.xml', $out, 'a taxonomy with posts keeps its sitemap' );
 	}
+
+	/**
+	 * WooCommerce's menu_order join is removed from the taxonomy sitemap query.
+	 *
+	 * SEOPress 10.4's term sitemap query carries a '_seopress_robots_index'
+	 * meta_query. WooCommerce filters the same query for 'product_cat' and
+	 * sets 'menu_order', whose INNER JOIN on 'wp_termmeta' dropped every series
+	 * that has a thumbnail but no order meta. Measured on production
+	 * 2026-11-10: 'product_cat-sitemap1.xml' was empty, and answering the
+	 * filter with 'menu_order => false' and 'orderby => name' restored all
+	 * nine series URLs (1,145 bytes) without touching the query's own filters.
+	 */
+	public function test_the_taxonomy_sitemap_query_drops_the_menu_order_join(): void {
+		$query = array(
+			'taxonomy'   => 'product_cat',
+			'hide_empty' => true,
+			'menu_order' => true,
+			'orderby'    => 'term_order',
+		);
+
+		$out = ( new SitemapDedupe() )->disable_term_menu_order( $query );
+
+		$this->assertFalse( $out['menu_order'], 'the join that requires order meta must be off' );
+		$this->assertSame( 'name', $out['orderby'], 'the series sitemap is alphabetical, not menu-ordered' );
+		$this->assertSame( 'product_cat', $out['taxonomy'], 'the query keeps its own taxonomy' );
+		$this->assertTrue( $out['hide_empty'], 'the query keeps its own filters' );
+	}
+
+	/**
+	 * Both SEOPress term-sitemap query filters are attached by register().
+	 *
+	 * The single-term template and the index build from the same query, so the
+	 * rule has to cover both; attaching only one leaves the other file empty.
+	 */
+	public function test_the_term_sitemap_query_filters_are_registered(): void {
+		$rule = new SitemapDedupe();
+
+		WP_Mock::expectFilterAdded( 'seopress_sitemaps_no_archive_link', array( $rule, 'drop_archive_link' ), 10, 2 );
+		WP_Mock::expectFilterAdded( 'seopress_sitemaps_xml_index', array( $rule, 'drop_empty_type_entries' ) );
+		WP_Mock::expectFilterAdded( 'seopress_sitemaps_single_term_query', array( $rule, 'disable_term_menu_order' ) );
+		WP_Mock::expectFilterAdded( 'seopress_sitemaps_index_tax_query', array( $rule, 'disable_term_menu_order' ) );
+
+		$rule->register();
+
+		// WP_Mock's expected filters are verified in tearDown; this keeps the
+		// four expectations counted as the assertions they are.
+		$this->addToAssertionCount( 4 );
+	}
 }

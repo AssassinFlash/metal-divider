@@ -329,7 +329,13 @@ final class Form {
 		$out .= '<figcaption class="md-inquiry-pattern__caption">';
 		$out .= '<span data-md-inquiry-pattern-title class="md-inquiry-pattern__name">' . \esc_html( $pattern['name'] ) . '</span>';
 		if ( '' !== $pattern['code'] ) {
-			$out .= '<span data-md-inquiry-pattern-code class="md-inquiry-pattern__code">' . \esc_html( $pattern['code'] ) . '</span>';
+			// A SKU that only repeats the name is the same label in caps:
+			// printing it put "Agave" twice in the row ("Apiary" then
+			// "APIARY"). The text stays in the DOM — the behavior file and the
+			// record read it — but the row shows one label; inquiry.css hides
+			// [hidden] on this span.
+			$repeats = \strtolower( \trim( $pattern['code'] ) ) === \strtolower( \trim( $pattern['name'] ) );
+			$out    .= '<span data-md-inquiry-pattern-code class="md-inquiry-pattern__code"' . ( $repeats ? ' hidden' : '' ) . '>' . \esc_html( $pattern['code'] ) . '</span>';
 		}
 		$out .= '<span data-md-inquiry-pattern-eyebrow class="md-inquiry-pattern__note">' . \esc_html__( 'This pattern is attached to your inquiry.', 'md-inquiry' ) . '</span>';
 		$out .= '</figcaption>';

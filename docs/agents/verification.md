@@ -5,7 +5,7 @@
 ## 1. Apify 是搜索与外部研究的硬门槛
 
 - 需要搜索、外部信息验证、竞品研究、行业规则确认或资料获取时,**先 Apify**,不先普通搜索。
-- 令牌在 `~/.config/metal-divider/apify.env`:`APIFY_TOKEN`(主)、`APIFY_TOKEN_SPARE1/2`(备)。三枚分属独立账号,实测 `GET /v2/users/me` 均 200。**按月轮换**(低价渠道有期限,业主每月换新),轮换后先验证再用。永不入仓库、不入日志。
+- 本机只用当前 `APIFY_TOKEN`。命令用 `apify-auth exec <命令>` 注入当前值，`apify` CLI 直接读取统一凭据。业主提供新值时运行 `python3 ~/.config/apify/rotate-token.py`，在隐藏提示输入。认证 401/403 时暂停 Apify，等轮换通过再继续。凭据永不进仓库或日志。
 - **不能用了就修,不绕开**:Token、Actor 选择、参数、Dataset、请求格式、权限、网络、抓取规则、输出解析、timeout、rate limit,逐项排除。第一次失败不得降级搜索深度,也不得直接下"找不到"。
 - 目标站限制某类爬取时,组合手段:Apify Actors、Scrapling/Scrapy、Crawl4AI、Firecrawl、Computer Use、站点自身 API、WP/Woo REST、sitemap、feed、页面源码、structured data。**Apify 仍是主入口**,其余是配合。
 - "不存在"是结论,不是借口:换关键词、换页面、换数据源、换 Actor、换抓取方式、换技术路径,充分调查之后才允许写"不存在"。

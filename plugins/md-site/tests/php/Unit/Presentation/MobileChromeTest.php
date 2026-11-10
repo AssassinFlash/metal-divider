@@ -809,6 +809,31 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * The search sheet's close control no longer lands on the field.
+	 *
+	 * Measured on the 1440px sheet 2026-11-10: the 44px close control at
+	 * top:16/right:16 sat on the 64px field's right border and on its clear
+	 * button. The field's wrapper now reserves the close control's 44px plus a
+	 * 12px gutter, and the close control is centred on the field (top 30 =
+	 * field top 20 + (64 - 44) / 2). The clear icon was near-black on the dark
+	 * field, invisible until this colour change.
+	 */
+	public function test_the_search_sheet_reserves_room_for_its_close_button(): void {
+		$css = $this->volume( 'chrome.css' );
+
+		$field = $this->rule_body( $css, 'xo-modal[xo-name="search"] .xo-predictive-search__input' );
+		$this->assertStringContainsString( 'width:calc(100% - 56px)', $field, 'the field stops before the close control' );
+		$this->assertStringContainsString( 'box-sizing:border-box', $field, 'the reserved gutter stays inside the panel padding' );
+
+		$close = $this->rule_body( $css, 'xo-modal[xo-name="search"] .xo-modal-content__close--abs' );
+		$this->assertStringContainsString( 'top:30px', $close, 'the close control is vertically centred on the 64px field' );
+		$this->assertStringContainsString( 'right:20px', $close, 'the close control sits in the reserved gutter' );
+
+		$clear = $this->rule_body( $css, 'xo-modal[xo-name="search"] .xo-predictive-search__clear' );
+		$this->assertStringContainsString( 'color:rgba(255,255,255,0.72)', $clear, 'the clear icon is legible on the dark field' );
+	}
+
+	/**
 	 * The sticky host owns the admin-bar offset and paints its own strip.
 	 *
 	 * The band used `position: relative; top: var(--wp-admin--admin-bar--height)`

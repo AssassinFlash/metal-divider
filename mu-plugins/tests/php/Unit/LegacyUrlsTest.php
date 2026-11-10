@@ -23,6 +23,7 @@ use PHPUnit\Framework\TestCase;
  * @covers ::md_legacy_urls_target
  * @covers ::md_legacy_urls_url
  * @covers ::md_legacy_urls_series_exists
+ * @covers ::md_legacy_urls_resolve_product_slug
  * @covers ::md_legacy_urls_redirect
  */
 final class LegacyUrlsTest extends TestCase {
@@ -41,6 +42,7 @@ final class LegacyUrlsTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$GLOBALS['md_mu_test_series']   = self::SERIES;
+		$GLOBALS['md_mu_test_products'] = array();
 		$GLOBALS['md_mu_test_is_admin'] = false;
 		unset( $GLOBALS['md_mu_test_doing_ajax'], $GLOBALS['md_mu_test_redirect'] );
 	}
@@ -51,6 +53,7 @@ final class LegacyUrlsTest extends TestCase {
 	protected function tearDown(): void {
 		unset(
 			$GLOBALS['md_mu_test_series'],
+			$GLOBALS['md_mu_test_products'],
 			$GLOBALS['md_mu_test_is_admin'],
 			$GLOBALS['md_mu_test_doing_ajax'],
 			$GLOBALS['md_mu_test_redirect']
@@ -134,6 +137,79 @@ final class LegacyUrlsTest extends TestCase {
 			'/pattern/agave/?pattern_search=lattice',
 			md_legacy_urls_url( '/shop/agave/?pattern_search=lattice', $live ),
 			'the query string travels to the pattern page too'
+		);
+	}
+
+	/**
+	 * An old storefront handle lands on the real product slug in one hop.
+	 *
+	 * The product slugs this site publishes carry the presentation suffix
+	 * ('-architectural-metal-screen-pattern'), so '/shop/agave/' used to stop
+	 * at '/pattern/agave/' and let WordPress's canonical redirect spend a
+	 * second 301. When the short slug has no product but its suffixed form
+	 * does, the alias answers with the suffixed URL directly.
+	 */
+	public function test_an_old_product_path_resolves_the_suffixed_slug_in_one_hop(): void {
+		$GLOBALS['md_mu_test_products'] = array(
+			array(
+				'ID'          => 101,
+				'post_title'  => 'Agave | Architectural Metal Screen Pattern',
+				'post_name'   => 'agave-architectural-metal-screen-pattern',
+				'post_status' => 'publish',
+				'post_type'   => 'product',
+			),
+		);
+
+		self::assertSame(
+			'/pattern/agave-architectural-metal-screen-pattern/',
+			md_legacy_urls_target( '/shop/agave/' ),
+			'the product lookup resolves the suffixed permalink without an intermediate 301'
+		);
+		self::assertSame(
+			'/pattern/agave-architectural-metal-screen-pattern/?pattern_search=lattice',
+			md_legacy_urls_url( '/shop/agave/?pattern_search=lattice' ),
+			'the query string still travels on the one-hop destination'
+		);
+	}
+
+	/**
+	 * A product whose slug really is the short path keeps it.
+	 *
+	 * The suffix fallback must only fire when the plain slug has no product;
+	 * otherwise a product published at '/pattern/agave/' would be moved to a
+	 * suffixed URL that does not exist.
+	 */
+	public function test_a_product_that_already_uses_the_short_slug_keeps_it(): void {
+		$GLOBALS['md_mu_test_products'] = array(
+			array(
+				'ID'          => 102,
+				'post_title'  => 'Agave',
+				'post_name'   => 'agave',
+				'post_status' => 'publish',
+				'post_type'   => 'product',
+			),
+		);
+
+		self::assertSame( '/pattern/agave/', md_legacy_urls_target( '/shop/agave/' ) );
+	}
+
+	/**
+	 * The product lookup is injectable, so a caller can resolve a slug without
+	 * touching the database — and the alias stays correct with no product at
+	 * all, which is the unit suite's default.
+	 */
+	public function test_the_product_lookup_can_be_injected(): void {
+		$product = static fn ( string $slug ): string => $slug . '-architectural-metal-screen-pattern';
+
+		self::assertSame(
+			'/pattern/agave-architectural-metal-screen-pattern/',
+			md_legacy_urls_target( '/shop/agave/', null, $product ),
+			'the injected lookup answers the destination'
+		);
+		self::assertSame(
+			'/pattern/agave/',
+			md_legacy_urls_target( '/shop/agave/' ),
+			'without a product row the alias still makes its first hop'
 		);
 	}
 

@@ -53,12 +53,20 @@
 		return form.querySelector('[id^="md-inquiry-' + name + '"]');
 	}
 
+	// A production product title carries the pattern name and an SEO suffix:
+	// "Agave | Architectural Metal Screen Pattern". The name is the first
+	// segment; every label this file prints goes through here, so the suffix
+	// never reaches a customer through the dialog or the WhatsApp text.
+	function cleanTitle(value) {
+		return String(value || '').split('|')[0].trim();
+	}
+
 	// Two labels for one pattern are one label too many. The code and the name
 	// are separate facts only when they say different things: "Floral Geo" and
 	// "FLORAL-GEO" normalise to the same words, and printing both put the same
 	// pattern three times in the dialog (row name, row code, modal title).
 	function labelKey(value) {
-		return String(value || '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
+		return cleanTitle(value).toLowerCase().replace(/[-_\s]+/g, ' ').trim();
 	}
 
 	function codeRepeatsName(code, name) {
@@ -223,12 +231,14 @@
 				lines.push("Hi, I'm " + name + (company ? ' (' + company + ')' : '') + '.');
 			}
 			if (cfg.pattern) {
+				// The SEO suffix after a pipe is not part of the name, and the
+				// code is a second label, not a second fact: when it repeats the
+				// cleaned name, the WhatsApp message names the pattern once.
+				var patternName = cleanTitle(cfg.pattern.name);
 				lines.push("I'd like a quote for this pattern:");
-				// The code is a second label, not a second fact: when it repeats
-				// the name, the WhatsApp message names the pattern once.
-				lines.push(!cfg.pattern.code || codeRepeatsName(cfg.pattern.code, cfg.pattern.name)
-					? cfg.pattern.name
-					: cfg.pattern.name + ' (' + cfg.pattern.code + ')');
+				lines.push(!cfg.pattern.code || codeRepeatsName(cfg.pattern.code, patternName)
+					? patternName
+					: patternName + ' (' + cfg.pattern.code + ')');
 			}
 			if (cfg.intent && cfg.intent !== 'Selected pattern') {
 				lines.push('Inquiry: ' + cfg.intent);
@@ -269,11 +279,16 @@
 			? patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]').textContent
 			: 'Selected pattern';
 		var defaultTitleText = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-title]')
-			? patternSlot.querySelector('[data-md-inquiry-pattern-title]').textContent
+			? cleanTitle(patternSlot.querySelector('[data-md-inquiry-pattern-title]').textContent)
 			: '';
 		var defaultCodeText = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-code]')
 			? patternSlot.querySelector('[data-md-inquiry-pattern-code]').textContent
 			: '';
+		// The server hides the code row when the SKU only repeats the name;
+		// the default restore below must not undo that decision.
+		var defaultCodeHidden = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-code]')
+			? patternSlot.querySelector('[data-md-inquiry-pattern-code]').hasAttribute('hidden')
+			: true;
 		var defaultThumbSrc = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-thumb]')
 			? (patternSlot.querySelector('[data-md-inquiry-pattern-thumb]').getAttribute('src') || '')
 			: '';
@@ -311,7 +326,7 @@
 			}
 			var rawCode = typeof detail.patternCode === 'string' ? detail.patternCode.trim() : '';
 			var rawSlug = typeof detail.patternSlug === 'string' ? detail.patternSlug.trim() : '';
-			var rawName = typeof detail.patternName === 'string' ? detail.patternName.trim() : '';
+			var rawName = typeof detail.patternName === 'string' ? cleanTitle(detail.patternName) : '';
 			var rawThumb = typeof detail.patternThumb === 'string' ? detail.patternThumb.trim() : '';
 			var rawIntent = typeof detail.intentLabel === 'string' && detail.intentLabel.trim()
 				? detail.intentLabel.trim()
@@ -380,7 +395,7 @@
 					var cd = patternSlot.querySelector('[data-md-inquiry-pattern-code]');
 					if (cd) {
 						cd.textContent = defaultCodeText;
-						if (defaultCodeText) {
+						if (defaultCodeText && !defaultCodeHidden) {
 							cd.removeAttribute('hidden');
 						} else {
 							cd.setAttribute('hidden', '');

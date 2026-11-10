@@ -1383,8 +1383,8 @@ xo-modal[xo-name="search"] form.search{
 }
 xo-modal[xo-name="search"] .xo-modal-content__close--abs{
   position:absolute;
-  top:16px;
-  right:16px;
+  top:30px;
+  right:20px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -1399,6 +1399,14 @@ xo-modal[xo-name="search"] .xo-modal-content__close--abs:hover{
   background:rgba(0,0,0,.14);
   rotate:180deg;
   transition:rotate .3s ease,background-color .3s ease;
+}
+/* The sheet's close button is absolute against the panel and sits at the
+   input's right edge. Reserve its 44px plus the 12px gutter from the field's
+   wrapper, so the input, the clear button inside it and the close button no
+   longer paint on top of one another. */
+xo-modal[xo-name="search"] .xo-predictive-search__input{
+  width:calc(100% - 56px);
+  box-sizing:border-box;
 }
 xo-modal[xo-name="search"] .xo-field-input__input{
   display:block;
@@ -1538,7 +1546,7 @@ xo-modal[xo-name="search"] .xo-predictive-search__clear{
   border:0;
   border-radius:10px;
   background:transparent;
-  color:#1a1a1a;
+  color:rgba(255,255,255,0.72);
   cursor:pointer;
 }
 xo-modal[xo-name="search"] .xo-predictive-search__clear[hidden]{
@@ -2220,8 +2228,8 @@ top: calc(var(--md-header-h, 60px) + 16px);
     color: #fff;
   }
   xo-modal[xo-name="search"] .xo-modal-content__close--abs {
-    top: 12px;
-    right: 12px;
+    top: 30px;
+    right: 20px;
     width: 44px;
     height: 44px;
     border-radius: 12px;

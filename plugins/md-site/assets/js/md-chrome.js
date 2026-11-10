@@ -343,6 +343,14 @@
     }
   }
 
+  // WordPress titles carry the presentation suffix SEOPress appends to a
+  // product's SEO title ("Agave | Architectural Metal Screen Pattern"). That
+  // string is metadata, not the pattern's name: search result cards and the
+  // quote context both read titles from the site and must show the clean name.
+  function cleanPatternTitle(value) {
+    return String(value || '').replace(/\s*\|\s*Architectural Metal Screen Pattern\s*$/i, '').trim();
+  }
+
   // A quote CTA can fire on the inquiry face too: the shared header and the
   // footer dock are on every page. inquiry.js wires its open-quote listener to
   // the dialog's copy of the form only — it looks for #md-quote-modal — and
@@ -360,6 +368,10 @@
     }
     var info = detail || {};
     var code = String(info.patternCode || '').trim();
+    // data-pattern-name used to carry the WooCommerce product title, SEO
+    // suffix included; the clean pattern name is the only part that belongs
+    // in the form's selected-pattern row.
+    var rawName = cleanPatternTitle(info.patternName);
     var slug = String(info.patternSlug || '').trim();
     var thumb = String(info.patternThumb || '').trim();
     var intent = String(info.intentLabel || info.quoteIntent || '').trim();
@@ -387,7 +399,7 @@
     if (!code && !slug) {
       return;
     }
-    var patternCode = (code || slug).toUpperCase();
+    var patternCode = (code || rawName || slug).toUpperCase();
     var patternSlug = (slug || code).toLowerCase();
     var patternInput = form.querySelector('[data-md-inquiry-pattern-input]');
     if (patternInput) {
@@ -408,7 +420,9 @@
     slot.removeAttribute('hidden');
     var title = slot.querySelector('[data-md-inquiry-pattern-title]');
     if (title) {
-      title.textContent = patternCode;
+      // The trigger's name is the readable label; the code row below keeps
+      // the SKU. Both are clean now that the SEO suffix is stripped.
+      title.textContent = rawName || patternCode;
     }
     var codeEl = slot.querySelector('[data-md-inquiry-pattern-code]');
     if (codeEl) {
@@ -909,6 +923,7 @@
               patternCode: quote.getAttribute('data-pattern-code') || '',
               patternSlug: quote.getAttribute('data-pattern-slug') || '',
               patternThumb: quote.getAttribute('data-pattern-thumb') || quote.getAttribute('data-quote-thumb') || '',
+              patternName: cleanPatternTitle(quote.getAttribute('data-pattern-name') || ''),
               patternUrl: quote.getAttribute('data-pattern-url') || '',
               quoteIntent: quote.getAttribute('data-quote-intent') || ''
             }
@@ -3359,7 +3374,7 @@
           }
         }
         if (name) {
-          name.textContent = decodeText(label);
+          name.textContent = cleanPatternTitle(decodeText(label));
         }
       };
 

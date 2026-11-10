@@ -35,6 +35,23 @@ final class FormTest extends TestCase {
 	private array $registered_scripts = array();
 
 	/**
+	 * The product title get_the_title() answers for the resolved product.
+	 *
+	 * A test that reproduces a production title (the pattern name plus the
+	 * page's SEO suffix after a pipe) sets this before rendering.
+	 *
+	 * @var string
+	 */
+	private string $product_title = 'Apiary';
+
+	/**
+	 * The SKU get_post_meta() answers for `_sku`.
+	 *
+	 * @var string
+	 */
+	private string $product_sku = 'APIARY';
+
+	/**
 	 * Sets the shared mocks up: escaping and sanitization pass through, the
 	 * pattern resolves to Apiary, the assets enqueue quietly.
 	 *
@@ -48,10 +65,15 @@ final class FormTest extends TestCase {
 		$product->ID        = 42;
 		$product->post_type = 'product';
 		WP_Mock::userFunction( 'get_posts' )->andReturn( array( $product ) );
-		WP_Mock::userFunction( 'get_the_title' )->andReturn( 'Apiary' );
+		WP_Mock::userFunction( 'get_the_title' )->andReturnUsing(
+			function (): string {
+				return $this->product_title;
+			}
+		);
 		WP_Mock::userFunction( 'get_post_meta' )->andReturnUsing(
-			static function ( int $id, string $key ): string {
-				return '_sku' === $key ? 'APIARY' : '';
+			function ( int $id, string $key ): string {
+				unset( $id );
+				return '_sku' === $key ? $this->product_sku : '';
 			}
 		);
 		WP_Mock::userFunction( 'get_permalink' )->andReturn( 'https://metal-divider.com/pattern/apiary' );
@@ -152,6 +174,55 @@ final class FormTest extends TestCase {
 		// instruction is that a drawing reaches the engineer by reply.
 		$this->assertStringContainsString( 'Send it in reply to the confirmation email', $html, 'the form says how a drawing reaches us' );
 		$this->assertStringNotContainsString( 'type="file"', $html, 'and does not pretend to take one' );
+	}
+
+	/**
+	 * A production title carries an SEO suffix after a pipe, and the SKU can
+	 * be the bare name: `Agave | Architectural Metal Screen Pattern` with
+	 * `_sku` = `Agave`. The suffix is the page's title tag, not the pattern,
+	 * and the SKU is not a second name: the row, the behavior file's
+	 * configuration and the WhatsApp text must each name the pattern once.
+	 */
+	public function test_a_pipe_suffixed_title_and_a_repeated_sku_are_named_once(): void {
+		$this->product_title = 'Agave | Architectural Metal Screen Pattern';
+		$this->product_sku   = 'Agave';
+
+		$html = $this->render( 'agave-architectural-metal-screen-pattern', array() );
+
+		$this->assertStringContainsString(
+			'<span data-md-inquiry-pattern-title class="md-inquiry-pattern__name">Agave</span>',
+			$html,
+			'the row names the pattern without the SEO suffix'
+		);
+		$this->assertMatchesRegularExpression(
+			'/<span data-md-inquiry-pattern-code class="md-inquiry-pattern__code" hidden>Agave<\/span>/',
+			$html,
+			'the SKU repeats the name, so its row is hidden instead of printed twice'
+		);
+		$this->assertStringContainsString( '"name":"Agave"', $html, 'the behavior file receives the cleaned name' );
+		$this->assertStringContainsString( '"code":"Agave"', $html );
+		$this->assertStringContainsString( 'Pattern%3A%20Agave%0ARef%3A', $html, 'the WhatsApp CTA names the pattern once' );
+		$this->assertStringNotContainsString( 'Architectural Metal Screen Pattern', $html, 'the SEO suffix never reaches the customer' );
+		$this->assertStringNotContainsString( '%20%28Agave%29', $html, 'the WhatsApp CTA does not repeat the SKU as a second label' );
+	}
+
+	/**
+	 * The other side of the same rule: a SKU that says something the name does
+	 * not keeps its own row. Hiding every code because one repeated a name
+	 * would remove a real pattern number from the record's visible context.
+	 */
+	public function test_a_distinct_sku_keeps_its_visible_row(): void {
+		$this->product_title = 'Agave | Architectural Metal Screen Pattern';
+		$this->product_sku   = 'AGAVE-304';
+
+		$html = $this->render( 'agave-architectural-metal-screen-pattern', array() );
+
+		$this->assertMatchesRegularExpression(
+			'/<span data-md-inquiry-pattern-code class="md-inquiry-pattern__code">AGAVE-304<\/span>/',
+			$html,
+			'a distinct SKU stays visible on its own row'
+		);
+		$this->assertStringNotContainsString( 'Architectural Metal Screen Pattern', $html );
 	}
 
 	/**
@@ -397,17 +468,19 @@ final class FormTest extends TestCase {
 	 * was the Ref line. And a failed submission whose form is the footer dialog
 	 * re-rendered the error into a dialog that navigation had closed.
 	 *
-	 * This executes inquiry.js twice, once per scenario: a page-level failed
-	 * form (reveal and focus) and a dialog-only failed form (reopen). The
-	 * program fails on the previous behavior: the title carried the slug, the
-	 * empty form opened with "Ref:" only, and the page form was left where the
-	 * navigation put it.
+	 * This executes inquiry.js once per scenario: a page-level failed form
+	 * (reveal and focus), a dialog-only failed form (reopen), and a dialog
+	 * that receives a production title with its pipe-separated SEO suffix and
+	 * a SKU that repeats the name. The program fails on the previous
+	 * behavior: the title carried the slug or the suffix, the SKU became a
+	 * second row, the empty form opened with "Ref:" only, and the page form
+	 * was left where the navigation put it.
 	 */
 	public function test_the_dialog_names_a_pattern_once_and_a_failed_form_reveals_itself(): void {
 		$js = dirname( __DIR__, 3 ) . '/assets/inquiry.js';
 		$this->assertFileExists( $js );
 
-		foreach ( array( 'page', 'modal' ) as $scenario ) {
+		foreach ( array( 'page', 'modal', 'suffixed' ) as $scenario ) {
 			$descriptors = array(
 				0 => array( 'pipe', 'r' ),
 				1 => array( 'pipe', 'w' ),
@@ -431,7 +504,7 @@ final class FormTest extends TestCase {
 	}
 
 	/**
-	 * The node program behind the interaction test: a minimal DOM, the two
+	 * The node program behind the interaction test: a minimal DOM, the three
 	 * scenarios, and assertions that fail on the old behavior.
 	 *
 	 * @return string
@@ -588,11 +661,15 @@ function matches(node, selector) {
 
 function buildForm(opts) {
 	var app = new El('div', 'md-inquiry-app');
-	app.setAttribute('data-md-inquiry', JSON.stringify({
+	var config = {
 		waNumber: '85264731687',
 		turnstile: false,
 		i18n: {}
-	}));
+	};
+	if (opts.cfgPattern) {
+		config.pattern = opts.cfgPattern;
+	}
+	app.setAttribute('data-md-inquiry', JSON.stringify(config));
 	if (opts.failed) {
 		app.setAttribute('data-md-inquiry-failed', '1');
 	}
@@ -619,9 +696,18 @@ function buildForm(opts) {
 	slot.appendChild(thumb);
 	var title = new El('span', 'md-inquiry-pattern__name');
 	title.setAttribute('data-md-inquiry-pattern-title', '');
+	if (typeof opts.titleText === 'string') {
+		title.textContent = opts.titleText;
+	}
 	slot.appendChild(title);
 	var code = new El('span', 'md-inquiry-pattern__code');
 	code.setAttribute('data-md-inquiry-pattern-code', '');
+	if (typeof opts.codeText === 'string') {
+		code.textContent = opts.codeText;
+	}
+	if (opts.codeHidden) {
+		code.setAttribute('hidden', '');
+	}
 	slot.appendChild(code);
 	form.appendChild(slot);
 
@@ -667,12 +753,27 @@ var body = new El('body');
 root.appendChild(body);
 
 var page = null;
+var modal = null;
 var modalForm = null;
 if (scenario === 'page') {
 	page = buildForm({ failed: true });
 	body.appendChild(page.app);
+} else if (scenario === 'suffixed') {
+	// A cached page can still carry the pre-fix markup and config: the title
+	// with its SEO suffix and a SKU that repeats the name.
+	modal = new El('div');
+	modal.setAttribute('id', 'md-quote-modal');
+	modalForm = buildForm({
+		pattern: true,
+		cfgPattern: { name: 'Agave | Architectural Metal Screen Pattern', code: 'Agave' },
+		titleText: 'Agave | Architectural Metal Screen Pattern',
+		codeText: 'Agave',
+		codeHidden: true
+	});
+	modal.appendChild(modalForm.app);
+	body.appendChild(modal);
 } else {
-	var modal = new El('div');
+	modal = new El('div');
 	modal.setAttribute('id', 'md-quote-modal');
 	modal.setAttribute('x-cloak', '');
 	modalForm = buildForm({ failed: true, pattern: true });
@@ -716,7 +817,19 @@ var waLink = (page || modalForm).wa;
 if (!waLink.href || waLink.href.indexOf('https://wa.me/85264731687?text=') !== 0) {
 	fail('the WhatsApp link was not built: ' + waLink.href);
 }
-if (waLink.href.indexOf('Hi%20Metal%20Divider') === -1 || waLink.href.indexOf('stainless%20steel%20screen%20project') === -1) {
+if (scenario === 'suffixed') {
+	// The server config is cleaned, but a cached page or a trigger can still
+	// carry the pipe suffix; the behavior file cleans it too.
+	if (waLink.href.indexOf('Architectural') !== -1) {
+		fail('the SEO suffix reached the WhatsApp text: ' + waLink.href);
+	}
+	if (waLink.href.indexOf('(Agave)') !== -1) {
+		fail('the SKU repeated the name in the WhatsApp text: ' + waLink.href);
+	}
+	if (waLink.href.indexOf('pattern%3A%0AAgave%0A') === -1) {
+		fail('the WhatsApp text did not name the pattern: ' + waLink.href);
+	}
+} else if (waLink.href.indexOf('Hi%20Metal%20Divider') === -1 || waLink.href.indexOf('stainless%20steel%20screen%20project') === -1) {
 	fail('the empty form did not open with the greeting: ' + waLink.href);
 }
 
@@ -730,7 +843,7 @@ if (scenario === 'page') {
 	if (dispatched.length !== 0) {
 		fail('a page-level failure reopened the dialog');
 	}
-} else {
+} else if (scenario === 'modal') {
 	if (dispatched.length !== 1 || dispatched[0].type !== 'open-quote') {
 		fail('a failed dialog-only form did not reopen the dialog: ' + JSON.stringify(dispatched));
 	}
@@ -798,6 +911,49 @@ if (scenario === 'page') {
 	});
 	if (modalForm.title.textContent !== 'Apiary' || modalForm.code.textContent !== 'APIARY-304' || modalForm.code.hasAttribute('hidden')) {
 		fail('a genuinely different code was hidden: title=' + modalForm.title.textContent + ' code=' + modalForm.code.textContent);
+	}
+}
+
+if (scenario === 'suffixed') {
+	if (!listeners['open-quote'] || !listeners['open-quote'].length) {
+		fail('inquiry.js did not register an open-quote listener');
+	}
+
+	// The trigger carries the production shape: the dirty title and the SKU
+	// that repeats it.
+	listeners['open-quote'].forEach(function (fn) {
+		fn({
+			detail: {
+				patternCode: 'Agave',
+				patternSlug: 'agave',
+				patternName: 'Agave | Architectural Metal Screen Pattern',
+				intentLabel: 'Selected pattern'
+			}
+		});
+	});
+	if (modalForm.title.textContent !== 'Agave') {
+		fail('the dialog title kept the SEO suffix: ' + modalForm.title.textContent);
+	}
+	if (modalForm.code.textContent !== '' || !modalForm.code.hasAttribute('hidden')) {
+		fail('the SKU that repeats the name became a second row: ' + JSON.stringify(modalForm.code.attrs));
+	}
+	if (modalForm.wa.href.indexOf('Architectural') !== -1 || modalForm.wa.href.indexOf('(Agave)') !== -1) {
+		fail('the WhatsApp text repeated the name or kept the suffix: ' + modalForm.wa.href);
+	}
+
+	// An empty open-quote restores the server-rendered default; neither the
+	// suffix nor the duplicate code row may come back with it.
+	listeners['open-quote'].forEach(function (fn) {
+		fn({ detail: {} });
+	});
+	if (modalForm.title.textContent !== 'Agave') {
+		fail('the SEO suffix came back with the default title: ' + modalForm.title.textContent);
+	}
+	if (!modalForm.code.hasAttribute('hidden')) {
+		fail('the duplicate code row came back with the default: ' + JSON.stringify(modalForm.code.attrs));
+	}
+	if (modalForm.wa.href.indexOf('(Agave)') !== -1) {
+		fail('the default WhatsApp text repeated the name: ' + modalForm.wa.href);
 	}
 }
 

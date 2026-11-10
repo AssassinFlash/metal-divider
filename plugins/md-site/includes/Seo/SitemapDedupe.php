@@ -45,6 +45,8 @@ final class SitemapDedupe {
 	public function register(): void {
 		add_filter( 'seopress_sitemaps_no_archive_link', array( $this, 'drop_archive_link' ), 10, 2 );
 		add_filter( 'seopress_sitemaps_xml_index', array( $this, 'drop_empty_type_entries' ) );
+		add_filter( 'seopress_sitemaps_single_term_query', array( $this, 'disable_term_menu_order' ) );
+		add_filter( 'seopress_sitemaps_index_tax_query', array( $this, 'disable_term_menu_order' ) );
 	}
 
 	/**
@@ -155,5 +157,27 @@ final class SitemapDedupe {
 	public function drop_archive_link( string $markup, string $path ): string {
 		unset( $markup, $path );
 		return '';
+	}
+
+	/**
+	 * Stops WooCommerce's menu_order join from emptying a taxonomy sitemap.
+	 *
+	 * SEOPress 10.4's term sitemap query adds a '_seopress_robots_index'
+	 * meta_query. WooCommerce filters the same query for 'product_cat' and
+	 * sets 'menu_order', which adds an INNER JOIN on 'wp_termmeta' for a key
+	 * most series never carry. The join drops every category that has a
+	 * 'thumbnail_id' but no 'order' meta — measured on production 2026-11-10,
+	 * all nine series disappeared and 'product_cat-sitemap1.xml' answered
+	 * with zero '<loc>'. Disabling the menu-order ordering and sorting by name
+	 * restored the file to its nine URLs (1,145 bytes). The index query is
+	 * filtered too, because SEOPress builds it from the same term query.
+	 *
+	 * @param array<string, mixed> $args The term query arguments.
+	 * @return array<string, mixed> The same arguments without the menu_order join.
+	 */
+	public function disable_term_menu_order( array $args ): array {
+		$args['menu_order'] = false;
+		$args['orderby']    = 'name';
+		return $args;
 	}
 }

@@ -22,10 +22,18 @@
 
 	var START_PATH = '/chat/index.php/chat/chatwidget/(department)/1';
 	var CSS_PATH = '/chat/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-launcher.css';
-	var CSS_VERSION = '20261110a';
+	var CSS_VERSION = '20261110b';
 
 	if ( location.pathname.indexOf( '/chat/' ) === 0 ) {
 		return;
+	}
+
+	// WordPress product titles carry SEOPress's presentation suffix ("Agave |
+	// Architectural Metal Screen Pattern"). The chat widget and a few PDPs still
+	// hand that title over, so the quote dialog must receive the clean pattern
+	// name rather than the SEO string.
+	function cleanPatternName( value ) {
+		return String( value || '' ).replace( /\s*\|\s*Architectural Metal Screen Pattern\s*$/i, '' ).trim();
 	}
 
 	function ready( fn ) {
@@ -155,11 +163,11 @@
 				var pdpTrigger = document.querySelector( '.pdp-quote-bar a[href="#open-quote"], .pdp-hero a[href="#open-quote"]' );
 				var patternCode = pdpTrigger ? ( pdpTrigger.getAttribute( 'data-pattern-code' ) || '' ) : '';
 				var patternSlug = pdpTrigger ? ( pdpTrigger.getAttribute( 'data-pattern-slug' ) || '' ) : '';
-				var patternName = pdpTrigger ? ( pdpTrigger.getAttribute( 'data-pattern-name' ) || '' ) : '';
+				var patternName = cleanPatternName( pdpTrigger ? ( pdpTrigger.getAttribute( 'data-pattern-name' ) || '' ) : '' );
 				var patternThumb = pdpTrigger ? ( pdpTrigger.getAttribute( 'data-pattern-thumb' ) || pdpTrigger.getAttribute( 'data-quote-thumb' ) || '' ) : '';
 				if ( !patternSlug && event.data && typeof event.data === 'object' ) {
 					var chatSlug = typeof event.data.patternSlug === 'string' ? event.data.patternSlug.trim().toLowerCase() : '';
-					var chatName = typeof event.data.patternName === 'string' ? event.data.patternName.trim() : '';
+					var chatName = typeof event.data.patternName === 'string' ? cleanPatternName( event.data.patternName ) : '';
 					if ( !chatSlug && typeof event.data.pageUrl === 'string' ) {
 						var pageMatch = event.data.pageUrl.match( /\/pattern\/([a-z0-9-]+)\/?/i );
 						if ( pageMatch && pageMatch[1] ) {

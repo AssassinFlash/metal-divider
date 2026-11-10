@@ -93,12 +93,11 @@
 }
 
 @media ( max-width: 749px ) {
-	/* A catalogue or PDP page already carries its own sticky bottom bar on
-	 * phones. The launcher sits above it, and shrinks to a 44px capsule so the
-	 * two floating layers together stop eating the article: the full 54px pill
+	/* A catalogue page already carries its own sticky bottom bar on phones.
+	 * The launcher sits above it, and shrinks to a 44px capsule so the two
+	 * floating layers together stop eating the article: the full 54px pill
 	 * with its 14px label covered a whole line of body copy and an H2 edge. */
-	body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) .mdvl-launcher,
-	body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher {
+	body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) .mdvl-launcher {
 		right: 16px;
 		bottom: calc( 80px + env( safe-area-inset-bottom ) );
 		gap: 8px;
@@ -107,11 +106,39 @@
 		font-size: 12.5px;
 	}
 
-	body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) .mdvl-launcher .mdvl-mark,
-	body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher .mdvl-mark {
+	body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) .mdvl-launcher .mdvl-mark {
 		width: 32px;
 		height: 32px;
 		font-size: 10px;
+	}
+}
+
+/* The PDP already shows a full-width quote bar at the bottom of a phone
+ * screen. A labelled capsule above it covered the right half of the body copy
+ * (measured at 390px, 2026-11-10), so on the PDP the launcher becomes a 44px
+ * round badge that sits clear of the bar. The viewport is 990px because the
+ * PDP's own layout breakpoint is: wider tablets still get the compact badge,
+ * not a 54px pill over the content. */
+@media ( max-width: 990px ) {
+	body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher {
+		right: 16px;
+		bottom: calc( 84px + env( safe-area-inset-bottom ) ) !important;
+		width: 44px;
+		height: 44px;
+		padding: 0;
+		border-radius: 50%;
+		justify-content: center;
+		gap: 0;
+	}
+
+	body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher .mdvl-label,
+	body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher .mdvl-dot {
+		display: none;
+	}
+
+	body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher .mdvl-mark {
+		width: 34px;
+		height: 34px;
 	}
 }
 

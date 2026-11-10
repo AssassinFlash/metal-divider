@@ -126,12 +126,14 @@ function md_legacy_urls_rest( string $path, string $base ): string {
  * the migration plan already chose for it (tools/migrate/18-migrate.py,
  * `/collections/all equity`).
  *
- * @param string        $path   The request path, leading slash included.
- * @param callable|null $series Tells whether a `product_cat` slug is live;
- *                              null uses WordPress's own lookup.
+ * @param string        $path    The request path, leading slash included.
+ * @param callable|null $series  Tells whether a `product_cat` slug is live;
+ *                               null uses WordPress's own lookup.
+ * @param callable|null $product Resolves an old product slug to the slug this
+ *                               site publishes; null uses the product lookup.
  * @return string The destination path, `''` when the path is not a legacy one.
  */
-function md_legacy_urls_target( string $path, ?callable $series = null ): string {
+function md_legacy_urls_target( string $path, ?callable $series = null, ?callable $product = null ): string {
 	$path = '/' . ltrim( $path, '/' );
 
 	$alias = rtrim( $path, '/' );
@@ -147,7 +149,10 @@ function md_legacy_urls_target( string $path, ?callable $series = null ): string
 
 		$parts = explode( '/', trim( $rest, '/' ) );
 		if ( 1 === count( $parts ) && 'page' !== $parts[0] && '' !== $parts[0] ) {
-			return MD_LEGACY_URLS_PATTERN_BASE . '/' . $parts[0] . '/';
+			$resolver     = $product ?? 'md_legacy_urls_resolve_product_slug';
+			$resolved     = (string) $resolver( $parts[0] );
+			$product_slug = '' === $resolved ? $parts[0] : $resolved;
+			return MD_LEGACY_URLS_PATTERN_BASE . '/' . $product_slug . '/';
 		}
 
 		return rtrim( MD_LEGACY_URLS_CATALOGUE, '/' ) . $rest;
@@ -186,6 +191,36 @@ function md_legacy_urls_series_exists( string $slug ): bool {
 }
 
 /**
+ * The product slug this site publishes for an old storefront slug.
+ *
+ * The old storefront handles are shorter than the product slugs this site
+ * publishes: '/shop/agave/' answers at
+ * '/pattern/agave-architectural-metal-screen-pattern/'. Redirecting first to
+ * '/pattern/agave/' costs a second 301 through WordPress's own canonical
+ * redirect, so this looks the suffixed product up directly.
+ *
+ * A slug no product carries comes back unchanged: '/pattern/<slug>/' is still
+ * the right first hop for a URL that may exist, and the fallback keeps this
+ * plugin harmless when it runs without a database or outside WordPress.
+ *
+ * @param string $slug The old storefront slug.
+ * @return string The product slug, or the original when no product matches.
+ */
+function md_legacy_urls_resolve_product_slug( string $slug ): string {
+	if ( ! function_exists( 'get_page_by_path' ) ) {
+		return $slug;
+	}
+	if ( null !== get_page_by_path( $slug, OBJECT, 'product' ) ) {
+		return $slug;
+	}
+	$suffixed = $slug . '-architectural-metal-screen-pattern';
+	if ( null !== get_page_by_path( $suffixed, OBJECT, 'product' ) ) {
+		return $suffixed;
+	}
+	return $slug;
+}
+
+/**
  * The destination for a whole request URI, query string included.
  *
  * The query string travels because the old addresses were used with one: the
@@ -194,13 +229,14 @@ function md_legacy_urls_series_exists( string $slug ): bool {
  * arrive as `/patterns/?pattern_search=lattice` rather than as a bare
  * `/patterns/` that silently drops what the visitor asked for.
  *
- * @param string        $uri    The request URI, path first.
- * @param callable|null $series The series lookup `md_legacy_urls_target` takes.
+ * @param string        $uri     The request URI, path first.
+ * @param callable|null $series  The series lookup `md_legacy_urls_target` takes.
+ * @param callable|null $product The product lookup `md_legacy_urls_target` takes.
  * @return string The destination path with its query, `''` when not legacy.
  */
-function md_legacy_urls_url( string $uri, ?callable $series = null ): string {
+function md_legacy_urls_url( string $uri, ?callable $series = null, ?callable $product = null ): string {
 	$path   = (string) wp_parse_url( $uri, PHP_URL_PATH );
-	$target = md_legacy_urls_target( $path, $series );
+	$target = md_legacy_urls_target( $path, $series, $product );
 	if ( '' === $target ) {
 		return '';
 	}

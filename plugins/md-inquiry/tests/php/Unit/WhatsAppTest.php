@@ -93,6 +93,56 @@ final class WhatsAppTest extends TestCase {
 	}
 
 	/**
+	 * A production title carries an SEO suffix after a pipe, and its SKU can
+	 * be the bare name: `Agave | Architectural Metal Screen Pattern` with
+	 * SKU `Agave`. Laid out raw, the prefilled text read "Pattern: Agave |
+	 * Architectural Metal Screen Pattern (Agave)" — the suffix leaked to the
+	 * customer and the name appeared twice. Both routes name it once.
+	 */
+	public function test_a_pipe_suffixed_title_and_a_repeated_sku_are_named_once(): void {
+		$pattern = array(
+			'post_id' => 42,
+			'name'    => 'Agave | Architectural Metal Screen Pattern',
+			'code'    => 'Agave',
+			'url'     => 'https://metal-divider.com/pattern/agave',
+			'thumb'   => '',
+		);
+		$source  = array(
+			'page'   => 'pattern-pdp',
+			'module' => 'hero',
+			'button' => 'request_quote',
+		);
+
+		$this->assertSame(
+			"Hi, I'm interested in a custom metal divider screen project.\nPattern: Agave\nRef: pattern-pdp/hero/whatsapp",
+			WhatsApp::cta_text( 'hero', $pattern, 'pattern-pdp' )
+		);
+		$this->assertSame(
+			"I'd like a quote for this pattern:\nAgave\nRef: pattern-pdp/hero/request_quote",
+			WhatsApp::form_text( '', '', '', $pattern, $source )
+		);
+		$this->assertStringNotContainsString( 'Architectural Metal Screen Pattern', WhatsApp::cta_text( 'hero', $pattern, 'pattern-pdp' ) );
+		$this->assertStringNotContainsString( 'Agave (Agave)', WhatsApp::form_text( '', '', '', $pattern, $source ) );
+
+		// No SKU at all: the label is the name, with no empty pair of
+		// parentheses where the code would have been.
+		$code_less = \array_merge( $pattern, array( 'code' => '' ) );
+		$this->assertStringContainsString( "Pattern: Agave\n", WhatsApp::cta_text( 'hero', $code_less, 'pattern-pdp' ) );
+	}
+
+	/**
+	 * The clean_title() helper keeps the first pipe segment and trims it; a
+	 * title without a pipe is unchanged.
+	 */
+	public function test_clean_title_keeps_the_name_segment(): void {
+		$this->assertSame( 'Agave', Pattern::clean_title( 'Agave | Architectural Metal Screen Pattern' ) );
+		$this->assertSame( 'Agave', Pattern::clean_title( ' Agave | Architectural Metal Screen Pattern ' ) );
+		$this->assertSame( 'Agave', Pattern::clean_title( 'Agave' ) );
+		$this->assertSame( 'Floral Geo', Pattern::clean_title( 'Floral Geo' ) );
+		$this->assertSame( '', Pattern::clean_title( '' ) );
+	}
+
+	/**
 	 * The shortcode renders a plain anchor with the module-aimed URL — pure
 	 * link, class name for the WindPress volume, no style of its own.
 	 */
