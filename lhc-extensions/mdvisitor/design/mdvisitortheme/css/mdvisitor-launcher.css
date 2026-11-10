@@ -56,16 +56,28 @@
 .mdvl-card {
 	position: fixed;
 	right: 24px;
-	bottom: 24px;
+	bottom: 20px;
 	z-index: 2147483000;
 	width: 400px;
 	max-width: calc( 100vw - 48px );
-	height: 680px;
-	max-height: calc( 100dvh - 32px );
+	height: min( 580px, calc( 100dvh - var( --md-header-h, 60px ) - 36px ) );
+	max-height: calc( 100dvh - var( --md-header-h, 60px ) - 36px );
 	background: #111;
 	border-radius: 18px;
 	overflow: hidden;
 	box-shadow: 0 28px 70px rgba( 0, 0, 0, 0.5 );
+}
+
+/* The admin bar pushes the sticky header down another 32px; the card's own
+ * ceiling has to lose that band too or its top lands under the header.
+ * Desktop only: below 561px the card is the full-screen sheet the mobile
+ * block at the bottom of this file makes it, and a height ceiling there would
+ * leave a strip of page showing under it. */
+@media ( min-width: 561px ) {
+	body.admin-bar .mdvl-card {
+		height: min( 580px, calc( 100dvh - var( --md-header-h, 60px ) - var( --wp-admin--admin-bar--height, 32px ) - 36px ) );
+		max-height: calc( 100dvh - var( --md-header-h, 60px ) - var( --wp-admin--admin-bar--height, 32px ) - 36px );
+	}
 }
 
 .mdvl-card[hidden] {
@@ -81,10 +93,25 @@
 }
 
 @media ( max-width: 749px ) {
+	/* A catalogue or PDP page already carries its own sticky bottom bar on
+	 * phones. The launcher sits above it, and shrinks to a 44px capsule so the
+	 * two floating layers together stop eating the article: the full 54px pill
+	 * with its 14px label covered a whole line of body copy and an H2 edge. */
 	body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) .mdvl-launcher,
 	body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher {
 		right: 16px;
 		bottom: calc( 80px + env( safe-area-inset-bottom ) );
+		gap: 8px;
+		height: 44px;
+		padding: 0 12px 0 6px;
+		font-size: 12.5px;
+	}
+
+	body:has(#pattern-catalog-template--21844031570173__pattern-catalog-main) .mdvl-launcher .mdvl-mark,
+	body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher .mdvl-mark {
+		width: 32px;
+		height: 32px;
+		font-size: 10px;
 	}
 }
 

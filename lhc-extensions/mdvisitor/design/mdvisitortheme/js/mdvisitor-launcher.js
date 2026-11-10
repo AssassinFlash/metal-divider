@@ -22,7 +22,7 @@
 
 	var START_PATH = '/chat/index.php/chat/chatwidget/(department)/1';
 	var CSS_PATH = '/chat/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-launcher.css';
-	var CSS_VERSION = '20261103a';
+	var CSS_VERSION = '20261110a';
 
 	if ( location.pathname.indexOf( '/chat/' ) === 0 ) {
 		return;

@@ -756,6 +756,108 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
+	 * The search render is not dropped by its own in-flight guard.
+	 *
+	 * `settle()` nulls `inflight` before hydrating the product thumbnails, so
+	 * the callback's old guard `inflight !== controller && controller` was true
+	 * for every settled query: the request returned rows, the panel fetched
+	 * their thumbnails, and then `paint()` was skipped — an empty list for a
+	 * search that had matches. Only a different, live request may drop a render.
+	 */
+	public function test_the_search_render_is_not_dropped_by_its_own_guard(): void {
+		$script = (string) file_get_contents( // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			dirname( (string) ( new \ReflectionClass( Templates::class ) )->getFileName() ) . '/../../assets/js/md-chrome.js'
+		);
+
+		$this->assertMatchesRegularExpression(
+			'/if \(inflight && inflight !== controller\) \{\s*return;\s*\}/',
+			$script,
+			'a settled query still paints; only a live, newer request may drop it'
+		);
+		$this->assertDoesNotMatchRegularExpression(
+			'/if \(inflight !== controller && controller\)/',
+			$script,
+			'the old guard was true for every settled query, because inflight is null by then'
+		);
+	}
+
+	/**
+	 * The desktop search sheet's focus ring and result label are legible on its
+	 * own dark panel.
+	 *
+	 * The focus rule painted a `#131313` ring on the `#141414` sheet — one unit
+	 * lighter than the surface it was meant to stand out from, invisible at
+	 * every width above 990. The phone breakpoint had always used gold. A
+	 * picture-less hit (a page or an article) inserts `.md-search-hit__kind`;
+	 * without a rule it rendered as unstyled text between the card's padding
+	 * and the name.
+	 */
+	public function test_the_search_sheet_paints_its_focus_and_kind_on_the_dark_panel(): void {
+		$css = $this->volume( 'chrome.css' );
+
+		$this->assertStringNotContainsString( 'outline:2px solid #131313 !important;', $css, 'no near-black focus ring on the #141414 panel' );
+		$this->assertMatchesRegularExpression(
+			'/xo-modal\[xo-name="search"\] \.xo-field-input__input:focus,[^{]*\{[^}]*outline:2px solid #d4b878 !important;[^}]*outline-offset:2px;/',
+			$css,
+			'the desktop search field paints the gold ring the phone breakpoint uses'
+		);
+
+		$kind = $this->rule_body( $css, '.md-search-hit__kind' );
+		$this->assertNotSame( '', $kind, 'the kind label the script inserts has a rule' );
+		$this->assertStringContainsString( 'text-transform:uppercase', $kind, 'the kind reads as a label, not body copy' );
+		$this->assertStringContainsString( 'color:#d4b878', $kind, 'the kind uses the panel gold' );
+	}
+
+	/**
+	 * The sticky host owns the admin-bar offset and paints its own strip.
+	 *
+	 * The band used `position: relative; top: var(--wp-admin--admin-bar--height)`
+	 * inside a transparent sticky host at `top: 0`, so a 32px strip of the
+	 * scrolling page showed between the top of the screen and the white band —
+	 * 46px on a phone, where the admin bar is absolute and scrolls away. The
+	 * offset now lives on the host (desktop only) and the host carries the
+	 * white surface.
+	 */
+	public function test_the_sticky_header_owns_the_admin_bar_offset_and_paints(): void {
+		$css = $this->volume( 'chrome.css' );
+
+		$host = $this->rule_body( $css, 'body > header#lc-header:has(> #HeaderV9-sections--21844031144189__header_v1_main)' );
+		$this->assertStringContainsString( 'position: sticky', $host, 'the band lives in a sticky host' );
+		$this->assertStringContainsString( 'background: #fff', $host, 'the host paints, so the page cannot show through above the band' );
+
+		$inner = $this->rule_body( $css, 'body.admin-bar #HeaderV9-sections--21844031144189__header_v1_main' );
+		$this->assertStringContainsString( 'top: 0;', $inner, 'the band inside the host no longer offsets itself' );
+
+		$this->assertMatchesRegularExpression(
+			'/@media \(min-width: 601px\)\{\s*body\.admin-bar > header#lc-header:has\([^)]*\)\{\s*top: var\(--wp-admin--admin-bar--height, 32px\);/',
+			$css,
+			'the host takes the desktop admin-bar offset; below 601px the bar scrolls away'
+		);
+	}
+
+	/**
+	 * The PDP does not wear three fixed layers on a phone.
+	 *
+	 * The quote bar, the chat launcher and the back-to-top button all float at
+	 * the bottom; at 152px the button sat over the last section's heading. The
+	 * bar already carries the page's quote action, so the shortcut is hidden on
+	 * this face. The PDP's own breakpoint also has to be the 990px chrome uses,
+	 * or a 990px viewport keeps the desktop layout.
+	 */
+	public function test_the_pdp_does_not_stack_three_floats_on_a_phone(): void {
+		$css = $this->volume( 'chrome.css' );
+		$pdp = $this->volume( 'pdp.css' );
+
+		$this->assertMatchesRegularExpression(
+			'/body:has\(#cinematic-pdp-template--22148302078205__pattern_product_cinematic\) \.md-back-to-top \{\s*display: none !important;/',
+			$css,
+			'the back-to-top shortcut is hidden on a phone PDP, where the bar and launcher already float'
+		);
+		$this->assertStringNotContainsString( '@media (max-width: 989px)', $pdp, "the PDP shares chrome.css's 990px breakpoint" );
+		$this->assertStringContainsString( 'text-wrap: balance', $pdp, 'long spec values balance their lines instead of orphaning a parenthesis' );
+	}
+
+	/**
 	 * A WindPress volume.
 	 *
 	 * @param string $name The volume file name.

@@ -113,6 +113,7 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( 'name="md_inquiry_name"', $html );
 		$this->assertStringContainsString( 'maxlength="120"', $html );
 		$this->assertStringContainsString( 'name="md_inquiry_phone"', $html );
+		$this->assertStringContainsString( 'class="md-inquiry-field md-inquiry-field--phone"', $html, 'the phone row carries its full-row hook' );
 		$this->assertStringContainsString( 'Phone / WhatsApp (optional)', $html );
 		$this->assertStringContainsString( 'maxlength="40"', $html, 'phone is capped at PHONE_MAX, not NAME_MAX' );
 		$this->assertStringContainsString( '<details class="md-inquiry-optional">', $html );
@@ -122,6 +123,15 @@ final class FormTest extends TestCase {
 		$this->assertStringContainsString( '<div class="md-inquiry-notice" role="alert" aria-live="polite"></div>', $html );
 		$this->assertStringContainsString( 'id="md-inquiry-message-hint"', $html );
 		$this->assertStringContainsString( 'aria-describedby="md-inquiry-message-hint"', $html );
+		// The textarea was the one field without a placeholder, and it asks for
+		// the brief: dimensions, panel count, application, finish. The copy is
+		// asserted verbatim because it is customer-visible text, not a style.
+		$this->assertStringContainsString(
+			'placeholder="Dimensions, panel count, indoor or outdoor application, finish preference..."',
+			$html,
+			'the message field asks for the brief it wants'
+		);
+		$this->assertStringNotContainsString( 'data-md-inquiry-failed', $html, 'a fresh GET is not a failed submission' );
 		$this->assertStringContainsString( '%0A', $html, 'the WhatsApp href keeps the encoded line break' );
 		$this->assertStringContainsString( 'name="website"', $html, 'the honeypot' );
 		$this->assertStringContainsString( 'class="md-inquiry-submit"', $html );
@@ -244,6 +254,10 @@ final class FormTest extends TestCase {
 
 		$this->assertStringContainsString( 'class="md-inquiry-notice md-inquiry-notice--error" role="alert"', $html );
 		$this->assertStringContainsString( 'Please complete the highlighted fields.', $html );
+		// The behavior file keys on this marker to bring the failure into view:
+		// without it the footer dialog re-rendered its error inside a dialog
+		// that navigation had already closed.
+		$this->assertStringContainsString( 'data-md-inquiry-failed="1"', $html, 'the failed app is marked for the behavior file' );
 		$this->assertStringContainsString( 'value="Jane Chan"', $html );
 		$this->assertStringContainsString( 'md-inquiry-field--invalid', $html );
 		$this->assertStringContainsString( 'Please enter a valid email address.', $html );
@@ -372,6 +386,426 @@ final class FormTest extends TestCase {
 	}
 
 	/**
+	 * The dialog names a pattern once, an empty WhatsApp open still greets, and
+	 * a failed re-render brings its error into view.
+	 *
+	 * Three regressions on the same path. A trigger that sends a slug and no
+	 * code used to have the slug uppercased into a fake SKU, so the dialog
+	 * showed "Floral Geo" as the title, "FLORAL-GEO" as the code row, and
+	 * "Request a quote · FLORAL-GEO" in the modal header. A visitor who typed
+	 * nothing and tapped "Send via WhatsApp instead" got a chat whose only text
+	 * was the Ref line. And a failed submission whose form is the footer dialog
+	 * re-rendered the error into a dialog that navigation had closed.
+	 *
+	 * This executes inquiry.js twice, once per scenario: a page-level failed
+	 * form (reveal and focus) and a dialog-only failed form (reopen). The
+	 * program fails on the previous behavior: the title carried the slug, the
+	 * empty form opened with "Ref:" only, and the page form was left where the
+	 * navigation put it.
+	 */
+	public function test_the_dialog_names_a_pattern_once_and_a_failed_form_reveals_itself(): void {
+		$js = dirname( __DIR__, 3 ) . '/assets/inquiry.js';
+		$this->assertFileExists( $js );
+
+		foreach ( array( 'page', 'modal' ) as $scenario ) {
+			$descriptors = array(
+				0 => array( 'pipe', 'r' ),
+				1 => array( 'pipe', 'w' ),
+				2 => array( 'pipe', 'w' ),
+			);
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- inquiry.js only runs in a browser; node is how this test can fail these branches.
+			$process = proc_open( array( 'node', '-', $js, $scenario ), $descriptors, $pipes );
+			$this->assertIsResource( $process );
+
+			fwrite( $pipes[0], $this->interaction_behavior_program() );
+			fclose( $pipes[0] );
+			$stdout = stream_get_contents( $pipes[1] );
+			$stderr = stream_get_contents( $pipes[2] );
+			fclose( $pipes[1] );
+			fclose( $pipes[2] );
+			$code = proc_close( $process );
+
+			$this->assertSame( 0, $code, $scenario . ': ' . $stderr . $stdout );
+			$this->assertStringContainsString( 'ok ' . $scenario, (string) $stdout );
+		}
+	}
+
+	/**
+	 * The node program behind the interaction test: a minimal DOM, the two
+	 * scenarios, and assertions that fail on the old behavior.
+	 *
+	 * @return string
+	 */
+	private function interaction_behavior_program(): string {
+		return <<<'INTERACTION_BEHAVIOR'
+'use strict';
+
+var fs = require('fs');
+var vm = require('vm');
+
+var jsPath = process.argv[2];
+var scenario = process.argv[3] || 'page';
+if (!jsPath) {
+	console.error('missing inquiry.js path');
+	process.exit(2);
+}
+
+function fail(message) {
+	console.error('FAIL: ' + message);
+	process.exit(1);
+}
+
+function El(tag, className) {
+	this.tag = tag;
+	this.attrs = {};
+	this.children = [];
+	this.parentElement = null;
+	this.textContent = '';
+	this.value = '';
+	this.required = false;
+	this.id = '';
+	this.disabled = false;
+	this.href = '';
+	var classes = [];
+	this.classList = {
+		add: function (name) {
+			if (classes.indexOf(name) === -1) {
+				classes.push(name);
+			}
+		},
+		remove: function (name) {
+			var at = classes.indexOf(name);
+			if (at !== -1) {
+				classes.splice(at, 1);
+			}
+		},
+		contains: function (name) {
+			return classes.indexOf(name) !== -1;
+		}
+	};
+	if (className) {
+		this.attrs.class = className;
+	}
+}
+El.prototype.getAttribute = function (name) {
+	return Object.prototype.hasOwnProperty.call(this.attrs, name) ? this.attrs[name] : null;
+};
+El.prototype.setAttribute = function (name, value) {
+	this.attrs[name] = String(value);
+	if (name === 'id') {
+		this.id = String(value);
+	}
+};
+El.prototype.removeAttribute = function (name) {
+	delete this.attrs[name];
+};
+El.prototype.hasAttribute = function (name) {
+	return Object.prototype.hasOwnProperty.call(this.attrs, name);
+};
+El.prototype.addEventListener = function () {};
+El.prototype.appendChild = function (child) {
+	child.parentElement = this;
+	this.children.push(child);
+	return child;
+};
+El.prototype.getClientRects = function () {
+	return [{ width: 100, height: 40 }];
+};
+El.prototype.getBoundingClientRect = function () {
+	return { top: 10, left: 10, width: 100, height: 40, bottom: 50, right: 110 };
+};
+El.prototype.focus = function () {
+	global.focused = this;
+};
+El.prototype.scrollIntoView = function () {
+	global.scrolled = this;
+};
+El.prototype.closest = function (selector) {
+	var node = this;
+	while (node) {
+		if (matches(node, selector)) {
+			return node;
+		}
+		node = node.parentElement;
+	}
+	return null;
+};
+El.prototype.querySelector = function (selector) {
+	var found = this.querySelectorAll(selector);
+	return found.length ? found[0] : null;
+};
+El.prototype.querySelectorAll = function (selector) {
+	var out = [];
+	walk(this, function (node) {
+		if (node !== this && matches(node, selector)) {
+			out.push(node);
+		}
+	}.bind(this));
+	return out;
+};
+
+function walk(node, fn) {
+	fn(node);
+	node.children.forEach(function (child) {
+		walk(child, fn);
+	});
+}
+
+function matches(node, selector) {
+	if (!node || !node.attrs) {
+		return false;
+	}
+	if (selector.indexOf(',') !== -1) {
+		return selector.split(',').some(function (part) {
+			return matches(node, part.trim());
+		});
+	}
+	if (selector.charAt(0) === '#') {
+		return node.id === selector.slice(1) || node.attrs.id === selector.slice(1);
+	}
+	if (selector.charAt(0) === '.') {
+		var className = node.attrs.class || '';
+		return (' ' + className + ' ').indexOf(' ' + selector.slice(1) + ' ') !== -1;
+	}
+	var nameMatch = selector.match(/^\[name="([^"]+)"\]$/);
+	if (nameMatch) {
+		return node.attrs.name === nameMatch[1];
+	}
+	var idPrefix = selector.match(/^\[id\^="([^"]+)"\]$/);
+	if (idPrefix) {
+		return typeof node.attrs.id === 'string' && node.attrs.id.indexOf(idPrefix[1]) === 0;
+	}
+	var valued = selector.match(/^\[([a-z0-9_-]+)="([^"]*)"\]$/i);
+	if (valued) {
+		return node.getAttribute(valued[1]) === valued[2];
+	}
+	var bareAttr = selector.match(/^\[([a-z0-9_-]+)\]$/i);
+	if (bareAttr) {
+		return Object.prototype.hasOwnProperty.call(node.attrs, bareAttr[1]);
+	}
+	return false;
+}
+
+function buildForm(opts) {
+	var app = new El('div', 'md-inquiry-app');
+	app.setAttribute('data-md-inquiry', JSON.stringify({
+		waNumber: '85264731687',
+		turnstile: false,
+		i18n: {}
+	}));
+	if (opts.failed) {
+		app.setAttribute('data-md-inquiry-failed', '1');
+	}
+
+	var form = new El('form', 'md-inquiry-form');
+
+	var patternInput = new El('input');
+	patternInput.setAttribute('name', 'md_inquiry_pattern_slug');
+	patternInput.setAttribute('data-md-inquiry-pattern-input', '');
+	form.appendChild(patternInput);
+
+	var intent = new El('input');
+	intent.setAttribute('name', 'md_inquiry_quote_intent');
+	form.appendChild(intent);
+
+	var slot = new El('div', 'md-inquiry-pattern');
+	slot.setAttribute('data-md-inquiry-pattern-slot', '');
+	if (!opts.pattern) {
+		slot.setAttribute('hidden', '');
+	}
+	var thumb = new El('img', 'md-inquiry-pattern__thumb');
+	thumb.setAttribute('data-md-inquiry-pattern-thumb', '');
+	thumb.setAttribute('hidden', '');
+	slot.appendChild(thumb);
+	var title = new El('span', 'md-inquiry-pattern__name');
+	title.setAttribute('data-md-inquiry-pattern-title', '');
+	slot.appendChild(title);
+	var code = new El('span', 'md-inquiry-pattern__code');
+	code.setAttribute('data-md-inquiry-pattern-code', '');
+	slot.appendChild(code);
+	form.appendChild(slot);
+
+	var notice = new El('div', 'md-inquiry-notice md-inquiry-notice--error');
+	if (opts.failed) {
+		notice.textContent = 'Please complete the highlighted fields.';
+	}
+	form.appendChild(notice);
+
+	var name = new El('input');
+	name.setAttribute('name', 'md_inquiry_name');
+	if (opts.failed) {
+		name.setAttribute('aria-invalid', 'true');
+	}
+	form.appendChild(name);
+
+	var message = new El('textarea');
+	message.setAttribute('name', 'md_inquiry_message');
+	form.appendChild(message);
+
+	var submit = new El('button', 'md-inquiry-submit');
+	form.appendChild(submit);
+	var wa = new El('a', 'md-inquiry-whatsapp');
+	form.appendChild(wa);
+
+	app.appendChild(form);
+	return {
+		app: app,
+		form: form,
+		patternInput: patternInput,
+		intent: intent,
+		slot: slot,
+		title: title,
+		code: code,
+		name: name,
+		message: message,
+		wa: wa
+	};
+}
+
+var root = new El('html');
+var body = new El('body');
+root.appendChild(body);
+
+var page = null;
+var modalForm = null;
+if (scenario === 'page') {
+	page = buildForm({ failed: true });
+	body.appendChild(page.app);
+} else {
+	var modal = new El('div');
+	modal.setAttribute('id', 'md-quote-modal');
+	modal.setAttribute('x-cloak', '');
+	modalForm = buildForm({ failed: true, pattern: true });
+	modal.appendChild(modalForm.app);
+	body.appendChild(modal);
+}
+
+var listeners = {};
+var dispatched = [];
+global.window = global;
+global.addEventListener = function (type, fn) {
+	listeners[type] = listeners[type] || [];
+	listeners[type].push(fn);
+};
+global.CustomEvent = function (type, init) {
+	this.type = type;
+	this.detail = init && init.detail ? init.detail : null;
+};
+global.dispatchEvent = function (event) {
+	dispatched.push(event);
+};
+global.document = {
+	documentElement: root,
+	querySelectorAll: function (selector) {
+		return root.querySelectorAll(selector);
+	},
+	createElement: function (tag) {
+		return new El(tag);
+	}
+};
+global.innerWidth = 800;
+global.innerHeight = 800;
+root.clientWidth = 800;
+root.clientHeight = 800;
+
+vm.runInThisContext(fs.readFileSync(jsPath, 'utf8'), { filename: jsPath });
+
+// The empty WhatsApp call to action still opens with a greeting. Without it
+// the prefilled chat said only "Ref: / /", which reads like a tracking link.
+var waLink = (page || modalForm).wa;
+if (!waLink.href || waLink.href.indexOf('https://wa.me/85264731687?text=') !== 0) {
+	fail('the WhatsApp link was not built: ' + waLink.href);
+}
+if (waLink.href.indexOf('Hi%20Metal%20Divider') === -1 || waLink.href.indexOf('stainless%20steel%20screen%20project') === -1) {
+	fail('the empty form did not open with the greeting: ' + waLink.href);
+}
+
+if (scenario === 'page') {
+	if (global.scrolled !== page.app) {
+		fail('a failed page form was not scrolled into view');
+	}
+	if (global.focused !== page.name) {
+		fail('focus did not land on the first control the server flagged invalid');
+	}
+	if (dispatched.length !== 0) {
+		fail('a page-level failure reopened the dialog');
+	}
+} else {
+	if (dispatched.length !== 1 || dispatched[0].type !== 'open-quote') {
+		fail('a failed dialog-only form did not reopen the dialog: ' + JSON.stringify(dispatched));
+	}
+	if (global.scrolled || global.focused) {
+		fail('a dialog-only failure tried to scroll or focus a closed surface');
+	}
+
+	if (!listeners['open-quote'] || !listeners['open-quote'].length) {
+		fail('inquiry.js did not register an open-quote listener');
+	}
+
+	// A trigger that has a name and a slug but no code: the slug is not a SKU.
+	listeners['open-quote'].forEach(function (fn) {
+		fn({
+			detail: {
+				patternSlug: 'floral-geo',
+				patternName: 'Floral Geo',
+				intentLabel: 'Selected pattern'
+			}
+		});
+	});
+	if (modalForm.title.textContent !== 'Floral Geo') {
+		fail('the dialog did not name the pattern once, got: ' + modalForm.title.textContent);
+	}
+	if (modalForm.code.textContent !== '' || !modalForm.code.hasAttribute('hidden')) {
+		fail('the slug became a fake code row: ' + JSON.stringify(modalForm.code.attrs));
+	}
+	if (modalForm.patternInput.value !== 'floral-geo') {
+		fail('the pattern slug did not reach the hidden input: ' + modalForm.patternInput.value);
+	}
+	if (modalForm.wa.href.indexOf('Floral%20Geo') === -1 || modalForm.wa.href.indexOf('FLORAL') !== -1) {
+		fail('the WhatsApp text repeated the name as a code: ' + modalForm.wa.href);
+	}
+
+	// A slug is not the name either. Before the fix the slug was uppercased
+	// into a SKU, so a pattern whose slug is the full WooCommerce post name
+	// grew a code row longer than the pattern name it repeated.
+	listeners['open-quote'].forEach(function (fn) {
+		fn({
+			detail: {
+				patternSlug: 'apiary-architectural-metal-screen-pattern',
+				patternName: 'Apiary'
+			}
+		});
+	});
+	if (modalForm.title.textContent !== 'Apiary') {
+		fail('the dialog did not keep the name when the slug differed: ' + modalForm.title.textContent);
+	}
+	if (modalForm.code.textContent !== '' || !modalForm.code.hasAttribute('hidden')) {
+		fail('the slug became a fake code row: ' + modalForm.code.textContent);
+	}
+	if (modalForm.wa.href.indexOf('APIARY-ARCHITECTURAL') !== -1) {
+		fail('the slug reached the WhatsApp text as a code: ' + modalForm.wa.href);
+	}
+
+	// A real, different code is a second fact: it stays, on its own row.
+	listeners['open-quote'].forEach(function (fn) {
+		fn({
+			detail: {
+				patternSlug: 'apiary',
+				patternName: 'Apiary',
+				patternCode: 'APIARY-304'
+			}
+		});
+	});
+	if (modalForm.title.textContent !== 'Apiary' || modalForm.code.textContent !== 'APIARY-304' || modalForm.code.hasAttribute('hidden')) {
+		fail('a genuinely different code was hidden: title=' + modalForm.title.textContent + ' code=' + modalForm.code.textContent);
+	}
+}
+
+console.log('ok ' + scenario);
+INTERACTION_BEHAVIOR;
+	}
+
+	/**
 	 * Renders the form: directly with the given pattern slug, or through the
 	 * shortcode when the test says so.
 	 *
@@ -436,9 +870,22 @@ function El(tag) {
 	this.id = '';
 	this.disabled = false;
 	this.rect = null;
+	var classes = [];
 	this.classList = {
-		add: function () {},
-		remove: function () {}
+		add: function (name) {
+			if (classes.indexOf(name) === -1) {
+				classes.push(name);
+			}
+		},
+		remove: function (name) {
+			var at = classes.indexOf(name);
+			if (at !== -1) {
+				classes.splice(at, 1);
+			}
+		},
+		contains: function (name) {
+			return classes.indexOf(name) !== -1;
+		}
 	};
 }
 El.prototype.getAttribute = function (name) {
@@ -607,7 +1054,10 @@ function app(sitekey) {
 }
 
 var visible = app('visible-key');
-visible.slot.rect = { top: 4000, left: 0, width: 300, height: 65, bottom: 4065, right: 300 };
+// The page slot is empty, and inquiry.css collapses an empty slot to
+// display:none: no box, no intersection. It must still render when the API
+// is ready; the old gate waited for a box this state never has.
+visible.slot.rect = null;
 body.appendChild(visible.app);
 
 var modal = el('div');
@@ -692,7 +1142,15 @@ global.turnstile = {
 	render: function (element, options) {
 		nextId += 1;
 		var id = 'widget-' + nextId;
-		renders.push({ id: id, element: element, options: options });
+		renders.push({
+			id: id,
+			element: element,
+			options: options,
+			mounting: element.classList.contains('md-inquiry-turnstile--mounting')
+		});
+		// Cloudflare attaches its iframe inside the container; the behavior
+		// file's mount class must be gone once that child exists.
+		element.appendChild(el('iframe'));
 		return id;
 	},
 	reset: function () {
@@ -716,6 +1174,12 @@ if (renders.length !== 1 || renders[0].element !== visible.slot) {
 }
 if (renders[0].options.sitekey !== 'visible-key' || renders[0].options.appearance !== 'interaction-only') {
 	fail('explicit render did not receive this form\'s sitekey and appearance');
+}
+if (!renders[0].mounting) {
+	fail('the collapsed :empty slot was not given a visible mount surface before turnstile.render');
+}
+if (renders[0].element.classList.contains('md-inquiry-turnstile--mounting')) {
+	fail('the mount class outlived the iframe it existed for');
 }
 
 renders[0].options.callback('token-a');
@@ -807,13 +1271,13 @@ if (visible.patternInput.value !== '') {
 if (hidden.patternSlot.hasAttribute('hidden')) {
 	fail('open-quote did not unhide the modal pattern slot');
 }
-if (hidden.patternTitle.textContent !== 'Apiary (APIARY)') {
+if (hidden.patternTitle.textContent !== 'Apiary') {
 	fail('open-quote did not set the modal pattern title, got: ' + hidden.patternTitle.textContent);
 }
 if (hidden.patternThumb.getAttribute('src') !== 'https://metal-divider.com/apiary.webp' || hidden.patternThumb.hasAttribute('hidden')) {
 	fail('open-quote did not update and unhide the modal pattern thumbnail');
 }
-if (!hidden.waLink.href || hidden.waLink.href.indexOf('https://wa.me/85264731687?text=') !== 0 || hidden.waLink.href.indexOf('Apiary%20(APIARY)') === -1) {
+if (!hidden.waLink.href || hidden.waLink.href.indexOf('https://wa.me/85264731687?text=') !== 0 || hidden.waLink.href.indexOf('Apiary') === -1 || hidden.waLink.href.indexOf('APIARY') !== -1) {
 	fail('open-quote did not update the modal WhatsApp link href, got: ' + hidden.waLink.href);
 }
 

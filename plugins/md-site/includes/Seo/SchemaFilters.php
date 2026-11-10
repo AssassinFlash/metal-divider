@@ -67,9 +67,19 @@ final class SchemaFilters {
 	/**
 	 * The catalogue's ItemList: the patterns the page actually renders.
 	 *
-	 * Reads the same query the catalogue template uses so the list and the
-	 * grid cannot disagree, and emits nothing on any other page. Item urls
-	 * are the patterns' own permalinks; the order is the page's order.
+	 * Reads the main query — the one `Catalog::filter_query()` shapes with the
+	 * 24-per-page pager, the search term and the sort — so the list and the
+	 * grid cannot disagree. A fixed "first 24 by title" query (the first
+	 * version) described page one on every page: page 2+ carried the same
+	 * items, and a search or a sort carried the unfiltered set, which is a
+	 * false statement about the visible list on exactly the pages the robots
+	 * rules mark noindex. When the main query has no posts this prints nothing:
+	 * an empty result set must not be padded from elsewhere.
+	 *
+	 * The fixed query remains as the fallback for a runtime with no main query
+	 * (a test, a headless render before `wp()`), so the block is still
+	 * assembled where no loop exists. Item urls are the patterns' own
+	 * permalinks; the order is the page's order.
 	 */
 	public function catalog_item_list(): void {
 		// `/patterns/` is WooCommerce's product archive, not a page: its body class
@@ -80,18 +90,34 @@ final class SchemaFilters {
 		if ( ! $is_catalog ) {
 			return;
 		}
-		$products = \get_posts(
-			array(
-				'post_type'      => 'product',
-				'post_status'    => 'publish',
-				'posts_per_page' => 24,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-				'fields'         => 'ids',
-			)
-		);
-		if ( array() === $products ) {
-			return;
+
+		$query    = isset( $GLOBALS['wp_query'] ) && $GLOBALS['wp_query'] instanceof \WP_Query ? $GLOBALS['wp_query'] : null;
+		$products = array();
+		if ( null !== $query ) {
+			$posts = is_array( $query->posts ) ? $query->posts : array();
+			foreach ( $posts as $post ) {
+				$product_id = is_object( $post ) ? (int) $post->ID : (int) $post;
+				if ( $product_id > 0 ) {
+					$products[] = $product_id;
+				}
+			}
+			if ( array() === $products ) {
+				return;
+			}
+		} else {
+			$products = \get_posts(
+				array(
+					'post_type'      => 'product',
+					'post_status'    => 'publish',
+					'posts_per_page' => 24,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+					'fields'         => 'ids',
+				)
+			);
+			if ( array() === $products ) {
+				return;
+			}
 		}
 		$items    = array();
 		$position = 0;
@@ -179,11 +205,43 @@ final class SchemaFilters {
 		if ( array() !== $points ) {
 			$schema['contactPoint'] = $points;
 		}
+		// The Knowledge Graph field is copied verbatim into the schema, and a
+		// site URL saved before the TLS cutover (or resolved through a proxy
+		// that reports http) would publish an http logo. The site is https-only,
+		// so the schema asserts the scheme every visitor is actually served:
+		// a mixed-content image and a second entity URL otherwise.
+		if ( isset( $schema['logo'] ) ) {
+			$schema['logo'] = $this->https( $schema['logo'] );
+		}
 		// The builder copies the phone into a top-level telephone as
 		// well; the spec's skeleton carries it on the contact point
 		// only.
 		unset( $schema['telephone'] );
 		return $schema;
+	}
+
+	/**
+	 * An image value forced onto https.
+	 *
+	 * SEOPress emits the logo either as a URL string or as an ImageObject
+	 * (url / contentUrl / @id); both shapes are normalized, anything else is
+	 * returned untouched.
+	 *
+	 * @param mixed $value The logo value.
+	 * @return mixed The same shape, with an https scheme on its URL fields.
+	 */
+	private function https( $value ) {
+		if ( is_string( $value ) ) {
+			return (string) \preg_replace( '#^http://#i', 'https://', $value );
+		}
+		if ( is_array( $value ) ) {
+			foreach ( array( 'url', 'contentUrl', '@id' ) as $key ) {
+				if ( isset( $value[ $key ] ) && is_string( $value[ $key ] ) ) {
+					$value[ $key ] = (string) \preg_replace( '#^http://#i', 'https://', $value[ $key ] );
+				}
+			}
+		}
+		return $value;
 	}
 
 	/**

@@ -127,6 +127,44 @@
   font-size: 13px;
   margin-top: 6px;
 }
+
+/* One right edge in every two-column form.
+ *
+ * The closing cards (manufacturing.css `.md-closing-well`) and the home
+ * contact section (home.css `.md-tc14287fe`) lay `.md-inquiry-fields` out as
+ * two `minmax(0, 1fr)` columns. Their span lists cover message, confirm,
+ * promise, actions, notice, pattern, turnstile and honeypot — but not the
+ * optional-details block and not the reply note, so those two took a single
+ * half-column and left an empty cell beside them. The phone row had the same
+ * hole between the name/email row and the message row: a half-width cell with
+ * nothing to its right. The visible result is the ragged right edge reported
+ * on /about-us/ — Name and Email on one row, then a short Phone, then a
+ * message that stopped short of the card's padding edge.
+ *
+ * The rules below put the phone, message, optional block, promise, note and
+ * notice on the full row, from the message control's width down to the
+ * textarea itself. They are scoped through `.md-inquiry-form` (four classes,
+ * 0-4-0) so they win the cascade against the page volumes' 0-3-0 rules
+ * without `!important`, in the same `components` layer; inquiry.css is
+ * imported after home.css but before manufacturing.css, so specificity is
+ * what decides, not import order. Outside a grid `grid-column` has no effect,
+ * which leaves the single-column forms (the inquiry page, the PDP card, the
+ * dialog) exactly as they were. */
+.md-inquiry .md-inquiry-form .md-inquiry-fields > .md-inquiry-field--phone,
+.md-inquiry .md-inquiry-form .md-inquiry-fields > .md-inquiry-field--message,
+.md-inquiry .md-inquiry-form .md-inquiry-fields > .md-inquiry-optional,
+.md-inquiry .md-inquiry-form .md-inquiry-fields > .md-inquiry-promise,
+.md-inquiry .md-inquiry-form .md-inquiry-fields > .md-inquiry-note,
+.md-inquiry .md-inquiry-form .md-inquiry-fields > .md-inquiry-notice {
+  grid-column: 1 / -1;
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+}
+.md-inquiry .md-inquiry-form .md-inquiry-fields > .md-inquiry-field--message .md-inquiry-field__input {
+  max-width: none;
+  width: 100%;
+}
 /* The honeypot is for bots only: off-canvas, never display:none (some
    scrapers skip hidden fields, which would defeat the trap). */
 .md-inquiry .md-inquiry-honeypot {
@@ -138,17 +176,44 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+/* The Turnstile slot is a mount point, not a drawn control.
+ *
+ * The widget renders with data-appearance="interaction-only": until the
+ * challenge needs an interaction it is either empty or a zero-height hidden
+ * frame. The 1px dashed box, 65px minimum and 12/16 padding this rule used to
+ * carry therefore drew a full-card-width empty dashed rectangle right under the
+ * "Have a drawing, DXF, DWG or PDF?" line — it read as a broken file-upload
+ * target, and the page had not one. The slot now sizes to its content: with
+ * no border or padding and no minimum, an empty slot is zero-height.
+ *
+ * :empty then removes the remaining margin so the empty state adds no band at
+ * all. Once the challenge renders, the iframe is a child, :empty stops
+ * matching, and the 12px margin separates it from the fields again. */
 .md-inquiry .md-inquiry-turnstile {
   align-items: center;
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  border: 0;
   color: rgba(255, 255, 255, 0.5);
   display: flex;
   font-size: 13px;
   gap: 10px;
-  margin: 24px 0;
-  min-height: 65px;
-  padding: 12px 16px;
+  margin: 12px 0;
+  min-height: 0;
+  padding: 0;
+}
+.md-inquiry .md-inquiry-turnstile:empty {
+  display: none;
+  margin: 0;
+}
+/* Turnstile does not create its iframe inside a display:none container. The
+ * :empty rule above is exactly that state, so the behavior file adds this
+ * class around turnstile.render() only: a 1px borderless, marginless surface
+ * (the :empty margin: 0 still applies) that is visible enough to mount into.
+ * The class is removed as soon as the iframe is a child, after which :empty
+ * no longer matches anyway. This rule sits after :empty because it has to
+ * win the equal-specificity tie while both apply. */
+.md-inquiry .md-inquiry-turnstile.md-inquiry-turnstile--mounting {
+  display: flex;
+  min-height: 1px;
 }
 .md-inquiry .md-inquiry-turnstile-status { margin: 0; }
 /* At 320 the quote column is 230px: 16px container padding, 1px panel
@@ -206,14 +271,28 @@
   padding: 0 24px;
   text-decoration: none;
 }
+/* The primary action is the one gold control in the form, and it keeps that
+ * colour while Turnstile has not yet unlocked it. The old disabled state was
+ * opacity 0.55 over --md-gold (#c9a962): on the #141414 card it computed to a
+ * muddy grey-brown block that read as disabled forever, which is exactly what
+ * it was until the widget rendered — the first thing a visitor sees on a page
+ * where the slot waits below the fold. A brighter champagne with near-black
+ * text holds the contrast, and the disabled state softens the same gold
+ * instead of greying it: 0.72 opacity plus a translucent gold border. */
 .md-inquiry .md-inquiry-submit {
-  background: var(--md-gold);
-  border: 1px solid var(--md-gold);
-  color: var(--md-bg-darkest);
+  background: #d4b475;
+  border: 1px solid #d4b475;
+  color: #111;
   cursor: pointer;
 }
-.md-inquiry .md-inquiry-submit:hover { background: var(--md-gold-light); }
-.md-inquiry .md-inquiry-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+.md-inquiry .md-inquiry-submit:not(:disabled):hover { background: var(--md-gold-light); }
+.md-inquiry .md-inquiry-submit:disabled {
+  background: #d4b475;
+  border-color: rgba(212, 180, 117, 0.55);
+  color: #111;
+  cursor: not-allowed;
+  opacity: 0.72;
+}
 .md-inquiry .md-inquiry-whatsapp {
   background: transparent;
   border: 1px solid var(--md-whatsapp);
@@ -315,6 +394,12 @@
 .md-inquiry .md-inquiry-pattern__note {
   color: rgba(255, 255, 255, 0.6);
   font-size: 13.5px;
+}
+/* The behavior file hides the code line when it repeats the pattern's name;
+   [hidden] already means display:none, and this keeps that true even if a
+   later rule gives the span a display value of its own. */
+.md-inquiry .md-inquiry-pattern__code[hidden] {
+  display: none !important;
 }
 .md-inquiry .ref-line {
   color: var(--md-gold);

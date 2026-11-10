@@ -56,7 +56,7 @@ abstract class TestCase extends WP_Mock_TestCase {
 	 * @return void
 	 */
 	protected function mock_passthroughs(): void {
-		foreach ( array( '__', '_x', '_n_noop', 'esc_html__', '__return_false' ) as $function ) {
+		foreach ( array( '__', '_x', '_n_noop', 'esc_html__', 'esc_attr__', '__return_false' ) as $function ) {
 			WP_Mock::passthruFunction( $function );
 		}
 		foreach ( array( 'esc_html', 'esc_attr', 'esc_url', 'esc_textarea', 'sanitize_title', 'sanitize_text_field', 'sanitize_textarea_field', 'sanitize_email', 'sanitize_key', 'wp_unslash' ) as $function ) {

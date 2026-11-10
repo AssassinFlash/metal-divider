@@ -229,7 +229,15 @@ final class Form {
 		$suffix       = 1 === self::$rendered ? '' : '-' . (string) self::$rendered;
 		$this->suffix = $suffix;
 
-		$out  = '<div class="md-inquiry-app" data-md-inquiry="' . \esc_attr( (string) \wp_json_encode( $this->config_json( $pattern, $source ) ) ) . '">';
+		// A failed submission re-renders the same form with the visitor's values
+		// and the failure notice. The behavior file needs to know that this app
+		// is the failed one: a page whose only form is the footer's quote dialog
+		// re-renders it inside a dialog that is closed again on navigation, so
+		// the error message otherwise sits invisible. The marker is a server
+		// fact, not something the script has to infer from the notice text.
+		$failed = $this->state->has_failed() ? ' data-md-inquiry-failed="1"' : '';
+		$out    = '<div class="md-inquiry-app" data-md-inquiry="' . \esc_attr( (string) \wp_json_encode( $this->config_json( $pattern, $source ) ) ) . '"' . $failed . '>';
+
 		$out .= '<div class="md-inquiry">';
 
 		$out .= '<form class="md-inquiry-form" method="post">';
@@ -429,7 +437,14 @@ final class Form {
 			default   => Validator::NAME_MAX,
 		};
 
-		$out  = '<p class="md-inquiry-field' . $invalid . '">';
+		// The phone row carries a modifier like the message row does: in the
+		// two-column closing cards its half-width cell left an empty cell beside
+		// it, so the form's right edge was ragged. The stylesheet gives
+		// --phone the full row; the class keeps that a semantic hook rather
+		// than a selector on the input's name.
+		$modifier = 'phone' === $key ? ' md-inquiry-field--phone' : '';
+
+		$out  = '<p class="md-inquiry-field' . $modifier . $invalid . '">';
 		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '">' . \esc_html( $label ) . '</label>';
 		$out .= '<input class="md-inquiry-field__input" type="' . \esc_attr( $type ) . '" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" value="' . \esc_attr( $value ) . '" maxlength="' . \esc_attr( $max ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '" placeholder="' . \esc_attr( $placeholder ) . '"' . ( $required ? ' required' : '' ) . $this->invalid_attrs( $key, $error ) . '>';
 		$out .= $this->error_span( $key, $error );
@@ -451,9 +466,15 @@ final class Form {
 			? __( 'Message (optional — the pattern is already attached)', 'md-inquiry' )
 			: __( 'Message', 'md-inquiry' );
 
+		// The placeholder is the one line of guidance the textarea had none of:
+		// every neighbouring input carries one, and the label alone ("Message")
+		// left the highest-intent field on the form asking for nothing in
+		// particular. It names what a useful brief contains, not a format.
+		$placeholder = \esc_attr__( 'Dimensions, panel count, indoor or outdoor application, finish preference...', 'md-inquiry' );
+
 		$out  = '<p class="md-inquiry-field md-inquiry-field--message' . $invalid . '">';
 		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '">' . \esc_html( $label ) . '</label>';
-		$out .= '<textarea class="md-inquiry-field__input" id="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '" name="md_inquiry_message" maxlength="' . \esc_attr( (string) Validator::MESSAGE_MAX ) . '" rows="5"' . ( $has_pattern ? '' : ' required' ) . $this->invalid_attrs( 'message', $error, $this->id_of( 'md-inquiry-message-hint' ) ) . '>' . \esc_textarea( $value ) . '</textarea>';
+		$out .= '<textarea class="md-inquiry-field__input" id="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '" name="md_inquiry_message" maxlength="' . \esc_attr( (string) Validator::MESSAGE_MAX ) . '" rows="5" placeholder="' . $placeholder . '"' . ( $has_pattern ? '' : ' required' ) . $this->invalid_attrs( 'message', $error, $this->id_of( 'md-inquiry-message-hint' ) ) . '>' . \esc_textarea( $value ) . '</textarea>';
 		// The pages ask for drawings by name ("Send your DXF, DWG, or PDF"), so
 		// the form has to say how a drawing reaches us. It cannot take a file:
 		// there is no file input and no upload handler, and the old shop's

@@ -49,6 +49,30 @@ const MD_LEGACY_URLS_OLD_CATALOGUE = '/shop';
 const MD_LEGACY_URLS_OLD_SERIES_BASE = '/collections';
 
 /**
+ * The site's own pattern base, without a trailing slash: a product pattern's
+ * permalink is `/pattern/<slug>/` (owner ruling 2026-10-24, "URL 基座改
+ * /pattern/").
+ */
+const MD_LEGACY_URLS_PATTERN_BASE = '/pattern';
+
+/**
+ * Old addresses that changed name rather than base, one destination each.
+ *
+ * Keys are request paths without the trailing slash; values are the paths the
+ * pages actually answer at today. `pattern-arabic` is the old site's name for
+ * the series this site publishes as `pattern-moroccan-arabic`, and it arrived
+ * in two shapes: the Shopify collection and the `/pattern-category/` path the
+ * site itself published between the URL ruling and the rename. The two family
+ * pages were linked on the old site under longer names.
+ */
+const MD_LEGACY_URLS_ALIASES = array(
+	'/collections/pattern-arabic'      => '/pattern-category/pattern-moroccan-arabic/',
+	'/pattern-category/pattern-arabic' => '/pattern-category/pattern-moroccan-arabic/',
+	'/perforated-metal-panels'         => '/perforated-panels/',
+	'/outdoor-privacy-screens'         => '/outdoor-privacy-landscape-screens/',
+);
+
+/**
  * Whether the path sits at the base or below it.
  *
  * A prefix test alone would claim `/shopkeeper` and `/collections-x`, which
@@ -82,6 +106,15 @@ function md_legacy_urls_rest( string $path, string $base ): string {
  * series' `#product-catalog` fragment is a browser concern and never reaches
  * this function — and the query string is the caller's to carry.
  *
+ * The one exception inside the catalogue branch is `/shop/<slug>`, which was
+ * a product on the old storefront: it moves to `/pattern/<slug>/`, the PDP the
+ * site actually publishes. Sending it to `/patterns/<slug>/` invented a 404 —
+ * the catalogue has no per-pattern child path. The pager (`/shop/page/N/`) is
+ * not a product and keeps the catalogue mapping.
+ *
+ * `MD_LEGACY_URLS_ALIASES` holds the addresses that changed name rather than
+ * base; they are answered before any of the rules above.
+ *
  * The old site's two Shopify handles are the exception, and they are why the
  * series branch asks whether the series exists. `/collections/all` was the
  * whole catalogue (it 301s to `/shop/` on the old site), and the redirect map
@@ -101,9 +134,23 @@ function md_legacy_urls_rest( string $path, string $base ): string {
 function md_legacy_urls_target( string $path, ?callable $series = null ): string {
 	$path = '/' . ltrim( $path, '/' );
 
+	$alias = rtrim( $path, '/' );
+	if ( isset( MD_LEGACY_URLS_ALIASES[ $alias ] ) ) {
+		return MD_LEGACY_URLS_ALIASES[ $alias ];
+	}
+
 	if ( md_legacy_urls_is_under( $path, MD_LEGACY_URLS_OLD_CATALOGUE ) ) {
 		$rest = md_legacy_urls_rest( $path, MD_LEGACY_URLS_OLD_CATALOGUE );
-		return rtrim( MD_LEGACY_URLS_CATALOGUE, '/' ) . ( '' === $rest ? '/' : $rest );
+		if ( '' === $rest ) {
+			return MD_LEGACY_URLS_CATALOGUE;
+		}
+
+		$parts = explode( '/', trim( $rest, '/' ) );
+		if ( 1 === count( $parts ) && 'page' !== $parts[0] && '' !== $parts[0] ) {
+			return MD_LEGACY_URLS_PATTERN_BASE . '/' . $parts[0] . '/';
+		}
+
+		return rtrim( MD_LEGACY_URLS_CATALOGUE, '/' ) . $rest;
 	}
 
 	if ( ! md_legacy_urls_is_under( $path, MD_LEGACY_URLS_OLD_SERIES_BASE ) ) {

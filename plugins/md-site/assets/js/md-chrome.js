@@ -199,14 +199,16 @@
     });
 
     // The quote dialog, opened by [data-quote-source] CTAs and by any
-    // anchor that targets #open-quote. The footer ships one dialog on every
-    // page; a page with its own #quote-modal (custom-screens) keeps the page
-    // dialog as the single open target, so the footer copy stays inert there.
+    // anchor that targets #open-quote. The footer ships the only dialog
+    // (#md-quote-modal) on every page — the custom-screens face used to carry
+    // its own #quote-modal and no longer does; that id survives in the
+    // selectors below only as a compatibility hook for the older markup.
     //
     // A page that already renders the inquiry form itself (the inquiry face)
     // must not get a second copy inside the dialog: the form already on the
     // page is the single place to start and verify the inquiry. On such a page
-    // the CTA scrolls to that form instead of opening a dialog over it.
+    // the CTA attaches the quote context to that form and scrolls to it
+    // instead of opening a dialog over it.
     Alpine.data('quoteModal', function () {
       return {
         isOpen: false,
@@ -215,7 +217,7 @@
         open: function (detail) {
           var page_form = pageInquiryForm();
           if (page_form) {
-            applyQuoteContext(page_form, detail);
+            applyPageQuoteContext(page_form, detail);
             focusInquiryForm(page_form);
             return;
           }
@@ -338,6 +340,90 @@
     }
     if (typeof target.focus === 'function') {
       target.focus({ preventScroll: true });
+    }
+  }
+
+  // A quote CTA can fire on the inquiry face too: the shared header and the
+  // footer dock are on every page. inquiry.js wires its open-quote listener to
+  // the dialog's copy of the form only — it looks for #md-quote-modal — and
+  // that copy is removed on this page, so the page form never heard the
+  // pattern the visitor named. This writes the same hooks inquiry.js's
+  // applyQuoteDetail writes (pattern input, hidden source inputs, quote
+  // intent, the pattern row and the message field's optional state), so an
+  // inquiry started from a CTA on /inquiry/ records the same context as one
+  // started in the dialog. The page form's WhatsApp href is generated when
+  // the page renders and stays as rendered; the submission does not use it.
+  function applyPageQuoteContext(app, detail) {
+    var form = app && app.querySelector ? app.querySelector('.md-inquiry-form') : null;
+    if (!form) {
+      return;
+    }
+    var info = detail || {};
+    var code = String(info.patternCode || '').trim();
+    var slug = String(info.patternSlug || '').trim();
+    var thumb = String(info.patternThumb || '').trim();
+    var intent = String(info.intentLabel || info.quoteIntent || '').trim();
+
+    var write = function (name, value) {
+      var input = form.querySelector('[name="' + name + '"]');
+      if (input) {
+        input.value = value;
+      }
+    };
+    var page = String(info.sourcePage || '').trim();
+    if (page) {
+      write('md_inquiry_source_page', page);
+    }
+    var module = String(info.sourceModule || info.source || '').trim();
+    if (module) {
+      write('md_inquiry_source_module', module);
+    }
+    var button = String(info.sourceButton || '').trim();
+    if (button) {
+      write('md_inquiry_source_button', button);
+    }
+    write('md_inquiry_quote_intent', intent);
+
+    if (!code && !slug) {
+      return;
+    }
+    var patternCode = (code || slug).toUpperCase();
+    var patternSlug = (slug || code).toLowerCase();
+    var patternInput = form.querySelector('[data-md-inquiry-pattern-input]');
+    if (patternInput) {
+      patternInput.value = patternSlug;
+    }
+    // The server requires the message only when no pattern is attached
+    // (Validator::validate), so the client-side requirement has to go with
+    // the pattern that now stands in for it.
+    var message = form.querySelector('[name="md_inquiry_message"]');
+    if (message) {
+      message.required = false;
+      message.removeAttribute('required');
+    }
+    var slot = form.querySelector('[data-md-inquiry-pattern-slot]');
+    if (!slot) {
+      return;
+    }
+    slot.removeAttribute('hidden');
+    var title = slot.querySelector('[data-md-inquiry-pattern-title]');
+    if (title) {
+      title.textContent = patternCode;
+    }
+    var codeEl = slot.querySelector('[data-md-inquiry-pattern-code]');
+    if (codeEl) {
+      codeEl.textContent = patternCode;
+    }
+    var note = slot.querySelector('[data-md-inquiry-pattern-eyebrow]');
+    if (note && intent) {
+      note.textContent = intent;
+    }
+    var thumbEl = slot.querySelector('[data-md-inquiry-pattern-thumb]');
+    if (thumbEl && thumb) {
+      thumbEl.setAttribute('src', thumb);
+      thumbEl.setAttribute('alt', patternCode);
+      thumbEl.removeAttribute('hidden');
+      slot.classList.remove('md-inquiry-pattern--no-thumb');
     }
   }
 
@@ -3231,6 +3317,10 @@
       var prompt = document.querySelector('[data-md-search-prompt]');
       var timer = null;
       var inflight = null;
+      // Every settle supersedes every earlier one, including a query whose
+      // request already finished and reset `inflight` to null while its
+      // thumbnails were still loading.
+      var requestSerial = 0;
       var seriesLoaded = false;
 
       var decodeText = function (value) {
@@ -3323,6 +3413,8 @@
       };
 
       var settle = function (query) {
+        requestSerial += 1;
+        var serial = requestSerial;
         if (inflight) {
           inflight.abort();
           inflight = null;
@@ -3363,7 +3455,18 @@
             // or article hit renders without a picture (fillTile drops the
             // frame rather than leaving it empty).
             hydrateProductThumbs(rows, function (thumbs) {
-              if (inflight !== controller && controller) {
+              // A newer query may have replaced this one while the thumbnails
+              // were loading. `inflight` is already null here (line above) —
+              // the old guard tested it against the controller and returned
+              // when it was null, so the results of a settled query were
+              // thrown away and the panel stayed empty forever. Only a
+              // *different, live* request is a reason to drop this render.
+              if (inflight && inflight !== controller) {
+                return;
+              }
+              // A newer query may already have finished and cleared `inflight`
+              // again; the serial still marks this render as superseded.
+              if (serial !== requestSerial) {
                 return;
               }
               paint(rows, query, thumbs);
@@ -3527,6 +3630,9 @@
       reset.addEventListener('click', function (event) {
         event.preventDefault();
         input.value = '';
+        // A thumbnail lookup already in flight must not repaint the list the
+        // visitor just cleared.
+        requestSerial += 1;
         if (inflight) {
           inflight.abort();
           inflight = null;
@@ -3571,6 +3677,9 @@
           clearTimeout(timer);
           timer = null;
         }
+        // Same reason: a pending render must not bring the dismissed layer
+        // back, and it keeps the serial ahead of every older query.
+        requestSerial += 1;
         if (inflight) {
           inflight.abort();
           inflight = null;

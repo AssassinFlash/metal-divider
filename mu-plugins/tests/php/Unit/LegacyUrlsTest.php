@@ -114,6 +114,50 @@ final class LegacyUrlsTest extends TestCase {
 	}
 
 	/**
+	 * An old product address moves to the pattern page, not to a catalogue
+	 * child path.
+	 *
+	 * `/shop/<slug>` was a product on the old storefront, and the site's PDP
+	 * base is `/pattern/` (owner ruling 2026-10-24). Mapping it to
+	 * `/patterns/<slug>/` — the catalogue's word with a product slug under it —
+	 * sent a visitor to a 404: no such route exists. The pager and any deeper
+	 * path are not products and keep the catalogue mapping.
+	 */
+	public function test_an_old_product_path_moves_to_the_pattern_page(): void {
+		$live = static fn ( string $slug ): bool => in_array( $slug, self::SERIES, true );
+
+		self::assertSame( '/pattern/agave/', md_legacy_urls_target( '/shop/agave/', $live ) );
+		self::assertSame( '/pattern/agave/', md_legacy_urls_target( '/shop/agave', $live ) );
+		self::assertSame( '/patterns/page/2/', md_legacy_urls_target( '/shop/page/2/', $live ), 'the pager is not a product' );
+		self::assertSame( '/patterns/anything/else', md_legacy_urls_target( '/shop/anything/else', $live ), 'a deeper path is not a product either' );
+		self::assertSame(
+			'/pattern/agave/?pattern_search=lattice',
+			md_legacy_urls_url( '/shop/agave/?pattern_search=lattice', $live ),
+			'the query string travels to the pattern page too'
+		);
+	}
+
+	/**
+	 * The addresses that changed name rather than base land on the pages the
+	 * site publishes today.
+	 *
+	 * `pattern-arabic` is the old site's name for the series published here as
+	 * `pattern-moroccan-arabic`, in both shapes it ever had; the two family
+	 * pages were linked under longer names.
+	 */
+	public function test_the_renamed_addresses_land_on_their_current_pages(): void {
+		$live = static fn (): bool => true;
+
+		self::assertSame( '/pattern-category/pattern-moroccan-arabic/', md_legacy_urls_target( '/collections/pattern-arabic/', $live ) );
+		self::assertSame( '/pattern-category/pattern-moroccan-arabic/', md_legacy_urls_target( '/collections/pattern-arabic', $live ) );
+		self::assertSame( '/pattern-category/pattern-moroccan-arabic/', md_legacy_urls_target( '/pattern-category/pattern-arabic/', $live ) );
+		self::assertSame( '/pattern-category/pattern-moroccan-arabic/', md_legacy_urls_target( '/pattern-category/pattern-arabic', $live ) );
+		self::assertSame( '/perforated-panels/', md_legacy_urls_target( '/perforated-metal-panels', $live ) );
+		self::assertSame( '/perforated-panels/', md_legacy_urls_target( '/perforated-metal-panels/', $live ) );
+		self::assertSame( '/outdoor-privacy-landscape-screens/', md_legacy_urls_target( '/outdoor-privacy-screens/', $live ) );
+	}
+
+	/**
 	 * The two Shopify handles with no series behind them land on the
 	 * catalogue.
 	 *

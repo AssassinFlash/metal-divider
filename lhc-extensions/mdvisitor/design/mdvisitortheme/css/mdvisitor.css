@@ -292,6 +292,39 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
 .md-start .md-hero h1{font-size:32px;margin-bottom:4px}
 .md-start .md-hero-sub{margin-bottom:11px;font-size:14.5px}
 
+/* The start card is a column of auto-height bands inside a fixed-height shell:
+ * hero, conversion bar, panel, composer, tabs. Nothing pinned the shell's own
+ * height, so on a laptop the bands added up to more than the card and the
+ * bottom composer was painted over the panel's last quick card ("Talk to a
+ * person") instead of under it. The shell, the active view and the panel now
+ * each own a bounded height, and only the panel scrolls. */
+.md-card.md-start .md-view.is-active{
+  display:flex!important;
+  flex-direction:column!important;
+  height:100%!important;
+  max-height:100%!important;
+  overflow:hidden!important;
+}
+.md-start .md-hero{padding:10px 16px 12px!important}
+.md-start .md-topline{margin-bottom:6px!important}
+.md-start .md-avatar-hero{width:36px!important;height:36px!important;margin-bottom:6px!important}
+.md-start .md-hero h1{font-size:26px!important;margin-bottom:3px!important}
+.md-start .md-hero-sub{font-size:13.5px!important;margin-bottom:8px!important}
+/* The offline leave-a-message panel keeps its own inset (its last line has to
+ * clear the home indicator), so it is the one panel this does not re-pad; it
+ * already scrolls through the base .md-panel rule. */
+.md-start .md-panel:not(.md-offline-panel){
+  flex:1 1 0%!important;
+  min-height:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding:12px 14px 14px!important;
+}
+.md-start .md-action{min-height:50px!important;padding:7px 11px!important;margin-bottom:6px!important}
+.md-start .md-start-composer{flex:0 0 auto!important;position:relative!important;z-index:2}
+.md-start .md-tabs{flex:0 0 48px!important}
+.md-start .md-faq .md-tabs{flex:0 0 48px!important}
+
 /* Charcoal is the default hero. Forest is opt-in: ?mdvtheme=forest */
 .md-card.md-start .md-hero{
   background:

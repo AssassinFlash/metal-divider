@@ -33,7 +33,7 @@ WORDPRESS_SHA1 = "b552c39cd95d89895b4e7a55af53a03687aff4f6"
 # file by file with `wp plugin verify-checksums` (wp.org publishes no archive
 # hash). Versions read from the plugin API on 2026-10-24.
 WOOCOMMERCE_VERSION = "11.2.1"
-ACF_VERSION = "6.8.10"  # ACF free (owner ruling 2026-10-24; ACF Pro is out)
+ACF_VERSION = "6.8.11"  # ACF free (owner ruling 2026-10-24; ACF Pro is out; 6.8.11 autoupdate on prod 2026-11-10)
 WINDPRESS_VERSION = "3.2.92"
 SEOPRESS_VERSION = "10.4"  # the free base SEOPress PRO builds on
 # The page-cache plugin of the production host (LiteSpeed Web Server runs the

@@ -78,7 +78,10 @@ overflow-x: hidden;
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip > div { padding: 20px 24px 24px 0; border-right: 1px solid var(--cp-border); margin-right: 24px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip > div:last-child { border-right: 0; margin-right: 0; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip dt { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cp-accent); margin-bottom: 8px; }
-#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip dd { margin: 0; font-family: 'Playfair Display', serif; font-size: 19px; line-height: 1.3; color: var(--cp-text); }
+/* Material reads "Stainless Steel (304 / 316)". Left to the line breaker the
+   parenthesis could orphan onto its own line; balancing splits a two-line
+   value in the middle of the phrase instead. */
+#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip dd { margin: 0; font-family: 'Playfair Display', serif; font-size: 19px; line-height: 1.3; color: var(--cp-text); text-wrap: balance; }
 /* Panel 2 */
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-split { display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); gap: 56px; align-items: start; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-split-solo { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
@@ -148,13 +151,17 @@ overflow-x: hidden;
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero { padding-top: 64px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-grid-cols { min-height: 62vh; padding: 56px 0 64px; }
 }
-@media (max-width: 989px) {
+@media (max-width: 990px) {
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-grid-cols,
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-split,
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-apps { grid-template-columns: 1fr; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-plate { justify-self: start; max-width: 380px; }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-apps-lead { position: static; }
-#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; border-top: 0; }
+/* Two tracks from 990px down. The strip sits on the hero photograph with only
+   the horizontal scrim behind it, and at 42% opacity the right column's white
+   serif text lost its ground; the inset panel deepens that ground at phone
+   width without turning the strip into a card on the full-width layout. */
+#cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; border-top: 0; padding: 0 14px; border-radius: 14px; background: rgba(10, 10, 10, 0.82); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip > div { border-right: 0; margin-right: 0; padding-right: 0; border-top: 1px solid var(--cp-border); }
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-wide { grid-column: 1 / -1; }
 }
@@ -341,15 +348,9 @@ padding: 10px 12px;
 font-size: 13px;
 white-space: nowrap;
 }
-body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .md-back-to-top {
-left: auto;
-right: 16px;
-bottom: calc(152px + env(safe-area-inset-bottom));
-width: 44px;
-height: 44px;
-background: #c9a962;
-color: #1a1a1a;
-}
+/* The PDP no longer skins the back-to-top control: chrome.css hides it at
+   every phone width on this face, where the fixed quote bar and the chat
+   launcher already fill the bottom corner. */
 /* Clearance for the fixed quote bar, on the footer rather than on `body`:
    WordPress prints `body{padding:0px}` unlayered from its global styles, and
    unlayered beats every `@layer` regardless of specificity — so the `body`

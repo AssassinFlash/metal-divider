@@ -165,6 +165,13 @@ final class Config {
 			'seopress_social_twitter_card_og'        => '1',
 		);
 		if ( null !== $logo_url && '' !== $logo_url ) {
+			// The stored URL is what the Organization schema's logo and the
+			// default og:image both reuse, so the scheme is settled here, once:
+			// an attachment resolved while the site still answered on http
+			// would otherwise publish http in both places for as long as the
+			// option lives. The site is https-only.
+			$logo_url = (string) \preg_replace( '#^http://#i', 'https://', $logo_url );
+
 			$social['seopress_social_knowledge_img']        = $logo_url;
 			$social['seopress_social_facebook_img_default'] = $logo_url;
 		}

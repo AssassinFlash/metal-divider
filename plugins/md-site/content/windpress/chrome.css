@@ -345,8 +345,13 @@ position: relative;
 z-index: 100;
 background: #fff;
 }
+/* The admin-bar offset belongs to the sticky host (see the sticky-host block
+   below), never to the band inside it. Offsetting the band left the host at
+   top:0 and the white bar 32px lower, so a transparent 32px strip of the
+   scrolling page showed between them. On a phone the admin bar is absolute
+   and scrolls away, which turned the same strip into a 46px hole. */
 body.admin-bar #HeaderV9-sections--21844031144189__header_v1_main {
-top: var(--wp-admin--admin-bar--height, 32px);
+top: 0;
 }
 /* The old header was 113px: a 37px announcement strip plus the 76px grid.
    The strip and its rules are gone (they are documented at their old place in
@@ -1322,6 +1327,20 @@ xo-modal[xo-name="search"].is-open{
   padding:12px 16px 16px;
   background:rgba(0,0,0,.45);
 }
+/* The sticky host starts below WordPress's admin bar from 601px up, so the
+   panel must start below bar plus band. Without this it opened under the bar
+   and over the header. Below 601px the bar is absolute and scrolls away, so
+   the plain band offset stays correct. */
+@media (min-width: 601px){
+body.admin-bar xo-modal[xo-name="search"].is-open{
+  top:calc(var(--md-header-h, 60px) + var(--wp-admin--admin-bar--height, 32px));
+}
+/* The panel starts one admin bar lower, so its scroll region has to lose the
+   same height; otherwise the sheet's last 32px fall below the viewport. */
+body.admin-bar xo-modal[xo-name="search"] .xo-modal-content__inner{
+  max-height:calc(100dvh - var(--md-header-h, 60px) - var(--wp-admin--admin-bar--height, 32px) - 24px);
+}
+}
 xo-modal[xo-name="search"] .xo-modal-content{
   display:block;
   flex:0 1 auto;
@@ -1455,6 +1474,19 @@ xo-modal[xo-name="search"] .xo-field-input__input::placeholder{
   line-height:1.3;
   color:#fff;
 }
+/* A hit with no picture (a page or an article) gains this label instead of an
+   empty grey frame. It sits above the name, inset to the name's 12px gutter;
+   the -4px bottom margin pairs with the name's 10px top padding. */
+.md-search-hit__kind{
+  display:inline-block;
+  margin:10px 12px -4px;
+  font-family:Inter, sans-serif;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:#d4b878;
+}
 .md-search-empty,
 .xo-predictive-search__prompt,
 .md-search-all{
@@ -1485,10 +1517,12 @@ xo-modal[xo-name="search"] .xo-field-input__input::placeholder{
   font-weight:600;
   text-decoration:none;
 }
+/* The panel is #141414, so the near-black ring was invisible on it. Gold is
+   the same focus ring the phone breakpoint paints. */
 xo-modal[xo-name="search"] .xo-field-input__input:focus,
 xo-modal[xo-name="search"] .xo-field-input__input:focus-visible{
-  outline:2px solid #131313 !important;
-  outline-offset:3px;
+  outline:2px solid #d4b878 !important;
+  outline-offset:2px;
   box-shadow:none !important;
 }
 xo-modal[xo-name="search"] .xo-predictive-search__clear{
@@ -1869,11 +1903,37 @@ flex-direction: column;
 min-height: 0;
 flex: 1 1 auto;
 }
+/* Two columns for the short identity fields: name and email share a row;
+   phone, the pattern row, the notice, the message, the optional details, the
+   Turnstile slot and the two notes span the width. One field row is about
+   82px, which is the height the card was short of on a 741px viewport — it no
+   longer presses against both edges. Half-width paragraphs are unreadable and
+   the Turnstile frame is a fixed 300px, hence the full-width list. */
 .md-quote-modal__card .md-inquiry-fields{
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 10px 12px;
+align-content: start;
 min-height: 0;
 flex: 1 1 auto;
 overflow-y: auto;
-gap: 10px;
+}
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-pattern,
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-notice,
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-field--message,
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-optional,
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-turnstile,
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-turnstile-status,
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-promise,
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-note{
+grid-column: 1 / -1;
+}
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-field:has([name="md_inquiry_name"]),
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-field:has([name="md_inquiry_email"]){
+grid-column: span 1;
+}
+.md-quote-modal__card .md-inquiry-fields > .md-inquiry-field:has([name="md_inquiry_phone"]){
+grid-column: 1 / -1;
 }
 .md-quote-modal__card .md-inquiry-field{
 gap: 4px;
@@ -1937,15 +1997,26 @@ border-top: 1px solid rgba(255, 255, 255, 0.08);
    fallback for a markup shape that lacks the id.
 
    z-index 100 is the band's own layer: below the modals (1000), above page
-   sections (9) and the first-party floats (900). The band must NOT be
-   opaque itself: the mega panels are its absolutely positioned children and
-   hang below its bottom edge, so anything that clips or paints over them
-   would hide the dropdown.
+   sections (9) and the first-party floats (900). The HOST carries the white
+   background: it is the element that sticks, so a background on it closes the
+   strip behind the band, while the mega panels — its descendants, absolutely
+   positioned below the band's bottom edge — still paint over it. The band
+   inside stays transparent for the same reason.
    ========================= */
 body > header#lc-header:has(> #HeaderV9-sections--21844031144189__header_v1_main){
 position: sticky;
 top: 0;
 z-index: 100;
+background: #fff;
+}
+/* WordPress's admin bar is fixed from 601px up, so the host stops below it
+   instead of sliding under it. Below 601px the bar is position:absolute and
+   scrolls away with the page; an offset there would reopen the same
+   transparent strip the old inner `top` caused. */
+@media (min-width: 601px){
+body.admin-bar > header#lc-header:has(> #HeaderV9-sections--21844031144189__header_v1_main){
+top: var(--wp-admin--admin-bar--height, 32px);
+}
 }
 
 /* Anchor and scroll offsets: every in-page target must clear the sticky band.
@@ -2269,9 +2340,15 @@ top: calc(var(--md-header-h, 60px) + 16px);
   body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .mdvl-launcher {
     bottom: calc(96px + env(safe-area-inset-bottom)) !important;
   }
-  body:has(#md-inquiry) .md-back-to-top,
-  body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .md-back-to-top {
+  body:has(#md-inquiry) .md-back-to-top {
     bottom: calc(152px + env(safe-area-inset-bottom));
+  }
+  /* The PDP is three fixed layers deep on a phone: the quote bar, the chat
+     launcher and this button. The button is the only one with no customer
+     action of its own, and at 152px it sat over the last section's heading.
+     The bar already carries the page's quote action, so the shortcut goes. */
+  body:has(#cinematic-pdp-template--22148302078205__pattern_product_cinematic) .md-back-to-top {
+    display: none !important;
   }
   .md-quote-modal {
     align-items: flex-end;

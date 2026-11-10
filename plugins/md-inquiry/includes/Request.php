@@ -23,19 +23,22 @@ final class Request {
 	public const UA_MAX = 300;
 
 	/**
-	 * The submitter's IP address: Cloudflare's connecting IP when the site is
-	 * proxied (its value is a plausible IP), otherwise the transport-level
-	 * remote address. The empty string when neither reads.
+	 * The submitter's IP address, as the transport reports it: REMOTE_ADDR,
+	 * never a request header. The empty string when it is absent or not an IP.
+	 *
+	 * The site is served by LiteSpeed on Hostinger with no CDN in front of it
+	 * (AGENTS.md §2, DNS ruling 2026-10-25), so REMOTE_ADDR is the only address
+	 * the connection actually carries. HTTP_CF_CONNECTING_IP is a header the
+	 * client can send freely; trusting it here would let one visitor present a
+	 * new address on every request and walk through RateLimiter's window.
+	 * mu-plugins/md-kb-endpoint.php reads the same fact the same way.
 	 *
 	 * @return string
 	 */
 	public static function ip(): string {
-		$candidates = array( 'HTTP_CF_CONNECTING_IP', 'REMOTE_ADDR' );
-		foreach ( $candidates as $key ) {
-			$raw = isset( $_SERVER[ $key ] ) ? \sanitize_text_field( \wp_unslash( $_SERVER[ $key ] ) ) : '';
-			if ( '' !== $raw && false !== \filter_var( $raw, \FILTER_VALIDATE_IP ) ) {
-				return $raw;
-			}
+		$raw = isset( $_SERVER['REMOTE_ADDR'] ) ? \sanitize_text_field( \wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		if ( '' !== $raw && false !== \filter_var( $raw, \FILTER_VALIDATE_IP ) ) {
+			return $raw;
 		}
 		return '';
 	}

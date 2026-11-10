@@ -16,7 +16,7 @@
 
 declare( strict_types = 1 );
 
-const MD_CHAT_LAUNCHER_VERSION = '20261103c';
+const MD_CHAT_LAUNCHER_VERSION = '20261110a';
 
 add_action( 'wp_enqueue_scripts', 'md_chat_launcher_enqueue' );
 

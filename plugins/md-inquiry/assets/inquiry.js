@@ -17,9 +17,10 @@
  * exists before the deferred script calls it. Each form passes its own
  * callbacks and the widget id turnstile.reset needs. A page-level callback
  * used to disable every submit when the widget inside the closed quote
- * dialog failed. That dialog has no box until it is open, so its widget is
- * not rendered until the slot has layout and has entered the viewport. A
- * form already on the page renders when the API is ready, even below the fold.
+ * dialog failed. The dialog's slot is not rendered while it is cloaked; a
+ * form already on the page renders when the API is ready, even below the
+ * fold. The empty slot is collapsed to display:none by inquiry.css, so
+ * "has a box" is not a readiness test — "not cloaked" is.
  */
 (function () {
 	'use strict';
@@ -50,6 +51,18 @@
 			return el;
 		}
 		return form.querySelector('[id^="md-inquiry-' + name + '"]');
+	}
+
+	// Two labels for one pattern are one label too many. The code and the name
+	// are separate facts only when they say different things: "Floral Geo" and
+	// "FLORAL-GEO" normalise to the same words, and printing both put the same
+	// pattern three times in the dialog (row name, row code, modal title).
+	function labelKey(value) {
+		return String(value || '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
+	}
+
+	function codeRepeatsName(code, name) {
+		return '' === code || labelKey(code) === labelKey(name);
 	}
 
 	function readConfig(app) {
@@ -211,13 +224,25 @@
 			}
 			if (cfg.pattern) {
 				lines.push("I'd like a quote for this pattern:");
-				lines.push(cfg.pattern.name + ' (' + cfg.pattern.code + ')');
+				// The code is a second label, not a second fact: when it repeats
+				// the name, the WhatsApp message names the pattern once.
+				lines.push(!cfg.pattern.code || codeRepeatsName(cfg.pattern.code, cfg.pattern.name)
+					? cfg.pattern.name
+					: cfg.pattern.name + ' (' + cfg.pattern.code + ')');
 			}
 			if (cfg.intent && cfg.intent !== 'Selected pattern') {
 				lines.push('Inquiry: ' + cfg.intent);
 			}
 			if (message) {
 				lines.push(message);
+			}
+			// The empty form still opens with a greeting. "Send via WhatsApp
+			// instead" is a first action for a visitor who has typed nothing, and
+			// a chat that opens with only a terse "Ref: page/module/button" reads
+			// like a tracking link, not an inquiry. WhatsApp::cta_text() on the
+			// server-side href opens the same way, so both routes say hello.
+			if (0 === lines.length) {
+				lines.push("Hi Metal Divider, I'd like to discuss a stainless steel screen project.");
 			}
 			lines.push('Ref: ' + source('page') + '/' + source('module') + '/' + source('button'));
 			return lines.join('\n');
@@ -355,6 +380,11 @@
 					var cd = patternSlot.querySelector('[data-md-inquiry-pattern-code]');
 					if (cd) {
 						cd.textContent = defaultCodeText;
+						if (defaultCodeText) {
+							cd.removeAttribute('hidden');
+						} else {
+							cd.setAttribute('hidden', '');
+						}
 					}
 					var th = patternSlot.querySelector('[data-md-inquiry-pattern-thumb]');
 					if (th) {
@@ -376,13 +406,20 @@
 			}
 
 			var slug = (rawSlug || rawCode).toLowerCase();
-			var code = (rawCode || rawSlug).toUpperCase();
 			var name = rawName || rawCode || rawSlug;
+			// The slug is an address, not a code. A trigger that sends a slug and
+			// no code used to have it uppercased into a fake SKU, so the dialog
+			// showed the pattern's name and then the same name again as
+			// "FLORAL-GEO". Only a code the trigger actually carries may fill the
+			// code row.
+			var code = rawCode ? rawCode.toUpperCase() : '';
 			if (rawCode === '' && slug === '' && defaultPattern) {
 				slug = defaultPattern.slug || '';
 				code = defaultPattern.code || '';
 				name = defaultPattern.name || code;
 			}
+			// The code is shown only when it says something the name does not.
+			var codeIsLabel = codeRepeatsName(code, name);
 			cfg.intent = rawIntent || '';
 
 			if (patternInput) {
@@ -391,7 +428,7 @@
 			if (name || code) {
 				cfg.pattern = {
 					name: name,
-					code: code || name.toUpperCase()
+					code: codeIsLabel ? '' : code
 				};
 				app.setAttribute('data-md-inquiry', JSON.stringify(cfg));
 				var msgField = field('message');
@@ -404,7 +441,10 @@
 				app.setAttribute('data-md-inquiry', JSON.stringify(cfg));
 			}
 
-			syncModalTitle(code || (defaultPattern && defaultPattern.code ? defaultPattern.code : ''));
+			// The title names the pattern once, not once more as a code: rawCode
+			// is the real SKU when present, otherwise the name is the only label
+			// the trigger sent.
+			syncModalTitle(rawCode || name);
 
 			if (patternSlot) {
 				patternSlot.removeAttribute('hidden');
@@ -415,15 +455,20 @@
 				var titleEl = patternSlot.querySelector('[data-md-inquiry-pattern-title]');
 				var codeEl = patternSlot.querySelector('[data-md-inquiry-pattern-code]');
 				if (titleEl) {
-					if (codeEl && (name || code)) {
+					if (codeEl && !codeIsLabel) {
 						titleEl.textContent = name;
 						codeEl.textContent = code;
-					} else if (name && code && name !== code && name.indexOf(code) === -1) {
+						codeEl.removeAttribute('hidden');
+					} else if (!codeEl && !codeIsLabel && name && code && name !== code && name.indexOf(code) === -1) {
+						// The slot has no code row of its own (the dialog's empty
+						// slot), so a genuinely different code shares the title line.
 						titleEl.textContent = name + ' (' + code + ')';
 					} else {
+						// No code, or a code that only repeats the name: one label.
 						titleEl.textContent = name || code || rawIntent;
 						if (codeEl) {
 							codeEl.textContent = '';
+							codeEl.setAttribute('hidden', '');
 						}
 					}
 				}
@@ -527,6 +572,34 @@
 			if (!sitekey) {
 				return;
 			}
+			// Turnstile will not create its iframe inside a display:none
+			// container, and an empty slot is collapsed to display:none by
+			// inquiry.css. Give the mount a 1px, borderless, marginless surface
+			// for the render call; remove the class as soon as the iframe is a
+			// child, which is also when :empty stops matching.
+			var mounting = !hasLayout(container);
+			if (mounting) {
+				container.classList.add('md-inquiry-turnstile--mounting');
+			}
+
+			function releaseMount() {
+				if (container.children && container.children.length) {
+					container.classList.remove('md-inquiry-turnstile--mounting');
+					return;
+				}
+				if (typeof MutationObserver !== 'function') {
+					container.classList.remove('md-inquiry-turnstile--mounting');
+					return;
+				}
+				var watcher = new MutationObserver(function () {
+					if (container.children && container.children.length) {
+						container.classList.remove('md-inquiry-turnstile--mounting');
+						watcher.disconnect();
+					}
+				});
+				watcher.observe(container, { childList: true });
+			}
+
 			rendering = true;
 			var id = window.turnstile.render(container, {
 				sitekey: sitekey,
@@ -551,6 +624,7 @@
 				},
 				'error-callback': function (code) {
 					lockSubmit();
+					container.classList.remove('md-inquiry-turnstile--mounting');
 					if (seenErrors[code]) {
 						return;
 					}
@@ -563,6 +637,9 @@
 				}
 			});
 			rendering = false;
+			if (mounting) {
+				releaseMount();
+			}
 			if (!id) {
 				return;
 			}
@@ -582,7 +659,16 @@
 					stopWatching();
 					return;
 				}
-				if (cloaked(container) || !hasLayout(container) || !intersecting) {
+				if (cloaked(container)) {
+					return;
+				}
+				// A laid-out slot still waits for the viewport: a closed dialog
+				// can have a box before x-cloak applies. An empty slot is a
+				// different case — inquiry.css collapses it with :empty
+				// { display: none }, so it has no box until Turnstile's first
+				// child exists. Waiting for layout on that state would wait
+				// forever; render it once the dialog is open.
+				if (hasLayout(container) && !intersecting) {
 					return;
 				}
 				renderWidget();
@@ -654,7 +740,10 @@
 			if (!container.getAttribute('data-sitekey')) {
 				return;
 			}
-			if (pageVisible(container)) {
+			// The empty slot is display:none in inquiry.css, so a page form has
+			// no box until its first child exists. "No layout and not cloaked"
+			// is that page form; only a cloaked slot (the closed dialog) waits.
+			if (pageVisible(container) || (!cloaked(container) && !hasLayout(container))) {
 				renderWidget();
 				return;
 			}
@@ -690,6 +779,61 @@
 		}
 	});
 
+	// A failed submission re-renders the form server-side: the values come
+	// back, the notice carries the error, and the server marks the app with
+	// data-md-inquiry-failed. The visitor, however, was navigated to a fresh
+	// URL and lands at the top of the page — or, when the form is the footer's
+	// quote dialog, with that dialog closed, so the error sits in a surface
+	// nobody can see. The page's own form is the first choice: scroll it into
+	// view and focus the first control the server flagged invalid. If the only
+	// failed form is inside the dialog, reopen the dialog instead. A page that
+	// carries both (home, the family pages) reveals the inline one: it is
+	// already on screen, and the dialog stays available behind its CTA.
+	function failedForm() {
+		var page = null;
+		var modal = null;
+		Array.prototype.forEach.call(document.querySelectorAll('.md-inquiry-app'), function (app) {
+			if (!app.getAttribute) {
+				return;
+			}
+			var failed = '1' === app.getAttribute('data-md-inquiry-failed');
+			if (!failed) {
+				var notice = app.querySelector('.md-inquiry-notice--error');
+				failed = !!notice && '' !== String(notice.textContent || '').trim();
+			}
+			if (!failed) {
+				return;
+			}
+			var inModal = app.closest ? app.closest('#md-quote-modal, #quote-modal') : null;
+			if (inModal) {
+				if (!modal) {
+					modal = app;
+				}
+			} else if (!page) {
+				page = app;
+			}
+		});
+		return { page: page, modal: modal };
+	}
+
+	function revealFailedForm() {
+		var failed = failedForm();
+		if (failed.page) {
+			if (typeof failed.page.scrollIntoView === 'function') {
+				failed.page.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}
+			var invalid = failed.page.querySelector('[aria-invalid="true"]');
+			if (invalid && typeof invalid.focus === 'function') {
+				invalid.focus({ preventScroll: true });
+			}
+			return;
+		}
+		if (failed.modal && typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
+			window.dispatchEvent(new CustomEvent('open-quote', { detail: {} }));
+		}
+	}
+
+	revealFailedForm();
 
 	function hasLayout(el) {
 		if (!el || typeof el.getClientRects !== 'function') {
