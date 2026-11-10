@@ -172,5 +172,6 @@ final class WhatsAppTest extends TestCase {
 		$this->assertStringNotContainsString( ' style=', $html );
 		$this->assertStringContainsString( \rawurlencode( 'Pattern: Apiary (APIARY)' ), $html );
 		$this->assertStringContainsString( \rawurlencode( 'Ref: pattern-pdp/faq/whatsapp' ), $html );
+		$this->assertStringContainsString( '%0APattern%3A%20Apiary%20%28APIARY%29%0ARef%3A', $html );
 	}
 }

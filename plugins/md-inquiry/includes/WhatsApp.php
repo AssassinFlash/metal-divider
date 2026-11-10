@@ -71,10 +71,11 @@ final class WhatsApp {
 		if ( '' === $page ) {
 			$page = null !== $pattern ? 'pattern-pdp' : 'inquiry';
 		}
-		$url    = self::url( self::cta_text( (string) $atts['module'], $pattern, $page ) );
+		$text   = self::cta_text( (string) $atts['module'], $pattern, $page );
+		$href   = \esc_url( 'https://wa.me/' . self::NUMBER ) . '?text=' . \rawurlencode( $text );
 		$label  = \is_string( $content ) && '' !== \trim( $content ) ? \trim( $content ) : \__( 'WhatsApp', 'md-inquiry' );
 		$module = \esc_attr( (string) $atts['module'] );
-		return '<a class="md-inquiry-whatsapp-link" data-md-inquiry-module="' . $module . '" href="' . \esc_url( $url ) . '" target="_blank" rel="noopener">' . \esc_html( $label ) . '</a>';
+		return '<a class="md-inquiry-whatsapp-link" data-md-inquiry-module="' . $module . '" href="' . $href . '" target="_blank" rel="noopener">' . \esc_html( $label ) . '</a>';
 	}
 
 	/**
