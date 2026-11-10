@@ -492,7 +492,7 @@ class Queue {
 	 * @return string
 	 */
 	private static function substr500( string $value ): string {
-		return \strlen( $value ) > 500 ? \substr( $value, 0, 499 ) . '…' : $value;
+		return \mb_strlen( $value, 'UTF-8' ) > 500 ? \mb_substr( $value, 0, 499, 'UTF-8' ) . '…' : $value;
 	}
 
 	/**

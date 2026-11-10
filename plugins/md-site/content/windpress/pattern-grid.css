@@ -1057,3 +1057,26 @@ border-color: rgba(201, 169, 98, 0.6);
 color: #fff;
 font-weight: 700;
 }
+
+/* --- RTL Overrides for Pattern Grid & Catalog --- */
+[dir="rtl"] #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__sort select {
+  padding: 0 16px 0 44px;
+}
+[dir="rtl"] #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__select-wrap::after {
+  right: auto;
+  left: 18px;
+}
+[dir="rtl"] #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__search-button {
+  margin-right: 0;
+  margin-left: 6px;
+}
+[dir="rtl"] #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__search input {
+  padding: 0 18px 0 8px;
+  text-align: right;
+}
+[dir="rtl"] #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__nav-link {
+  text-align: right;
+}
+[dir="rtl"] #pattern-catalog-template--21844031570173__pattern-catalog-main .pattern-catalog__toolbar {
+  text-align: right;
+}

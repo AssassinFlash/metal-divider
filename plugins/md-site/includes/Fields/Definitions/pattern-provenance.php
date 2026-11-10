@@ -16,49 +16,55 @@ declare( strict_types = 1 );
  * @return array<string, mixed>
  */
 return array(
-	'key'          => 'group_md_pattern_provenance',
-	'title'        => '来源与许可 pattern_provenance',
-	'fields'       => array(
+	'key'                    => 'group_md_pattern_provenance',
+	'title'                  => '来源与许可 pattern_provenance',
+	'acfml_field_group_mode' => 'advanced',
+	'fields'                 => array(
 		array(
-			'key'     => 'field_md_source_site',
-			'label'   => '来源站 Source site',
-			'name'    => 'source_site',
-			'type'    => 'radio',
-			'choices' => array(
+			'key'                 => 'field_md_source_site',
+			'label'               => '来源站 Source site',
+			'name'                => 'source_site',
+			'type'                => 'radio',
+			'choices'             => array(
 				'parasoleil' => 'Parasoleil',
 				'dsd'        => 'DSD',
 			),
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'   => 'field_md_source_slug',
-			'label' => '来源 slug Source slug',
-			'name'  => 'source_slug',
-			'type'  => 'text',
+			'key'                 => 'field_md_source_slug',
+			'label'               => '来源 slug Source slug',
+			'name'                => 'source_slug',
+			'type'                => 'text',
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'   => 'field_md_source_manifest',
-			'label' => '来源 manifest (JSON)',
-			'name'  => 'source_manifest',
-			'type'  => 'textarea',
-			'rows'  => 4,
+			'key'                 => 'field_md_source_manifest',
+			'label'               => '来源 manifest (JSON)',
+			'name'                => 'source_manifest',
+			'type'                => 'textarea',
+			'rows'                => 4,
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'   => 'field_md_openness_inferred_from',
-			'label' => '镂空率推断自 Openness inferred from',
-			'name'  => 'openness_inferred_from',
-			'type'  => 'text',
+			'key'                 => 'field_md_openness_inferred_from',
+			'label'               => '镂空率推断自 Openness inferred from',
+			'name'                => 'openness_inferred_from',
+			'type'                => 'text',
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'   => 'field_md_openness_confidence',
-			'label' => '推断置信度 Confidence',
-			'name'  => 'openness_confidence',
-			'type'  => 'number',
-			'min'   => 0,
-			'max'   => 1,
-			'step'  => 0.01,
+			'key'                 => 'field_md_openness_confidence',
+			'label'               => '推断置信度 Confidence',
+			'name'                => 'openness_confidence',
+			'type'                => 'number',
+			'min'                 => 0,
+			'max'                 => 1,
+			'step'                => 0.01,
+			'wpml_cf_preferences' => 1,
 		),
 	),
-	'location'     => array(
+	'location'               => array(
 		array(
 			array(
 				'param'    => 'post_type',
@@ -67,8 +73,8 @@ return array(
 			),
 		),
 	),
-	'position'     => 'normal',
-	'menu_order'   => 2,
-	'active'       => true,
-	'show_in_rest' => 0,
+	'position'               => 'normal',
+	'menu_order'             => 2,
+	'active'                 => true,
+	'show_in_rest'           => 0,
 );

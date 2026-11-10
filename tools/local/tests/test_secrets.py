@@ -25,6 +25,8 @@ def licence_values() -> list[str]:
     for file, variable in (
         (licenses.LIVECANVAS_FILE, licenses.LIVECANVAS_VARIABLE),
         (licenses.SEOPRESS_FILE, licenses.SEOPRESS_VARIABLE),
+        (licenses.WPML_FILE, licenses.WPML_VARIABLE),
+        (licenses.DEEPSEEK_FILE, licenses.DEEPSEEK_VARIABLE),
     ):
         found = licenses.env_value(licenses.directory() / file, variable)
         if found and len(found) >= 8:

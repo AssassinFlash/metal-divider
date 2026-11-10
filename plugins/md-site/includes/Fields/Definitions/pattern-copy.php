@@ -20,32 +20,36 @@ declare( strict_types = 1 );
  * @return array<string, mixed>
  */
 return array(
-	'key'          => 'group_md_pattern_copy',
-	'title'        => '图案文案 pattern_copy',
-	'fields'       => array(
+	'key'                    => 'group_md_pattern_copy',
+	'title'                  => '图案文案 pattern_copy',
+	'acfml_field_group_mode' => 'advanced',
+	'fields'                 => array(
 		array(
-			'key'   => 'field_md_summary',
-			'label' => '摘要 Summary',
-			'name'  => 'summary',
-			'type'  => 'textarea',
-			'rows'  => 4,
+			'key'                 => 'field_md_summary',
+			'label'               => '摘要 Summary',
+			'name'                => 'summary',
+			'type'                => 'textarea',
+			'rows'                => 4,
+			'wpml_cf_preferences' => 2,
 		),
 		array(
-			'key'   => 'field_md_inspiration',
-			'label' => '灵感 Inspiration',
-			'name'  => 'inspiration',
-			'type'  => 'textarea',
-			'rows'  => 4,
+			'key'                 => 'field_md_inspiration',
+			'label'               => '灵感 Inspiration',
+			'name'                => 'inspiration',
+			'type'                => 'textarea',
+			'rows'                => 4,
+			'wpml_cf_preferences' => 2,
 		),
 		array(
-			'key'          => 'field_md_notable_effect',
-			'label'        => '显著效果 Notable effect',
-			'name'         => 'notable_effect',
-			'type'         => 'text',
-			'instructions' => 'PDP 设计意图第二段的短句(旧站 metafield notable_effect,146/146 有值)。留空则第二段不渲染。',
+			'key'                 => 'field_md_notable_effect',
+			'label'               => '显著效果 Notable effect',
+			'name'                => 'notable_effect',
+			'type'                => 'text',
+			'instructions'        => 'PDP 设计意图第二段的短句(旧站 metafield notable_effect,146/146 有值)。留空则第二段不渲染。',
+			'wpml_cf_preferences' => 2,
 		),
 	),
-	'location'     => array(
+	'location'               => array(
 		array(
 			array(
 				'param'    => 'post_type',
@@ -54,8 +58,8 @@ return array(
 			),
 		),
 	),
-	'position'     => 'normal',
-	'menu_order'   => 1,
-	'active'       => true,
-	'show_in_rest' => 1,
+	'position'               => 'normal',
+	'menu_order'             => 1,
+	'active'                 => true,
+	'show_in_rest'           => 1,
 );

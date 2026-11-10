@@ -223,9 +223,10 @@ function md_wecom_notify_handle( array $input ): array {
  * @param string $email    The visitor's saved email address.
  * @param string $referrer The page URL where the chat is taking place.
  * @param string $summary  Optional latest visitor question or summary.
+ * @param string $locale   Optional visitor locale.
  * @return array{status: int, body: array<string, mixed>} The handler's result.
  */
-function md_wecom_notify_visitor_email( int $chat_id, string $email, string $referrer = '', string $summary = '' ): array {
+function md_wecom_notify_visitor_email( int $chat_id, string $email, string $referrer = '', string $summary = '', string $locale = '' ): array {
 	$token = md_wecom_notify_setting( 'bearer_token' );
 	if ( '' === $token ) {
 		return array(
@@ -238,18 +239,23 @@ function md_wecom_notify_visitor_email( int $chat_id, string $email, string $ref
 	}
 
 	$summary = trim( $summary );
+	$chat    = array(
+		'id'       => $chat_id,
+		'status'   => 5,
+		'nick'     => $email,
+		'email'    => $email,
+		'referrer' => $referrer,
+	);
+	if ( '' !== $locale ) {
+		$chat['chat_locale'] = $locale;
+	}
+
 	return md_wecom_notify_handle(
 		array(
 			'header' => 'Bearer ' . $token,
 			'body'   => array(
 				'event' => 'chat.visitor_email_saved',
-				'chat'  => array(
-					'id'       => $chat_id,
-					'status'   => 5,
-					'nick'     => $email,
-					'email'    => $email,
-					'referrer' => $referrer,
-				),
+				'chat'  => $chat,
 				'msg'   => array(
 					'msg' => '' !== $summary ? 'Email left in chat: ' . $email . ' — ' . $summary : 'Email left in chat: ' . $email,
 				),
@@ -687,6 +693,37 @@ function md_wecom_notify_log_failure( string $side, string $kind, int $status, i
 }
 
 /**
+ * Resolves a non-EN language tag for WeCom notification titles.
+ *
+ * @param array<string, mixed> $chat The chat payload.
+ * @return string Non-empty tag like ' [ZH]' when non-EN, '' for English or unspecified.
+ */
+function md_wecom_notify_locale_tag( array $chat ): string {
+	$raw = '';
+	if ( isset( $chat['chat_locale'] ) && is_string( $chat['chat_locale'] ) ) {
+		$raw = trim( $chat['chat_locale'] );
+	}
+	if ( '' === $raw && isset( $chat['referrer'] ) && is_string( $chat['referrer'] ) ) {
+		if ( function_exists( 'md_chat_email_page_locale' ) ) {
+			$raw = md_chat_email_page_locale( $chat['referrer'] );
+		} else {
+			$path = (string) wp_parse_url( $chat['referrer'], PHP_URL_PATH );
+			if ( preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $path, $matches ) ) {
+				$raw = strtolower( $matches[1] );
+			}
+		}
+	}
+	if ( '' === $raw || 'en' === strtolower( $raw ) ) {
+		return '';
+	}
+	$canonical = strtolower( $raw );
+	if ( 'zh-hans' === $canonical || 'zh-cn' === $canonical ) {
+		$canonical = 'zh';
+	}
+	return ' [' . strtoupper( $canonical ) . ']';
+}
+
+/**
  * The textcard to the one configured member, through WeCom's message/send.
  * The send runs at most twice: once on the cached-or-fresh token, and once
  * more — no further — when the API names the token's age (40014, 42001) as
@@ -706,15 +743,16 @@ function md_wecom_notify_send_card( int $chat_id, string $link, array $chat, arr
 		return false;
 	}
 
-	$nick = is_string( $chat['nick'] ?? null ) && '' !== trim( (string) $chat['nick'] ) ? trim( (string) $chat['nick'] ) : 'Visitor';
-	$text = is_string( $msg['msg'] ?? null ) && '' !== trim( (string) $msg['msg'] ) ? trim( (string) $msg['msg'] ) : 'Open the live chat conversation and reply to the visitor.';
+	$nick       = is_string( $chat['nick'] ?? null ) && '' !== trim( (string) $chat['nick'] ) ? trim( (string) $chat['nick'] ) : 'Visitor';
+	$text       = is_string( $msg['msg'] ?? null ) && '' !== trim( (string) $msg['msg'] ) ? trim( (string) $msg['msg'] ) : 'Open the live chat conversation and reply to the visitor.';
+	$locale_tag = md_wecom_notify_locale_tag( $chat );
 
 	$payload = array(
 		'touser'   => $to_user,
 		'msgtype'  => 'textcard',
 		'agentid'  => (int) md_wecom_notify_setting( 'wecom_agent_id' ),
 		'textcard' => array(
-			'title'       => sprintf( 'Live chat #%d — %s', $chat_id, $nick ),
+			'title'       => sprintf( 'Live chat #%d%s — %s', $chat_id, $locale_tag, $nick ),
 			'description' => mb_substr( $text, 0, 120 ),
 			'url'         => $link,
 			'btntxt'      => 'Open', // WeCom's button text is at most four characters (message/send: btntxt), so the longer label would be truncated.

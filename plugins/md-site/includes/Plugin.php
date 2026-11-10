@@ -13,11 +13,13 @@ use MetalDivider\Site\Media\Sizes;
 
 use MetalDivider\Site\Catalog;
 use MetalDivider\Site\Fields\FieldGroups;
+use MetalDivider\Site\I18n\LiveCanvasLocalizer;
 use MetalDivider\Site\Presentation\Assets;
 use MetalDivider\Site\Presentation\PartialFields;
 use MetalDivider\Site\Presentation\Partials;
 use MetalDivider\Site\Presentation\Shortcodes;
 use MetalDivider\Site\Seo\CatalogRobots;
+use MetalDivider\Site\Seo\Hreflang;
 use MetalDivider\Site\Seo\PageNoindex;
 use MetalDivider\Site\Seo\SitemapDedupe;
 use MetalDivider\Site\Seo\SchemaFilters;
@@ -82,6 +84,8 @@ final class Plugin {
 		// shortcodes inside them, and the notes themselves ship in the response.
 		// The converter reads the repository files, not this response.
 		( new Presentation\HtmlComments() )->register();
+		( new LiveCanvasLocalizer() )->register();
+		( new Hreflang() )->register();
 		$this->fields->register();
 		$this->schemas->register();
 		$this->catalog_robots->register();
@@ -105,15 +109,16 @@ final class Plugin {
 		if ( ! class_exists( 'WP_CLI' ) ) {
 			return;
 		}
-		// One namespace, six command objects: WP-CLI merges each object's
+		// One namespace, seven command objects: WP-CLI merges each object's
 		// annotated methods into the shared md-site tree, so the surface
 		// stays wp md-site present / seo / seed-series / seed-tiles /
-		// retarget-thumbnails / windpress-anchors.
+		// retarget-thumbnails / windpress-anchors / i18n.
 		\WP_CLI::add_command( 'md-site', new Cli\PresentCommand() );
 		\WP_CLI::add_command( 'md-site', new Cli\SeoCommand() );
 		\WP_CLI::add_command( 'md-site', new Cli\CatalogCommand() );
 		\WP_CLI::add_command( 'md-site', new Cli\TileOrderCommand() );
 		\WP_CLI::add_command( 'md-site', new Cli\ThumbnailCommand() );
 		\WP_CLI::add_command( 'md-site', new Cli\WindPressAnchorsCommand() );
+		\WP_CLI::add_command( 'md-site i18n', new Cli\I18nCommand() );
 	}
 }

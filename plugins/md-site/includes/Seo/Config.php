@@ -363,11 +363,29 @@ final class Config {
 	 * @return array<int, string> One report line per surface.
 	 */
 	public function apply(): array {
+		return \MetalDivider\Site\I18n\Languages::with_language(
+			'en',
+			function (): array {
+				return $this->execute_apply();
+			}
+		);
+	}
+
+	/**
+	 * Executes apply in the canonical language context.
+	 *
+	 * @return array<int, string> One report line per surface.
+	 */
+	private function execute_apply(): array {
+		$home_for_pro = \function_exists( 'has_filter' ) && \has_filter( 'wpml_current_language' )
+			? \MetalDivider\Site\I18n\Languages::unfiltered_home_url( '/' )
+			: (string) home_url( '/' );
+
 		$lines = array();
 		foreach ( array(
 			array( self::TITLES, self::titles(), 'titles', false ),
 			array( self::SITEMAP, self::sitemap(), 'sitemap', false ),
-			array( self::PRO, self::pro( (string) home_url( '/' ) ), 'pro (breadcrumbs, robots.txt, builder)', true ),
+			array( self::PRO, self::pro( $home_for_pro ), 'pro (breadcrumbs, robots.txt, builder)', true ),
 			array( self::SOCIAL, $this->social_with_logo(), 'social (knowledge, cards)', false ),
 		) as list( $name, $value, $label, $overlay ) ) {
 			if ( $overlay ) {
@@ -400,11 +418,29 @@ final class Config {
 	 * @return array<int, string> The drift rows.
 	 */
 	public function check(): array {
+		return \MetalDivider\Site\I18n\Languages::with_language(
+			'en',
+			function (): array {
+				return $this->execute_check();
+			}
+		);
+	}
+
+	/**
+	 * Executes check in the canonical language context.
+	 *
+	 * @return array<int, string> The drift rows.
+	 */
+	private function execute_check(): array {
+		$home_for_pro = \function_exists( 'has_filter' ) && \has_filter( 'wpml_current_language' )
+			? \MetalDivider\Site\I18n\Languages::unfiltered_home_url( '/' )
+			: (string) home_url( '/' );
+
 		$rows = array();
 		foreach ( array(
 			array( self::TITLES, self::titles(), 'titles', false ),
 			array( self::SITEMAP, self::sitemap(), 'sitemap', false ),
-			array( self::PRO, self::pro( (string) home_url( '/' ) ), 'pro', true ),
+			array( self::PRO, self::pro( $home_for_pro ), 'pro', true ),
 			array( self::SOCIAL, $this->social_with_logo(), 'social', false ),
 		) as list( $name, $value, $label, $overlay ) ) {
 			$live    = get_option( $name );
@@ -745,6 +781,18 @@ final class Config {
 				update_post_meta( (int) $page->ID, $key, wp_slash( $value ) );
 			}
 			$lines[] = sprintf( 'page %s: meta synced', $slug );
+
+			if ( 'inquiry/thank-you' === $slug && isset( $metas['_seopress_robots_index'] ) && 'yes' === $metas['_seopress_robots_index'] ) {
+				if ( \function_exists( 'has_filter' ) && \has_filter( 'wpml_object_id' ) ) {
+					foreach ( \MetalDivider\Site\I18n\Languages::TARGETS as $target_lang ) {
+						$tr_id = \MetalDivider\Site\I18n\Languages::post_translation( (int) $page->ID, $target_lang );
+						if ( $tr_id > 0 && $tr_id !== (int) $page->ID ) {
+							update_post_meta( $tr_id, '_seopress_robots_index', 'yes' );
+							$lines[] = sprintf( 'page %s (%s): meta synced', $slug, $target_lang );
+						}
+					}
+				}
+			}
 		}
 		return $lines;
 	}

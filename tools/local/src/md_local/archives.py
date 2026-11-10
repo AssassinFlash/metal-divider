@@ -84,6 +84,26 @@ KNOWN: dict[str, tuple[str, str, str]] = {
         "style.css",
         versions.PICOSTRAP5_VERSION,
     ),
+    "sitepress-multilingual-cms": (
+        "sitepress-multilingual-cms",
+        "sitepress.php",
+        versions.WPML_CMS_VERSION,
+    ),
+    "wpml-string-translation": (
+        "wpml-string-translation",
+        "plugin.php",
+        versions.WPML_ST_VERSION,
+    ),
+    "woocommerce-multilingual": (
+        "woocommerce-multilingual",
+        "wpml-woocommerce.php",
+        versions.WCML_VERSION,
+    ),
+    "acfml": (
+        "acfml",
+        "wpml-acf.php",
+        versions.ACFML_VERSION,
+    ),
 }
 
 

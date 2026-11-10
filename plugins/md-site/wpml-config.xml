@@ -1,0 +1,74 @@
+<wpml-config>
+	<custom-types>
+		<custom-type translate="1">product</custom-type>
+		<custom-type translate="1">page</custom-type>
+		<custom-type translate="1">post</custom-type>
+		<custom-type translate="0">lc_dynamic_template</custom-type>
+		<custom-type translate="0">lc_partial</custom-type>
+	</custom-types>
+	<taxonomies>
+		<taxonomy translate="1">product_cat</taxonomy>
+		<taxonomy translate="1">category</taxonomy>
+		<taxonomy translate="0">product_type</taxonomy>
+		<taxonomy translate="0">product_visibility</taxonomy>
+	</taxonomies>
+	<custom-fields>
+		<custom-field action="translate">summary</custom-field>
+		<custom-field action="translate">inspiration</custom-field>
+		<custom-field action="translate">notable_effect</custom-field>
+		<custom-field action="translate">_seopress_titles_title</custom-field>
+		<custom-field action="translate">_seopress_titles_desc</custom-field>
+		<custom-field action="translate">_wp_attachment_image_alt</custom-field>
+		<custom-field action="copy">open_area</custom-field>
+		<custom-field action="copy">visual_density</custom-field>
+		<custom-field action="copy">repeat_behavior</custom-field>
+		<custom-field action="copy">motifs</custom-field>
+		<custom-field action="copy">best_fit</custom-field>
+		<custom-field action="copy">cad_status</custom-field>
+		<custom-field action="copy">source_site</custom-field>
+		<custom-field action="copy">source_slug</custom-field>
+		<custom-field action="copy">source_manifest</custom-field>
+		<custom-field action="copy">openness_inferred_from</custom-field>
+		<custom-field action="copy">openness_confidence</custom-field>
+		<custom-field action="copy">_open_area</custom-field>
+		<custom-field action="copy">_visual_density</custom-field>
+		<custom-field action="copy">_repeat_behavior</custom-field>
+		<custom-field action="copy">_motifs</custom-field>
+		<custom-field action="copy">_best_fit</custom-field>
+		<custom-field action="copy">_cad_status</custom-field>
+		<custom-field action="copy">_summary</custom-field>
+		<custom-field action="copy">_inspiration</custom-field>
+		<custom-field action="copy">_notable_effect</custom-field>
+		<custom-field action="copy">_source_site</custom-field>
+		<custom-field action="copy">_source_slug</custom-field>
+		<custom-field action="copy">_source_manifest</custom-field>
+		<custom-field action="copy">_openness_inferred_from</custom-field>
+		<custom-field action="copy">_openness_confidence</custom-field>
+		<custom-field action="copy">lc_use_template_of_slug</custom-field>
+		<custom-field action="copy">_seopress_robots_index</custom-field>
+		<custom-field action="copy">_sku</custom-field>
+		<custom-field action="copy">_thumbnail_id</custom-field>
+		<custom-field action="copy">_product_image_gallery</custom-field>
+		<custom-field action="copy">_regular_price</custom-field>
+		<custom-field action="copy">_price</custom-field>
+		<custom-field action="copy">_manage_stock</custom-field>
+		<custom-field action="copy">_stock_status</custom-field>
+		<custom-field action="copy">_virtual</custom-field>
+		<custom-field action="copy">_downloadable</custom-field>
+	</custom-fields>
+	<custom-term-fields>
+		<custom-term-field action="translate">typical_applications</custom-term-field>
+		<custom-term-field action="translate">bottom_content</custom-term-field>
+		<custom-term-field action="translate">style_blurb</custom-term-field>
+		<custom-term-field action="translate">_seopress_titles_title</custom-term-field>
+		<custom-term-field action="translate">_seopress_titles_desc</custom-term-field>
+		<custom-term-field action="copy">thumbnail_id</custom-term-field>
+		<custom-term-field action="copy">accent_color</custom-term-field>
+		<custom-term-field action="copy">difficulty_level</custom-term-field>
+		<custom-term-field action="copy">_accent_color</custom-term-field>
+		<custom-term-field action="copy">_difficulty_level</custom-term-field>
+		<custom-term-field action="copy">_typical_applications</custom-term-field>
+		<custom-term-field action="copy">_bottom_content</custom-term-field>
+		<custom-term-field action="copy">_style_blurb</custom-term-field>
+	</custom-term-fields>
+</wpml-config>

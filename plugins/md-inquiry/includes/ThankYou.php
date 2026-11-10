@@ -47,8 +47,17 @@ final class ThankYou {
 	 * @return string
 	 */
 	public static function url( int $inquiry_id ): string {
-		$page = \get_page_by_path( self::PATH );
-		$base = $page instanceof \WP_Post ? (string) \get_permalink( $page ) : \home_url( '/' . self::PATH . '/' );
+		$page        = \get_page_by_path( self::PATH );
+		$target_lang = Locale::to_wpml( Locale::current() );
+		if ( $page instanceof \WP_Post ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML public filter.
+			$page_id = (int) \apply_filters( 'wpml_object_id', $page->ID, 'page', true, $target_lang );
+			$base    = (string) \get_permalink( $page_id > 0 ? $page_id : $page->ID );
+		} else {
+			$fallback = \home_url( '/' . self::PATH . '/' );
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML public filter.
+			$base = (string) \apply_filters( 'wpml_permalink', $fallback, $target_lang );
+		}
 		return \add_query_arg(
 			array(
 				self::QUERY_VAR => $inquiry_id,

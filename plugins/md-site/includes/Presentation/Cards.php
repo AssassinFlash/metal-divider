@@ -165,7 +165,7 @@ final class Cards {
 		}
 		$name    = PatternFacts::code( $post_id );
 		$gallery = PatternFacts::gallery( $post_id );
-		$context = sprintf( 'Project context for %s', $name );
+		$context = sprintf( \MetalDivider\Site\I18n\Dictionary::text( 'project_context_for' ), $name );
 		$thumbs  = array();
 		foreach ( array_slice( $gallery, 0, 2 ) as $size ) {
 			$thumbs[] = $this->item( $size, $context );

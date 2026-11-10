@@ -262,11 +262,27 @@ final class SitemapDedupeTest extends TestCase {
 		WP_Mock::expectFilterAdded( 'seopress_sitemaps_xml_index', array( $rule, 'drop_empty_type_entries' ) );
 		WP_Mock::expectFilterAdded( 'seopress_sitemaps_single_term_query', array( $rule, 'disable_term_menu_order' ) );
 		WP_Mock::expectFilterAdded( 'seopress_sitemaps_index_tax_query', array( $rule, 'disable_term_menu_order' ) );
+		WP_Mock::expectFilterAdded( 'seopress_sitemaps_single_query', array( $rule, 'include_all_languages_in_posts_query' ), 20, 2 );
 
 		$rule->register();
 
 		// WP_Mock's expected filters are verified in tearDown; this keeps the
-		// four expectations counted as the assertions they are.
-		$this->addToAssertionCount( 4 );
+		// five expectations counted as the assertions they are.
+		$this->addToAssertionCount( 5 );
+	}
+
+	/**
+	 * Single post sitemap queries suppress WPML language filtering so all languages are indexed.
+	 */
+	public function test_single_post_sitemap_query_suppresses_filters(): void {
+		$query = array(
+			'post_type' => 'product',
+			'limit'     => 100,
+		);
+
+		$out = ( new SitemapDedupe() )->include_all_languages_in_posts_query( $query, 'product' );
+
+		$this->assertTrue( $out['suppress_filters'], 'WPML language query filters must be suppressed' );
+		$this->assertSame( 'product', $out['post_type'] );
 	}
 }

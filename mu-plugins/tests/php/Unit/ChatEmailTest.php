@@ -511,6 +511,82 @@ namespace Md\Mu\Tests\Unit {
 
 			unset( $GLOBALS['md_mu_test_lh_msgs'] );
 		}
+
+		/**
+		 * Validates locale detection, multilingual pattern slugs, and saving
+		 * inquiry_locale postmeta across all 9 supported languages.
+		 */
+		public function test_multilingual_locale_extraction_pattern_slugs_and_inquiry_meta(): void {
+			// 1. Locale extraction from URLs across all 9 languages.
+			self::assertSame( 'en', md_chat_email_page_locale( 'https://metal-divider.com/pattern/agave/' ) );
+			self::assertSame( 'zh', md_chat_email_page_locale( 'https://metal-divider.com/zh/pattern/agave/' ) );
+			self::assertSame( 'es', md_chat_email_page_locale( 'https://metal-divider.com/es/patterns/' ) );
+			self::assertSame( 'pt-br', md_chat_email_page_locale( 'https://metal-divider.com/pt-br/pattern/breeze/' ) );
+			self::assertSame( 'de', md_chat_email_page_locale( 'https://metal-divider.com/de/inquiry/' ) );
+			self::assertSame( 'fr', md_chat_email_page_locale( 'https://metal-divider.com/fr/patterns/' ) );
+			self::assertSame( 'ar', md_chat_email_page_locale( 'https://metal-divider.com/ar/pattern/lotus/' ) );
+			self::assertSame( 'id', md_chat_email_page_locale( 'https://metal-divider.com/id/pattern/lotus/' ) );
+			self::assertSame( 'vi', md_chat_email_page_locale( 'https://metal-divider.com/vi/pattern/lotus/' ) );
+
+			// 2. Multilingual pattern slug parsing.
+			self::assertSame( 'agave', md_chat_email_pattern_slug( 'https://metal-divider.com/zh/pattern/agave/' ) );
+			self::assertSame( 'lotus', md_chat_email_pattern_slug( 'https://metal-divider.com/de/pattern/lotus/' ) );
+			self::assertSame( 'breeze', md_chat_email_pattern_slug( 'https://staging.metal-divider.com/ar/product/breeze/' ) );
+
+			// 3. Inquiry creation records inquiry_locale and _inquiry_locale.
+			$this->answer_row_with(
+				array(
+					'id'         => 88,
+					'hash'       => $this->stored_hash(),
+					'status'     => 0,
+					'anonymized' => 0,
+					'referrer'   => 'https://metal-divider.com/zh/pattern/agave/',
+					'nick'       => 'Visitor',
+				)
+			);
+			$res = $this->email_request( 88, $this->stored_hash(), 'chinese-lead@example.com', 'https://metal-divider.com/zh/pattern/agave/' );
+			self::assertSame( 200, $res->status );
+			$post_id = count( (array) ( $GLOBALS['md_mu_test_inquiries'] ?? array() ) ) + 500;
+			$meta    = $GLOBALS['md_mu_test_postmeta'][ $post_id ] ?? array();
+			self::assertSame( 'zh', $meta['inquiry_locale'] ?? '' );
+			self::assertSame( 'field_md_inquiry_locale', $meta['_inquiry_locale'] ?? '' );
+		}
+
+		/**
+		 * Updates lh_chat.chat_locale when the column exists in the database.
+		 */
+		public function test_updates_chat_locale_column_when_present(): void {
+			$GLOBALS['md_mu_test_has_chat_locale'] = true;
+			$this->answer_row_with(
+				array(
+					'id'         => 99,
+					'hash'       => $this->stored_hash(),
+					'status'     => 0,
+					'anonymized' => 0,
+				)
+			);
+
+			$body = array(
+				'chat_id'  => 99,
+				'hash'     => $this->stored_hash(),
+				'page_url' => 'https://metal-divider.com/de/pattern/lotus/',
+				'lang'     => 'de',
+			);
+			/**
+			 * The suite's WP_REST_Request double takes the decoded body as its
+			 * first parameter; WordPress's own class takes a method string
+			 * there. The double is what runs, so the exception is pinned to
+			 * this line.
+			 *
+			 * @phpstan-ignore-next-line
+			 */
+			$req = new \WP_REST_Request( $body );
+			$res = md_chat_context_respond( $req );
+			self::assertSame( 200, $res->status );
+			self::assertContains( 'UPDATE lh_chat SET referrer,chat_locale WHERE id', $GLOBALS['wpdb']->queries );
+
+			unset( $GLOBALS['md_mu_test_has_chat_locale'] );
+		}
 	}
 }
 

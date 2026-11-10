@@ -163,7 +163,10 @@ final class Submission {
 			$verification = 'not_configured';
 		}
 
-		$record                 = $checked['values'];
+		$record = $checked['values'];
+		if ( '' === $record['locale'] ) {
+			$record['locale'] = Locale::current();
+		}
 		$record['quote_intent'] = $values['quote_intent'] ?? '';
 		$post_id                = $this->store( $record, $pattern, $verification, $ip );
 		if ( false === $post_id ) {
@@ -224,10 +227,10 @@ final class Submission {
 	 * customer is asked to retry (spec 07 §7: a record-less inquiry is
 	 * refused outright, never mailed).
 	 *
-	 * @param array<string, string>                                                            $record      The validated values.
-	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string}|null $pattern     The pattern context.
-	 * @param string                                                                           $verification The Turnstile outcome.
-	 * @param string                                                                           $ip          The submitter's IP.
+	 * @param array<string, string>                                                                                                       $record       The validated values.
+	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string, canonical_slug?: string, name_en?: string}|null $pattern      The pattern context.
+	 * @param string                                                                                                                      $verification The Turnstile outcome.
+	 * @param string                                                                                                                      $ip           The submitter's IP.
 	 * @return int|false The record's ID, or false.
 	 */
 	private function store( array $record, ?array $pattern, string $verification, string $ip ) {
@@ -267,6 +270,7 @@ final class Submission {
 			'ip_address'       => $ip,
 			'user_agent'       => Request::user_agent_summary(),
 			'turnstile_status' => $verification,
+			'inquiry_locale'   => $record['locale'],
 		);
 		$keys   = Fields\FieldGroup::field_keys();
 		foreach ( $fields as $name => $value ) {
@@ -275,7 +279,6 @@ final class Submission {
 				\update_post_meta( $post_id, '_' . $name, $keys[ $name ] );
 			}
 		}
-		\update_post_meta( $post_id, 'inquiry_locale', $record['locale'] );
 		if ( '' !== ( $record['quote_intent'] ?? '' ) ) {
 			\update_post_meta( $post_id, 'quote_intent', $record['quote_intent'] );
 		}
@@ -285,33 +288,35 @@ final class Submission {
 	/**
 	 * The record shaped for the mail composer.
 	 *
-	 * @param int                                                                              $post_id     The record's ID.
-	 * @param array<string, string>                                                            $record      The validated values.
-	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string}|null $pattern The pattern context.
-	 * @param string                                                                           $verification The Turnstile outcome.
+	 * @param int                                                                                                                         $post_id      The record's ID.
+	 * @param array<string, string>                                                                                                       $record       The validated values.
+	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string, canonical_slug?: string, name_en?: string}|null $pattern      The pattern context.
+	 * @param string                                                                                                                      $verification The Turnstile outcome.
 	 * @return array<string, mixed>
 	 */
 	private function mail_record( int $post_id, array $record, ?array $pattern, string $verification ): array {
 		return array(
-			'name'           => $record['name'],
-			'email'          => $record['email'],
-			'company'        => $record['company'],
-			'phone'          => $record['phone'],
-			'country'        => $record['country'],
-			'scope'          => $record['scope'],
-			'route'          => $record['route'],
-			'quantity'       => $record['quantity'],
-			'message'        => $record['message'],
-			'pattern_name'   => null !== $pattern ? $pattern['name'] : '',
-			'pattern_code'   => null !== $pattern ? $pattern['code'] : '',
-			'pattern_url'    => null !== $pattern ? $pattern['url'] : '',
-			'quote_intent'   => $record['quote_intent'] ?? '',
-			'source_page'    => $record['source_page'],
-			'source_module'  => $record['source_module'],
-			'source_button'  => $record['source_button'],
-			'verification'   => $verification,
-			'submitted_time' => \gmdate( 'Y-m-d H:i:s' ),
-			'edit_url'       => \admin_url( 'post.php?post=' . $post_id . '&action=edit' ),
+			'name'            => $record['name'],
+			'email'           => $record['email'],
+			'company'         => $record['company'],
+			'phone'           => $record['phone'],
+			'country'         => $record['country'],
+			'scope'           => $record['scope'],
+			'route'           => $record['route'],
+			'quantity'        => $record['quantity'],
+			'message'         => $record['message'],
+			'pattern_name'    => null !== $pattern ? $pattern['name'] : '',
+			'pattern_name_en' => null !== $pattern ? ( $pattern['name_en'] ?? $pattern['name'] ) : '',
+			'pattern_code'    => null !== $pattern ? $pattern['code'] : '',
+			'pattern_url'     => null !== $pattern ? $pattern['url'] : '',
+			'quote_intent'    => $record['quote_intent'] ?? '',
+			'source_page'     => $record['source_page'],
+			'source_module'   => $record['source_module'],
+			'source_button'   => $record['source_button'],
+			'verification'    => $verification,
+			'submitted_time'  => \gmdate( 'Y-m-d H:i:s' ),
+			'edit_url'        => \admin_url( 'post.php?post=' . $post_id . '&action=edit' ),
+			'locale'          => $record['locale'],
 		);
 	}
 

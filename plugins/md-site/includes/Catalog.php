@@ -44,6 +44,49 @@ final class Catalog {
 	}
 
 	/**
+	 * Resolves a product_cat term's canonical English slug across all 9 languages.
+	 *
+	 * @param \WP_Term $term The taxonomy term.
+	 * @return string The canonical series slug, or '' for non-product_cat terms.
+	 */
+	public static function canonical_series_slug( \WP_Term $term ): string {
+		if ( 'product_cat' !== $term->taxonomy ) {
+			return '';
+		}
+
+		if ( \function_exists( 'has_filter' ) && \has_filter( 'wpml_object_id' ) ) {
+			$en_id = \MetalDivider\Site\I18n\Languages::term_translation( (int) $term->term_id, 'product_cat', 'en' );
+			if ( $en_id > 0 && (int) $term->term_id !== $en_id ) {
+				$en_term = \MetalDivider\Site\I18n\Languages::with_language(
+					'en',
+					static function () use ( $en_id ) {
+						return \get_term( $en_id, 'product_cat' );
+					}
+				);
+				if ( $en_term instanceof \WP_Term && '' !== $en_term->slug ) {
+					return (string) $en_term->slug;
+				}
+			}
+		}
+
+		$slug = (string) $term->slug;
+		// Fallback: strip language suffix like -zh, -zh-hans, -pt-br, -es, etc. if the base is in SERIES_ORDER.
+		foreach ( \MetalDivider\Site\I18n\Languages::ALL as $code ) {
+			$suffixes = array( '-' . $code, '-' . \MetalDivider\Site\I18n\Languages::to_wpml( $code ) );
+			foreach ( $suffixes as $suffix ) {
+				if ( str_ends_with( $slug, $suffix ) ) {
+					$base = substr( $slug, 0, -strlen( $suffix ) );
+					if ( in_array( $base, self::SERIES_ORDER, true ) ) {
+						return $base;
+					}
+				}
+			}
+		}
+
+		return $slug;
+	}
+
+	/**
 	 * The card shortcode.
 	 */
 	public const CARD = 'md_pattern_card';
@@ -247,10 +290,15 @@ final class Catalog {
 		// (series_visible_counts() carries the measurements).
 		$counts = self::series_visible_counts();
 
-		$by_slug = array();
+		$by_slug      = array();
+		$current_lang = \MetalDivider\Site\I18n\Languages::current();
 		foreach ( $terms as $term ) {
-			if ( ( $counts[ $term->slug ] ?? 0 ) > 0 ) {
-				$by_slug[ $term->slug ] = $term;
+			if ( ! \MetalDivider\Site\I18n\Languages::is_term_in_language( $term, 'product_cat', $current_lang ) ) {
+				continue;
+			}
+			$canonical = self::canonical_series_slug( $term );
+			if ( ( $counts[ $canonical ] ?? $counts[ $term->slug ] ?? 0 ) > 0 ) {
+				$by_slug[ $canonical ] = $term;
 			}
 		}
 		if ( array() === $by_slug ) {
@@ -272,14 +320,19 @@ final class Catalog {
 			if ( \is_wp_error( $link ) ) {
 				continue;
 			}
-			$is_current = null !== $current && (int) $term->term_id === (int) $current->term_id;
+			$canonical  = self::canonical_series_slug( $term );
+			$is_current = null !== $current && (
+				(int) $term->term_id === (int) $current->term_id
+				|| ( '' !== $canonical && self::canonical_series_slug( $current ) === $canonical )
+			);
+			$count      = (int) ( $counts[ $canonical ] ?? $counts[ $term->slug ] ?? 0 );
 			$out       .= sprintf(
 				'<a href="%s" class="pattern-catalog__nav-link%s"%s><span>%s</span><span class="pattern-catalog__count">%d</span></a>',
 				\esc_url( $link ),
 				$is_current ? ' is-active' : '',
 				$is_current ? ' aria-current="page"' : '',
 				\esc_html( self::series_label( $term ) ),
-				(int) ( $counts[ $term->slug ] ?? 0 )
+				$count
 			);
 		}
 		return $out;
@@ -313,7 +366,18 @@ final class Catalog {
 	 */
 	private static function series_label( \WP_Term $term ): string {
 		$name = (string) $term->name;
-		return str_ends_with( $name, 'Patterns' ) ? $name : $name . ' Patterns';
+		if ( \MetalDivider\Site\I18n\Languages::current() === 'en' ) {
+			return str_ends_with( $name, 'Patterns' ) ? $name : $name . ' Patterns';
+		}
+		$fmt = \MetalDivider\Site\I18n\Dictionary::text( 'series_patterns_label' );
+		if ( str_contains( $fmt, '%s' ) ) {
+			$suffix = str_replace( '%s', '', $fmt );
+			if ( '' !== $suffix && str_ends_with( $name, $suffix ) ) {
+				return $name;
+			}
+			return sprintf( $fmt, $name );
+		}
+		return $name;
 	}
 
 	/**
@@ -502,15 +566,15 @@ final class Catalog {
 	}
 
 	/**
-	 * The per-request tally of series_visible_counts().
+	 * The per-request tally of series_visible_counts(), scoped by language.
 	 *
 	 * A property rather than a function-static so tests can reset it: the
 	 * suite runs every case in one process, and a function-static would
 	 * carry the first case's catalog into all the rest.
 	 *
-	 * @var array<string, int>|null
+	 * @var array<string, array<string, int>>
 	 */
-	private static ?array $visible_counts = null;
+	private static array $visible_counts = array();
 
 	/**
 	 * How many catalog-visible published patterns each series holds.
@@ -542,9 +606,9 @@ final class Catalog {
 	 * @return array<string, int> Count by term slug, absent for an empty series.
 	 */
 	public static function series_visible_counts(): array {
-		$counts = self::$visible_counts;
-		if ( null !== $counts ) {
-			return $counts;
+		$lang = \MetalDivider\Site\I18n\Languages::current();
+		if ( isset( self::$visible_counts[ $lang ] ) ) {
+			return self::$visible_counts[ $lang ];
 		}
 		$counts   = array();
 		$excluded = ( new self() )->catalog_excluded_term_ids();
@@ -571,7 +635,7 @@ final class Catalog {
 			)
 		);
 		if ( array() === $ids ) {
-			self::$visible_counts = $counts;
+			self::$visible_counts[ $lang ] = $counts;
 			return $counts;
 		}
 		$terms = \wp_get_object_terms(
@@ -582,17 +646,20 @@ final class Catalog {
 			)
 		);
 		if ( \is_wp_error( $terms ) ) {
-			self::$visible_counts = $counts;
+			self::$visible_counts[ $lang ] = $counts;
 			return $counts;
 		}
 		foreach ( $terms as $term ) {
-			$slug = (string) $term->slug;
-			if ( '' === $slug ) {
-				continue;
+			$canonical = self::canonical_series_slug( $term );
+			if ( '' !== $canonical ) {
+				$counts[ $canonical ] = ( $counts[ $canonical ] ?? 0 ) + 1;
 			}
-			$counts[ $slug ] = ( $counts[ $slug ] ?? 0 ) + 1;
+			$slug = (string) $term->slug;
+			if ( '' !== $slug && $slug !== $canonical ) {
+				$counts[ $slug ] = ( $counts[ $slug ] ?? 0 ) + 1;
+			}
 		}
-		self::$visible_counts = $counts;
+		self::$visible_counts[ $lang ] = $counts;
 		return $counts;
 	}
 
@@ -601,7 +668,7 @@ final class Catalog {
 	 * request builds it once and exits.
 	 */
 	public static function reset_visible_counts(): void {
-		self::$visible_counts = null;
+		self::$visible_counts = array();
 	}
 
 	/**
@@ -647,11 +714,32 @@ final class Catalog {
 		if ( '' === $slug ) {
 			return array();
 		}
+
+		$current_lang = \MetalDivider\Site\I18n\Languages::current();
+		$tax_field    = 'slug';
+		$tax_terms    = $slug;
+
+		if ( 'en' !== $current_lang && \function_exists( 'has_filter' ) && \has_filter( 'wpml_object_id' ) ) {
+			$en_term = \MetalDivider\Site\I18n\Languages::with_language(
+				'en',
+				static function () use ( $slug ) {
+					return \get_term_by( 'slug', $slug, 'product_cat' );
+				}
+			);
+			if ( $en_term instanceof \WP_Term && (int) $en_term->term_id > 0 ) {
+				$tr_term_id = \MetalDivider\Site\I18n\Languages::term_translation( (int) $en_term->term_id, 'product_cat', $current_lang );
+				if ( $tr_term_id > 0 ) {
+					$tax_field = 'term_id';
+					$tax_terms = $tr_term_id;
+				}
+			}
+		}
+
 		$tax_query = array(
 			array(
 				'taxonomy'         => 'product_cat',
-				'field'            => 'slug',
-				'terms'            => $slug,
+				'field'            => $tax_field,
+				'terms'            => $tax_terms,
 				'include_children' => false,
 			),
 		);
@@ -741,14 +829,14 @@ final class Catalog {
 		}
 		$out = array();
 		foreach ( $terms as $term ) {
-			// get_the_terms() answers WP_Term[]; the instanceof guard this
-			// replaced was always true (PHPStan says so) and the slug check is
-			// the one that can be false.
-			if ( '' !== $term->slug ) {
+			$canonical = self::canonical_series_slug( $term );
+			if ( '' !== $canonical ) {
+				$out[] = $canonical;
+			} elseif ( '' !== $term->slug ) {
 				$out[] = (string) $term->slug;
 			}
 		}
-		return $out;
+		return array_values( array_unique( $out ) );
 	}
 
 	/**

@@ -11,7 +11,8 @@
 	align-items: center;
 	gap: 10px;
 	height: 54px;
-	padding: 0 18px 0 8px;
+	padding-block: 0;
+	padding-inline: 8px 18px;
 	border: 1px solid rgba( 201, 169, 98, 0.34 );
 	border-radius: 999px;
 	background: #050806;

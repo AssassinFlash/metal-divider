@@ -98,6 +98,7 @@ final class SchemaFiltersTest extends TestCase {
 		// The catalogue's ItemList: an action, not a filter, because it prints
 		// its own block rather than amending one of SEOPress's.
 		WP_Mock::expectActionAdded( 'wp_head', array( $filters, 'catalog_item_list' ), 99 );
+		WP_Mock::expectActionAdded( 'wp_head', array( $filters, 'localized_faq_schema' ), 99 );
 
 		$filters->register();
 
@@ -205,13 +206,13 @@ final class SchemaFiltersTest extends TestCase {
 					'@type'             => 'ContactPoint',
 					'contactType'       => 'sales',
 					'email'             => 'info@metal-divider.com',
-					'availableLanguage' => array( 'English' ),
+					'availableLanguage' => array( 'English', 'Chinese', 'Spanish', 'Portuguese', 'German', 'French', 'Arabic', 'Indonesian', 'Vietnamese' ),
 				),
 				array(
 					'@type'             => 'ContactPoint',
 					'contactType'       => 'WhatsApp',
 					'telephone'         => '+85264731687',
-					'availableLanguage' => array( 'English' ),
+					'availableLanguage' => array( 'English', 'Chinese', 'Spanish', 'Portuguese', 'German', 'French', 'Arabic', 'Indonesian', 'Vietnamese' ),
 				),
 			),
 			$schema['contactPoint']

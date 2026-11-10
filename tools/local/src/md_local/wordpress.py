@@ -72,6 +72,10 @@ ARCHIVED_PLUGINS: tuple[tuple[str, str], ...] = (
     ("wp-seopress-pro", "wp-seopress-pro"),
     ("livecanvas", "livecanvas"),
     ("yansir-md", "28-wp-markdown-editor"),
+    ("sitepress-multilingual-cms", "sitepress-multilingual-cms"),
+    ("wpml-string-translation", "wpml-string-translation"),
+    ("woocommerce-multilingual", "woocommerce-multilingual"),
+    ("acfml", "acfml"),
 )
 
 ADMIN_USER = "local-admin"
@@ -114,8 +118,8 @@ def provision(
     ):
         directory.mkdir(parents=True, exist_ok=True)
     instance.dir.chmod(0o700)
-    # The phase-2 egress allowlist, empty in phase 1 (docs/specs/14-local-stack.md §1.4).
-    instance.allow_hosts_file.touch(mode=0o644)
+    # The phase-2 egress allowlist: DeepSeek translation API (docs/specs/14-local-stack.md §1.4).
+    _ensure_allow_hosts(instance)
 
     say(f"database {instance.database}")
     password = mysql.ensure_user()
@@ -224,8 +228,10 @@ def refresh(instance: Instance, php: Path, checkout: Checkout, say: Say) -> None
     )
     if drift:
         say(f"runs {drift}: `just reset {instance.name}` rebuilds the pinned versions")
+    _ensure_allow_hosts(instance)
     _install_server(instance, php, checkout)
     wp = WpCli(php, instance)
+    _install_missing_archived_plugins(instance, wp, say)
     _install_base_theme(instance, wp, say)
     _link_our_plugins(instance, checkout, wp, say)
     _link_our_themes(instance, checkout, wp, say)
@@ -261,6 +267,16 @@ def versions_of(instance: Instance) -> dict[str, str | None]:
             instance.wp_content / "themes" / "picostrap5" / "style.css"
         ),
         "LiteSpeed Cache": _header(plugins / "litespeed-cache" / "litespeed-cache.php"),
+        "WPML Multilingual CMS": _header(
+            plugins / "sitepress-multilingual-cms" / "sitepress.php"
+        ),
+        "WPML String Translation": _header(
+            plugins / "wpml-string-translation" / "plugin.php"
+        ),
+        "WooCommerce Multilingual": _header(
+            plugins / "woocommerce-multilingual" / "wpml-woocommerce.php"
+        ),
+        "ACFML": _header(plugins / "acfml" / "wpml-acf.php"),
     }
 
 
@@ -276,7 +292,41 @@ PINNED_VERSIONS: dict[str, str] = {
     "yansir-md": versions.YANSIR_MD_VERSION,
     "picostrap5": versions.PICOSTRAP5_VERSION,
     "LiteSpeed Cache": versions.LITESPEED_CACHE_VERSION,
+    "WPML Multilingual CMS": versions.WPML_CMS_VERSION,
+    "WPML String Translation": versions.WPML_ST_VERSION,
+    "WooCommerce Multilingual": versions.WCML_VERSION,
+    "ACFML": versions.ACFML_VERSION,
 }
+
+
+def _ensure_allow_hosts(instance: Instance) -> None:
+    """Ensure the local egress allowlist permits api.deepseek.com (spec 14 §1.4)."""
+    instance.allow_hosts_file.touch(mode=0o644)
+    lines = instance.allow_hosts_file.read_text(encoding="utf-8").splitlines()
+    entries = {
+        line.strip().lower()
+        for line in lines
+        if line.strip() and not line.strip().startswith("#")
+    }
+    if "api.deepseek.com" not in entries:
+        prefix = "\n".join(lines).rstrip("\n")
+        updated = f"{prefix}\napi.deepseek.com\n" if prefix else "api.deepseek.com\n"
+        instance.allow_hosts_file.write_text(updated, encoding="utf-8")
+
+
+def _install_missing_archived_plugins(instance: Instance, wp: WpCli, say: Say) -> None:
+    """Install and activate any newly pinned archived plugin absent on an existing instance."""
+    plugins_dir = instance.wp_content / "plugins"
+    if not (plugins_dir / "woocommerce").is_dir():
+        # Bare instance (`up --bare`): keeps no plugin face.
+        return
+    for archive_slug, activate_as in ARCHIVED_PLUGINS:
+        if (plugins_dir / activate_as).is_dir():
+            continue
+        archive_path = archives.verified(archive_slug)
+        say(f"{archive_slug} {archive_path.version} (archive)")
+        wp.run("plugin", "install", str(archive_path.path))
+        wp.run("plugin", "activate", activate_as)
 
 
 def _install_server(instance: Instance, php: Path, checkout: Checkout) -> None:

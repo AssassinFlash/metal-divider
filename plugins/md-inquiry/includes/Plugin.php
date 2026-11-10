@@ -91,5 +91,27 @@ final class Plugin {
 		// had no `md_inquiry_minute` and `wp_next_scheduled()` was false while
 		// two real mails sat in the queue with attempts=0.
 		$this->queue->register();
+
+		\add_filter(
+			'gettext',
+			static function ( string $translation, string $text, string $domain ): string {
+				if ( 'md-inquiry' !== $domain ) {
+					return $translation;
+				}
+				$locale = Locale::current();
+				if ( 'en' === $locale ) {
+					return $translation;
+				}
+				return Translations::translate( $text, $locale );
+			},
+			10,
+			3
+		);
+		\add_action(
+			'init',
+			static function (): void {
+				\load_plugin_textdomain( 'md-inquiry', false, 'md-inquiry/languages' );
+			}
+		);
 	}
 }

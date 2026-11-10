@@ -82,6 +82,25 @@ function md_site_guards_headers(): void {
 add_action( 'send_headers', 'md_site_guards_headers', 1 );
 
 /**
+ * Removes WPML client scripts that emit inline script blocks via wp_localize_script,
+ * violating the site's strict Content-Security-Policy (script-src 'self').
+ */
+function md_site_guards_dequeue_wpml_scripts(): void {
+	if ( is_admin() ) {
+		return;
+	}
+	foreach ( array( 'wpml-cookie', 'wpml-browser-redirect', 'sitepress-scripts' ) as $handle ) {
+		if ( function_exists( 'wp_dequeue_script' ) ) {
+			wp_dequeue_script( $handle );
+		}
+		if ( function_exists( 'wp_deregister_script' ) ) {
+			wp_deregister_script( $handle );
+		}
+	}
+}
+add_action( 'wp_enqueue_scripts', 'md_site_guards_dequeue_wpml_scripts', 100 );
+
+/**
  * Removes the X-Pingback header: pingback is a use of XML-RPC, and XML-RPC
  * is off.
  *
@@ -134,6 +153,10 @@ function md_site_guards_is_legacy_author_path( string $request, string $author_b
 	$path = trim( $request, '/' );
 	$base = trim( $author_base, '/' );
 	if ( '' === $path || '' === $base ) {
+		return false;
+	}
+	$path = (string) preg_replace( '#^(?:zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', '', $path );
+	if ( '' === $path ) {
 		return false;
 	}
 	if ( ! str_starts_with( $path, $base . '/' ) ) {

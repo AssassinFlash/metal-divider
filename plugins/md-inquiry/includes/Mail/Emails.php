@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace MetalDivider\Inquiry\Mail;
 
 use MetalDivider\Inquiry\Config;
+use MetalDivider\Inquiry\Translations;
 
 /**
  * Composes the internal notification and the customer confirmation (spec 07
@@ -64,21 +65,31 @@ final class Emails {
 	 * @return array{to: list<string>, subject: string, body: string, headers: list<string>}
 	 */
 	public function internal( array $record ): array {
-		$pattern = self::pattern( $record );
-		$subject = null !== $pattern
-			? 'New inquiry: ' . $pattern['name'] . ' — ' . $record['name']
+		$locale       = isset( $record['locale'] ) && \is_string( $record['locale'] ) ? $record['locale'] : '';
+		$pattern      = self::pattern( $record );
+		$pattern_name = ! empty( $record['pattern_name_en'] ) && \is_string( $record['pattern_name_en'] ) ? $record['pattern_name_en'] : ( null !== $pattern ? $pattern['name'] : '' );
+		$subject      = '' !== $pattern_name
+			? 'New inquiry: ' . $pattern_name . ' — ' . $record['name']
 			: 'New inquiry: ' . $record['name'];
+
+		if ( '' !== $locale && 'en' !== $locale ) {
+			$subject = '[' . \strtoupper( $locale ) . '] ' . $subject;
+		}
 
 		$lines = array( 'A new inquiry arrived through the inquiry form.', '' );
 		if ( null !== $pattern ) {
-			$lines[] = 'Pattern: ' . $pattern['name'] . ' (' . $pattern['code'] . ')';
-			$lines[] = 'Pattern page: ' . $record['pattern_url'];
+			$display_pattern = '' !== $pattern_name ? $pattern_name : $pattern['name'];
+			$lines[]         = 'Pattern: ' . $display_pattern . ' (' . $pattern['code'] . ')';
+			$lines[]         = 'Pattern page: ' . $record['pattern_url'];
 		}
 		if ( '' !== ( $record['quote_intent'] ?? '' ) ) {
 			$lines[] = 'Request intent: ' . $record['quote_intent'];
 		}
 		$lines[] = 'Submitted: ' . $record['submitted_time'] . ' UTC';
 		$lines[] = 'Source: ' . $record['source_page'] . '/' . $record['source_module'] . '/' . $record['source_button'];
+		if ( '' !== $locale && 'en' !== $locale ) {
+			$lines[] = 'Language: ' . $locale;
+		}
 		$lines[] = 'Verification: ' . $record['verification'];
 		$lines[] = '';
 		$lines[] = 'Name: ' . $record['name'];
@@ -118,37 +129,42 @@ final class Emails {
 	 * @return array{to: list<string>, subject: string, body: string, headers: list<string>}
 	 */
 	public function confirmation( array $record ): array {
-		$pattern = self::pattern( $record );
-		$subject = null !== $pattern
-			? 'We\'ve received your inquiry about ' . $pattern['name']
-			: 'We\'ve received your inquiry';
+		$locale = isset( $record['locale'] ) && \is_string( $record['locale'] ) ? $record['locale'] : '';
+		if ( '' === $locale || 'en' === $locale ) {
+			$pattern = self::pattern( $record );
+			$subject = null !== $pattern
+				? 'We\'ve received your inquiry about ' . $pattern['name']
+				: 'We\'ve received your inquiry';
 
-		$lines = array( 'Hello ' . $record['name'] . ',', '' );
-		if ( null !== $pattern ) {
-			$lines[] = 'Thank you for your inquiry about ' . $pattern['name'] . ' (' . $pattern['code'] . ') — this email confirms we have received it.';
-		} else {
-			$lines[] = 'Thank you for your inquiry — this email confirms we have received it.';
+			$lines = array( 'Hello ' . $record['name'] . ',', '' );
+			if ( null !== $pattern ) {
+				$lines[] = 'Thank you for your inquiry about ' . $pattern['name'] . ' (' . $pattern['code'] . ') — this email confirms we have received it.';
+			} else {
+				$lines[] = 'Thank you for your inquiry — this email confirms we have received it.';
+			}
+			$lines[] = '';
+			$lines[] = 'Our team replies within 24 hours on business days with pattern availability, material options and pricing. If you sent dimensions, quantities or a timeline, we will address them in that reply. If you have drawings or site photos, attaching them to your reply helps us quote faster.';
+			$lines[] = '';
+			$lines[] = 'Need to reach us sooner? Reply directly to this email, or use:';
+			$lines[] = '- WhatsApp: +852 6473 1687 — https://wa.me/85264731687';
+			$lines[] = '- Email: info@metal-divider.com';
+			$lines[] = '';
+			$lines[] = 'Kind regards,';
+			$lines[] = 'The MetalDivider team';
+			$lines[] = 'metal-divider.com';
+
+			return array(
+				'to'      => array( $record['email'] ),
+				'subject' => $subject,
+				'body'    => \implode( "\n", $lines ),
+				'headers' => array(
+					'From: MetalDivider <' . $this->config->from_email() . '>',
+					'Reply-To: ' . self::REPLY_TO,
+				),
+			);
 		}
-		$lines[] = '';
-		$lines[] = 'Our team replies within 24 hours on business days with pattern availability, material options and pricing. If you sent dimensions, quantities or a timeline, we will address them in that reply. If you have drawings or site photos, attaching them to your reply helps us quote faster.';
-		$lines[] = '';
-		$lines[] = 'Need to reach us sooner? Reply directly to this email, or use:';
-		$lines[] = '- WhatsApp: +852 6473 1687 — https://wa.me/85264731687';
-		$lines[] = '- Email: info@metal-divider.com';
-		$lines[] = '';
-		$lines[] = 'Kind regards,';
-		$lines[] = 'The MetalDivider team';
-		$lines[] = 'metal-divider.com';
 
-		return array(
-			'to'      => array( $record['email'] ),
-			'subject' => $subject,
-			'body'    => \implode( "\n", $lines ),
-			'headers' => array(
-				'From: MetalDivider <' . $this->config->from_email() . '>',
-				'Reply-To: ' . self::REPLY_TO,
-			),
-		);
+		return Translations::confirmation_email( $this->config, $record, $locale );
 	}
 
 	/**

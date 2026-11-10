@@ -103,4 +103,29 @@
   #md-blog-single .md-blog-single-content { font-size: 16px; line-height: 1.85; }
 }
 
+/* --- RTL Overrides for Blog --- */
+[dir="rtl"] #md-blog-single {
+  text-align: right;
+}
+[dir="rtl"] #md-blog-single .md-blog-single-map-nav a {
+  border-left: 0;
+  border-right: 2px solid transparent;
+}
+[dir="rtl"] #md-blog-single .md-blog-single-map-nav a[aria-current="location"] {
+  border-right-color: var(--md-gold-dark);
+}
+[dir="rtl"] #md-blog-single .md-blog-single-content blockquote {
+  padding-left: 0;
+  padding-right: 24px;
+  border-left: 0;
+  border-right: 3px solid var(--md-gold);
+}
+[dir="rtl"] #md-blog-single .md-blog-single-content :is(ul, ol) {
+  padding-left: 0;
+  padding-right: 24px;
+}
+[dir="rtl"] #md-blog-single .reader-toc summary {
+  text-align: right;
+}
+
 

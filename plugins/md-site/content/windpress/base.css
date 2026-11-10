@@ -64,9 +64,11 @@
   /* Fonts and scale. "san-serif" is the old head's literal fallback text
      (sic) — the family is Inter / Playfair Display and the fallback never
      applies while the self-hosted faces load. */
+  --font-sans: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans Arabic", "Geeza Pro", sans-serif;
+  --md-font-sans: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans Arabic", "Geeza Pro", sans-serif;
   --font-body-desktop-size: 1.6rem;
   --font-body-mobile-size: 1.5rem;
-  --font-body-family: Inter, san-serif;
+  --font-body-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans Arabic", "Geeza Pro", sans-serif;
   --font-body-style: ;
   --font-body-weight: 400;
   --font-body-weight-bold: 400;
@@ -127,7 +129,7 @@ html {
    62.5% root the body would otherwise inherit 10px and every unstyled run of
    text would shrink. Old computed 1440x900: 16px / 24px. */
 body {
-  font-family: var(--md-font-sans);
+  font-family: var(--md-font-sans, var(--font-sans, Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans Arabic", "Geeza Pro", sans-serif));
   font-size: var(--font-body-size, var(--font-body-mobile-size, 1.5rem));
   line-height: 1.5;
 }
@@ -231,4 +233,26 @@ xo-container[xo-fluid]:not([xo-fluid=false]) {
  * ---------------------------------------------------------------- */
 main p:not([class*="max-w-"]) {
   max-width: 980px;
+}
+
+/* ---------------------------------------------------------------- *
+ * Arabic RTL: cursive Arabic scripts disconnect when tracking /
+ * positive letter-spacing is applied. Zero letter-spacing site-wide
+ * for Arabic elements.
+ * ---------------------------------------------------------------- */
+[dir="rtl"] body,
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6,
+[dir="rtl"] p,
+[dir="rtl"] a,
+[dir="rtl"] button,
+[dir="rtl"] span,
+[dir="rtl"] th,
+[dir="rtl"] td,
+[dir="rtl"] label {
+  letter-spacing: 0 !important;
 }

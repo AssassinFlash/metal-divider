@@ -36,14 +36,15 @@ final class Columns {
 	 */
 	public function columns( array $columns ): array {
 		return array(
-			'cb'         => $columns['cb'] ?? '<input type="checkbox">',
-			'title'      => __( 'Inquiry', 'md-inquiry' ),
-			'md_email'   => __( 'Email', 'md-inquiry' ),
-			'md_company' => __( 'Company', 'md-inquiry' ),
-			'md_pattern' => __( 'Pattern', 'md-inquiry' ),
-			'md_source'  => __( 'Source', 'md-inquiry' ),
-			'md_status'  => __( 'Status', 'md-inquiry' ),
-			'date'       => $columns['date'] ?? __( 'Date', 'md-inquiry' ),
+			'cb'             => $columns['cb'] ?? '<input type="checkbox">',
+			'title'          => __( 'Inquiry', 'md-inquiry' ),
+			'md_email'       => __( 'Email', 'md-inquiry' ),
+			'md_company'     => __( 'Company', 'md-inquiry' ),
+			'md_pattern'     => __( 'Pattern', 'md-inquiry' ),
+			'inquiry_locale' => __( 'Language', 'md-inquiry' ),
+			'md_source'      => __( 'Source', 'md-inquiry' ),
+			'md_status'      => __( 'Status', 'md-inquiry' ),
+			'date'           => $columns['date'] ?? __( 'Date', 'md-inquiry' ),
 		);
 	}
 
@@ -74,6 +75,10 @@ final class Columns {
 				if ( '' !== $code ) {
 					echo ' <span class="md-inquiry-column-code">' . \esc_html( $code ) . '</span>';
 				}
+				return;
+			case 'inquiry_locale':
+				$locale = (string) \get_post_meta( $post_id, 'inquiry_locale', true );
+				echo \esc_html( '' !== $locale ? \strtoupper( $locale ) : '—' );
 				return;
 			case 'md_source':
 				$source = array(

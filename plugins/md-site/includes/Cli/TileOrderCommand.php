@@ -142,6 +142,20 @@ final class TileOrderCommand {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			WP_CLI::error( 'Run as an administrator: wp md-site seed-tiles --user=<admin>.' );
 		}
+		\MetalDivider\Site\I18n\Languages::with_language(
+			'en',
+			function () use ( $assoc_args ): void {
+				$this->execute_seed_tiles( $assoc_args );
+			}
+		);
+	}
+
+	/**
+	 * Executes the tile order seed in the canonical language context.
+	 *
+	 * @param array<string, mixed> $assoc_args Options: dry-run.
+	 */
+	private function execute_seed_tiles( array $assoc_args ): void {
 		$dry_run = isset( $assoc_args['dry-run'] );
 
 		$written   = 0;
@@ -195,6 +209,19 @@ final class TileOrderCommand {
 				if ( (int) $product->menu_order > 0 ) {
 					++$unchanged;
 					$report[] = sprintf( '%d already ordered %d, marking it', $id, (int) $product->menu_order );
+					if ( ! $dry_run && \function_exists( 'has_filter' ) && \has_filter( 'wpml_object_id' ) ) {
+						foreach ( \MetalDivider\Site\I18n\Languages::TARGETS as $target_lang ) {
+							$tr_id = \MetalDivider\Site\I18n\Languages::post_translation( $id, $target_lang );
+							if ( $tr_id > 0 && $tr_id !== $id ) {
+								\wp_update_post(
+									array(
+										'ID'         => $tr_id,
+										'menu_order' => (int) $product->menu_order,
+									)
+								);
+							}
+						}
+					}
 					continue;
 				}
 
@@ -207,6 +234,19 @@ final class TileOrderCommand {
 							'menu_order' => $position,
 						)
 					);
+					if ( \function_exists( 'has_filter' ) && \has_filter( 'wpml_object_id' ) ) {
+						foreach ( \MetalDivider\Site\I18n\Languages::TARGETS as $target_lang ) {
+							$tr_id = \MetalDivider\Site\I18n\Languages::post_translation( $id, $target_lang );
+							if ( $tr_id > 0 && $tr_id !== $id ) {
+								\wp_update_post(
+									array(
+										'ID'         => $tr_id,
+										'menu_order' => $position,
+									)
+								);
+							}
+						}
+					}
 				}
 			}
 		}
@@ -217,6 +257,14 @@ final class TileOrderCommand {
 		if ( ! $dry_run ) {
 			foreach ( $to_mark as $id ) {
 				\update_post_meta( $id, self::MARKER, self::SEED_REVISION );
+				if ( \function_exists( 'has_filter' ) && \has_filter( 'wpml_object_id' ) ) {
+					foreach ( \MetalDivider\Site\I18n\Languages::TARGETS as $target_lang ) {
+						$tr_id = \MetalDivider\Site\I18n\Languages::post_translation( $id, $target_lang );
+						if ( $tr_id > 0 && $tr_id !== $id ) {
+							\update_post_meta( $tr_id, self::MARKER, self::SEED_REVISION );
+						}
+					}
+				}
 			}
 		}
 

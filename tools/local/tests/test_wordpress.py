@@ -15,11 +15,15 @@ def plugins_of(tmp_path: Path) -> Path:
         "woocommerce/woocommerce.php": "* Version: 11.2.1",
         "advanced-custom-fields/acf.php": "* Version: 6.8.11",
         "windpress/windpress.php": "* Version:             3.2.92",
-        "wp-seopress/seopress.php": "* Version: 10.3",
+        "wp-seopress/seopress.php": f"* Version: {versions.SEOPRESS_VERSION}",
         "wp-seopress-pro/seopress-pro.php": "* Version: 10.2.1",
         "livecanvas/livecanvas-plugin-index.php": "Version: 4.9.5",
         "28-wp-markdown-editor/yansir-md.php": "Version: 1.0.1",
         "litespeed-cache/litespeed-cache.php": "Version: 7.9.2",
+        "sitepress-multilingual-cms/sitepress.php": f"Version: {versions.WPML_CMS_VERSION}",
+        "wpml-string-translation/plugin.php": f"Version: {versions.WPML_ST_VERSION}",
+        "woocommerce-multilingual/wpml-woocommerce.php": f"Version: {versions.WCML_VERSION}",
+        "acfml/wpml-acf.php": f"Version: {versions.ACFML_VERSION}",
     }
     for relative, line in headers.items():
         path = plugins / relative

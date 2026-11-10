@@ -92,6 +92,7 @@ final class StatusesAndFieldsTest extends TestCase {
 				'ip_address',
 				'user_agent',
 				'turnstile_status',
+				'inquiry_locale',
 			),
 			$names,
 			'the ticket\'s field list, in record order — the pattern list fields are gone (ticket #7 revision)'

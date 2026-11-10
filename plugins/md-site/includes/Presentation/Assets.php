@@ -96,10 +96,42 @@ final class Assets {
 		if ( \is_admin() ) {
 			return;
 		}
-		foreach ( array( 'woocommerce-layout', 'woocommerce-smallscreen', 'woocommerce-general', 'photoswipe', 'photoswipe-default-skin' ) as $style ) {
+		foreach ( array(
+			'woocommerce-layout',
+			'woocommerce-smallscreen',
+			'woocommerce-general',
+			'photoswipe',
+			'photoswipe-default-skin',
+			'wpml-legacy-horizontal-list-0',
+			'wpml-legacy-vertical-list-0',
+			'wpml-legacy-dropdown-0',
+			'wpml-legacy-dropdown-click-0',
+			'wpml-legacy-post-translations-0',
+			'wpml-tm-styles',
+			'sitepress-style',
+			'wcml-dropdown-0',
+		) as $style ) {
 			\wp_dequeue_style( $style );
 		}
-		foreach ( array( 'woocommerce', 'wc-add-to-cart', 'wc-jquery-blockui', 'wc-zoom', 'wc-flexslider', 'wc-photoswipe', 'wc-photoswipe-ui-default', 'wc-single-product', 'wc-js-cookie', 'sourcebuster-js', 'wc-order-attribution', 'hostinger-reach-embed-js' ) as $script ) {
+		foreach ( array(
+			'woocommerce',
+			'wc-add-to-cart',
+			'wc-jquery-blockui',
+			'wc-zoom',
+			'wc-flexslider',
+			'wc-photoswipe',
+			'wc-photoswipe-ui-default',
+			'wc-single-product',
+			'wc-js-cookie',
+			'sourcebuster-js',
+			'wc-order-attribution',
+			'hostinger-reach-embed-js',
+			'wpml-cookie',
+			'wpml-browser-redirect',
+			'sitepress-scripts',
+			'wcml-front-scripts',
+			'cart-widget',
+		) as $script ) {
 			\wp_dequeue_script( $script );
 		}
 		// Woo attaches the flipper on body_class, after this hook: remove it

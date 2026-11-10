@@ -58,7 +58,7 @@
 	// segment; every label this file prints goes through here, so the suffix
 	// never reaches a customer through the dialog or the WhatsApp text.
 	function cleanTitle(value) {
-		return String(value || '').split('|')[0].trim();
+		return String(value || '').split(/[|｜]/)[0].trim();
 	}
 
 	// Two labels for one pattern are one label too many. The code and the name
@@ -184,7 +184,7 @@
 				message: i18n.errorMessage || 'Please add a short message.',
 				confirm: i18n.errorConfirm || 'Please confirm this inquiry is for an architectural or commercial project.'
 			};
-			return map[key] || 'Please complete this field.';
+			return map[key] || (i18n && i18n.fieldFallback) || 'Please complete this field.';
 		}
 
 		function isMissing(key) {
@@ -227,21 +227,26 @@
 			var company = value('company');
 			var message = value('message');
 			var lines = [];
+			var i18n = cfg.i18n || {};
 			if (name) {
-				lines.push("Hi, I'm " + name + (company ? ' (' + company + ')' : '') + '.');
+				var greetingFmt = i18n.waGreeting || "Hi, I'm %s%s.";
+				var companyPart = company ? ' (' + company + ')' : '';
+				lines.push(greetingFmt.replace('%s', name).replace('%s', companyPart));
 			}
 			if (cfg.pattern) {
 				// The SEO suffix after a pipe is not part of the name, and the
 				// code is a second label, not a second fact: when it repeats the
 				// cleaned name, the WhatsApp message names the pattern once.
 				var patternName = cleanTitle(cfg.pattern.name);
-				lines.push("I'd like a quote for this pattern:");
+				lines.push(i18n.waPatternIntro || "I'd like a quote for this pattern:");
 				lines.push(!cfg.pattern.code || codeRepeatsName(cfg.pattern.code, patternName)
 					? patternName
 					: patternName + ' (' + cfg.pattern.code + ')');
 			}
-			if (cfg.intent && cfg.intent !== 'Selected pattern') {
-				lines.push('Inquiry: ' + cfg.intent);
+			var defaultEyebrow = (i18n && i18n.selectedPattern) || 'Selected pattern';
+			if (cfg.intent && cfg.intent !== 'Selected pattern' && cfg.intent !== defaultEyebrow) {
+				var intentPrefix = i18n.waInquiryPrefix || 'Inquiry: ';
+				lines.push(intentPrefix + cfg.intent);
 			}
 			if (message) {
 				lines.push(message);
@@ -252,7 +257,7 @@
 			// like a tracking link, not an inquiry. WhatsApp::cta_text() on the
 			// server-side href opens the same way, so both routes say hello.
 			if (0 === lines.length) {
-				lines.push("Hi Metal Divider, I'd like to discuss a stainless steel screen project.");
+				lines.push(i18n.waDefaultIntro || "Hi Metal Divider, I'd like to discuss a stainless steel screen project.");
 			}
 			lines.push('Ref: ' + source('page') + '/' + source('module') + '/' + source('button'));
 			return lines.join('\n');
@@ -277,7 +282,7 @@
 		var defaultSlotHidden = patternSlot ? patternSlot.hasAttribute('hidden') : true;
 		var defaultEyebrowText = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]')
 			? patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]').textContent
-			: 'Selected pattern';
+			: ((cfg.i18n && cfg.i18n.selectedPattern) || 'Selected pattern');
 		var defaultTitleText = patternSlot && patternSlot.querySelector('[data-md-inquiry-pattern-title]')
 			? cleanTitle(patternSlot.querySelector('[data-md-inquiry-pattern-title]').textContent)
 			: '';
@@ -312,11 +317,13 @@
 			if (!modalTitle) {
 				return;
 			}
+			var defaultTitle = (cfg.i18n && cfg.i18n.defaultModalTitle) || 'Request a quote';
 			if (!modalTitle.__mdDefaultTitle) {
-				modalTitle.__mdDefaultTitle = modalTitle.textContent || 'Request a quote';
+				modalTitle.__mdDefaultTitle = modalTitle.textContent || defaultTitle;
 			}
+			var format = (cfg.i18n && cfg.i18n.modalTitleWithCode) || 'Request a quote · %s';
 			modalTitle.textContent = activeCode
-				? 'Request a quote · ' + activeCode
+				? format.replace('%s', activeCode)
 				: modalTitle.__mdDefaultTitle;
 		}
 
@@ -465,7 +472,8 @@
 				patternSlot.removeAttribute('hidden');
 				var eyebrowEl = patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]');
 				if (eyebrowEl) {
-					eyebrowEl.textContent = (name || code) ? (rawIntent || defaultEyebrowText) : (rawIntent ? 'Selected request' : defaultEyebrowText);
+					var selReq = (cfg.i18n && cfg.i18n.selectedRequest) || 'Selected request';
+					eyebrowEl.textContent = (name || code) ? (rawIntent || defaultEyebrowText) : (rawIntent ? selReq : defaultEyebrowText);
 				}
 				var titleEl = patternSlot.querySelector('[data-md-inquiry-pattern-title]');
 				var codeEl = patternSlot.querySelector('[data-md-inquiry-pattern-code]');

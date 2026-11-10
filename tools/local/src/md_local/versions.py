@@ -57,10 +57,12 @@ YANSIR_MD_VERSION = "1.0.1"
 # on top of it (spec 17 §2.1, branch research/spec-theme-base).
 PICOSTRAP5_VERSION = "3.5.0"
 
-# Not installed in phase 1 (owner ruling 2026-10-24: English site first,
-# multilingual is phase 2). The slot records the version the phase-2 ticket
-# will install, so `just status` can show the contract.
-POLYLANG_VERSION = "3.9.1"
+# Phase-2 multilingual plugins (owner rulings 2026-10-24 & 2026-11-11: WPML
+# Multilingual Agency, installed from the local archives verified by SHA-256).
+WPML_CMS_VERSION = "5.3.0"
+WPML_ST_VERSION = "5.3.0"
+WCML_VERSION = "5.8.0"
+ACFML_VERSION = "5.3.0"
 
 # WP-CLI as on this Mac (`brew pin wp-cli`); the version the stack requires.
 WPCLI_VERSION = "2.12"

@@ -62,6 +62,7 @@ final class SchemaFilters {
 		// is page #6 with the default template). Without this block a search
 		// engine sees a WebPage and no list at all.
 		add_action( 'wp_head', array( $this, 'catalog_item_list' ), 99 );
+		add_action( 'wp_head', array( $this, 'localized_faq_schema' ), 99 );
 	}
 
 	/**
@@ -137,7 +138,7 @@ final class SchemaFilters {
 		$schema = array(
 			'@context'        => 'https://schema.org',
 			'@type'           => 'ItemList',
-			'name'            => 'Architectural metal screen patterns',
+			'name'            => \MetalDivider\Site\I18n\Dictionary::text( 'item_list_name' ),
 			'numberOfItems'   => \count( $items ),
 			'itemListOrder'   => 'https://schema.org/ItemListOrderAscending',
 			'itemListElement' => $items,
@@ -185,13 +186,14 @@ final class SchemaFilters {
 				$phone = (string) $social->getSocialKnowledgePhone();
 			}
 		}
-		$points = array();
+		$languages = array( 'English', 'Chinese', 'Spanish', 'Portuguese', 'German', 'French', 'Arabic', 'Indonesian', 'Vietnamese' );
+		$points    = array();
 		if ( '' !== $email ) {
 			$points[] = array(
 				'@type'             => 'ContactPoint',
 				'contactType'       => 'sales',
 				'email'             => $email,
-				'availableLanguage' => array( 'English' ),
+				'availableLanguage' => $languages,
 			);
 		}
 		if ( '' !== $phone ) {
@@ -199,7 +201,7 @@ final class SchemaFilters {
 				'@type'             => 'ContactPoint',
 				'contactType'       => 'WhatsApp',
 				'telephone'         => $phone,
-				'availableLanguage' => array( 'English' ),
+				'availableLanguage' => $languages,
 			);
 		}
 		if ( array() !== $points ) {
@@ -269,8 +271,11 @@ final class SchemaFilters {
 			// every other field it carries.
 			$json['description'] = html_entity_decode( $description, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5 );
 		}
+		$current_lang     = \MetalDivider\Site\I18n\Languages::current();
 		$json['image']    = $this->images( $post_id, is_array( $json['image'] ?? null ) ? $json['image'] : array() );
-		$json['material'] = self::MATERIAL;
+		$json['material'] = 'en' === $current_lang
+			? self::MATERIAL
+			: \MetalDivider\Site\I18n\Dictionary::text( 'material_wording', $current_lang );
 		$series           = $this->series_name( $post_id );
 		if ( '' !== $series ) {
 			$json['category'] = $series;
@@ -281,10 +286,10 @@ final class SchemaFilters {
 		}
 		$json['potentialAction'] = array(
 			'@type'  => 'QuoteAction',
-			'name'   => 'Request a quote',
+			'name'   => \MetalDivider\Site\I18n\Dictionary::text( 'request_a_quote', $current_lang ),
 			'target' => array(
 				'@type'       => 'EntryPoint',
-				'urlTemplate' => home_url( '/inquiry/' ),
+				'urlTemplate' => \MetalDivider\Site\I18n\Languages::home_url( '/inquiry/', $current_lang ),
 			),
 		);
 		return $json;
@@ -395,16 +400,28 @@ final class SchemaFilters {
 	 * @return array<int, array<string, string>> The entries.
 	 */
 	private function properties( int $post_id ): array {
-		$entries = array();
+		$current_lang = \MetalDivider\Site\I18n\Languages::current();
+		$entries      = array();
 		foreach ( self::PROPERTIES as $name => $label ) {
 			$value = (string) get_post_meta( $post_id, $name, true );
 			if ( '' === $value ) {
 				continue;
 			}
+			$prop_name  = 'en' === $current_lang ? $label : \MetalDivider\Site\I18n\Dictionary::text( 'spec_' . $name, $current_lang );
+			$prop_value = $value;
+			if ( 'en' !== $current_lang ) {
+				if ( 'best_fit' === $name ) {
+					$prop_value = \MetalDivider\Site\I18n\Dictionary::text( 'best_fit.' . $value, $current_lang );
+				} elseif ( 'visual_density' === $name ) {
+					$prop_value = \MetalDivider\Site\I18n\Dictionary::text( 'visual_density.' . $value, $current_lang );
+				} elseif ( 'repeat_behavior' === $name ) {
+					$prop_value = \MetalDivider\Site\I18n\Dictionary::text( 'repeat_behavior.' . $value, $current_lang );
+				}
+			}
 			$entries[] = array(
 				'@type' => 'PropertyValue',
-				'name'  => $label,
-				'value' => $value,
+				'name'  => $prop_name,
+				'value' => $prop_value,
 			);
 		}
 		return $entries;
@@ -418,9 +435,45 @@ final class SchemaFilters {
 	 * @return string The absolute @id.
 	 */
 	private function entity_id( string $entity ): string {
+		if ( \function_exists( 'has_filter' ) && \has_filter( 'wpml_current_language' ) ) {
+			return \MetalDivider\Site\I18n\Languages::unfiltered_home_url( '/#' . $entity );
+		}
 		if ( class_exists( '\SEOPress\Helpers\SchemaEntityId' ) ) {
 			return (string) \SEOPress\Helpers\SchemaEntityId::for_home( $entity );
 		}
 		return home_url( '/#' . $entity );
+	}
+
+	/**
+	 * Emits localized FAQPage schema on non-default language translated /faqs/ pages.
+	 */
+	public function localized_faq_schema(): void {
+		if ( ! \MetalDivider\Site\I18n\Languages::is_frontend_non_default() ) {
+			return;
+		}
+		if ( ! \function_exists( 'is_page' ) || ! \is_page() ) {
+			return;
+		}
+		$post_id = (int) \get_queried_object_id();
+		if ( $post_id <= 0 ) {
+			return;
+		}
+		$en_id       = \MetalDivider\Site\I18n\Languages::post_translation( $post_id, 'en' );
+		$source_id   = $en_id > 0 ? $en_id : $post_id;
+		$source_post = \get_post( $source_id );
+		if ( ! $source_post instanceof \WP_Post || 'faqs' !== $source_post->post_name ) {
+			return;
+		}
+
+		$fallback_html = \MetalDivider\Site\Presentation\Templates::read(
+			\MetalDivider\Site\Presentation\Templates::path( 'faqs' )
+		);
+		$current_lang  = \MetalDivider\Site\I18n\Languages::current();
+		$html          = \MetalDivider\Site\I18n\TemplateStore::get_template( 'faqs', $fallback_html, $current_lang );
+		$permalink     = (string) \get_permalink( $post_id );
+		$json_ld       = FaqSchema::json_ld( $html, $permalink );
+		if ( '' !== $json_ld ) {
+			echo "\n" . $json_ld . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON-LD output.
+		}
 	}
 }

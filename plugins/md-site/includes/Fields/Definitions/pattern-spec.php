@@ -16,49 +16,53 @@ declare( strict_types = 1 );
  * @return array<string, mixed>
  */
 return array(
-	'key'          => 'group_md_pattern_spec',
-	'title'        => '图案规格 pattern_spec',
-	'fields'       => array(
+	'key'                    => 'group_md_pattern_spec',
+	'title'                  => '图案规格 pattern_spec',
+	'acfml_field_group_mode' => 'advanced',
+	'fields'                 => array(
 		array(
-			'key'          => 'field_md_open_area',
-			'label'        => '镂空率 Open area',
-			'name'         => 'open_area',
-			'type'         => 'number',
-			'instructions' => '镂空率真值。16 个 "On request" 图案留空(迁移不编造数据)。',
-			'min'          => 0,
-			'max'          => 100,
-			'step'         => 0.01,
-			'append'       => '%',
-			'default'      => '',
+			'key'                 => 'field_md_open_area',
+			'label'               => '镂空率 Open area',
+			'name'                => 'open_area',
+			'type'                => 'number',
+			'instructions'        => '镂空率真值。16 个 "On request" 图案留空(迁移不编造数据)。',
+			'min'                 => 0,
+			'max'                 => 100,
+			'step'                => 0.01,
+			'append'              => '%',
+			'default'             => '',
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'     => 'field_md_visual_density',
-			'label'   => '视觉密度 Visual density',
-			'name'    => 'visual_density',
-			'type'    => 'radio',
-			'choices' => array(
+			'key'                 => 'field_md_visual_density',
+			'label'               => '视觉密度 Visual density',
+			'name'                => 'visual_density',
+			'type'                => 'radio',
+			'choices'             => array(
 				'open'     => 'Open',
 				'balanced' => 'Balanced',
 				'dense'    => 'Dense',
 				'custom'   => 'Custom',
 			),
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'     => 'field_md_repeat_behavior',
-			'label'   => '循环行为 Repeat behavior',
-			'name'    => 'repeat_behavior',
-			'type'    => 'radio',
-			'choices' => array(
+			'key'                 => 'field_md_repeat_behavior',
+			'label'               => '循环行为 Repeat behavior',
+			'name'                => 'repeat_behavior',
+			'type'                => 'radio',
+			'choices'             => array(
 				'repeating' => 'Repeating',
 				'flowing'   => 'Flowing',
 			),
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'     => 'field_md_motifs',
-			'label'   => '主题词 Motifs',
-			'name'    => 'motifs',
-			'type'    => 'checkbox',
-			'choices' => array(
+			'key'                 => 'field_md_motifs',
+			'label'               => '主题词 Motifs',
+			'name'                => 'motifs',
+			'type'                => 'checkbox',
+			'choices'             => array(
 				'abstract'      => 'Abstract',
 				'organic'       => 'Organic',
 				'geometric'     => 'Geometric',
@@ -75,29 +79,32 @@ return array(
 				'lattice'       => 'Lattice',
 				'perforated'    => 'Perforated',
 			),
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'     => 'field_md_best_fit',
-			'label'   => '最适用途 Best fit',
-			'name'    => 'best_fit',
-			'type'    => 'radio',
-			'choices' => array(
+			'key'                 => 'field_md_best_fit',
+			'label'               => '最适用途 Best fit',
+			'name'                => 'best_fit',
+			'type'                => 'radio',
+			'choices'             => array(
 				'architectural-screening' => 'Architectural screening',
 				'decorative-screening'    => 'Decorative screening',
 			),
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'     => 'field_md_cad_status',
-			'label'   => 'CAD 状态 CAD status',
-			'name'    => 'cad_status',
-			'type'    => 'radio',
-			'choices' => array(
+			'key'                 => 'field_md_cad_status',
+			'label'               => 'CAD 状态 CAD status',
+			'name'                => 'cad_status',
+			'type'                => 'radio',
+			'choices'             => array(
 				'gated'   => 'Gated',
 				'missing' => 'Missing',
 			),
+			'wpml_cf_preferences' => 1,
 		),
 	),
-	'location'     => array(
+	'location'               => array(
 		array(
 			array(
 				'param'    => 'post_type',
@@ -106,8 +113,8 @@ return array(
 			),
 		),
 	),
-	'position'     => 'side',
-	'menu_order'   => 0,
-	'active'       => true,
-	'show_in_rest' => 1,
+	'position'               => 'side',
+	'menu_order'             => 0,
+	'active'                 => true,
+	'show_in_rest'           => 1,
 );

@@ -107,6 +107,20 @@ final class CatalogCommand {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			WP_CLI::error( 'Run as an administrator: wp md-site seed-series --user=<admin>.' );
 		}
+		\MetalDivider\Site\I18n\Languages::with_language(
+			'en',
+			function () use ( $assoc_args ): void {
+				$this->execute_seed_series( $assoc_args );
+			}
+		);
+	}
+
+	/**
+	 * Executes the series seed in the canonical language context.
+	 *
+	 * @param array<string, mixed> $assoc_args Options: dry-run, repoint-masked.
+	 */
+	private function execute_seed_series( array $assoc_args ): void {
 		$dry_run = isset( $assoc_args['dry-run'] );
 		$repoint = isset( $assoc_args['repoint-masked'] );
 
@@ -137,6 +151,9 @@ final class CatalogCommand {
 		$already_seeded   = 0;
 
 		foreach ( $terms as $term ) {
+			if ( ! \MetalDivider\Site\I18n\Languages::is_term_in_language( $term, 'product_cat', 'en' ) ) {
+				continue;
+			}
 			$term_id = (int) $term->term_id;
 
 			$thumbnail = (int) \get_term_meta( $term_id, 'thumbnail_id', true );

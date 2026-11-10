@@ -22,7 +22,7 @@
 
 	var START_PATH = '/chat/index.php/chat/chatwidget/(department)/1';
 	var CSS_PATH = '/chat/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-launcher.css';
-	var CSS_VERSION = '20261110b';
+	var CSS_VERSION = '20261111a';
 
 	if ( location.pathname.indexOf( '/chat/' ) === 0 ) {
 		return;
@@ -33,8 +33,64 @@
 	// hand that title over, so the quote dialog must receive the clean pattern
 	// name rather than the SEO string.
 	function cleanPatternName( value ) {
-		return String( value || '' ).replace( /\s*\|\s*Architectural Metal Screen Pattern\s*$/i, '' ).trim();
+		return String( value || '' ).split( /[|｜]/ )[0].trim();
 	}
+
+	function getPageLocale() {
+		var docLang = ( document.documentElement.getAttribute( 'lang' ) || '' ).toLowerCase().trim();
+		if ( docLang.indexOf( 'zh' ) === 0 ) {
+			return 'zh';
+		}
+		if ( docLang.indexOf( 'pt' ) === 0 ) {
+			return 'pt-br';
+		}
+		if ( docLang.indexOf( 'es' ) === 0 ) {
+			return 'es';
+		}
+		if ( docLang.indexOf( 'de' ) === 0 ) {
+			return 'de';
+		}
+		if ( docLang.indexOf( 'fr' ) === 0 ) {
+			return 'fr';
+		}
+		if ( docLang.indexOf( 'ar' ) === 0 ) {
+			return 'ar';
+		}
+		if ( docLang.indexOf( 'id' ) === 0 ) {
+			return 'id';
+		}
+		if ( docLang.indexOf( 'vi' ) === 0 ) {
+			return 'vi';
+		}
+		if ( docLang.indexOf( 'en' ) === 0 ) {
+			return 'en';
+		}
+		var pathMatch = window.location.pathname.match( /^\/(zh|es|pt-br|de|fr|ar|id|vi)(?:\/|$)/i );
+		if ( pathMatch && pathMatch[1] ) {
+			return pathMatch[1].toLowerCase();
+		}
+		return 'en';
+	}
+
+	function getPageDir( locale ) {
+		var docDir = document.documentElement.getAttribute( 'dir' );
+		if ( docDir ) {
+			return docDir.toLowerCase();
+		}
+		return locale === 'ar' ? 'rtl' : 'ltr';
+	}
+
+	var LABELS = {
+		en: { ask: 'Ask Metal Divider', assistant: 'Metal Divider assistant' },
+		zh: { ask: '咨询 Metal Divider', assistant: 'Metal Divider 智能助手' },
+		es: { ask: 'Preguntar a Metal Divider', assistant: 'Asistente de Metal Divider' },
+		'pt-br': { ask: 'Pergunte à Metal Divider', assistant: 'Assistente Metal Divider' },
+		de: { ask: 'Metal Divider fragen', assistant: 'Metal Divider Assistent' },
+		fr: { ask: 'Demander à Metal Divider', assistant: 'Assistant Metal Divider' },
+		ar: { ask: 'اسأل Metal Divider', assistant: 'مساعد Metal Divider' },
+		id: { ask: 'Tanya Metal Divider', assistant: 'Asisten Metal Divider' },
+		vi: { ask: 'Hỏi Metal Divider', assistant: 'Trợ lý Metal Divider' }
+	};
 
 	function ready( fn ) {
 		if ( document.readyState === 'loading' ) {
@@ -45,6 +101,10 @@
 	}
 
 	ready( function () {
+		var currentLocale = getPageLocale();
+		var currentDir = getPageDir( currentLocale );
+		var i18n = LABELS[ currentLocale ] || LABELS.en;
+
 		var link = document.createElement( 'link' );
 		link.rel = 'stylesheet';
 		link.href = CSS_PATH + '?v=' + CSS_VERSION;
@@ -57,6 +117,7 @@
 		launcher.setAttribute( 'aria-controls', 'mdvl-card' );
 		launcher.setAttribute( 'aria-expanded', 'false' );
 		launcher.setAttribute( 'aria-haspopup', 'dialog' );
+		launcher.setAttribute( 'aria-label', i18n.ask );
 
 		var mark = document.createElement( 'span' );
 		mark.className = 'mdvl-mark';
@@ -65,7 +126,7 @@
 
 		var label = document.createElement( 'span' );
 		label.className = 'mdvl-label';
-		label.textContent = 'Ask Metal Divider';
+		label.textContent = i18n.ask;
 
 		var dot = document.createElement( 'span' );
 		dot.className = 'mdvl-dot';
@@ -79,7 +140,7 @@
 		card.className = 'mdvl-card';
 		card.id = 'mdvl-card';
 		card.setAttribute( 'role', 'dialog' );
-		card.setAttribute( 'aria-label', 'Metal Divider assistant' );
+		card.setAttribute( 'aria-label', i18n.assistant );
 		card.hidden = true;
 
 		var frame = null;
@@ -93,7 +154,9 @@
 					{
 						type: 'mdv_host_context',
 						pageUrl: window.location.href,
-						pageTitle: document.title
+						pageTitle: document.title,
+						lang: currentLocale,
+						dir: currentDir
 					},
 					window.location.origin
 				);
@@ -169,7 +232,7 @@
 					var chatSlug = typeof event.data.patternSlug === 'string' ? event.data.patternSlug.trim().toLowerCase() : '';
 					var chatName = typeof event.data.patternName === 'string' ? cleanPatternName( event.data.patternName ) : '';
 					if ( !chatSlug && typeof event.data.pageUrl === 'string' ) {
-						var pageMatch = event.data.pageUrl.match( /\/pattern\/([a-z0-9-]+)\/?/i );
+						var pageMatch = event.data.pageUrl.match( /(?:\/(?:zh|es|pt-br|de|fr|ar|id|vi))?\/pattern\/([a-z0-9-]+)\/?/i );
 						if ( pageMatch && pageMatch[1] ) {
 							chatSlug = pageMatch[1].toLowerCase();
 						}

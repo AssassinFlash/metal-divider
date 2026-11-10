@@ -159,6 +159,11 @@ final class Shortcodes {
 	public const SERIES_GRID = 'md_series_grid';
 
 	/**
+	 * The language switcher component.
+	 */
+	public const LANG_SWITCHER = 'md_lang_switcher';
+
+	/**
 	 * The site-wide hero sentence, with the product's best-fit word (spec
 	 * 08 D2: every series shares the sentence, only the word varies) and
 	 * the same sentence without it, for a pattern whose `best_fit` field
@@ -246,6 +251,7 @@ final class Shortcodes {
 		add_shortcode( self::IMAGE, array( $this, 'image' ) );
 		add_shortcode( self::RELATED, array( $this, 'related' ) );
 		add_shortcode( self::SERIES_GRID, array( $this, 'series_grid' ) );
+		add_shortcode( self::LANG_SWITCHER, array( $this, 'lang_switcher' ) );
 	}
 
 	/**
@@ -259,7 +265,10 @@ final class Shortcodes {
 	 */
 	public function material( $atts = array(), ?string $content = '' ): string {
 		unset( $atts, $content );
-		return esc_html( self::MATERIAL_WORDING );
+		$val = 'en' === \MetalDivider\Site\I18n\Languages::current()
+			? self::MATERIAL_WORDING
+			: \MetalDivider\Site\I18n\Dictionary::text( 'material_wording' );
+		return esc_html( $val );
 	}
 
 	/**
@@ -423,7 +432,9 @@ final class Shortcodes {
 	private function open_area_text(): string {
 		$value = $this->pattern_meta( 'open_area' );
 		if ( '' === $value || ! is_numeric( $value ) ) {
-			return self::OPEN_AREA_ON_REQUEST;
+			return 'en' === \MetalDivider\Site\I18n\Languages::current()
+				? self::OPEN_AREA_ON_REQUEST
+				: \MetalDivider\Site\I18n\Dictionary::text( 'on_request' );
 		}
 		$number = (float) $value;
 		$digits = floor( $number ) === $number ? 0 : 2;
@@ -451,6 +462,10 @@ final class Shortcodes {
 		$key = $this->pattern_meta( 'best_fit' );
 		if ( '' === $key ) {
 			return '';
+		}
+		$current_lang = \MetalDivider\Site\I18n\Languages::current();
+		if ( 'en' !== $current_lang ) {
+			return \MetalDivider\Site\I18n\Dictionary::text( 'best_fit.' . $key, $current_lang );
 		}
 		return self::BEST_FIT_WORDS[ $key ] ?? ucwords( str_replace( '-', ' ', $key ) );
 	}
@@ -944,10 +959,15 @@ final class Shortcodes {
 		if ( is_wp_error( $terms ) || array() === $terms ) {
 			return '';
 		}
-		$counts = \MetalDivider\Site\Catalog::series_visible_counts();
-		$out    = '';
+		$counts       = \MetalDivider\Site\Catalog::series_visible_counts();
+		$current_lang = \MetalDivider\Site\I18n\Languages::current();
+		$out          = '';
 		foreach ( $terms as $term ) {
-			if ( ( $counts[ $term->slug ] ?? 0 ) < 1 ) {
+			if ( ! \MetalDivider\Site\I18n\Languages::is_term_in_language( $term, 'product_cat', $current_lang ) ) {
+				continue;
+			}
+			$canonical = \MetalDivider\Site\Catalog::canonical_series_slug( $term );
+			if ( ( $counts[ $canonical ] ?? $counts[ $term->slug ] ?? 0 ) < 1 ) {
 				continue;
 			}
 			$link = get_term_link( $term );
@@ -988,8 +1008,135 @@ final class Shortcodes {
 		if ( null === $term ) {
 			return '';
 		}
-		$slug = (string) $term->slug;
-		return str_starts_with( $slug, 'pattern-' ) ? substr( $slug, strlen( 'pattern-' ) ) : $slug;
+		$canonical    = \MetalDivider\Site\Catalog::canonical_series_slug( $term );
+		$slug         = '' !== $canonical ? $canonical : (string) $term->slug;
+		$tail         = str_starts_with( $slug, 'pattern-' ) ? substr( $slug, strlen( 'pattern-' ) ) : $slug;
+		$current_lang = \MetalDivider\Site\I18n\Languages::current();
+		if ( 'en' !== $current_lang ) {
+			return \MetalDivider\Site\I18n\Dictionary::text( 'series.' . $tail, $current_lang );
+		}
+		return $tail;
+	}
+
+	/**
+	 * The language switcher component for desktop header, mobile drawer, and footer.
+	 *
+	 * @param array<string, mixed>|string $atts    Shortcode attributes: context (header-desktop|header-mobile|footer).
+	 * @param string|null                 $content Enclosed content (unused).
+	 * @return string The semantic HTML switcher markup.
+	 */
+	public function lang_switcher( $atts = array(), ?string $content = '' ): string {
+		unset( $content );
+		$atts    = \shortcode_atts(
+			array(
+				'context' => 'header-desktop',
+			),
+			(array) $atts,
+			self::LANG_SWITCHER
+		);
+		$context = (string) $atts['context'];
+
+		$items        = \MetalDivider\Site\I18n\Languages::switcher_items();
+		$current      = \MetalDivider\Site\I18n\Languages::current();
+		$aria_label   = \MetalDivider\Site\I18n\Dictionary::text( 'switcher_aria_label' );
+		$active_short = 'EN';
+
+		foreach ( $items as $it ) {
+			if ( $it['active'] ) {
+				$active_short = $it['short'];
+				break;
+			}
+		}
+
+		if ( 'header-mobile' === $context ) {
+			$grid_items = '';
+			foreach ( $items as $it ) {
+				$active_cls   = $it['active'] ? ' is-active' : '';
+				$current_attr = $it['active'] ? ' aria-current="true"' : '';
+				$grid_items  .= sprintf(
+					'<li><a class="md-lang-switcher__link%s" href="%s" hreflang="%s" lang="%s" dir="%s"%s>%s</a></li>',
+					$active_cls,
+					\esc_url( $it['url'] ),
+					\esc_attr( $it['hreflang'] ),
+					\esc_attr( $it['lang_attr'] ),
+					\esc_attr( $it['dir'] ),
+					$current_attr,
+					\esc_html( $it['label'] )
+				);
+			}
+			return sprintf(
+				'<nav class="md-lang-switcher md-lang-switcher--mobile" aria-label="%s"><ul class="md-lang-switcher__grid" role="list">%s</ul></nav>',
+				\esc_attr( $aria_label ),
+				$grid_items
+			);
+		}
+
+		if ( 'footer' === $context ) {
+			$inline_items = '';
+			foreach ( $items as $it ) {
+				$active_cls    = $it['active'] ? ' is-active' : '';
+				$current_attr  = $it['active'] ? ' aria-current="true"' : '';
+				$inline_items .= sprintf(
+					'<li><a href="%s" hreflang="%s" lang="%s" dir="%s" class="md-lang-switcher__footer-link%s"%s>%s</a></li>',
+					\esc_url( $it['url'] ),
+					\esc_attr( $it['hreflang'] ),
+					\esc_attr( $it['lang_attr'] ),
+					\esc_attr( $it['dir'] ),
+					$active_cls,
+					$current_attr,
+					\esc_html( $it['label'] )
+				);
+			}
+			return sprintf(
+				'<nav class="md-lang-switcher md-lang-switcher--footer" aria-label="%s"><ul class="md-lang-switcher__inline" role="list">%s</ul></nav>',
+				\esc_attr( $aria_label ),
+				$inline_items
+			);
+		}
+
+		// Default: header-desktop.
+		$config      = array(
+			'lang'       => $current,
+			'dir'        => \MetalDivider\Site\I18n\Languages::is_rtl( $current ) ? 'rtl' : 'ltr',
+			'restPrefix' => 'en' === $current ? '' : '/' . $current,
+			'shopUrl'    => \MetalDivider\Site\I18n\Languages::home_url( '/patterns/', $current ),
+			'strings'    => \MetalDivider\Site\I18n\Dictionary::chrome_config( $current ),
+		);
+		$json_config = (string) \wp_json_encode( $config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+
+		$globe_svg   = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>';
+		$chevron_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="md-lang-switcher__chevron" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>';
+
+		$menu_items = '';
+		foreach ( $items as $it ) {
+			$active_cls   = $it['active'] ? ' is-active' : '';
+			$current_attr = $it['active'] ? ' aria-current="true"' : '';
+			$menu_items  .= sprintf(
+				'<li><a class="md-lang-switcher__link%s" href="%s" hreflang="%s" lang="%s" dir="%s"%s>%s</a></li>',
+				$active_cls,
+				\esc_url( $it['url'] ),
+				\esc_attr( $it['hreflang'] ),
+				\esc_attr( $it['lang_attr'] ),
+				\esc_attr( $it['dir'] ),
+				$current_attr,
+				\esc_html( $it['label'] )
+			);
+		}
+
+		return sprintf(
+			'<div class="md-lang-switcher md-lang-switcher--desktop" data-md-lang-switcher data-md-i18n-config="%s">' .
+			'<button type="button" class="md-lang-switcher__btn" aria-haspopup="true" aria-expanded="false" aria-label="%s" data-md-lang-toggle>' .
+			'%s<span class="md-lang-switcher__code">%s</span>%s' .
+			'</button>' .
+			'<ul class="md-lang-switcher__menu" role="list" hidden data-md-lang-menu>%s</ul>' .
+			'</div>',
+			\esc_attr( $json_config ),
+			\esc_attr( $aria_label ),
+			$globe_svg,
+			\esc_html( $active_short ),
+			$chevron_svg,
+			$menu_items
+		);
 	}
 
 	/**

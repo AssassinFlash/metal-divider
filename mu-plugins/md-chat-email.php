@@ -174,10 +174,76 @@ function md_chat_email_pattern_slug( string $url ): string {
 		return '';
 	}
 	$path = wp_parse_url( $url, PHP_URL_PATH );
-	if ( ! is_string( $path ) || 1 !== preg_match( '~^/(?:pattern|product)/([a-z0-9-]+)(?:/|$)~i', $path, $matches ) ) {
+	if ( ! is_string( $path ) || 1 !== preg_match( '~^/(?:(?:zh|es|pt-br|de|fr|ar|id|vi)/)?(?:pattern|product)/([a-z0-9-]+)(?:/|$)~i', $path, $matches ) ) {
 		return '';
 	}
 	return strtolower( $matches[1] );
+}
+
+/**
+ * Extract the canonical language code from a page URL path prefix.
+ *
+ * @param string $url The validated page URL.
+ * @return string The language code ('en', 'zh', etc.), default 'en'.
+ */
+function md_chat_email_page_locale( string $url ): string {
+	if ( '' === $url ) {
+		return 'en';
+	}
+	$path = wp_parse_url( $url, PHP_URL_PATH );
+	if ( is_string( $path ) && 1 === preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $path, $matches ) ) {
+		return strtolower( $matches[1] );
+	}
+	return 'en';
+}
+
+/**
+ * Normalizes a client-provided language string into a canonical language code.
+ *
+ * @param string $lang The raw language code or tag.
+ * @return string The canonical locale ('en', 'zh', 'es', 'pt-br', 'de', 'fr', 'ar', 'id', 'vi').
+ */
+function md_chat_email_normalize_locale( string $lang ): string {
+	$raw = strtolower( trim( $lang ) );
+	if ( '' === $raw ) {
+		return 'en';
+	}
+	if ( str_starts_with( $raw, 'zh' ) ) {
+		return 'zh';
+	}
+	if ( str_starts_with( $raw, 'pt' ) ) {
+		return 'pt-br';
+	}
+	if ( in_array( $raw, array( 'en', 'es', 'pt-br', 'de', 'fr', 'ar', 'id', 'vi' ), true ) ) {
+		return $raw;
+	}
+	return 'en';
+}
+
+/**
+ * Checks whether the lh_chat table has a chat_locale column.
+ *
+ * @return bool True when the column exists.
+ */
+function md_chat_email_chat_has_locale_column(): bool {
+	if ( isset( $GLOBALS['md_mu_test_has_chat_locale'] ) ) {
+		return (bool) $GLOBALS['md_mu_test_has_chat_locale'];
+	}
+	if ( defined( 'PHPUNIT_COMPOSER_INSTALL' ) || defined( '__PHPUNIT_PHAR__' ) ) {
+		return false;
+	}
+	global $wpdb;
+	if ( ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_results' ) ) {
+		return false;
+	}
+	static $has_column = null;
+	if ( null !== $has_column ) {
+		return $has_column;
+	}
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	$cols       = $wpdb->get_results( "SHOW COLUMNS FROM `lh_chat` LIKE 'chat_locale'" );
+	$has_column = is_array( $cols ) && array() !== $cols;
+	return $has_column;
 }
 
 /**
@@ -261,14 +327,15 @@ function md_chat_email_inquiry_class( string $suffix ): string {
  * Record the chat email lead as an md_inquiry post and enqueue its mails
  * when the md-inquiry plugin is active on this WordPress instance.
  *
- * @param int    $chat_id    The LHC chat ID.
- * @param string $email      The validated visitor email.
- * @param object $row        The lh_chat row.
- * @param string $page_url   The validated page URL from the request, if any.
- * @param string $transcript The formatted chat transcript.
+ * @param int    $chat_id         The LHC chat ID.
+ * @param string $email           The validated visitor email.
+ * @param object $row             The lh_chat row.
+ * @param string $page_url        The validated page URL from the request, if any.
+ * @param string $transcript      The formatted chat transcript.
+ * @param string $explicit_locale Optional explicit locale code ('en', 'zh', etc.).
  * @return int|null The created md_inquiry post ID, or null when skipped/failed.
  */
-function md_chat_email_record_inquiry( int $chat_id, string $email, object $row, string $page_url, string $transcript ): ?int {
+function md_chat_email_record_inquiry( int $chat_id, string $email, object $row, string $page_url, string $transcript, string $explicit_locale = '' ): ?int {
 	$post_type_class = md_chat_email_inquiry_class( 'PostType' );
 	if ( ! class_exists( $post_type_class ) ) {
 		return null;
@@ -293,6 +360,7 @@ function md_chat_email_record_inquiry( int $chat_id, string $email, object $row,
 
 	$submitted_time = gmdate( 'Y-m-d H:i:s' );
 	$post_title     = $email . ' — AI Chat #' . $chat_id . ' — ' . gmdate( 'Y-m-d' );
+	$locale         = '' !== $explicit_locale ? $explicit_locale : md_chat_email_page_locale( $effective_url );
 
 	global $wpdb;
 	$wpdb_vars      = get_object_vars( $wpdb );
@@ -346,6 +414,7 @@ function md_chat_email_record_inquiry( int $chat_id, string $email, object $row,
 		'project_scope'    => 'AI Chat Follow-up',
 		'inquiry_route'    => 'AI Chat',
 		'project_quantity' => '',
+		'inquiry_locale'   => $locale,
 		'message'          => $transcript,
 		'pattern_product'  => is_array( $pattern ) ? ( $pattern['post_id'] ?? '' ) : '',
 		'pattern_name'     => is_array( $pattern ) ? (string) ( $pattern['name'] ?? '' ) : '',
@@ -367,6 +436,9 @@ function md_chat_email_record_inquiry( int $chat_id, string $email, object $row,
 		if ( is_array( $resolved_keys ) ) {
 			$field_keys = $resolved_keys;
 		}
+	}
+	if ( ! isset( $field_keys['inquiry_locale'] ) ) {
+		$field_keys['inquiry_locale'] = 'field_md_inquiry_locale';
 	}
 
 	foreach ( $fields as $meta_key => $meta_value ) {
@@ -391,6 +463,7 @@ function md_chat_email_record_inquiry( int $chat_id, string $email, object $row,
 			'company'        => '',
 			'phone'          => $phone,
 			'country'        => '',
+			'locale'         => $locale,
 			'scope'          => 'AI Chat Follow-up',
 			'route'          => 'AI Chat',
 			'quantity'       => '',
@@ -524,11 +597,22 @@ function md_chat_email_respond( $request ) {
 		);
 	}
 
-	$data    = '' !== $page_url ? array(
-		'email'    => $email,
-		'referrer' => $page_url,
-	) : array( 'email' => $email );
-	$format  = '' !== $page_url ? array( '%s', '%s' ) : array( '%s' );
+	$lang   = isset( $body['lang'] ) && is_string( $body['lang'] ) ? trim( $body['lang'] ) : '';
+	$locale = md_chat_email_normalize_locale( $lang );
+	if ( 'en' === $locale && '' !== $page_url ) {
+		$locale = md_chat_email_page_locale( $page_url );
+	}
+
+	$data   = array( 'email' => $email );
+	$format = array( '%s' );
+	if ( '' !== $page_url ) {
+		$data['referrer'] = $page_url;
+		$format[]         = '%s';
+	}
+	if ( md_chat_email_chat_has_locale_column() ) {
+		$data['chat_locale'] = $locale;
+		$format[]            = '%s';
+	}
 	$updated = $wpdb->update(
 		'lh_chat',
 		$data,
@@ -550,10 +634,10 @@ function md_chat_email_respond( $request ) {
 	$stored_referrer = isset( $row->referrer ) && is_string( $row->referrer ) ? md_chat_email_sanitize_page_url( $row->referrer ) : '';
 	$effective_url   = '' !== $page_url ? $page_url : $stored_referrer;
 
-	md_chat_email_record_inquiry( $chat_id, $email, $row, $page_url, $transcript );
+	md_chat_email_record_inquiry( $chat_id, $email, $row, $page_url, $transcript, $locale );
 
 	if ( function_exists( 'md_wecom_notify_visitor_email' ) ) {
-		md_wecom_notify_visitor_email( $chat_id, $email, $effective_url, md_chat_email_latest_question( $transcript ) );
+		md_wecom_notify_visitor_email( $chat_id, $email, $effective_url, md_chat_email_latest_question( $transcript ), $locale );
 	}
 
 	return new \WP_REST_Response(
@@ -576,6 +660,11 @@ function md_chat_context_respond( $request ) { // phpcs:ignore WordPress.NamingC
 	$chat_id  = isset( $body['chat_id'] ) ? (int) $body['chat_id'] : 0;
 	$hash     = isset( $body['hash'] ) ? $body['hash'] : '';
 	$page_url = md_chat_email_sanitize_page_url( $body['page_url'] ?? '' );
+	$lang     = isset( $body['lang'] ) && is_string( $body['lang'] ) ? trim( $body['lang'] ) : '';
+	$locale   = md_chat_email_normalize_locale( $lang );
+	if ( 'en' === $locale && '' !== $page_url ) {
+		$locale = md_chat_email_page_locale( $page_url );
+	}
 
 	if ( $chat_id < 1 ) {
 		return new \WP_REST_Response(
@@ -629,11 +718,18 @@ function md_chat_context_respond( $request ) { // phpcs:ignore WordPress.NamingC
 		);
 	}
 
+	$data   = array( 'referrer' => $page_url );
+	$format = array( '%s' );
+	if ( md_chat_email_chat_has_locale_column() ) {
+		$data['chat_locale'] = $locale;
+		$format[]            = '%s';
+	}
+
 	$updated = $wpdb->update(
 		'lh_chat',
-		array( 'referrer' => $page_url ),
+		$data,
 		array( 'id' => $chat_id ),
-		array( '%s' ),
+		$format,
 		array( '%d' )
 	);
 

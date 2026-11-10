@@ -24,3 +24,7 @@ parameters:
 		# stubs above are read, not analysed.
 		- tests/php/Support/wp-standins.php
 		- tests/php/Doubles
+	ignoreErrors:
+		-
+			message: '#Call to an undefined method WP_Mock\\.*::reply\(\)#'
+			path: tests/php/*

@@ -259,7 +259,8 @@ final class Form {
 			$nonce_field
 		);
 		$out        .= '<input type="hidden" name="md_inquiry_action" value="submit">';
-		$out        .= '<input type="hidden" name="md_inquiry_locale" id="' . \esc_attr( $this->id_of( 'md-inquiry-locale' ) ) . '" value="en">';
+		$form_locale = '' !== $this->state->value( 'locale' ) ? $this->state->value( 'locale' ) : Locale::current();
+		$out        .= '<input type="hidden" name="md_inquiry_locale" id="' . \esc_attr( $this->id_of( 'md-inquiry-locale' ) ) . '" value="' . \esc_attr( $form_locale ) . '">';
 		if ( null !== $pattern ) {
 			$out .= '<input type="hidden" data-md-inquiry-pattern-input name="md_inquiry_pattern_slug" value="' . \esc_attr( $this->pattern_slug_of( $pattern_slug, $pattern ) ) . '">';
 		} else {
@@ -316,7 +317,7 @@ final class Form {
 	 * The pattern context row: the pattern this inquiry is about, assembled
 	 * server-side so the customer's belief and the record agree.
 	 *
-	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string} $pattern The pattern context.
+	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string, canonical_slug?: string, name_en?: string} $pattern The pattern context.
 	 * @return string
 	 */
 	private function pattern_row( array $pattern ): string {
@@ -413,7 +414,7 @@ final class Form {
 		$out .= '<select class="md-inquiry-field__input md-inquiry-field__select" id="' . \esc_attr( $this->id_of( 'md-inquiry-' . $key ) ) . '" name="md_inquiry_' . \esc_attr( $key ) . '" autocomplete="' . \esc_attr( $autocomplete ) . '"' . ( $required ? ' required' : '' ) . $this->invalid_attrs( $key, $error ) . '>';
 		$out .= '<option value="">' . \esc_html( $placeholder ) . '</option>';
 		foreach ( $options as $option ) {
-			$out .= '<option value="' . \esc_attr( $option ) . '"' . ( $value === $option ? ' selected' : '' ) . '>' . \esc_html( $option ) . '</option>';
+			$out .= '<option value="' . \esc_attr( $option ) . '"' . ( $value === $option ? ' selected' : '' ) . '>' . \esc_html( Translations::option_label( $option ) ) . '</option>';
 		}
 		$out .= '</select>';
 		$out .= $this->error_span( $key, $error );
@@ -633,7 +634,7 @@ final class Form {
 		// (owner ruling: multilingual is phase 2), and a control that switches
 		// language between the label beside it and the widget itself reads as a
 		// defect, not as personalisation.
-		$lang = \esc_attr( substr( (string) \get_locale(), 0, 2 ) );
+		$lang = \esc_attr( Locale::to_turnstile( Locale::current() ) );
 		$out  = '<div class="md-inquiry-turnstile" data-sitekey="' . $sitekey . '" data-language="' . $lang . '" data-appearance="interaction-only" data-theme="auto" data-retry="auto"></div>';
 		$out .= '<p class="md-inquiry-turnstile-status" role="status" hidden></p>';
 		return $out;
@@ -656,10 +657,10 @@ final class Form {
 	 * spec's PDP vocabulary, with the page falling back to the current post's
 	 * slug off a pattern page.
 	 *
-	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string}|null $pattern The pattern context.
-	 * @param string                                                                           $page   The explicit page.
-	 * @param string                                                                           $module The explicit module.
-	 * @param string                                                                           $button The explicit button.
+	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string, canonical_slug?: string, name_en?: string}|null $pattern The pattern context.
+	 * @param string                                                                                                                      $page    The explicit page.
+	 * @param string                                                                                                                      $module  The explicit module.
+	 * @param string                                                                                                                      $button  The explicit button.
 	 * @return array{page: string, module: string, button: string}
 	 */
 	private function source( ?array $pattern, string $page, string $module, string $button ): array {
@@ -685,6 +686,16 @@ final class Form {
 			}
 			if ( \method_exists( $GLOBALS['wp_query'], 'is_tax' ) && $GLOBALS['wp_query']->is_tax( 'product_cat' ) && \method_exists( $GLOBALS['wp_query'], 'get_queried_object' ) ) {
 				$term = $GLOBALS['wp_query']->get_queried_object();
+				if ( \is_object( $term ) && isset( $term->term_id ) ) {
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML public filter.
+					$en_term_id = (int) \apply_filters( 'wpml_object_id', (int) $term->term_id, 'product_cat', true, 'en' );
+					if ( $en_term_id > 0 && $en_term_id !== (int) $term->term_id && \function_exists( 'get_term' ) ) {
+						$en_term = \get_term( $en_term_id, 'product_cat' );
+						if ( \is_object( $en_term ) && isset( $en_term->slug ) && \is_string( $en_term->slug ) && '' !== $en_term->slug ) {
+							return $en_term->slug;
+						}
+					}
+				}
 				if ( \is_object( $term ) && isset( $term->slug ) && \is_string( $term->slug ) && '' !== $term->slug ) {
 					return $term->slug;
 				}
@@ -695,28 +706,73 @@ final class Form {
 			}
 		}
 		$post = \get_post();
-		return $post instanceof \WP_Post && '' !== $post->post_name ? $post->post_name : 'inquiry';
+		if ( $post instanceof \WP_Post && 0 !== $post->ID ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML public filter.
+			$en_post_id = (int) \apply_filters( 'wpml_object_id', $post->ID, $post->post_type, true, 'en' );
+			if ( $en_post_id > 0 && $en_post_id !== $post->ID && \function_exists( 'get_post_field' ) ) {
+				$en_slug = (string) \get_post_field( 'post_name', $en_post_id );
+				if ( '' !== $en_slug ) {
+					return $en_slug;
+				}
+			}
+			return '' !== $post->post_name ? $post->post_name : 'inquiry';
+		}
+		return 'inquiry';
 	}
 
 	/**
 	 * The pattern slug the hidden field carries.
 	 *
-	 * @param string                                                                      $explicit The shortcode's explicit slug.
-	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string} $pattern  The resolved pattern.
+	 * @param string                                                                                                                 $explicit The shortcode's explicit slug.
+	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string, canonical_slug?: string, name_en?: string} $pattern  The resolved pattern.
 	 * @return string
 	 */
 	private function pattern_slug_of( string $explicit, array $pattern ): string {
-		return '' !== $explicit ? $explicit : (string) \get_post_field( 'post_name', $pattern['post_id'] );
+		if ( '' !== $explicit ) {
+			return $explicit;
+		}
+		if ( isset( $pattern['canonical_slug'] ) && '' !== $pattern['canonical_slug'] ) {
+			return $pattern['canonical_slug'];
+		}
+		return (string) \get_post_field( 'post_name', $pattern['post_id'] );
 	}
 
 	/**
 	 * The behavior file's configuration, as the data attribute carries it.
 	 *
-	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string}|null $pattern The pattern context.
-	 * @param array{page: string, module: string, button: string}                              $source The source triple.
+	 * @param array{post_id: int, name: string, code: string, url: string, thumb: string, canonical_slug?: string, name_en?: string}|null $pattern The pattern context.
+	 * @param array{page: string, module: string, button: string}                                                                         $source  The source triple.
 	 * @return array<string, mixed>
 	 */
 	private function config_json( ?array $pattern, array $source ): array {
+		$i18n = array(
+			'turnstileExpired'   => __( 'Verification expired. Please try again.', 'md-inquiry' ),
+			'turnstileError'     => __( 'Verification could not run. Please refresh the page and try again.', 'md-inquiry' ),
+			'errorName'          => __( 'Please enter your name.', 'md-inquiry' ),
+			'errorEmail'         => __( 'Please enter a valid email address.', 'md-inquiry' ),
+			'errorCountry'       => __( 'Please choose your country.', 'md-inquiry' ),
+			'errorScope'         => __( 'Please choose the project scope.', 'md-inquiry' ),
+			'errorRoute'         => __( 'Please choose an inquiry route.', 'md-inquiry' ),
+			'errorQuantity'      => __( 'Please choose a quantity range.', 'md-inquiry' ),
+			'errorMessage'       => __( 'Please add a short message.', 'md-inquiry' ),
+			'errorConfirm'       => __( 'Please confirm this inquiry is for an architectural or commercial project.', 'md-inquiry' ),
+			'errorSummary'       => __( 'Please complete the highlighted fields.', 'md-inquiry' ),
+			// phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Pattern SKU placeholder.
+			'modalTitleWithCode' => __( 'Request a quote · %s', 'md-inquiry' ),
+			'defaultModalTitle'  => __( 'Request a quote', 'md-inquiry' ),
+			'selectedPattern'    => __( 'Selected pattern', 'md-inquiry' ),
+			'selectedRequest'    => __( 'Selected request', 'md-inquiry' ),
+			'fieldFallback'      => __( 'Please complete this field.', 'md-inquiry' ),
+			// phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment, WordPress.WP.I18n.UnorderedPlaceholdersText -- WhatsApp JS template.
+			'waGreeting'         => __( 'Hi, I\'m %s%s.', 'md-inquiry' ),
+			'waInquiryPrefix'    => __( 'Inquiry: ', 'md-inquiry' ),
+			'waDefaultIntro'     => __( 'Hi Metal Divider, I\'d like to discuss a stainless steel screen project.', 'md-inquiry' ),
+		);
+
+		if ( null !== $pattern || 'en' !== Locale::current() ) {
+			$i18n['waPatternIntro'] = __( 'I\'d like a quote for this pattern:', 'md-inquiry' );
+		}
+
 		return array(
 			'waNumber'  => WhatsApp::NUMBER,
 			'pattern'   => null === $pattern ? null : array(
@@ -725,19 +781,7 @@ final class Form {
 			),
 			'source'    => $source,
 			'turnstile' => $this->config->turnstile_is_configured(),
-			'i18n'      => array(
-				'turnstileExpired' => __( 'Verification expired. Please try again.', 'md-inquiry' ),
-				'turnstileError'   => __( 'Verification could not run. Please refresh the page and try again.', 'md-inquiry' ),
-				'errorName'        => __( 'Please enter your name.', 'md-inquiry' ),
-				'errorEmail'       => __( 'Please enter a valid email address.', 'md-inquiry' ),
-				'errorCountry'     => __( 'Please choose your country.', 'md-inquiry' ),
-				'errorScope'       => __( 'Please choose the project scope.', 'md-inquiry' ),
-				'errorRoute'       => __( 'Please choose an inquiry route.', 'md-inquiry' ),
-				'errorQuantity'    => __( 'Please choose a quantity range.', 'md-inquiry' ),
-				'errorMessage'     => __( 'Please add a short message.', 'md-inquiry' ),
-				'errorConfirm'     => __( 'Please confirm this inquiry is for an architectural or commercial project.', 'md-inquiry' ),
-				'errorSummary'     => __( 'Please complete the highlighted fields.', 'md-inquiry' ),
-			),
+			'i18n'      => $i18n,
 		);
 	}
 

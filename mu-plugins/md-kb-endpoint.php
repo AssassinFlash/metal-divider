@@ -57,6 +57,141 @@ function md_kb_endpoint_bearer_ok( string $header ): bool {
 }
 
 /**
+ * Runs a callback inside WPML's 'en' language context, restoring the
+ * previous language on exit even if an exception occurs.
+ *
+ * @template T
+ * @param callable(): T $callback The operation to run.
+ * @return T The callback result.
+ */
+function md_kb_endpoint_with_en_language( callable $callback ): mixed {
+	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML standard filter.
+	$prev_lang = function_exists( 'apply_filters' ) ? apply_filters( 'wpml_current_language', null ) : null;
+	if ( function_exists( 'do_action' ) ) {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML standard action.
+		do_action( 'wpml_switch_language', 'en' );
+	}
+	try {
+		return $callback();
+	} finally {
+		if ( null !== $prev_lang && function_exists( 'do_action' ) ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML standard action.
+			do_action( 'wpml_switch_language', $prev_lang );
+		}
+	}
+}
+
+/**
+ * Resolves a product post ID to its canonical 'en' product ID.
+ *
+ * @param int $post_id The product post ID.
+ * @return int The canonical EN product ID.
+ */
+function md_kb_endpoint_canonical_product_id( int $post_id ): int {
+	if ( $post_id <= 0 ) {
+		return 0;
+	}
+	if ( function_exists( 'apply_filters' ) ) {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML standard filter.
+		$en_id = (int) apply_filters( 'wpml_object_id', $post_id, 'product', true, 'en' );
+		if ( $en_id > 0 ) {
+			return $en_id;
+		}
+	}
+	return $post_id;
+}
+
+/**
+ * Detect the visitor's canonical language code ('en', 'zh', 'es', 'pt-br',
+ * 'de', 'fr', 'ar', 'id', 'vi') from question content, explicit parameter,
+ * or page URL path prefix.
+ *
+ * @param string $question      The visitor's question text.
+ * @param string $page_url      The page URL the question was asked on.
+ * @param string $explicit_lang Optional client-supplied language code.
+ * @return string The canonical locale code (default 'en').
+ */
+function md_kb_endpoint_detect_language( string $question, string $page_url = '', string $explicit_lang = '' ): string {
+	$normalized_explicit = '';
+	if ( '' !== trim( $explicit_lang ) ) {
+		$raw = strtolower( trim( $explicit_lang ) );
+		if ( str_starts_with( $raw, 'zh' ) ) {
+			$normalized_explicit = 'zh';
+		} elseif ( str_starts_with( $raw, 'pt' ) ) {
+			$normalized_explicit = 'pt-br';
+		} elseif ( in_array( $raw, array( 'en', 'es', 'pt-br', 'de', 'fr', 'ar', 'id', 'vi' ), true ) ) {
+			$normalized_explicit = $raw;
+		}
+	}
+
+	$trimmed_q = trim( $question );
+	if ( '' !== $trimmed_q ) {
+		// 1. Script checks.
+		if ( 1 === preg_match( '/\p{Arabic}/u', $trimmed_q ) ) {
+			return 'ar';
+		}
+		if ( 1 === preg_match( '/\p{Han}/u', $trimmed_q ) ) {
+			return 'zh';
+		}
+		if ( 1 === preg_match( '/[đĐơƠưƯ]|[ảẩẳẻểỉỏổởủửỷạặậẹệịọộợụựỵằắẵẳặầấẫẩậềếễểệồốỗổộờớỡởợừứữửự]/u', $trimmed_q ) ) {
+			return 'vi';
+		}
+
+		// 2. Explicit language parameter overrides non-script questions.
+		if ( '' !== $normalized_explicit ) {
+			return $normalized_explicit;
+		}
+
+		// 3. Strong language function words and markers.
+		if ( 1 === preg_match( '/\b(?:xin\s+chào|báo\s+giá|vách\s+ngăn|thép\s+không\s+gỉ|hoa\s+văn|giao\s+hàng)\b/iu', $trimmed_q ) ) {
+			return 'vi';
+		}
+		if ( 1 === preg_match( '/\b(?:hallo|guten\s+tag|danke|bitte|wie\s+viel|was\s+kostet|muster|versand|lieferung|lieferzeit|edelstahl|innenbereich|außenbereich|angebot|katalog|abmessungen|stärke)\b/iu', $trimmed_q ) ) {
+			return 'de';
+		}
+		if ( 1 === preg_match( '/\b(?:bonjour|merci|s\'il\s+vous\s+pla[iî]t|combien|prix|devis|échantillon|livraison|expédition|délai|acier\s+inoxydable|extérieur|intérieur|catalogue|épaisseur)\b/iu', $trimmed_q ) ) {
+			return 'fr';
+		}
+		if ( 1 === preg_match( '/\b(?:hola|buenos\s+d[ií]as|gracias|por\s+favor|cu[aá]nto|precio|cotizaci[oó]n|presupuesto|muestra|env[ií]o|plazo|acero\s+inoxidable|cat[aá]logo|patr[oó]n|patrones|espesor|grosor)\b/iu', $trimmed_q ) ) {
+			return 'es';
+		}
+		if ( 1 === preg_match( '/\b(?:ol[aá]|bom\s+dia|obrigad[oa]|por\s+favor|quanto\s+custa|pre[çc]o|or[çc]amento|amostra|frete|prazo|a[çc]o\s+inoxid[aá]vel|cat[aá]logo|padr[aã]o|padr[oõ]es|espessura)\b/iu', $trimmed_q ) ) {
+			return 'pt-br';
+		}
+		if ( 1 === preg_match( '/\b(?:halo|selamat\s+pagi|selamat\s+siang|terima\s+kasih|tolong|berapa|harga|penawaran|sampel|contoh|pengiriman|ongkir|baja\s+tahan\s+karat|katalog|pola|ketebalan|rekomendasi)\b/iu', $trimmed_q ) ) {
+			return 'id';
+		}
+
+		// 4. Fallback to URL path prefix before generic English keywords when ambiguous.
+		if ( '' !== $page_url ) {
+			$path = (string) wp_parse_url( $page_url, PHP_URL_PATH );
+			if ( preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $path, $m ) ) {
+				return strtolower( $m[1] );
+			}
+		}
+
+		if ( 1 === preg_match( '/\b(?:hello|hi|please|thank\s+you|thanks|how\s+much|price|quote|cost|shipping|lead\s+time|sample|stainless\s+steel|pattern|screen|can\s+you|what\s+is|where|do\s+you|recommend)\b/iu', $trimmed_q ) ) {
+			return 'en';
+		}
+	}
+
+	// 5. Explicit language parameter when question was empty.
+	if ( '' !== $normalized_explicit ) {
+		return $normalized_explicit;
+	}
+
+	// 6. Fallback to URL path prefix.
+	if ( '' !== $page_url ) {
+		$path = (string) wp_parse_url( $page_url, PHP_URL_PATH );
+		if ( preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $path, $m ) ) {
+			return strtolower( $m[1] );
+		}
+	}
+
+	return 'en';
+}
+
+/**
  * The answer request, end to end: the bearer gate, then the request
  * validation, the knowledge retrieval and the model call. The input is what
  * the route adapter receives (the Authorization header and the decoded JSON
@@ -82,12 +217,24 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 
+	$chat_id = isset( $body['chat_id'] ) && is_scalar( $body['chat_id'] ) && ctype_digit( (string) $body['chat_id'] )
+		? (int) $body['chat_id']
+		: 0;
+
+	$explicit_lang = isset( $body['lang'] ) && is_string( $body['lang'] ) ? trim( $body['lang'] ) : '';
+	$raw_page_url  = isset( $body['page_url'] ) && is_string( $body['page_url'] ) ? trim( $body['page_url'] ) : '';
+	$visitor_lang  = md_kb_endpoint_detect_language( $q, $raw_page_url, $explicit_lang );
+	if ( 'en' === $visitor_lang && '' === $raw_page_url && $chat_id > 0 ) {
+		$chat_ref     = md_kb_endpoint_chat_referrer( $chat_id );
+		$visitor_lang = md_kb_endpoint_detect_language( $q, $chat_ref, $explicit_lang );
+	}
+
 	if ( md_kb_endpoint_knowledge_is_empty() ) {
 		return array(
 			'status' => 503,
 			'body'   => array(
 				'error' => array( 'code' => 'kb_unavailable' ),
-				'msg'   => md_kb_endpoint_fallback_message(),
+				'msg'   => md_kb_endpoint_fallback_message( $visitor_lang ),
 			),
 		);
 	}
@@ -97,14 +244,10 @@ function md_kb_endpoint_answer( array $input ): array {
 			'status' => 503,
 			'body'   => array(
 				'error' => array( 'code' => 'not_configured' ),
-				'msg'   => md_kb_endpoint_fallback_message(),
+				'msg'   => md_kb_endpoint_fallback_message( $visitor_lang ),
 			),
 		);
 	}
-
-	$chat_id = isset( $body['chat_id'] ) && is_scalar( $body['chat_id'] ) && ctype_digit( (string) $body['chat_id'] )
-		? (int) $body['chat_id']
-		: 0;
 
 	$history = $body['history'] ?? array();
 	// Each turn is capped where it is accepted: only the last six turns
@@ -122,15 +265,15 @@ function md_kb_endpoint_answer( array $input ): array {
 		$history = md_kb_endpoint_chat_history( $chat_id, $q );
 	}
 
-	$direct_pattern = md_kb_endpoint_pattern_lookup( $q );
+	$direct_pattern = md_kb_endpoint_pattern_lookup( $q, $visitor_lang );
 	$direct_p_hits  = $direct_pattern['hits'];
 	$pattern        = $direct_pattern;
 	if ( 0 === $pattern['hits'] && array() !== $history && ! md_kb_endpoint_asks_recommendation( $q ) ) {
-		$pattern = md_kb_endpoint_history_pattern_lookup( $history );
+		$pattern = md_kb_endpoint_history_pattern_lookup( $history, $visitor_lang );
 	}
-	$page = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null ) : array( 'context' => '' );
+	$page = 0 === $pattern['hits'] ? md_kb_endpoint_page_context( $body['page_url'] ?? null, $visitor_lang ) : array( 'context' => '' );
 	if ( 0 === $pattern['hits'] && '' === $page['context'] && $chat_id > 0 ) {
-		$page = md_kb_endpoint_page_context( md_kb_endpoint_chat_referrer( $chat_id ) );
+		$page = md_kb_endpoint_page_context( md_kb_endpoint_chat_referrer( $chat_id ), $visitor_lang );
 	}
 	$resolved = '' !== $pattern['context'] ? $pattern['context'] : $page['context'];
 	// The source the answer actually used: the named pattern, else the page
@@ -154,7 +297,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		return array(
 			'status' => 200,
 			'body'   => array(
-				'msg'           => md_kb_endpoint_shipping_reply( $q, $resolved, $shipping_sources ),
+				'msg'           => md_kb_endpoint_shipping_reply( $q, $resolved, $shipping_sources, $visitor_lang ),
 				'action'        => md_kb_endpoint_wants_human( $q ) ? 'transfer_operator' : '',
 				'sources'       => $shipping_sources,
 				'source_labels' => md_kb_endpoint_source_labels( $shipping_sources ),
@@ -162,7 +305,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		);
 	}
 	if ( md_kb_endpoint_asks_pattern_check_prompt( $q ) ) {
-		return md_kb_endpoint_pattern_check_prompt_reply( $resolved, $resolved_sources );
+		return md_kb_endpoint_pattern_check_prompt_reply( $resolved, $resolved_sources, $visitor_lang );
 	}
 	// A confirmed fact the question asked for stays. Neither a commercial
 	// commitment nor an unpublished project fact is invented by the model.
@@ -170,7 +313,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		return array(
 			'status' => 200,
 			'body'   => array(
-				'msg'     => md_kb_endpoint_unverified_fact_reply( $q, $resolved ),
+				'msg'     => md_kb_endpoint_unverified_fact_reply( $q, $resolved, $visitor_lang ),
 				'action'  => 'transfer_operator',
 				'sources' => $resolved_sources,
 			),
@@ -180,7 +323,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		return array(
 			'status' => 200,
 			'body'   => array(
-				'msg'     => md_kb_endpoint_commercial_reply( $q, $resolved ),
+				'msg'     => md_kb_endpoint_commercial_reply( $q, $resolved, $visitor_lang ),
 				'action'  => md_kb_endpoint_wants_human( $q ) ? 'transfer_operator' : '',
 				'sources' => $resolved_sources,
 			),
@@ -191,7 +334,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		return array(
 			'status' => 200,
 			'body'   => array(
-				'msg'           => md_kb_endpoint_showroom_reply(),
+				'msg'           => md_kb_endpoint_showroom_reply( $visitor_lang ),
 				'action'        => '',
 				'sources'       => array( 'Showroom visits' ),
 				'source_labels' => array( 'Showroom visits' ),
@@ -202,7 +345,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		return array(
 			'status' => 200,
 			'body'   => array(
-				'msg'           => md_kb_endpoint_dimensions_reply( $q, $resolved ),
+				'msg'           => md_kb_endpoint_dimensions_reply( $q, $resolved, $visitor_lang ),
 				'action'        => '',
 				'sources'       => array( 'Thickness and weight' ),
 				'source_labels' => array( 'Thickness and weight' ),
@@ -212,11 +355,11 @@ function md_kb_endpoint_answer( array $input ): array {
 
 	if ( md_kb_endpoint_asks_recommendation( $q ) ) {
 		if ( 0 === $pattern['hits'] ) {
-			$pattern = md_kb_endpoint_pattern_recommend( $q );
+			$pattern = md_kb_endpoint_pattern_recommend( $q, array(), $visitor_lang );
 		} else {
 			$exclude_ids = md_kb_endpoint_pattern_source_ids( $pattern['sources'] );
 			$recommend_q = md_kb_endpoint_augment_recommendation_query( $q, $exclude_ids );
-			$recommended = md_kb_endpoint_pattern_recommend( $recommend_q, $exclude_ids );
+			$recommended = md_kb_endpoint_pattern_recommend( $recommend_q, $exclude_ids, $visitor_lang );
 			if ( 0 < $recommended['hits'] ) {
 				$pattern['context'] = $pattern['context'] . "\n\n" . $recommended['context'];
 				$pattern['sources'] = array_values( array_unique( array_merge( $pattern['sources'], $recommended['sources'] ) ) );
@@ -227,7 +370,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		$resolved_sources = 0 < $pattern['hits'] ? $pattern['sources'] : ( isset( $page['sources'] ) ? $page['sources'] : array() );
 	}
 
-	list( $results, $context ) = md_kb_endpoint_retrieve( $q );
+	list( $results, $context ) = md_kb_endpoint_retrieve( $q, $visitor_lang );
 	if ( '' !== $pattern['context'] ) {
 		$context = "PATTERN FACTS (WooCommerce, current publish):\n" . $pattern['context']
 			. ( '' !== trim( $context ) ? "\n\nKNOWLEDGE (Rapls):\n" . $context : '' );
@@ -235,7 +378,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		$context = "CURRENT PATTERN (the page the visitor opened the chat on):\n" . $page['context']
 			. ( '' !== trim( $context ) ? "\n\nKNOWLEDGE (Rapls):\n" . $context : '' );
 	}
-	$answer = md_kb_endpoint_call_model( md_kb_endpoint_messages( $q, $context, $history ) );
+	$answer = md_kb_endpoint_call_model( md_kb_endpoint_messages( $q, $context, $history, $visitor_lang ) );
 
 	if ( is_string( $answer ) ) {
 		$fallback_answer = md_kb_endpoint_pattern_upstream_fallback( $q, $resolved, $pattern, $results );
@@ -244,7 +387,7 @@ function md_kb_endpoint_answer( array $input ): array {
 				'status' => 502,
 				'body'   => array(
 					'error' => array( 'code' => $answer ),
-					'msg'   => md_kb_endpoint_fallback_message(),
+					'msg'   => md_kb_endpoint_fallback_message( $visitor_lang ),
 				),
 			);
 		}
@@ -258,6 +401,7 @@ function md_kb_endpoint_answer( array $input ): array {
 		&& 'human_request' !== $answer['reason']
 		&& ! md_kb_endpoint_wants_human( $q )
 		&& md_kb_endpoint_no_answer_message() !== $answer['answer']
+		&& md_kb_endpoint_no_answer_message( $visitor_lang ) !== $answer['answer']
 	) {
 		$answer['handoff'] = false;
 		$answer['reason']  = 'none';
@@ -267,7 +411,7 @@ function md_kb_endpoint_answer( array $input ): array {
 	$answer = md_kb_endpoint_preserve_known_facts( $q, $resolved, $answer );
 
 	// A question that kept a published fact is not an unanswered gap, even when the rest transfers.
-	if ( $answer['handoff'] && md_kb_endpoint_is_knowledge_gap( $answer ) && 0 === $pattern['hits'] && '' === md_kb_endpoint_partial_fact_message( $q, $resolved ) ) {
+	if ( $answer['handoff'] && md_kb_endpoint_is_knowledge_gap( $answer, $visitor_lang ) && 0 === $pattern['hits'] && '' === md_kb_endpoint_partial_fact_message( $q, $resolved ) ) {
 		$trimmed_context = trim( $context );
 		$gap_reason      = '' === $trimmed_context ? 'no_context' : 'grounding';
 		md_kb_endpoint_log_unanswered( $q, $gap_reason );
@@ -282,7 +426,7 @@ function md_kb_endpoint_answer( array $input ): array {
 	$labels     = md_kb_endpoint_source_labels( $sources );
 	$msg        = md_kb_endpoint_normalize_links( $answer['answer'] );
 	if ( ! $answer['handoff'] && array() !== $labels ) {
-		$msg .= md_kb_endpoint_source_footer( $sources );
+		$msg .= md_kb_endpoint_source_footer( $sources, $visitor_lang );
 	}
 	return array(
 		'status' => 200,
@@ -316,9 +460,23 @@ const MD_KB_ENDPOINT_PATTERN_LIMIT = 3;
  * The visitor-facing sentence when a question asks for a price, a lead
  * time, an MOQ or a sample promise. Those are not product facts, and the
  * model is not asked to invent them.
+ *
+ * @param string $lang The canonical language code.
+ * @return string The handoff message.
  */
-function md_kb_endpoint_commercial_handoff_message(): string {
-	return 'Every screen is custom-fabricated in 304 or 316 stainless steel. Pricing, lead time, minimum order, and finish samples are confirmed by our team for your panel dimensions, thickness (0.8-3.0 mm), PVD finish, and quantity — use Request Quote or Chat on WhatsApp above for a formal quote within 24 hours.';
+function md_kb_endpoint_commercial_handoff_message( string $lang = 'en' ): string {
+	$messages = array(
+		'en'    => 'Every screen is custom-fabricated in 304 or 316 stainless steel. Pricing, lead time, minimum order, and finish samples are confirmed by our team for your panel dimensions, thickness (0.8-3.0 mm), PVD finish, and quantity — use Request Quote or Chat on WhatsApp above for a formal quote within 24 hours.',
+		'zh'    => '每款屏风均采用 304 或 316 不锈钢定制加工。价格、交期、起订量及表面样品由我们的团队根据您的面板尺寸、厚度（0.8-3.0 mm）、PVD 表面处理和数量为您核算——请使用上方的“索取报价”或“WhatsApp 咨询”，我们将在 24 小时内提供正式报价。',
+		'es'    => 'Cada celosía se fabrica a medida en acero inoxidable 304 o 316. El precio, plazo de entrega, pedido mínimo y muestras de acabado los confirma nuestro equipo según las dimensiones de panel, grosor (0,8-3,0 mm), acabado PVD y cantidad; utilice Solicitar cotización o WhatsApp arriba para una cotización formal en 24 horas.',
+		'pt-br' => 'Cada painel é fabricado sob medida em aço inoxidável 304 ou 316. Preço, prazo de entrega, pedido mínimo e amostras de acabamento são confirmados por nossa equipe com base nas dimensões do painel, espessura (0,8-3,0 mm), acabamento PVD e quantidade — use Solicitar orçamento ou WhatsApp acima para um orçamento formal em 24 horas.',
+		'de'    => 'Jede Blende wird individuell aus Edelstahl 304 oder 316 maßgefertigt. Preis, Lieferzeit, Mindestbestellmenge und Oberflächenmuster bestätigt unser Team anhand Ihrer Paneelmaße, Stärke (0,8–3,0 mm), PVD-Oberfläche und Menge — nutzen Sie Angebot anfordern oder WhatsApp oben für ein formelles Angebot innerhalb von 24 Stunden.',
+		'fr'    => 'Chaque panneau est fabriqué sur mesure en acier inoxydable 304 ou 316. Le prix, le délai de livraison, la commande minimale et les échantillons de finition sont confirmés par notre équipe selon les dimensions, l\'épaisseur (0,8-3,0 mm), la finition PVD et la quantité — utilisez Demander un devis ou WhatsApp ci-dessus pour un devis sous 24 heures.',
+		'ar'    => 'يتم تصنيع كل قاطع معدني حسب الطلب من الفولاذ المقاوم للصدأ 304 أو 316. يتم تأكيد السعر ومدة التسليم والحد الأدنى للطلب وعينات التشطيب من قِبل فريقنا وفقاً لأبعاد الألواح والسمك (0.8-3.0 مم) وتشطيب PVD والكمية — استخدم "طلب عرض سعر" أو دردشة واتساب أعلاه للحصول على عرض سعر رسمي خلال 24 ساعة.',
+		'id'    => 'Setiap sekat dibuat khusus dari baja tahan karat 304 atau 316. Harga, waktu pengerjaan, pesanan minimum, dan sampel finishing dikonfirmasi oleh tim kami sesuai dimensi panel, ketebalan (0,8-3,0 mm), finishing PVD, dan jumlah — gunakan Minta Penawaran atau WhatsApp di atas untuk penawaran resmi dalam 24 jam.',
+		'vi'    => 'Mỗi vách ngăn được gia công theo yêu cầu bằng thép không gỉ 304 hoặc 316. Giá cả, thời gian giao hàng, số lượng đặt tối thiểu và mẫu hoàn thiện được đội ngũ của chúng tôi xác nhận theo kích thước tấm, độ dày (0,8-3,0 mm), lớp hoàn thiện PVD và số lượng — hãy sử dụng Yêu cầu báo giá hoặc WhatsApp ở trên để nhận báo giá chính thức trong 24 giờ.',
+	);
+	return $messages[ $lang ] ?? $messages['en'];
 }
 
 /**
@@ -331,7 +489,7 @@ function md_kb_endpoint_commercial_handoff_message(): string {
  */
 function md_kb_endpoint_wants_human( string $q ): bool {
 	return 1 === preg_match(
-		'/\b(?:talk\s+to\s+(?:a\s+)?(?:human|person|agent|someone|representative|team|operator)|speak\s+(?:to|with)\s+(?:a\s+)?(?:human|person|agent|someone|representative|operator)|connect\s+me\s+(?:with|to)|real\s+person|human\s+agent|live\s+agent)\b|转人工|人工客服|找人工|真人客服/iu',
+		'/\b(?:talk\s+to\s+(?:a\s+)?(?:human|person|agent|someone|representative|team|operator)|speak\s+(?:to|with)\s+(?:a\s+)?(?:human|person|agent|someone|representative|operator)|connect\s+me\s+(?:with|to)|real\s+person|human\s+agent|live\s+agent|hablar\s+con\s+(?:un\s+)?(?:humano|agente|persona|operador)|agente\s+humano|persona\s+real|falar\s+com\s+(?:um\s+)?(?:humano|atendente|agente|pessoa|operador)|atendente\s+humano|mit\s+(?:einem\s+)?(?:menschen|mitarbeiter|berater|operator)\s+sprechen|parler\s+[àa]\s+(?:un\s+)?(?:humain|agent|conseiller|opérateur|personne)|agent\s+humain|bicara\s+dengan\s+(?:manusia|agen|petugas|operator)|nói\s+chuyện\s+với\s+(?:người|nhân\s+viên|tư\s+vấn))\b|转人工|人工客服|找人工|真人客服|联系客服|التحدث\s+مع\s+(?:إنسان|شخص|موظف|خدمة\s+العملاء)|خدمة\s+العملاء|وكيل\s+بشري/iu',
 		$q
 	);
 }
@@ -339,7 +497,7 @@ function md_kb_endpoint_wants_human( string $q ): bool {
 /**
  * Whether the question asks for a commercial commitment rather than only a
  * pattern fact: price, quote, lead time, a ship date, MOQ or a sample, in
- * English or Chinese. A published fact the question also asked for is kept
+ * English, Chinese, or supported languages. A published fact the question also asked for is kept
  * beside the handoff; the commitment itself is never turned into a number.
  *
  * @param string $q The visitor's question.
@@ -350,7 +508,7 @@ function md_kb_endpoint_asks_commercial( string $q ): bool {
 		return true;
 	}
 	return 1 === preg_match(
-		'/\b(?:price|pricing|quote|quotation|cost\b(?!\s*-?\s*effective)|how\s+much|lead[\s-]*time|delivery\s+(?:time|date)|moq|minimum\s+order|samples?)\b|价格|报价|交期|交货|起订|样品|多少钱|单价|费用|运费|发货(?!到)/iu',
+		'/\b(?:price|pricing|quote|quotation|cost\b(?!\s*-?\s*effective)|how\s+much|lead[\s-]*time|delivery\s+(?:time|date)|moq|minimum\s+order|samples?|precio|precios|cotizaci[oó]n|cotizaciones|presupuesto|cu[aá]nto\s+cuesta|pedido\s+m[ií]nimo|muestras?|pre[çc]o|pre[çc]os|or[çc]amento|or[çc]amentos|quanto\s+custa|amostras?|preis|preise|kostet?|angebot|kostenvoranschlag|lieferzeit|mindestbestellmenge|muster|prix|co[uû]t|devis|combien|d[eé]lai\s+de\s+livraison|commande\s+minimale|échantillons?|harga|biaya|penawaran|berapa|sampel|giá|báo\s+giá|chi\s+phí|bao\s+nhiêu|mẫu)\b|价格|报价|交期|交货|起订|样品|多少钱|单价|费用|运费|发货(?!到)|سعر|أسعار|عرض\s+سعر|كم\s+السعر|تكلفة|عينة|عينات/iu',
 		$q
 	);
 }
@@ -365,7 +523,7 @@ function md_kb_endpoint_asks_commercial( string $q ): bool {
  */
 function md_kb_endpoint_asks_ship_date( string $q ): bool {
 	return 1 === preg_match(
-		'/\bwhen\s+(?:could|can|will|would)\s+(?:you|we|it|this|that)\s+ship\b|\bhow\s+soon\b|\bship(?:ping)?\s+date\b|\bwhen\s+(?:could|can|will)\s+it\s+(?:arrive|be\s+delivered)\b|什么时候.{0,8}发货|何时发货|发货时间/iu',
+		'/\b(?:when\s+(?:could|can|will|would)\s+(?:you|we|it|this|that)\s+ship|how\s+soon|ship(?:ping)?\s+date|when\s+(?:could|can|will)\s+it\s+(?:arrive|be\s+delivered)|cu[aá]ndo\s+(?:se\s+env[ií]a|podr[ií]a\s+enviar|llega)|fecha\s+de\s+env[ií]o|quando\s+(?:ser[aá]\s+enviado|pode\s+enviar|chega)|data\s+de\s+envio|wann\s+(?:wird|kann)\s+(?:versendet|geliefert)|versanddatum|lieferdatum|quand\s+(?:peut-on|sera-t-il)\s+(?:exp[eé]di[eé]|livr[eé])|date\s+d[\'’]exp[eé]dition|kapan\s+(?:bisa\s+dikirim|sampai)|tanggal\s+pengiriman|khi\s+nào\s+(?:giao\s+hàng|nhận\s+được)|ngày\s+giao\s+hàng)\b|什么时候.{0,8}发货|何时发货|发货时间|متى\s+(?:يتم\s+الشحن|يمكن\s+الشحن|يصل)|تاريخ\s+الشحن/iu',
 		$q
 	);
 }
@@ -382,7 +540,7 @@ function md_kb_endpoint_asks_shipping( string $q ): bool {
 		return false;
 	}
 	return 1 === preg_match(
-		'/\b(?:do\s+you\s+(?:ship|deliver)|can\s+you\s+(?:ship|deliver)|ship\s+to|deliver\s+to|ship\s+(?:internationally|worldwide)|deliver\s+(?:internationally|worldwide)|shipping\s+(?:to|options|methods|terms)|freight)\b|发货到|送到|运到|发到|能发.*吗|海运|空运/iu',
+		'/\b(?:do\s+you\s+(?:ship|deliver)|can\s+you\s+(?:ship|deliver)|ship\s+to|deliver\s+to|ship\s+(?:internationally|worldwide)|deliver\s+(?:internationally|worldwide)|shipping\s+(?:to|options|methods|terms)|freight|env[ií]os?\s+a|env[ií]an\s+a|pueden\s+enviar\s+a|entrega\s+en|transporte\s+mar[ií]timo|transporte\s+a[eé]reo|envios?\s+para|enviam\s+para|entregam\s+em|(?:versand|versenden\s+sie)\s+nach|liefern\s+sie\s+nach|seefracht|luftfracht|exp[eé]dition\s+vers|livrez-vous\s+[àa]|fret\s+maritime|fret\s+a[eé]rien|kirim\s+ke|pengiriman\s+ke|bisa\s+kirim\s+ke|ongkir|kargo\s+laut|kargo\s+udara|vận\s+chuyển\s+đến|giao\s+hàng\s+đến|có\s+thể\s+giao\s+đến)\b|发货到|送到|运到|发到|能发.*吗|海运|空运|شحن\s+إلى|هل\s+تشحنون\s+إلى|الشحن\s+البحري|الشحن\s+الجوي/iu',
 		$q
 	);
 }
@@ -390,10 +548,22 @@ function md_kb_endpoint_asks_shipping( string $q ): bool {
 /**
  * The visitor-facing sentence for packing and worldwide shipping options.
  *
+ * @param string $lang The visitor language.
  * @return string The shipping guidance copy.
  */
-function md_kb_endpoint_shipping_message(): string {
-	return 'We pack custom stainless steel panels in export-grade wooden crates and ship worldwide by sea freight or air freight under EXW, FOB, CIF, or DDP terms. Use Request Quote or Chat on WhatsApp above with your destination and panel sizes so our team can confirm the freight option.';
+function md_kb_endpoint_shipping_message( string $lang = 'en' ): string {
+	$messages = array(
+		'en'    => 'We pack custom stainless steel panels in export-grade wooden crates and ship worldwide by sea freight or air freight under EXW, FOB, CIF, or DDP terms. Use Request Quote or Chat on WhatsApp above with your destination and panel sizes so our team can confirm the freight option.',
+		'zh'    => '我们采用出口级木箱包装定制不锈钢板，并通过海运或空运以 EXW、FOB、CIF 或 DDP 条款发往全球。请使用上方的“索取报价”或“WhatsApp 咨询”告知您的目的地和面板尺寸，以便我们的团队确认运输方案。',
+		'es'    => 'Embalamos los paneles de acero inoxidable a medida en cajas de madera aptas para exportación y realizamos envíos a todo el mundo por transporte marítimo o aéreo bajo términos EXW, FOB, CIF o DDP. Utilice Solicitar cotización o WhatsApp arriba indicando su destino y medidas para confirmar la opción de transporte.',
+		'pt-br' => 'Embalamos os painéis personalizados de aço inoxidável em caixas de madeira para exportação e enviamos para todo o mundo por frete marítimo ou aéreo sob termos EXW, FOB, CIF ou DDP. Use Solicitar orçamento ou WhatsApp acima com seu destino e dimensões para confirmar a opção de frete.',
+		'de'    => 'Wir verpacken maßgefertigte Edelstahlpaneele in exportgerechten Holzkisten und versenden weltweit per See- oder Luftfracht unter EXW-, FOB-, CIF- oder DDP-Bedingungen. Nutzen Sie Angebot anfordern oder WhatsApp oben mit Ihrem Zielort und den Paneelmaßen, damit unser Team die Frachtoption bestätigen kann.',
+		'fr'    => 'Nous emballons les panneaux en acier inoxydable sur mesure dans des caisses en bois conformes à l\'exportation et expédions dans le monde entier par fret maritime ou aérien selon les conditions EXW, FOB, CIF ou DDP. Utilisez Demander un devis ou WhatsApp ci-dessus avec votre destination et vos dimensions pour confirmer l\'option de fret.',
+		'ar'    => 'نقوم بتعبئة ألواح الفولاذ المقاوم للصدأ المخصصة في صناديق خشبية مخصصة للتصدير ونشحن إلى جميع أنحاء العالم عن طريق الشحن البحري أو الجوي بموجب شروط EXW أو FOB أو CIF أو DDP. استخدم "طلب عرض سعر" أو واتساب أعلاه مع تحديد وجهتك ومقاسات الألواح ليؤكد فريقنا خيار الشحن.',
+		'id'    => 'Kami mengemas panel baja tahan karat khusus dalam peti kayu standar ekspor dan mengirimkannya ke seluruh dunia melalui kargo laut atau udara dengan ketentuan EXW, FOB, CIF, atau DDP. Gunakan Minta Penawaran atau WhatsApp di atas beserta tujuan dan ukuran panel Anda agar tim kami dapat mengonfirmasi opsi pengiriman.',
+		'vi'    => 'Chúng tôi đóng gói các tấm thép không gỉ gia công theo yêu cầu trong các kiện gỗ tiêu chuẩn xuất khẩu và vận chuyển toàn cầu bằng đường biển hoặc đường hàng không theo điều kiện EXW, FOB, CIF hoặc DDP. Hãy sử dụng Yêu cầu báo giá hoặc WhatsApp ở trên cùng địa điểm và kích thước tấm của bạn để đội ngũ của chúng tôi xác nhận phương án vận chuyển.',
+	);
+	return $messages[ $lang ] ?? $messages['en'];
 }
 
 /**
@@ -403,16 +573,17 @@ function md_kb_endpoint_shipping_message(): string {
  * @param string             $q       The visitor's question.
  * @param string             $context The resolved pattern facts, '' when none.
  * @param array<int, string> $sources The sources to cite in the footer.
+ * @param string             $lang    The visitor language.
  * @return string The visitor-facing reply.
  */
-function md_kb_endpoint_shipping_reply( string $q, string $context, array $sources = array( 'Packing and shipping' ) ): string {
+function md_kb_endpoint_shipping_reply( string $q, string $context, array $sources = array( 'Packing and shipping' ), string $lang = 'en' ): string {
 	$parts = array();
 	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
 	if ( '' !== $facts ) {
 		$parts[] = $facts;
 	}
-	$parts[] = md_kb_endpoint_shipping_message();
-	return implode( ' ', $parts ) . md_kb_endpoint_source_footer( $sources );
+	$parts[] = md_kb_endpoint_shipping_message( $lang );
+	return implode( ' ', $parts ) . md_kb_endpoint_source_footer( $sources, $lang );
 }
 
 /**
@@ -421,18 +592,19 @@ function md_kb_endpoint_shipping_reply( string $q, string $context, array $sourc
  *
  * @param string $q       The visitor's question.
  * @param string $context The resolved pattern facts, '' when none.
+ * @param string $lang    The visitor language.
  * @return string The visitor-facing reply.
  */
-function md_kb_endpoint_commercial_reply( string $q, string $context ): string {
+function md_kb_endpoint_commercial_reply( string $q, string $context, string $lang = 'en' ): string {
 	$parts = array();
 	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
 	if ( '' !== $facts ) {
 		$parts[] = $facts;
 	}
 	if ( md_kb_endpoint_unverified_cad_must_transfer( $q, $context ) ) {
-		$parts[] = md_kb_endpoint_drawing_check_message();
+		$parts[] = md_kb_endpoint_drawing_check_message( $lang );
 	}
-	$parts[] = md_kb_endpoint_commercial_handoff_message();
+	$parts[] = md_kb_endpoint_commercial_handoff_message( $lang );
 	return implode( ' ', $parts );
 }
 
@@ -459,7 +631,10 @@ function md_kb_endpoint_asks_unverified_fact( string $q ): bool {
  * @return bool Whether the question is a visit question.
  */
 function md_kb_endpoint_asks_showroom( string $q ): bool {
-	return 1 === preg_match( '/\b(?:showroom|show\s+room|visit\s+(?:the\s+)?(?:factory|office|showroom)|visit\s+you|come\s+to\s+your)\b|展厅|参观/iu', $q );
+	return 1 === preg_match(
+		'/\b(?:showroom|show\s+room|visit\s+(?:the\s+)?(?:factory|office|showroom)|visit\s+you|come\s+to\s+your|visitar\s+(?:la\s+f[aá]brica|el\s+showroom|sus\s+instalaciones)|sala\s+de\s+exposici[oó]n|ausstellungsraum|fabrik\s+besuchen|salle\s+d[\'’]exposition|kunjungi\s+(?:pabrik|showroom)|ruang\s+pamer|thăm\s+(?:nhà\s+máy|showroom)|phòng\s+trưng\s+bày)\b|展厅|参观|معرض|صالة\s+عرض|زيارة\s+(?:المصنع|المعرض)/iu',
+		$q
+	);
 }
 
 /**
@@ -470,7 +645,10 @@ function md_kb_endpoint_asks_showroom( string $q ): bool {
  * @return bool Whether the question is a thickness or weight question.
  */
 function md_kb_endpoint_asks_dimensions( string $q ): bool {
-	return 1 === preg_match( '/\b(?:thickness|how\s+thick|weight|weigh(?:s|t)?|how\s+heavy|kg\s*\/\s*m)\b|厚度|多厚|重量|多重/iu', $q );
+	return 1 === preg_match(
+		'/\b(?:thickness|how\s+thick|weight|weigh(?:s|t)?|how\s+heavy|kg\s*\/\s*m|grosor|espesor|cu[aá]n\s+grueso|peso|cu[aá]nto\s+pesa|espessura|quanto\s+pesa|st[aä]rke|dicke|wie\s+dick|gewicht|wie\s+schwer|[eé]paisseur|combien\s+[eé]pais|poids|ketebalan|berapa\s+tebal|berat|berapa\s+berat|độ\s+dày|dày\s+bao\s+nhiêu|trọng\s+lượng|cân\s+nặng)\b|厚度|多厚|重量|多重|سمك|سماكة|كم\s+السمك|وزن|كم\s+الوزن/iu',
+		$q
+	);
 }
 
 /**
@@ -493,9 +671,10 @@ function md_kb_endpoint_asks_pattern_check_prompt( string $q ): bool {
  *
  * @param string             $resolved         The resolved pattern context.
  * @param array<int, string> $resolved_sources The resolved pattern sources.
+ * @param string             $lang             The visitor language.
  * @return array{status: int, body: array<string, mixed>} The endpoint reply.
  */
-function md_kb_endpoint_pattern_check_prompt_reply( string $resolved, array $resolved_sources ): array {
+function md_kb_endpoint_pattern_check_prompt_reply( string $resolved, array $resolved_sources, string $lang = 'en' ): array {
 	if ( '' !== $resolved ) {
 		$blocks = md_kb_endpoint_pattern_fact_blocks( $resolved );
 		if ( isset( $blocks[0] ) ) {
@@ -513,7 +692,7 @@ function md_kb_endpoint_pattern_check_prompt_reply( string $resolved, array $res
 			$msg    = implode( ', ', $parts ) . '. Tell me what you would like to check — or share another pattern name or code.';
 			$labels = md_kb_endpoint_source_labels( $resolved_sources );
 			if ( array() !== $labels ) {
-				$msg .= md_kb_endpoint_source_footer( $resolved_sources );
+				$msg .= md_kb_endpoint_source_footer( $resolved_sources, $lang );
 			}
 			return array(
 				'status' => 200,
@@ -561,11 +740,23 @@ function md_kb_endpoint_normalize_links( string $text ): string {
  * The direct reply for a showroom visit. Owner decided visits are welcome
  * (2026-10-27); no street address is invented, and the team confirms time.
  *
+ * @param string $lang The visitor language.
  * @return string The visitor-facing reply.
  */
-function md_kb_endpoint_showroom_reply(): string {
-	return 'You are welcome to visit our Foshan, Guangdong location by arrangement, Monday to Saturday 9:00-18:00 GMT+8. Contact our team with a preferred date and we will confirm the address and time.'
-		. md_kb_endpoint_source_footer( array( 'Showroom visits' ) );
+function md_kb_endpoint_showroom_reply( string $lang = 'en' ): string {
+	$messages = array(
+		'en'    => 'You are welcome to visit our Foshan, Guangdong location by arrangement, Monday to Saturday 9:00-18:00 GMT+8. Contact our team with a preferred date and we will confirm the address and time.',
+		'zh'    => '欢迎您预约参观我们位于广东佛山的展厅与工厂，接待时间为周一至周六 9:00-18:00 (GMT+8)。请联系我们的团队告知您的意向日期，我们将为您确认具体地址与时间。',
+		'es'    => 'Le invitamos a visitar nuestras instalaciones en Foshan, Guangdong previa cita, de lunes a sábado de 9:00 a 18:00 GMT+8. Póngase en contacto con nuestro equipo indicando su fecha preferida y le confirmaremos dirección y hora.',
+		'pt-br' => 'Você é bem-vindo para visitar nossa fábrica e showroom em Foshan, Guangdong mediante agendamento, de segunda a sábado das 9:00 às 18:00 GMT+8. Entre em contato com nossa equipe com sua data de preferência para confirmarmos o endereço e horário.',
+		'de'    => 'Sie sind herzlich eingeladen, unseren Standort in Foshan, Guangdong nach Vereinbarung von Montag bis Samstag 9:00–18:00 GMT+8 zu besuchen. Kontaktieren Sie unser Team mit einem Terminwunsch; wir bestätigen Adresse und Uhrzeit.',
+		'fr'    => 'Vous êtes invités à visiter nos installations à Foshan, Guangdong sur rendez-vous, du lundi au samedi de 9h00 à 18h00 GMT+8. Contactez notre équipe avec la date souhaitée et nous confirmerons l\'adresse et l\'heure.',
+		'ar'    => 'يسعدنا استقبالكم في موقعنا بمدينة فوشان، مقاطعة غوانغدونغ بموجب موعد مسبق، من الاثنين إلى السبت 9:00-18:00 بتوقيت GMT+8. تواصل مع فريقنا وحدد التاريخ المناسب وسنؤكد لكم العنوان والموعد.',
+		'id'    => 'Anda dipersilakan mengunjungi lokasi kami di Foshan, Guangdong berdasarkan perjanjian, Senin sampai Sabtu 09.00-18.00 GMT+8. Hubungi tim kami dengan tanggal yang diinginkan dan kami akan mengonfirmasi alamat serta waktu.',
+		'vi'    => 'Chúng tôi rất hoan nghênh bạn đến thăm cơ sở của chúng tôi tại Phật Sơn, Quảng Đông theo lịch hẹn trước, từ Thứ Hai đến Thứ Bảy 9:00-18:00 GMT+8. Vui lòng liên hệ với đội ngũ của chúng tôi với ngày dự kiến để chúng tôi xác nhận địa chỉ và thời gian.',
+	);
+	$body     = $messages[ $lang ] ?? $messages['en'];
+	return $body . md_kb_endpoint_source_footer( array( 'Showroom visits' ), $lang );
 }
 
 /**
@@ -574,26 +765,50 @@ function md_kb_endpoint_showroom_reply(): string {
  *
  * @param string $q       The visitor's question.
  * @param string $context The resolved pattern facts, '' when none.
+ * @param string $lang    The visitor language.
  * @return string The visitor-facing reply.
  */
-function md_kb_endpoint_dimensions_reply( string $q, string $context ): string {
+function md_kb_endpoint_dimensions_reply( string $q, string $context, string $lang = 'en' ): string {
 	$parts = array();
 	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
 	if ( '' !== $facts ) {
 		$parts[] = $facts;
 	}
-	$parts[] = 'Decorative stainless steel panels are commonly 0.8-3.0 mm thick. As a reference, 1.0 mm stainless steel weighs about 8 kg/m2. The exact thickness and weight are confirmed for each project from the pattern, fixing and span.';
-	return implode( ' ', $parts ) . md_kb_endpoint_source_footer( array( 'Thickness and weight' ) );
+	$messages = array(
+		'en'    => 'Decorative stainless steel panels are commonly 0.8-3.0 mm thick. As a reference, 1.0 mm stainless steel weighs about 8 kg/m2. The exact thickness and weight are confirmed for each project from the pattern, fixing and span.',
+		'zh'    => '装饰不锈钢板常见厚度为 0.8-3.0 mm。作为参考，1.0 mm 厚不锈钢板约重 8 kg/m²。确切的厚度和重量将根据项目所选图案、固定方式及跨度由团队最终核定。',
+		'es'    => 'Los paneles decorativos de acero inoxidable suelen tener entre 0,8 y 3,0 mm de grosor. Como referencia, el acero inoxidable de 1,0 mm pesa unos 8 kg/m². El grosor y peso exactos se confirman para cada proyecto según el patrón, fijación y vano.',
+		'pt-br' => 'Os painéis decorativos de aço inoxidável geralmente têm de 0,8 a 3,0 mm de espessura. Como referência, o aço inoxidável de 1,0 mm pesa cerca de 8 kg/m². A espessura e o peso exatos são confirmados para cada projeto com base no padrão, fixação e vão.',
+		'de'    => 'Dekorative Edelstahlpaneele sind üblicherweise 0,8–3,0 mm stark. Als Referenz: 1,0 mm Edelstahl wiegt ca. 8 kg/m². Die genaue Stärke und das Gewicht werden für jedes Projekt anhand von Muster, Befestigung und Spannweite bestätigt.',
+		'fr'    => 'Les panneaux décoratifs en acier inoxydable ont couramment une épaisseur de 0,8 à 3,0 mm. À titre de référence, 1,0 mm d\'acier inoxydable pèse environ 8 kg/m². L\'épaisseur et le poids exacts sont confirmés pour chaque projet selon le motif, la fixation et la portée.',
+		'ar'    => 'يبلغ سمك ألواح الفولاذ المقاوم للصدأ الزخرفية عادةً 0.8-3.0 مم. كمرجع، يزن الفولاذ المقاوم للصدأ بسمك 1.0 مم حوالي 8 كجم/متر مربع. يتم تأكيد السمك والوزن الدقيقين لكل مشروع وفقاً للنمط وطريقة التثبيت والمسافة بين الركائز.',
+		'id'    => 'Panel baja tahan karat dekoratif umumnya memiliki ketebalan 0,8-3,0 mm. Sebagai referensi, baja tahan karat 1,0 mm berbobot sekitar 8 kg/m². Ketebalan dan berat pastinya dikonfirmasi untuk setiap proyek berdasarkan pola, sistem pemasangan, dan bentang.',
+		'vi'    => 'Các tấm thép không gỉ trang trí thường có độ dày từ 0,8 đến 3,0 mm. Để tham khảo, thép không gỉ 1,0 mm nặng khoảng 8 kg/m². Độ dày và trọng lượng chính xác được xác nhận cho từng dự án dựa trên hoa văn, cách cố định và khẩu độ.',
+	);
+	$parts[]  = $messages[ $lang ] ?? $messages['en'];
+	return implode( ' ', $parts ) . md_kb_endpoint_source_footer( array( 'Thickness and weight' ), $lang );
 }
 
 /**
  * The showroom, destination, installation, thickness or weight handoff.
  * No number or promise is stated; the team confirms the project.
  *
+ * @param string $lang The visitor language.
  * @return string The visitor-facing handoff sentence.
  */
-function md_kb_endpoint_unverified_fact_handoff_message(): string {
-	return 'That project detail is confirmed by our team — I am connecting you with them.';
+function md_kb_endpoint_unverified_fact_handoff_message( string $lang = 'en' ): string {
+	$messages = array(
+		'en'    => 'That project detail is confirmed by our team — I am connecting you with them.',
+		'zh'    => '该项目具体细节需要由我们的团队为您确认——我正在为您转接人工团队。',
+		'es'    => 'Ese detalle del proyecto debe confirmarlo nuestro equipo; le estoy comunicando con ellos.',
+		'pt-br' => 'Esse detalhe do projeto é confirmado por nossa equipe — estou conectando você com eles.',
+		'de'    => 'Dieses Projektdetail wird von unserem Team bestätigt — ich verbinde Sie gerne weiter.',
+		'fr'    => 'Ce détail de projet est confirmé par notre équipe — je vous mets en relation avec eux.',
+		'ar'    => 'يتم تأكيد تفاصيل هذا المشروع من قِبل فريقنا — أقوم الآن بتوصيلك بهم.',
+		'id'    => 'Detail proyek tersebut dikonfirmasi oleh tim kami — saya menghubungkan Anda dengan mereka.',
+		'vi'    => 'Chi tiết dự án đó được đội ngũ của chúng tôi xác nhận — tôi đang kết nối bạn với họ.',
+	);
+	return $messages[ $lang ] ?? $messages['en'];
 }
 
 /**
@@ -602,15 +817,16 @@ function md_kb_endpoint_unverified_fact_handoff_message(): string {
  *
  * @param string $q       The visitor's question.
  * @param string $context The resolved pattern facts, '' when none.
+ * @param string $lang    The visitor language.
  * @return string The visitor-facing reply.
  */
-function md_kb_endpoint_unverified_fact_reply( string $q, string $context ): string {
+function md_kb_endpoint_unverified_fact_reply( string $q, string $context, string $lang = 'en' ): string {
 	$parts = array();
 	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
 	if ( '' !== $facts ) {
 		$parts[] = $facts;
 	}
-	$parts[] = md_kb_endpoint_unverified_fact_handoff_message();
+	$parts[] = md_kb_endpoint_unverified_fact_handoff_message( $lang );
 	return implode( ' ', $parts );
 }
 
@@ -618,10 +834,22 @@ function md_kb_endpoint_unverified_fact_reply( string $q, string $context ): str
  * The sentence used when a drawing was asked for and the published CAD
  * status does not confirm one. It does not say the drawing is available.
  *
+ * @param string $lang The visitor language.
  * @return string The check sentence.
  */
-function md_kb_endpoint_drawing_check_message(): string {
-	return 'A drawing has not been confirmed — our team is checking that.';
+function md_kb_endpoint_drawing_check_message( string $lang = 'en' ): string {
+	$messages = array(
+		'en'    => 'A drawing has not been confirmed — our team is checking that.',
+		'zh'    => '图纸尚未确认——我们的团队正在核实。',
+		'es'    => 'El plano no ha sido confirmado; nuestro equipo lo está comprobando.',
+		'pt-br' => 'O desenho ainda não foi confirmado — nossa equipe está verificando.',
+		'de'    => 'Eine Zeichnung ist noch nicht bestätigt — unser Team prüft das.',
+		'fr'    => 'Le plan n\'a pas été confirmé — notre équipe vérifie ce point.',
+		'ar'    => 'لم يتم تأكيد الرسم بعد — يقوم فريقنا بالتحقق من ذلك.',
+		'id'    => 'Gambar belum dikonfirmasi — tim kami sedang memeriksanya.',
+		'vi'    => 'Bản vẽ chưa được xác nhận — đội ngũ của chúng tôi đang kiểm tra.',
+	);
+	return $messages[ $lang ] ?? $messages['en'];
 }
 
 /**
@@ -1369,39 +1597,55 @@ function md_kb_endpoint_is_catalog_excluded( int $post_id ): bool {
  * @return array<int, \WP_Post> The matches, exact ones first.
  */
 function md_kb_endpoint_pattern_query( string $candidate ): array {
-	$query  = new WP_Query(
-		array(
-			'post_type'      => 'product',
-			'post_status'    => 'publish',
-			's'              => $candidate,
-			'posts_per_page' => 10,
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- excludes products hidden from the WooCommerce catalog.
-			'tax_query'      => md_kb_endpoint_catalog_tax_query(),
-		)
+	return md_kb_endpoint_with_en_language(
+		static function () use ( $candidate ): array {
+			$query  = new WP_Query(
+				array(
+					'post_type'      => 'product',
+					'post_status'    => 'publish',
+					's'              => $candidate,
+					'posts_per_page' => 10,
+					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- excludes products hidden from the WooCommerce catalog.
+					'tax_query'      => md_kb_endpoint_catalog_tax_query(),
+				)
+			);
+			$posts  = is_array( $query->posts ) ? $query->posts : array();
+			$exact  = array();
+			$prefix = array();
+			$needle = mb_strtolower( $candidate );
+			$seen   = array();
+			foreach ( $posts as $post ) {
+				if ( ! $post instanceof WP_Post || md_kb_endpoint_is_catalog_excluded( (int) $post->ID ) ) {
+					continue;
+				}
+				$canon_id = md_kb_endpoint_canonical_product_id( (int) $post->ID );
+				if ( isset( $seen[ $canon_id ] ) ) {
+					continue;
+				}
+				$seen[ $canon_id ] = true;
+				if ( $canon_id !== (int) $post->ID ) {
+					$canon_post = get_post( $canon_id );
+					if ( $canon_post instanceof WP_Post ) {
+						$post = $canon_post;
+					}
+				}
+				$title = mb_strtolower( $post->post_title );
+				$sku   = mb_strtolower( md_kb_endpoint_product_sku( (int) $post->ID ) );
+				$slug  = mb_strtolower( $post->post_name );
+				if ( $sku === $needle || $slug === $needle || $title === $needle ) {
+					$exact[] = $post;
+				} elseif ( md_kb_endpoint_pattern_title_prefix_allowed( $candidate ) && str_starts_with( $title, $needle ) ) {
+					$prefix[] = $post;
+				}
+			}
+			// An exact SKU, slug or full title is the pattern. A title prefix is
+			// only a name match when the candidate itself is more than one word:
+			// a single token such as "long" or "square" is ordinary English, not a
+			// pattern name, even when a title starts with it.
+			$ranked = array() !== $exact ? $exact : $prefix;
+			return array_slice( $ranked, 0, MD_KB_ENDPOINT_PATTERN_LIMIT );
+		}
 	);
-	$posts  = is_array( $query->posts ) ? $query->posts : array();
-	$exact  = array();
-	$prefix = array();
-	$needle = mb_strtolower( $candidate );
-	foreach ( $posts as $post ) {
-		if ( ! $post instanceof WP_Post || md_kb_endpoint_is_catalog_excluded( (int) $post->ID ) ) {
-			continue;
-		}
-		$title = mb_strtolower( $post->post_title );
-		$sku   = mb_strtolower( md_kb_endpoint_product_sku( (int) $post->ID ) );
-		$slug  = mb_strtolower( $post->post_name );
-		if ( $sku === $needle || $slug === $needle || $title === $needle ) {
-			$exact[] = $post;
-		} elseif ( md_kb_endpoint_pattern_title_prefix_allowed( $candidate ) && str_starts_with( $title, $needle ) ) {
-			$prefix[] = $post;
-		}
-	}
-	// An exact SKU, slug or full title is the pattern. A title prefix is
-	// only a name match when the candidate itself is more than one word:
-	// a single token such as "long" or "square" is ordinary English, not a
-	// pattern name, even when a title starts with it.
-	$ranked = array() !== $exact ? $exact : $prefix;
-	return array_slice( $ranked, 0, MD_KB_ENDPOINT_PATTERN_LIMIT );
 }
 
 /**
@@ -1474,14 +1718,44 @@ function md_kb_endpoint_pattern_open_area( mixed $value ): string {
 }
 
 /**
+ * Localizes a permalink URL for the visitor's canonical language code.
+ *
+ * @param string $url          The canonical English permalink.
+ * @param string $visitor_lang The visitor language code ('en', 'zh', etc.).
+ * @return string The localized URL.
+ */
+function md_kb_endpoint_localize_url( string $url, string $visitor_lang = 'en' ): string {
+	if ( '' === $url || 'en' === $visitor_lang ) {
+		return $url;
+	}
+	$wpml_lang = 'zh' === $visitor_lang ? 'zh-hans' : $visitor_lang;
+	if ( function_exists( 'apply_filters' ) && function_exists( 'has_filter' ) && has_filter( 'wpml_permalink' ) ) {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML standard filter.
+		$filtered = apply_filters( 'wpml_permalink', $url, $wpml_lang );
+		if ( is_string( $filtered ) && '' !== $filtered ) {
+			return $filtered;
+		}
+	}
+	if ( 1 === preg_match( '#^(https?://[^/]+)(/.*)?$#i', $url, $matches ) ) {
+		$origin = $matches[1];
+		$path   = $matches[2] ?? '/';
+		$clean  = (string) preg_replace( '#^/(?:zh|es|pt-br|de|fr|ar|id|vi)(?=/|$)#i', '', $path );
+		return $origin . '/' . $visitor_lang . ( str_starts_with( $clean, '/' ) ? $clean : '/' . $clean );
+	}
+	$clean = (string) preg_replace( '#^/(?:zh|es|pt-br|de|fr|ar|id|vi)(?=/|$)#i', '', $url );
+	return '/' . $visitor_lang . ( str_starts_with( $clean, '/' ) ? $clean : '/' . $clean );
+}
+
+/**
  * The facts of one published product, as the model may cite them. Empty
  * fields are named as unconfirmed rather than filled in. Price, lead time,
  * MOQ and sample promises are not read.
  *
- * @param \WP_Post $post The product.
+ * @param \WP_Post $post         The product.
+ * @param string   $visitor_lang The visitor language code.
  * @return array{id: int, code: string, title: string, context: string, source: string} The facts and their source line.
  */
-function md_kb_endpoint_pattern_facts( WP_Post $post ): array {
+function md_kb_endpoint_pattern_facts( WP_Post $post, string $visitor_lang = 'en' ): array {
 	$id       = (int) $post->ID;
 	$sku      = md_kb_endpoint_product_sku( $id );
 	$code     = '' !== $sku ? $sku : $post->post_name;
@@ -1520,7 +1794,7 @@ function md_kb_endpoint_pattern_facts( WP_Post $post ): array {
 	$url     = get_permalink( $id );
 	$image   = get_the_post_thumbnail_url( $id, 'full' );
 	if ( is_string( $url ) && '' !== $url ) {
-		$lines[] = 'permalink: ' . $url;
+		$lines[] = 'permalink: ' . md_kb_endpoint_localize_url( $url, $visitor_lang );
 	}
 	if ( is_string( $image ) && '' !== $image ) {
 		$lines[] = 'image: ' . $image;
@@ -1552,13 +1826,14 @@ const MD_KB_ENDPOINT_PAGE_HOSTS = array(
  * pattern lookup wins, so the caller does not ask this when the question
  * already named a pattern.
  *
- * @param mixed $page_url The request's page_url, untrusted.
+ * @param mixed  $page_url     The request's page_url, untrusted.
+ * @param string $visitor_lang The visitor language code.
  * @return array{context: string, sources?: array<string>} The compact facts
  *         and the source the answer cites, or an empty context and no source.
  *         `sources` is present only when a published pattern resolved, which
  *         is why the caller tests it with isset() rather than reading it.
  */
-function md_kb_endpoint_page_context( mixed $page_url ): array {
+function md_kb_endpoint_page_context( mixed $page_url, string $visitor_lang = 'en' ): array {
 	$empty = array( 'context' => '' );
 	$slug  = md_kb_endpoint_page_slug( $page_url );
 	if ( '' === $slug ) {
@@ -1568,13 +1843,20 @@ function md_kb_endpoint_page_context( mixed $page_url ): array {
 	if ( ! $post instanceof WP_Post ) {
 		return $empty;
 	}
+	$canonical_id = md_kb_endpoint_canonical_product_id( (int) $post->ID );
+	if ( $canonical_id !== (int) $post->ID ) {
+		$en_post = get_post( $canonical_id );
+		if ( $en_post instanceof WP_Post ) {
+			$post = $en_post;
+		}
+	}
 	if ( 'publish' !== $post->post_status || 'product' !== $post->post_type || md_kb_endpoint_is_catalog_excluded( (int) $post->ID ) ) {
 		return $empty;
 	}
 	$sku  = md_kb_endpoint_product_sku( (int) $post->ID );
 	$code = '' !== $sku ? $sku : $post->post_name;
 	return array(
-		'context' => md_kb_endpoint_page_facts( $post ),
+		'context' => md_kb_endpoint_page_facts( $post, $visitor_lang ),
 		'sources' => array( 'pattern#' . (int) $post->ID . ' ' . $code ),
 	);
 }
@@ -1613,7 +1895,7 @@ function md_kb_endpoint_page_slug( mixed $page_url ): string {
 		return '';
 	}
 	$path = rawurldecode( (string) ( $parts['path'] ?? '' ) );
-	if ( ! preg_match( '#^/(?:pattern|product)/([^/]+)/?$#', $path, $match ) ) {
+	if ( ! preg_match( '#^/(?:(?:zh|es|pt-br|de|fr|ar|id|vi)/)?(?:pattern|product)/([^/]+)/?$#i', $path, $match ) ) {
 		return '';
 	}
 	$slug = strtolower( $match[1] );
@@ -1629,10 +1911,11 @@ function md_kb_endpoint_page_slug( mixed $page_url ): string {
  * and minus anything commercial. CAD status stays, including when it is
  * unconfirmed, so a drawing question on this page cannot be invented.
  *
- * @param \WP_Post $post The published product.
+ * @param \WP_Post $post         The published product.
+ * @param string   $visitor_lang The visitor language code.
  * @return string The context block, one fact per line.
  */
-function md_kb_endpoint_page_facts( WP_Post $post ): string {
+function md_kb_endpoint_page_facts( WP_Post $post, string $visitor_lang = 'en' ): string {
 	$id    = (int) $post->ID;
 	$sku   = md_kb_endpoint_product_sku( $id );
 	$code  = '' !== $sku ? $sku : $post->post_name;
@@ -1654,7 +1937,7 @@ function md_kb_endpoint_page_facts( WP_Post $post ): string {
 	$lines[]   = 'cad_status: ' . $cad;
 	$permalink = get_permalink( $id );
 	if ( is_string( $permalink ) && '' !== $permalink ) {
-		$lines[] = 'URL: ' . $permalink;
+		$lines[] = 'URL: ' . md_kb_endpoint_localize_url( $permalink, $visitor_lang );
 	}
 	return implode( "\n", $lines );
 }
@@ -1664,10 +1947,11 @@ function md_kb_endpoint_page_facts( WP_Post $post ): string {
  * as the audit-trail source lines. No candidate, or no published match,
  * is an empty lookup — the caller then answers from Rapls as before.
  *
- * @param string $q The visitor's question.
+ * @param string $q            The visitor's question.
+ * @param string $visitor_lang The visitor language code.
  * @return array{context: string, sources: array<int, string>, hits: int} The pattern context.
  */
-function md_kb_endpoint_pattern_lookup( string $q ): array {
+function md_kb_endpoint_pattern_lookup( string $q, string $visitor_lang = 'en' ): array {
 	$seen    = array();
 	$blocks  = array();
 	$sources = array();
@@ -1677,7 +1961,7 @@ function md_kb_endpoint_pattern_lookup( string $q ): array {
 				continue;
 			}
 			$seen[ $post->ID ] = true;
-			$facts             = md_kb_endpoint_pattern_facts( $post );
+			$facts             = md_kb_endpoint_pattern_facts( $post, $visitor_lang );
 			$blocks[]          = $facts['context'];
 			$sources[]         = $facts['source'];
 			if ( count( $blocks ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
@@ -1791,13 +2075,14 @@ function md_kb_endpoint_chat_referrer( int $chat_id ): string {
  * Pattern <Name>`, or SKU codes) are extracted first so long assistant
  * paragraphs never trigger a 1-6 word n-gram query storm.
  *
- * @param array<int, string> $history Chronological history turns.
+ * @param array<int, string> $history      Chronological history turns.
+ * @param string             $visitor_lang The visitor language code.
  * @return array{context: string, sources: array<int, string>, hits: int} The pattern lookup from history.
  */
-function md_kb_endpoint_history_pattern_lookup( array $history ): array {
+function md_kb_endpoint_history_pattern_lookup( array $history, string $visitor_lang = 'en' ): array {
 	foreach ( array_reverse( $history ) as $turn ) {
 		if ( 1 === preg_match( '/^Assistant:\s*(.*)$/isu', $turn, $assistant_match ) ) {
-			$lookup = md_kb_endpoint_assistant_turn_pattern_lookup( $turn, trim( $assistant_match[1] ) );
+			$lookup = md_kb_endpoint_assistant_turn_pattern_lookup( $turn, trim( $assistant_match[1] ), $visitor_lang );
 			if ( 0 < $lookup['hits'] ) {
 				return $lookup;
 			}
@@ -1807,7 +2092,7 @@ function md_kb_endpoint_history_pattern_lookup( array $history ): array {
 		if ( '' === $cleaned ) {
 			continue;
 		}
-		$lookup = md_kb_endpoint_pattern_lookup( $cleaned );
+		$lookup = md_kb_endpoint_pattern_lookup( $cleaned, $visitor_lang );
 		if ( 0 < $lookup['hits'] ) {
 			return $lookup;
 		}
@@ -1825,11 +2110,12 @@ function md_kb_endpoint_history_pattern_lookup( array $history ): array {
  *
  * @param string $raw_turn     The raw turn string (may include Based on: footer).
  * @param string $cleaned_turn The turn with the Assistant: prefix stripped.
+ * @param string $visitor_lang The visitor language code.
  * @return array{context: string, sources: array<int, string>, hits: int} The pattern lookup result.
  */
-function md_kb_endpoint_assistant_turn_pattern_lookup( string $raw_turn, string $cleaned_turn ): array {
+function md_kb_endpoint_assistant_turn_pattern_lookup( string $raw_turn, string $cleaned_turn, string $visitor_lang = 'en' ): array {
 	$candidates = array();
-	if ( preg_match_all( '~/pattern/([a-z0-9-]+)~i', $raw_turn, $slug_matches ) ) {
+	if ( preg_match_all( '~(?:/(?:zh|es|pt-br|de|fr|ar|id|vi))?/pattern/([a-z0-9-]+)~i', $raw_turn, $slug_matches ) ) {
 		foreach ( $slug_matches[1] as $slug ) {
 			$candidates[] = strtolower( $slug );
 		}
@@ -1880,7 +2166,7 @@ function md_kb_endpoint_assistant_turn_pattern_lookup( string $raw_turn, string 
 				continue;
 			}
 			$seen[ $post->ID ] = true;
-			$facts             = md_kb_endpoint_pattern_facts( $post );
+			$facts             = md_kb_endpoint_pattern_facts( $post, $visitor_lang );
 			$blocks[]          = $facts['context'];
 			$sources[]         = $facts['source'];
 			if ( count( $blocks ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
@@ -1960,7 +2246,7 @@ function md_kb_endpoint_augment_recommendation_query( string $q, array $matched_
  */
 function md_kb_endpoint_asks_recommendation( string $q ): bool {
 	$explicit_recommend = 1 === preg_match(
-		'/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?|any\s+patterns?|show\s+(?:me\s+)?patterns?|looking\s+for\s+(?:a\s+)?patterns?|patterns?\s+(?:for|with|that|suitable|in|like|similar)|similar\s+(?:patterns?\s+)?to|alternatives?\s+to)\b|推荐|哪(?:款|些|种)图案|什么图案|类似/iu',
+		'/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?|any\s+patterns?|show\s+(?:me\s+)?patterns?|looking\s+for\s+(?:a\s+)?patterns?|patterns?\s+(?:for|with|that|suitable|in|like|similar)|similar\s+(?:patterns?\s+)?to|alternatives?\s+to)\b|推荐|哪(?:款|些|种)图案|什么图案|类似|\b(?:recomiend[aoesn]?|recomendar|recomendaci[oó]n|sugier[aen]?|sugerir|sugerencia|qu[eé]\s+patrones?|cu[aá]les\s+patrones?|recomenda[çc][aã]o|recomenda[rm]?|quais\s+padr[oõ]es|empfehlen|empfehlung|welche\s+muster|sugg[eé]rer|suggestion|quels\s+motifs?|menyarankan|pola\s+apa|rekomendasikan|gợi\s+ý|khuyến\s+nghị|mẫu\s+nào|đề\s+xuất)\b|توصية|اقتراح|أي\s+نمط|رشح/iu',
 		$q
 	);
 	if ( ! $explicit_recommend && 1 === preg_match( '/\bthis\s+(?:pattern|screen)\b/iu', $q ) ) {
@@ -1973,11 +2259,11 @@ function md_kb_endpoint_asks_recommendation( string $q ): bool {
 		return false;
 	}
 	return 1 === preg_match(
-		'/\b(?:geometric|organic|abstract|moroccan(?:[\s-]+arabic)?|arabic|perforated|gradient|landscape|asian|chinese|vintage(?:[\s-]+retro)?|retro|botanical|floral|mural|emt|expanded\s+metal|glass[\s-]+hybrid|laminated\s+glass|repeat(?:ing)?\s+patterns?|(?:low|medium|balanced|high|open|custom)\s+density|dense\s+patterns?)\b|\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b.*\bopen[\s-]*area\b|\bopen[\s-]*area\b.*\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b|\b(?:low|high|medium|balanced)\s+open[\s-]*area\b|几何|有机|抽象|摩洛哥|阿拉伯|穿孔|渐变|山水|中式|复古|植物|花卉|壁画|扩张网|夹胶玻璃|低密度|中密度|均衡密度|高密度|定制密度|\d{1,2}\s*%.*镂空|镂空.*\d{1,2}\s*%/iu',
+		'/\b(?:geometric|organic|abstract|moroccan(?:[\s-]+arabic)?|arabic|perforated|gradient|landscape|asian|chinese|vintage(?:[\s-]+retro)?|retro|botanical|floral|mural|emt|expanded\s+metal|glass[\s-]+hybrid|laminated\s+glass|repeat(?:ing)?\s+patterns?|(?:low|medium|balanced|high|open|custom)\s+density|dense\s+patterns?)\b|\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b.*\bopen[\s-]*area\b|\bopen[\s-]*area\b.*\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b|\b(?:low|high|medium|balanced)\s+open[\s-]*area\b|几何|有机|抽象|摩洛哥|阿拉伯|穿孔|渐变|山水|中式|复古|植物|花卉|壁画|扩张网|夹胶玻璃|低密度|中密度|均衡密度|高密度|定制密度|\d{1,2}\s*%.*镂空|镂空.*\d{1,2}\s*%|\b(?:geom[eé]trico|org[aá]nico|abstracto|abstrato|abstrakt|abstrait|marroqu[ií]|gelocht|perforado|perforé|paisaje|paisagem|landschaft|paysage|asi[aá]tico|chino|chin[êe]s|asiatisch|asiatique|bot[aá]nico|flor|hoja|folha|mural|metal\s+expandido|streckmetall|vidrio\s+laminado|vidro\s+laminado)\b|هندسي|عضوي|مغربي|مشربية|مثقب|طبيعي|جدارية|معدن\s+ممدد/iu',
 		$q
 	) || (
-		1 === preg_match( '/\b(?:outdoor|exterior|facade|privacy|partition|divider|interior|indoor|room\s+divider|balustrade|railing|cladding|sunshade|weather|hotel|lobby|architectural[\s-]+screening|decorative[\s-]+screening|repeat)\b|室外|户外|外墙|幕墙|隐私|隔断|屏风|室内|护栏|栏杆|遮阳|酒店|大堂|循环/iu', $q )
-		&& 1 === preg_match( '/\b(?:patterns?|designs?|styles?|options?|suitable|fit)\b|图案|款式|适合/iu', $q )
+		1 === preg_match( '/\b(?:outdoor|exterior|facade|privacy|partition|divider|interior|indoor|room\s+divider|balustrade|railing|cladding|sunshade|weather|hotel|lobby|architectural[\s-]+screening|decorative[\s-]+screening|repeat)\b|室外|户外|外墙|幕墙|隐私|隔断|屏风|室内|护栏|栏杆|遮阳|酒店|大堂|循环|\b(?:außen|innen|séparateur|garde-corps|luar\s+ruangan|dalam\s+ruangan|ngoài\s+trời|trong\s+nhà|vách\s+ngăn)\b|خارجي|داخلي|واجهة|قاطع/iu', $q )
+		&& 1 === preg_match( '/\b(?:patterns?|designs?|styles?|options?|suitable|fit)\b|图案|款式|适合|\b(?:patrones?|padr[oõ]es|muster|motifs?|pola|mẫu)\b|نمط|تصميم/iu', $q )
 	);
 }
 
@@ -1986,129 +2272,153 @@ function md_kb_endpoint_asks_recommendation( string $q ): bool {
  * catalog scored against the series, open area percentage, application/best
  * fit, motifs, and visual density criteria in the visitor's question.
  *
- * @param string          $q           The visitor's question.
- * @param array<int, int> $exclude_ids Product IDs to exclude (e.g. a named reference pattern).
+ * @param string          $q            The visitor's question.
+ * @param array<int, int> $exclude_ids  Product IDs to exclude (e.g. a named reference pattern).
+ * @param string          $visitor_lang The visitor language code.
  * @return array{context: string, sources: array<int, string>, hits: int} The top matching pattern facts.
  */
-function md_kb_endpoint_pattern_recommend( string $q, array $exclude_ids = array() ): array {
-	$query = new WP_Query(
-		array(
-			'post_type'      => 'product',
-			'post_status'    => 'publish',
-			// phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- the full published pattern catalog is 146 items and must be scored in memory.
-			'posts_per_page' => 200,
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- excludes products hidden from the WooCommerce catalog.
-			'tax_query'      => md_kb_endpoint_catalog_tax_query(),
-		)
-	);
-	$posts = is_array( $query->posts ) ? $query->posts : array();
-	if ( array() === $posts ) {
-		return array(
-			'context' => '',
-			'sources' => array(),
-			'hits'    => 0,
-		);
-	}
-
-	$scored = array();
-	foreach ( $posts as $post ) {
-		if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
-			continue;
-		}
-		$id = (int) $post->ID;
-		if ( in_array( $id, $exclude_ids, true ) || md_kb_endpoint_is_catalog_excluded( $id ) ) {
-			continue;
-		}
-		$score = md_kb_endpoint_pattern_score( $post, $q );
-		if ( $score > 0 ) {
-			$scored[] = array(
-				'post'  => $post,
-				'score' => $score,
-				'id'    => $id,
+function md_kb_endpoint_pattern_recommend( string $q, array $exclude_ids = array(), string $visitor_lang = 'en' ): array {
+	return md_kb_endpoint_with_en_language(
+		static function () use ( $q, $exclude_ids, $visitor_lang ): array {
+			$query = new WP_Query(
+				array(
+					'post_type'      => 'product',
+					'post_status'    => 'publish',
+					// phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- the full published pattern catalog is 146 items and must be scored in memory.
+					'posts_per_page' => 200,
+					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- excludes products hidden from the WooCommerce catalog.
+					'tax_query'      => md_kb_endpoint_catalog_tax_query(),
+				)
 			);
-		}
-	}
-
-	$is_generic_fallback = false;
-	if ( array() === $scored && 1 === preg_match( '/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?|any\s+patterns?|show\s+(?:me\s+)?patterns?|looking\s+for\s+(?:a\s+)?patterns?)\b|推荐|哪(?:款|些|种)图案|什么图案/iu', $q ) ) {
-		$is_generic_fallback = true;
-		$candidates          = array();
-		foreach ( $posts as $post ) {
-			if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
-				continue;
-			}
-			$id = (int) $post->ID;
-			if ( in_array( $id, $exclude_ids, true ) || md_kb_endpoint_is_catalog_excluded( $id ) ) {
-				continue;
-			}
-			$raw_oa   = md_kb_endpoint_pattern_field( get_field( 'open_area', $id ) );
-			$best_fit = md_kb_endpoint_pattern_field( get_field( 'best_fit', $id ) );
-			if ( '' !== $raw_oa && is_numeric( $raw_oa ) && (float) $raw_oa > 0 && '' !== $best_fit ) {
-				$candidates[] = array(
-					'post'   => $post,
-					'score'  => 1,
-					'id'     => $id,
-					'series' => md_kb_endpoint_primary_series_key( $id ),
+			$posts = is_array( $query->posts ) ? $query->posts : array();
+			if ( array() === $posts ) {
+				return array(
+					'context' => '',
+					'sources' => array(),
+					'hits'    => 0,
 				);
 			}
-		}
-		usort(
-			$candidates,
-			static fn ( array $a, array $b ): int => $a['id'] <=> $b['id']
-		);
-		$used_series = array();
-		$picked_ids  = array();
-		foreach ( $candidates as $candidate ) {
-			$series = $candidate['series'];
-			if ( '' !== $series && ! isset( $used_series[ $series ] ) ) {
-				$used_series[ $series ]         = true;
-				$picked_ids[ $candidate['id'] ] = true;
-				$scored[]                       = $candidate;
-				if ( count( $scored ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
-					break;
-				}
-			}
-		}
-		if ( count( $scored ) < MD_KB_ENDPOINT_PATTERN_LIMIT ) {
-			foreach ( $candidates as $candidate ) {
-				if ( isset( $picked_ids[ $candidate['id'] ] ) ) {
+
+			$scored        = array();
+			$seen_ids      = array();
+			$exclude_canon = array_map( 'md_kb_endpoint_canonical_product_id', $exclude_ids );
+			foreach ( $posts as $post ) {
+				if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
 					continue;
 				}
-				$scored[] = $candidate;
-				if ( count( $scored ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
-					break;
+				$id       = (int) $post->ID;
+				$canon_id = md_kb_endpoint_canonical_product_id( $id );
+				if ( isset( $seen_ids[ $canon_id ] ) || in_array( $id, $exclude_ids, true ) || in_array( $canon_id, $exclude_canon, true ) || md_kb_endpoint_is_catalog_excluded( $id ) ) {
+					continue;
+				}
+				$seen_ids[ $canon_id ] = true;
+				if ( $canon_id !== $id ) {
+					$canon_post = get_post( $canon_id );
+					if ( $canon_post instanceof WP_Post ) {
+						$post = $canon_post;
+					}
+				}
+				$score = md_kb_endpoint_pattern_score( $post, $q );
+				if ( $score > 0 ) {
+					$scored[] = array(
+						'post'  => $post,
+						'score' => $score,
+						'id'    => $canon_id,
+					);
 				}
 			}
+
+			$is_generic_fallback = false;
+			if ( array() === $scored && md_kb_endpoint_asks_recommendation( $q ) ) {
+				$is_generic_fallback = true;
+				$candidates          = array();
+				$seen_generic        = array();
+				foreach ( $posts as $post ) {
+					if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
+						continue;
+					}
+					$id       = (int) $post->ID;
+					$canon_id = md_kb_endpoint_canonical_product_id( $id );
+					if ( isset( $seen_generic[ $canon_id ] ) || in_array( $id, $exclude_ids, true ) || in_array( $canon_id, $exclude_canon, true ) || md_kb_endpoint_is_catalog_excluded( $id ) ) {
+						continue;
+					}
+					$seen_generic[ $canon_id ] = true;
+					if ( $canon_id !== $id ) {
+						$canon_post = get_post( $canon_id );
+						if ( $canon_post instanceof WP_Post ) {
+							$post = $canon_post;
+						}
+					}
+					$raw_oa   = md_kb_endpoint_pattern_field( get_field( 'open_area', $canon_id ) );
+					$best_fit = md_kb_endpoint_pattern_field( get_field( 'best_fit', $canon_id ) );
+					if ( '' !== $raw_oa && is_numeric( $raw_oa ) && (float) $raw_oa > 0 && '' !== $best_fit ) {
+						$candidates[] = array(
+							'post'   => $post,
+							'score'  => 1,
+							'id'     => $canon_id,
+							'series' => md_kb_endpoint_primary_series_key( $canon_id ),
+						);
+					}
+				}
+				usort(
+					$candidates,
+					static fn ( array $a, array $b ): int => $a['id'] <=> $b['id']
+				);
+				$used_series = array();
+				$picked_ids  = array();
+				foreach ( $candidates as $candidate ) {
+					$series = $candidate['series'];
+					if ( '' !== $series && ! isset( $used_series[ $series ] ) ) {
+						$used_series[ $series ]         = true;
+						$picked_ids[ $candidate['id'] ] = true;
+						$scored[]                       = $candidate;
+						if ( count( $scored ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
+							break;
+						}
+					}
+				}
+				if ( count( $scored ) < MD_KB_ENDPOINT_PATTERN_LIMIT ) {
+					foreach ( $candidates as $candidate ) {
+						if ( isset( $picked_ids[ $candidate['id'] ] ) ) {
+							continue;
+						}
+						$scored[] = $candidate;
+						if ( count( $scored ) >= MD_KB_ENDPOINT_PATTERN_LIMIT ) {
+							break;
+						}
+					}
+				}
+			} else {
+				usort(
+					$scored,
+					static function ( array $a, array $b ): int {
+						if ( $b['score'] !== $a['score'] ) {
+							return $b['score'] <=> $a['score'];
+						}
+						return $a['id'] <=> $b['id'];
+					}
+				);
+			}
+
+			$blocks  = array();
+			$sources = array();
+			foreach ( array_slice( $scored, 0, MD_KB_ENDPOINT_PATTERN_LIMIT ) as $item ) {
+				$facts     = md_kb_endpoint_pattern_facts( $item['post'], $visitor_lang );
+				$blocks[]  = $facts['context'];
+				$sources[] = $facts['source'];
+			}
+
+			$context = implode( "\n\n", $blocks );
+			if ( $is_generic_fallback && '' !== $context ) {
+				$context = "Visitor asked a general recommendation question without specifying interior/exterior or open area. Present these representative examples across series and ask whether their project is interior or exterior and what open-area/privacy level they need:\n\n" . $context;
+			}
+
+			return array(
+				'context' => $context,
+				'sources' => $sources,
+				'hits'    => count( $blocks ),
+			);
 		}
-	} else {
-		usort(
-			$scored,
-			static function ( array $a, array $b ): int {
-				if ( $b['score'] !== $a['score'] ) {
-					return $b['score'] <=> $a['score'];
-				}
-				return $a['id'] <=> $b['id'];
-			}
-		);
-	}
-
-	$blocks  = array();
-	$sources = array();
-	foreach ( array_slice( $scored, 0, MD_KB_ENDPOINT_PATTERN_LIMIT ) as $item ) {
-		$facts     = md_kb_endpoint_pattern_facts( $item['post'] );
-		$blocks[]  = $facts['context'];
-		$sources[] = $facts['source'];
-	}
-
-	$context = implode( "\n\n", $blocks );
-	if ( $is_generic_fallback && '' !== $context ) {
-		$context = "Visitor asked a general recommendation question without specifying interior/exterior or open area. Present these representative examples across series and ask whether their project is interior or exterior and what open-area/privacy level they need:\n\n" . $context;
-	}
-
-	return array(
-		'context' => $context,
-		'sources' => $sources,
-		'hits'    => count( $blocks ),
 	);
 }
 
@@ -2172,59 +2482,59 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 	// Series/motif matching rules.
 	$series_rules     = array(
 		array(
-			'regex'   => '/\bgeometric\b|几何/iu',
+			'regex'   => '/\b(?:geometric|geom[eé]trico|geometrisch|g[eé]om[eé]trique|geometris)\b|几何|هندسي|hình\s+học/iu',
 			'needles' => array( 'geometric' ),
 		),
 		array(
-			'regex'   => '/\borganic\b|有机/iu',
+			'regex'   => '/\b(?:organic|org[aá]nico|organisch|organique|organik)\b|有机|عضوي|hữu\s+cơ/iu',
 			'needles' => array( 'organic' ),
 		),
 		array(
-			'regex'   => '/\babstract\b|抽象/iu',
+			'regex'   => '/\b(?:abstract|abstracto|abstrato|abstrakt|abstrait|abstrak)\b|抽象|مُجرّد|trừu\s+tượng/iu',
 			'needles' => array( 'abstract' ),
 		),
 		array(
-			'regex'   => '/\b(?:moroccan(?:[\s-]+arabic)?|arabic|mashrabiya)\b|摩洛哥|阿拉伯/iu',
+			'regex'   => '/\b(?:moroccan(?:[\s-]+arabic)?|arabic|mashrabiya|marroqu[ií]|marroquin[oa]|marokkanisch|marocain|maroko)\b|摩洛哥|阿拉伯|مغربي|عربي|مشربية|ma-rốc/iu',
 			'needles' => array( 'moroccan-arabic', 'moroccan', 'arabic' ),
 		),
 		array(
-			'regex'   => '/\bperforated\b|穿孔/iu',
+			'regex'   => '/\b(?:perforated|perforado|gelocht|perforé|berlubang)\b|穿孔|مثقب|đục\s+lỗ/iu',
 			'needles' => array( 'perforated' ),
 		),
 		array(
-			'regex'   => '/\bgradient\b|渐变/iu',
+			'regex'   => '/\b(?:gradient|degradado|gradiente|verlauf|d[eé]grad[eé]|gradien)\b|渐变|تدرج/iu',
 			'needles' => array( 'gradient' ),
 		),
 		array(
-			'regex'   => '/\blandscape\b|山水|风景/iu',
+			'regex'   => '/\b(?:landscape|paisaje|paisagem|landschaft|paysage|pemandangan)\b|山水|风景|طبيعي|phong\s+cảnh/iu',
 			'needles' => array( 'landscape' ),
 		),
 		array(
-			'regex'   => '/\b(?:asian|chinese)\b|中式|亚洲/iu',
+			'regex'   => '/\b(?:asian|chinese|asi[aá]tico|chino|chin[êe]s|asiatisch|chinesisch|asiatique|chinois|asia|cina)\b|中式|亚洲|آسيوي|صيني|châu\s+á|trung\s+quốc/iu',
 			'needles' => array( 'asian', 'chinese' ),
 		),
 		array(
-			'regex'   => '/\b(?:vintage(?:[\s-]+retro)?|retro)\b|复古/iu',
+			'regex'   => '/\b(?:vintage(?:[\s-]+retro)?|retro|cl[aá]sico|r[eé]tro|klasik)\b|复古|قديم|cổ\s+điển/iu',
 			'needles' => array( 'vintage-retro', 'vintage', 'retro' ),
 		),
 		array(
-			'regex'   => '/\b(?:botanical|floral|flower|leaf|leaves|plant|vine|garden|bamboo)\b|植物|花卉|树叶|竹/iu',
+			'regex'   => '/\b(?:botanical|floral|flower|leaf|leaves|plant|vine|garden|bamboo|bot[aá]nico|flor|blume|pflanze|blatt|feuille|bunga|tanaman)\b|植物|花卉|树叶|竹|زهور|نبات|cây|hoa|lá/iu',
 			'needles' => array( 'leaf', 'floral', 'vine', 'garden', 'bamboo', 'botanical', 'organic' ),
 		),
 		array(
-			'regex'   => '/\bmural\b|壁画/iu',
+			'regex'   => '/\b(?:mural|wandbild)\b|壁画|جدارية|tranh\s+tường/iu',
 			'needles' => array( 'mural', 'landscape', 'flowing' ),
 		),
 		array(
-			'regex'   => '/\b(?:emt|expanded\s+metal)\b|扩张网|拉伸网/iu',
+			'regex'   => '/\b(?:emt|expanded\s+metal|metal\s+expandido|streckmetall|m[eé]tal\s+d[eé]ploy[eé]|logam\s+bentang)\b|扩张网|拉伸网|معدن\s+ممدد|lưới\s+kéo\s+giãn/iu',
 			'needles' => array( 'emt', 'expanded metal', 'geometric', 'perforated' ),
 		),
 		array(
-			'regex'   => '/\b(?:repeat(?:ing)?)\b|循环|重复/iu',
+			'regex'   => '/\b(?:repeat(?:ing)?|repetici[oó]n|repetitivo|wiederholend|r[eé]p[eé]titif|berulang)\b|循环|重复|متكرر|lặp\s+lại/iu',
 			'needles' => array( 'repeating', 'repeat', 'tile' ),
 		),
 		array(
-			'regex'   => '/\b(?:glass[\s-]+hybrid|laminated\s+glass)\b|夹胶玻璃|玻璃复合/iu',
+			'regex'   => '/\b(?:glass[\s-]+hybrid|laminated\s+glass|vidrio\s+laminado|vidro\s+laminado|verbundglas|verre\s+feuillet[eé]|kaca\s+laminasi)\b|夹胶玻璃|玻璃复合|زجاج\s+مصفح|kính\s+ghép/iu',
 			'needles' => array( 'glass-hybrid', 'laminated glass', 'glass', 'decorative-screening' ),
 		),
 	);
@@ -2251,7 +2561,7 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 	$raw_oa = md_kb_endpoint_pattern_field( get_field( 'open_area', $id ) );
 	if ( '' !== $raw_oa && is_numeric( $raw_oa ) && (float) $raw_oa > 0 ) {
 		$oa = (float) $raw_oa;
-		if ( 1 === preg_match( '/(\d{1,2}(?:\.\d+)?)\s*(?:%|percent)?\s*(?:-|to|–|~|到|至)\s*(\d{1,2}(?:\.\d+)?)\s*(?:%|percent|镂空)/iu', $q, $range_match ) ) {
+		if ( 1 === preg_match( '/(\d{1,2}(?:\.\d+)?)\s*(?:%|percent)?\s*(?:-|to|–|~|到|至)\s*(\d{1,2}(?:\.\d+)?)\s*(?:%|percent|por\s+ciento|porcento|prozent|pour\s+cent|بالمائة|persen|phần\s+trăm|镂空)/iu', $q, $range_match ) ) {
 			$min_oa = min( (float) $range_match[1], (float) $range_match[2] );
 			$max_oa = max( (float) $range_match[1], (float) $range_match[2] );
 			if ( $oa >= $min_oa && $oa <= $max_oa ) {
@@ -2285,11 +2595,11 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 	}
 
 	$asks_outdoor = 1 === preg_match(
-		'/\b(?:outdoor|exterior|facade|cladding|sunshade|balustrade|railing|weather)\b|室外|户外|外墙|幕墙|遮阳|护栏|栏杆/iu',
+		'/\b(?:outdoor|exterior|facade|cladding|sunshade|balustrade|railing|weather|außen|façade|garde-corps|luar\s+ruangan|ngoài\s+trời)\b|室外|户外|外墙|幕墙|遮阳|护栏|栏杆|خارجي|واجهة/iu',
 		$q
 	);
 	$asks_indoor  = 1 === preg_match(
-		'/\b(?:indoor|interior|room\s+divider|partition|divider|lobby)\b|室内|隔断|屏风|大堂/iu',
+		'/\b(?:indoor|interior|room\s+divider|partition|divider|lobby|innen|séparateur|dalam\s+ruangan|trong\s+nhà|vách\s+ngăn)\b|室内|隔断|屏风|大堂|داخلي|قاطع/iu',
 		$q
 	);
 	if ( $asks_outdoor ) {
@@ -2303,23 +2613,23 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 	}
 
 	$keyword_map = array(
-		'privacy'       => array( 'privacy', 'private', '隐私' ),
-		'facade'        => array( 'facade', 'exterior', 'outdoor', 'cladding', 'sunshade', 'architectural', '室外', '户外', '外墙', '幕墙', '遮阳' ),
-		'architectural' => array( 'architectural', 'facade', 'exterior', 'outdoor', 'cladding', 'sunshade', 'balustrade', 'railing', '室外', '户外', '外墙', '幕墙', '护栏', '栏杆' ),
-		'decorative'    => array( 'decorative', 'interior', 'partition', 'divider', 'hotel', 'lobby', '室内', '隔断', '屏风', '酒店', '大堂' ),
-		'interior'      => array( 'interior', 'partition', 'divider', 'hotel', 'lobby', '室内', '隔断', '屏风', '酒店', '大堂' ),
-		'partition'     => array( 'partition', 'divider', '隔断', '屏风' ),
-		'divider'       => array( 'divider', 'partition', '隔断', '屏风' ),
-		'botanical'     => array( 'botanical', 'floral', 'leaf', 'plant', '植物', '花卉' ),
-		'floral'        => array( 'floral', 'flower', 'blossom', '花卉' ),
-		'leaf'          => array( 'leaf', 'leaves', 'botanical', '植物' ),
-		'wave'          => array( 'wave', 'ripple', 'ocean', '波浪' ),
-		'lattice'       => array( 'lattice', 'grid', '格栅' ),
-		'arch'          => array( 'arch', 'arched', '拱' ),
-		'geometric'     => array( 'geometric', '几何' ),
-		'organic'       => array( 'organic', '有机' ),
-		'modern'        => array( 'modern', '现代' ),
-		'classic'       => array( 'classic', 'traditional', '经典', '传统' ),
+		'privacy'       => array( 'privacy', 'private', '隐私', 'privacidad', 'privacidade', 'privatsphäre', 'intimité', 'خصوصية', 'privasi', 'riêng tư' ),
+		'facade'        => array( 'facade', 'exterior', 'outdoor', 'cladding', 'sunshade', 'architectural', '室外', '户外', '外墙', '幕墙', '遮阳', 'fachada', 'fassade', 'façade', 'واجهة' ),
+		'architectural' => array( 'architectural', 'facade', 'exterior', 'outdoor', 'cladding', 'sunshade', 'balustrade', 'railing', '室外', '户外', '外墙', '幕墙', '护栏', '栏杆', 'arquitectónico', 'arquitetônico', 'architektonisch', 'architectural', 'معماري' ),
+		'decorative'    => array( 'decorative', 'interior', 'partition', 'divider', 'hotel', 'lobby', '室内', '隔断', '屏风', '酒店', '大堂', 'decorativo', 'décoratif', 'dekorativ', 'زخرفي' ),
+		'interior'      => array( 'interior', 'partition', 'divider', 'hotel', 'lobby', '室内', '隔断', '屏风', '酒店', '大堂', 'innen', 'intérieur', 'داخلي' ),
+		'partition'     => array( 'partition', 'divider', '隔断', '屏风', 'divisoria', 'divisória', 'trennwand', 'séparation', 'sekat', 'vách ngăn', 'قاطع' ),
+		'divider'       => array( 'divider', 'partition', '隔断', '屏风', 'divisoria', 'divisória', 'trennwand', 'séparation', 'sekat', 'vách ngăn', 'قاطع' ),
+		'botanical'     => array( 'botanical', 'floral', 'leaf', 'plant', '植物', '花卉', 'botánico', 'botânico', 'botanisch', 'botanique', 'نباتي' ),
+		'floral'        => array( 'floral', 'flower', 'blossom', '花卉', 'flor', 'fleur', 'blume', 'bunga', 'hoa' ),
+		'leaf'          => array( 'leaf', 'leaves', 'botanical', '植物', 'hoja', 'folha', 'blatt', 'feuille', 'daun', 'lá' ),
+		'wave'          => array( 'wave', 'ripple', 'ocean', '波浪', 'ola', 'onda', 'welle', 'vague', 'gelombang', 'sóng' ),
+		'lattice'       => array( 'lattice', 'grid', '格栅', 'celosía', 'treliça', 'gitter', 'treillis', 'kisi-kisi' ),
+		'arch'          => array( 'arch', 'arched', '拱', 'arco', 'bogen', 'arche', 'قوس' ),
+		'geometric'     => array( 'geometric', '几何', 'geométrico', 'geometrisch', 'géométrique', 'هندسي' ),
+		'organic'       => array( 'organic', '有机', 'orgánico', 'orgânico', 'organisch', 'organique', 'عضوي' ),
+		'modern'        => array( 'modern', '现代', 'moderno', 'moderne', 'حديث' ),
+		'classic'       => array( 'classic', 'traditional', '经典', '传统', 'clásico', 'clássico', 'klassisch', 'classique', 'تقليدي' ),
 	);
 	foreach ( $keyword_map as $product_token => $query_triggers ) {
 		if ( ! str_contains( $full_text, $product_token ) ) {
@@ -2377,12 +2687,13 @@ function md_kb_endpoint_validated_table( string $suffix ): string {
  * when active, or direct query against the knowledge table when the plugin
  * is deactivated on production, returning up to five hits and the context.
  *
- * @param string $q The visitor's question.
+ * @param string $q            The visitor's question.
+ * @param string $visitor_lang The visitor language code.
  * @return array{0: array<int, array<string, mixed>>, 1: string} The search results, and the built context.
  */
-function md_kb_endpoint_retrieve( string $q ): array {
+function md_kb_endpoint_retrieve( string $q, string $visitor_lang = 'en' ): array {
 	if ( ! class_exists( 'RAPLSAICH_Search_Engine' ) ) {
-		return md_kb_endpoint_retrieve_from_db( $q );
+		return md_kb_endpoint_retrieve_from_db( $q, $visitor_lang );
 	}
 	$engine = new RAPLSAICH_Search_Engine();
 	$engine->set_bot_filters( array(), true, true );
@@ -2408,10 +2719,11 @@ function md_kb_endpoint_retrieve( string $q ): array {
  * not loaded at runtime (production keeps the plugin deactivated so its
  * duplicate frontend widget never renders).
  *
- * @param string $q The visitor's question.
+ * @param string $q            The visitor's question.
+ * @param string $visitor_lang The visitor language code.
  * @return array{0: array<int, array<string, mixed>>, 1: string} The search results, and the built context.
  */
-function md_kb_endpoint_retrieve_from_db( string $q ): array {
+function md_kb_endpoint_retrieve_from_db( string $q, string $visitor_lang = 'en' ): array {
 	global $wpdb;
 	$knowledge = md_kb_endpoint_validated_table( 'raplsaich_knowledge' );
 	if ( '' === $knowledge || ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_results' ) ) {
@@ -2419,9 +2731,16 @@ function md_kb_endpoint_retrieve_from_db( string $q ): array {
 	}
 
 	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- table name comes from md_kb_endpoint_validated_table whitelist.
-	$rows = $wpdb->get_results(
-		"SELECT id, title, content FROM {$knowledge} WHERE is_active = 1 ORDER BY id ASC LIMIT 50"
-	);
+	$prev_suppress = method_exists( $wpdb, 'suppress_errors' ) ? $wpdb->suppress_errors( true ) : false;
+	try {
+		$rows = $wpdb->get_results(
+			"SELECT id, title, content FROM {$knowledge} WHERE is_active = 1 ORDER BY id ASC LIMIT 50"
+		);
+	} finally {
+		if ( method_exists( $wpdb, 'suppress_errors' ) ) {
+			$wpdb->suppress_errors( (bool) $prev_suppress );
+		}
+	}
 	// phpcs:enable
 	if ( ! is_array( $rows ) || array() === $rows ) {
 		return array( array(), '' );
@@ -2551,6 +2870,40 @@ function md_kb_endpoint_retrieve_from_db( string $q ): array {
 		$blocks[]  = '### ' . $hit['title'] . "\n" . $hit['content'];
 	}
 
+	if ( ( 'en' !== $visitor_lang || 1 === preg_match( '/[^\x00-\x7F]/', $q ) ) && count( $results ) < 2 ) {
+		$fallback_results = array();
+		$fallback_blocks  = array();
+		$count            = 0;
+		foreach ( $rows as $row ) {
+			if ( ! is_object( $row ) ) {
+				continue;
+			}
+			$id      = (int) ( $row->id ?? 0 );
+			$title   = trim( (string) ( $row->title ?? '' ) );
+			$content = trim( (string) ( $row->content ?? '' ) );
+			if ( 0 >= $id || ( '' === $title && '' === $content ) ) {
+				continue;
+			}
+			$fallback_results[] = array(
+				'type'      => 'knowledge',
+				'source_id' => $id,
+				'title'     => $title,
+				'content'   => $content,
+				'url'       => null,
+				'score'     => 1.0,
+			);
+			$fallback_blocks[]  = '### ' . $title . "\n" . $content;
+			++$count;
+			if ( $count >= 12 ) {
+				break;
+			}
+		}
+		if ( array() !== $fallback_results ) {
+			$results = $fallback_results;
+			$blocks  = $fallback_blocks;
+		}
+	}
+
 	$context = mb_substr( implode( "\n\n", $blocks ), 0, 20000 );
 	return array( $results, $context );
 }
@@ -2576,15 +2929,22 @@ function md_kb_endpoint_knowledge_is_empty(): bool {
 	}
 
 	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the table names come from md_kb_endpoint_validated_table's whitelist; one count per request, no object cache to bypass.
-	if ( 0 < (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$index}" ) ) {
-		return false;
-	}
+	$prev_suppress = is_object( $wpdb ) && method_exists( $wpdb, 'suppress_errors' ) ? $wpdb->suppress_errors( true ) : false;
+	try {
+		if ( 0 < (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$index}" ) ) {
+			return false;
+		}
 
-	$active = $wpdb->get_var( "SELECT COUNT(*) FROM {$knowledge} WHERE is_active = 1" );
-	if ( null === $active ) {
-		// A table older than the active flag: every row is offered, which
-		// is how the plugin itself searches that schema.
-		$active = $wpdb->get_var( "SELECT COUNT(*) FROM {$knowledge}" );
+		$active = $wpdb->get_var( "SELECT COUNT(*) FROM {$knowledge} WHERE is_active = 1" );
+		if ( null === $active ) {
+			// A table older than the active flag: every row is offered, which
+			// is how the plugin itself searches that schema.
+			$active = $wpdb->get_var( "SELECT COUNT(*) FROM {$knowledge}" );
+		}
+	} finally {
+		if ( is_object( $wpdb ) && method_exists( $wpdb, 'suppress_errors' ) ) {
+			$wpdb->suppress_errors( (bool) $prev_suppress );
+		}
 	}
 	// phpcs:enable
 	return 0 === (int) $active;
@@ -2653,14 +3013,27 @@ function md_kb_endpoint_source_labels( array $sources ): array {
  * the response's sources field for acceptance; the chat shows only titles.
  *
  * @param array<int, string> $sources The internal source lines or plain labels.
+ * @param string             $lang    The canonical visitor language code.
  * @return string The footer, '' when there is no label.
  */
-function md_kb_endpoint_source_footer( array $sources ): string {
+function md_kb_endpoint_source_footer( array $sources, string $lang = 'en' ): string {
 	$labels = md_kb_endpoint_source_labels( $sources );
 	if ( array() === $labels ) {
 		return '';
 	}
-	return "\n\nBased on: " . implode( '; ', $labels );
+	$headers = array(
+		'en'    => 'Based on: ',
+		'zh'    => '参考来源：',
+		'es'    => 'Basado en: ',
+		'pt-br' => 'Com base em: ',
+		'de'    => 'Basierend auf: ',
+		'fr'    => 'Basé sur : ',
+		'ar'    => 'بناءً على: ',
+		'id'    => 'Berdasarkan: ',
+		'vi'    => 'Dựa trên: ',
+	);
+	$prefix  = $headers[ $lang ] ?? $headers['en'];
+	return "\n\n" . $prefix . implode( '; ', $labels );
 }
 
 /**
@@ -2669,11 +3042,12 @@ function md_kb_endpoint_source_footer( array $sources ): string {
  * the two handoff triggers of the MVP — an explicit ask for a human, and
  * the model's own judgment that it cannot answer.
  *
+ * @param string $visitor_lang The canonical visitor language code.
  * @return string The system prompt.
  */
-function md_kb_endpoint_system_prompt(): string {
-	$no_answer = md_kb_endpoint_no_answer_message();
-	return 'You are the support assistant of metal-divider.com, a B2B architectural metal screen pattern inquiry site. '
+function md_kb_endpoint_system_prompt( string $visitor_lang = 'en' ): string {
+	$no_answer = md_kb_endpoint_no_answer_message( $visitor_lang );
+	$base      = 'You are the support assistant of metal-divider.com, a B2B architectural metal screen pattern inquiry site. '
 		. "Answer the visitor's question ONLY from the knowledge provided in the user message. "
 		. 'Pattern facts, when present, are the current published product and outrank any other note about the same pattern. '
 		. 'A field marked not confirmed, or an open area of On request, must be said that way — never as zero, and never invented. '
@@ -2691,6 +3065,30 @@ function md_kb_endpoint_system_prompt(): string {
 		. 'When none of the question is covered, set handoff true, set reason to "no_knowledge", and reply exactly: "' . $no_answer . '". '
 		. 'When the visitor asks for a human or an agent, set handoff true, set reason to "human_request", and reply that you are connecting them with the team — do not use the no-knowledge sentence. '
 		. 'Reply with json only: {"answer": "<text for the visitor>", "handoff": true|false, "reason": "no_knowledge"|"human_request"|"none"}.';
+
+	if ( 'en' === $visitor_lang ) {
+		return $base;
+	}
+
+	$lang_names  = array(
+		'zh'    => 'Simplified Chinese (简体中文)',
+		'es'    => 'Spanish (Español)',
+		'pt-br' => 'Brazilian Portuguese (Português do Brasil)',
+		'de'    => 'German (Deutsch)',
+		'fr'    => 'French (Français)',
+		'ar'    => 'Modern Standard Arabic (العربية)',
+		'id'    => 'Indonesian (Bahasa Indonesia)',
+		'vi'    => 'Vietnamese (Tiếng Việt)',
+	);
+	$target_lang = $lang_names[ $visitor_lang ] ?? $visitor_lang;
+
+	return $base . ' '
+		. 'IMPORTANT MULTILINGUAL INSTRUCTIONS: '
+		. 'The visitor is communicating in ' . $target_lang . '. '
+		. 'You MUST write your entire response ("answer") naturally and professionally in ' . $target_lang . '. '
+		. 'The only permitted material is strictly Stainless Steel (304 / 316); never state aluminum, corten steel, copper, brass, or mild steel. '
+		. 'All pattern links MUST preserve the language prefix /' . $visitor_lang . '/pattern/<slug>/ in their URLs. '
+		. 'When none of the question is covered, return reason "no_knowledge" and reply exactly: "' . $no_answer . '".';
 }
 
 /**
@@ -2699,16 +3097,17 @@ function md_kb_endpoint_system_prompt(): string {
  * question with the knowledge under it — the empty knowledge included, so
  * the model sees there is none to answer from rather than guessing.
  *
- * @param string        $q       The visitor's question.
- * @param string        $context The knowledge context, '' when nothing was found.
- * @param array<string> $history The earlier visitor messages.
+ * @param string        $q            The visitor's question.
+ * @param string        $context      The knowledge context, '' when nothing was found.
+ * @param array<string> $history      The earlier visitor messages.
+ * @param string        $visitor_lang The canonical visitor language code.
  * @return array<int, array{role: string, content: string}> The messages.
  */
-function md_kb_endpoint_messages( string $q, string $context, array $history ): array {
+function md_kb_endpoint_messages( string $q, string $context, array $history, string $visitor_lang = 'en' ): array {
 	$messages = array(
 		array(
 			'role'    => 'system',
-			'content' => md_kb_endpoint_system_prompt(),
+			'content' => md_kb_endpoint_system_prompt( $visitor_lang ),
 		),
 	);
 	foreach ( array_slice( $history, -6 ) as $turn ) {
@@ -2906,10 +3305,22 @@ function md_kb_endpoint_parse_model_json( string $content ): ?array {
  * question. It is also the promised handoff copy, so the endpoint and the
  * prompt read it from one place.
  *
+ * @param string $lang The canonical language code.
  * @return string The no-knowledge sentence.
  */
-function md_kb_endpoint_no_answer_message(): string {
-	return "I don't have that information — our team can help.";
+function md_kb_endpoint_no_answer_message( string $lang = 'en' ): string {
+	$messages = array(
+		'en'    => "I don't have that information — our team can help.",
+		'zh'    => '我目前没有该信息——我们的团队可以为您提供帮助。',
+		'es'    => 'No dispongo de esa información; nuestro equipo puede ayudarle.',
+		'pt-br' => 'Não tenho essa informação — nossa equipe pode ajudar.',
+		'de'    => 'Diese Information liegt mir nicht vor — unser Team hilft Ihnen gerne weiter.',
+		'fr'    => 'Je ne dispose pas de cette information — notre équipe peut vous aider.',
+		'ar'    => 'لا تتوفر لدي هذه المعلومات حاليًا — يمكن لفريقنا مساعدتك.',
+		'id'    => 'Saya tidak memiliki informasi tersebut — tim kami dapat membantu Anda.',
+		'vi'    => 'Tôi không có thông tin này — đội ngũ của chúng tôi có thể hỗ trợ bạn.',
+	);
+	return $messages[ $lang ] ?? $messages['en'];
 }
 
 /**
@@ -2921,16 +3332,18 @@ function md_kb_endpoint_no_answer_message(): string {
  * on the model reproducing the copy verbatim.
  *
  * @param array{answer: string, handoff: bool, reason: string} $answer The model's reply.
+ * @param string                                               $lang   The canonical language code.
  * @return bool Whether the visitor asked something the knowledge cannot answer.
  */
-function md_kb_endpoint_is_knowledge_gap( array $answer ): bool {
+function md_kb_endpoint_is_knowledge_gap( array $answer, string $lang = 'en' ): bool {
 	if ( 'no_knowledge' === $answer['reason'] ) {
 		return true;
 	}
 	if ( '' !== $answer['reason'] ) {
 		return false;
 	}
-	return trim( $answer['answer'] ) === md_kb_endpoint_no_answer_message();
+	$trimmed = trim( $answer['answer'] );
+	return md_kb_endpoint_no_answer_message( 'en' ) === $trimmed || ( 'en' !== $lang && md_kb_endpoint_no_answer_message( $lang ) === $trimmed );
 }
 
 /**
@@ -3035,10 +3448,22 @@ function md_kb_endpoint_log_unanswered( string $question, string $reason ): bool
  * failure combination can display instead (the copy is the endpoint's
  * working draft, for the site's copy review).
  *
+ * @param string $lang The canonical language code.
  * @return string The fallback message.
  */
-function md_kb_endpoint_fallback_message(): string {
-	return "Sorry — I can't look that up right now. Please try again in a moment, or reach our team on WhatsApp at +852 6473 1687.";
+function md_kb_endpoint_fallback_message( string $lang = 'en' ): string {
+	$messages = array(
+		'en'    => "Sorry — I can't look that up right now. Please try again in a moment, or reach our team on WhatsApp at +852 6473 1687.",
+		'zh'    => '抱歉，我目前无法查询该信息。请稍后再试，或通过 WhatsApp 联系我们团队：+852 6473 1687。',
+		'es'    => 'Disculpe, no puedo consultar eso en este momento. Por favor, inténtelo de nuevo en un momento o contacte a nuestro equipo por WhatsApp al +852 6473 1687.',
+		'pt-br' => 'Desculpe, não consigo verificar isso no momento. Por favor, tente novamente em instantes ou fale com nossa equipe pelo WhatsApp em +852 6473 1687.',
+		'de'    => 'Entschuldigung, das kann ich gerade nicht nachschlagen. Bitte versuchen Sie es gleich noch einmal oder kontaktieren Sie unser Team per WhatsApp unter +852 6473 1687.',
+		'fr'    => 'Désolé, je ne peux pas vérifier cela pour le moment. Veuillez réessayer dans un instant ou contacter notre équipe sur WhatsApp au +852 6473 1687.',
+		'ar'    => 'عذرًا، لا يمكنني التحقق من ذلك حاليًا. يُرجى المحاولة مرة أخرى بعد لحظات، أو التواصل مع فريقنا عبر واتساب على الرقم ‎+852 6473 1687.',
+		'id'    => 'Maaf, saya tidak dapat memeriksa informasi tersebut saat ini. Silakan coba lagi beberapa saat lagi, atau hubungi tim kami melalui WhatsApp di +852 6473 1687.',
+		'vi'    => 'Xin lỗi, hiện tại tôi không thể tra cứu thông tin này. Vui lòng thử lại sau giây lát hoặc liên hệ với đội ngũ của chúng tôi qua WhatsApp tại +852 6473 1687.',
+	);
+	return $messages[ $lang ] ?? $messages['en'];
 }
 
 /**

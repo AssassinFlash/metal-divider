@@ -537,6 +537,10 @@ CONTRACT_PLUGINS: tuple[tuple[str, str], ...] = (
     ("livecanvas", local_versions.LIVECANVAS_VERSION),
     ("28-wp-markdown-editor", local_versions.YANSIR_MD_VERSION),
     ("litespeed-cache", local_versions.LITESPEED_CACHE_VERSION),
+    ("sitepress-multilingual-cms", local_versions.WPML_CMS_VERSION),
+    ("wpml-string-translation", local_versions.WPML_ST_VERSION),
+    ("woocommerce-multilingual", local_versions.WCML_VERSION),
+    ("acfml", local_versions.ACFML_VERSION),
 )
 
 

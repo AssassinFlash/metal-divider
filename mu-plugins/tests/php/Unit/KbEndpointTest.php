@@ -3720,6 +3720,120 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * Detects visitor language across all 9 supported languages from question
+	 * script, question function words, URL path prefixes, or explicit parameter.
+	 */
+	public function test_detects_language_across_all_nine_locales(): void {
+		// 1. Script-based detection from questions.
+		self::assertSame( 'ar', md_kb_endpoint_detect_language( 'هل تشحنون الشاشات إلى دبي؟', '' ) );
+		self::assertSame( 'zh', md_kb_endpoint_detect_language( '请问你们的金属屏风是什么材质？', '' ) );
+		self::assertSame( 'vi', md_kb_endpoint_detect_language( 'Cho tôi hỏi tấm vách ngăn kim loại giá bao nhiêu?', '' ) );
+
+		// 2. Strong function word detection from questions.
+		self::assertSame( 'de', md_kb_endpoint_detect_language( 'Haben Sie Muster für den Außenbereich und wie viel kostet das?', '' ) );
+		self::assertSame( 'es', md_kb_endpoint_detect_language( '¿Cuál es el precio y tiempo de entrega?', '' ) );
+		self::assertSame( 'fr', md_kb_endpoint_detect_language( 'Quel est le délai de livraison pour un panneau?', '' ) );
+		self::assertSame( 'pt-br', md_kb_endpoint_detect_language( 'Vocês enviam orçamento e amostras para o Brasil?', '' ) );
+		self::assertSame( 'id', md_kb_endpoint_detect_language( 'Berapa harga panel pembatas ruangan ini?', '' ) );
+		self::assertSame( 'en', md_kb_endpoint_detect_language( 'What is the standard thickness of the stainless steel screen?', '' ) );
+
+		// 3. Fallback to URL path prefix when question text is neutral or ambiguous.
+		self::assertSame( 'de', md_kb_endpoint_detect_language( 'Agave 2400x1200', 'https://metal-divider.com/de/pattern/agave/' ) );
+		self::assertSame( 'ar', md_kb_endpoint_detect_language( '1234', 'https://metal-divider.com/ar/pattern/lotus/' ) );
+		self::assertSame( 'zh', md_kb_endpoint_detect_language( 'Agave', 'https://metal-divider.com/zh/pattern/agave/' ) );
+		self::assertSame( 'pt-br', md_kb_endpoint_detect_language( 'Agave', 'https://metal-divider.com/pt-br/pattern/agave/' ) );
+		self::assertSame( 'vi', md_kb_endpoint_detect_language( 'Agave', 'https://metal-divider.com/vi/pattern/agave/' ) );
+		self::assertSame( 'fr', md_kb_endpoint_detect_language( 'Agave', 'https://metal-divider.com/fr/patterns/' ) );
+		self::assertSame( 'es', md_kb_endpoint_detect_language( 'Agave', 'https://metal-divider.com/es/patterns/' ) );
+		self::assertSame( 'id', md_kb_endpoint_detect_language( 'Agave', 'https://metal-divider.com/id/pattern/agave/' ) );
+		self::assertSame( 'en', md_kb_endpoint_detect_language( 'Agave', 'https://metal-divider.com/pattern/agave/' ) );
+
+		// 4. Explicit language parameter overrides question and URL.
+		self::assertSame( 'fr', md_kb_endpoint_detect_language( 'Hello there', 'https://metal-divider.com/de/pattern/agave/', 'fr' ) );
+		self::assertSame( 'zh', md_kb_endpoint_detect_language( 'Hello', '', 'zh-hans' ) );
+	}
+
+	/**
+	 * Multilingual intent recognition recognizes commercial handoff, shipping,
+	 * showroom and recommendations in non-EN languages, and deterministic replies
+	 * strictly conform to single material and pattern terminology.
+	 */
+	public function test_multilingual_intent_recognition_and_deterministic_replies(): void {
+		// 1. English deterministic messages remain 100% byte-for-byte identical.
+		self::assertSame( md_kb_endpoint_commercial_handoff_message(), md_kb_endpoint_commercial_handoff_message( 'en' ) );
+		self::assertSame( md_kb_endpoint_shipping_message(), md_kb_endpoint_shipping_message( 'en' ) );
+		self::assertSame( md_kb_endpoint_showroom_reply(), md_kb_endpoint_showroom_reply( 'en' ) );
+		self::assertSame( md_kb_endpoint_dimensions_reply( 'thickness', '' ), md_kb_endpoint_dimensions_reply( 'thickness', '', 'en' ) );
+		self::assertSame( md_kb_endpoint_unverified_fact_handoff_message(), md_kb_endpoint_unverified_fact_handoff_message( 'en' ) );
+		self::assertSame( md_kb_endpoint_drawing_check_message(), md_kb_endpoint_drawing_check_message( 'en' ) );
+		self::assertSame( md_kb_endpoint_no_answer_message(), md_kb_endpoint_no_answer_message( 'en' ) );
+		self::assertSame( md_kb_endpoint_fallback_message(), md_kb_endpoint_fallback_message( 'en' ) );
+		self::assertSame( "\n\nBased on: Agave", md_kb_endpoint_source_footer( array( 'Agave' ), 'en' ) );
+
+		// 2. Commercial handoff messages across all 9 languages name 304 and 316 stainless steel and exclude other metals.
+		$locales = array( 'en', 'zh', 'es', 'pt-br', 'de', 'fr', 'ar', 'id', 'vi' );
+		foreach ( $locales as $loc ) {
+			$msg = md_kb_endpoint_commercial_handoff_message( $loc );
+			self::assertStringContainsString( '304', $msg );
+			self::assertStringContainsString( '316', $msg );
+			self::assertStringNotContainsString( 'Corten', $msg );
+			self::assertStringNotContainsString( 'Aluminium', $msg );
+		}
+
+		// 3. Multilingual intent matching: commercial commitment vs human handoff.
+		self::assertTrue( md_kb_endpoint_asks_commercial( '我想询价，报价多少？' ) );
+		self::assertTrue( md_kb_endpoint_asks_commercial( '¿Pueden darme una cotización o presupuesto?' ) );
+		self::assertTrue( md_kb_endpoint_asks_commercial( 'Ich benötige ein Angebot und Preisliste' ) );
+		self::assertTrue( md_kb_endpoint_asks_commercial( 'Quel est le prix et le devis?' ) );
+		self::assertTrue( md_kb_endpoint_asks_commercial( 'كم سعر هذا الموديل؟ أريد عرض سعر' ) );
+
+		self::assertTrue( md_kb_endpoint_wants_human( '请帮我转人工客服' ) );
+		self::assertTrue( md_kb_endpoint_wants_human( 'Quiero hablar con un humano' ) );
+		self::assertTrue( md_kb_endpoint_wants_human( 'Ich möchte mit einem Mitarbeiter sprechen' ) );
+		self::assertTrue( md_kb_endpoint_wants_human( 'Je veux parler à un conseiller' ) );
+		self::assertTrue( md_kb_endpoint_wants_human( 'أريد التحدث مع خدمة العملاء' ) );
+
+		self::assertTrue( md_kb_endpoint_asks_shipping( '可以发货到新加坡吗？' ) );
+		self::assertTrue( md_kb_endpoint_asks_shipping( '¿Hacen envíos a México?' ) );
+		self::assertTrue( md_kb_endpoint_asks_shipping( 'Versenden Sie nach Deutschland?' ) );
+
+		self::assertTrue( md_kb_endpoint_asks_recommendation( '可以推荐几款几何风格的户外屏风吗？' ) );
+		self::assertTrue( md_kb_endpoint_asks_recommendation( '¿Qué modelos geométricos me recomienda para exterior?' ) );
+	}
+
+	/**
+	 * Localizes pattern URLs, extracts multilingual page slugs, and formats
+	 * pattern facts and system prompt for the visitor's language.
+	 */
+	public function test_multilingual_pattern_urls_page_context_and_system_prompt(): void {
+		// 1. URL localization.
+		self::assertSame( '/zh/pattern/agave/', md_kb_endpoint_localize_url( '/pattern/agave/', 'zh' ) );
+		self::assertSame( '/de/pattern/lotus/', md_kb_endpoint_localize_url( '/pattern/lotus/', 'de' ) );
+		self::assertSame( '/ar/pattern/breeze/', md_kb_endpoint_localize_url( '/pattern/breeze/', 'ar' ) );
+		self::assertSame( '/pattern/agave/', md_kb_endpoint_localize_url( '/pattern/agave/', 'en' ) );
+
+		// 2. Page slug regex matching with language directory prefixes.
+		self::assertSame( 'agave', md_kb_endpoint_page_slug( 'https://metal-divider.com/zh/pattern/agave/' ) );
+		self::assertSame( 'lotus', md_kb_endpoint_page_slug( 'https://metal-divider.com/de/pattern/lotus/' ) );
+		self::assertSame( 'breeze', md_kb_endpoint_page_slug( 'https://staging.metal-divider.com/ar/product/breeze/' ) );
+
+		// 3. System prompt instructions for non-EN visitors.
+		$zh_prompt = md_kb_endpoint_system_prompt( 'zh' );
+		self::assertStringContainsString( 'IMPORTANT MULTILINGUAL INSTRUCTIONS:', $zh_prompt );
+		self::assertStringContainsString( 'Simplified Chinese', $zh_prompt );
+
+		$ar_prompt = md_kb_endpoint_system_prompt( 'ar' );
+		self::assertStringContainsString( 'Modern Standard Arabic', $ar_prompt );
+
+		$en_prompt = md_kb_endpoint_system_prompt( 'en' );
+		self::assertStringNotContainsString( 'IMPORTANT MULTILINGUAL INSTRUCTIONS:', $en_prompt );
+
+		// 4. Fallback message localized for non-EN languages.
+		self::assertStringContainsString( '+852 6473 1687', md_kb_endpoint_fallback_message( 'zh' ) );
+		self::assertStringContainsString( '+852 6473 1687', md_kb_endpoint_fallback_message( 'de' ) );
+	}
+
+	/**
 	 * A recorded bootstrap global, reset between the tests.
 	 *
 	 * @param string $name The global's name.

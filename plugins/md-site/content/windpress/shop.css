@@ -648,7 +648,7 @@ transform: none !important;
 /* Honeypot — visually + accessibility hidden, bots see + fill */
 #pattern-contact-template--21844031570173__pattern-contact .pcf-honeypot {
 position: absolute;
-left: -9999px;
+inset-inline-start: -9999px;
 top: -9999px;
 width: 1px;
 height: 1px;

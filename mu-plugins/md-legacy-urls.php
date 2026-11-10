@@ -49,6 +49,11 @@ const MD_LEGACY_URLS_OLD_CATALOGUE = '/shop';
 const MD_LEGACY_URLS_OLD_SERIES_BASE = '/collections';
 
 /**
+ * The old Shopify products base, without a trailing slash.
+ */
+const MD_LEGACY_URLS_OLD_PRODUCTS_BASE = '/products';
+
+/**
  * The site's own pattern base, without a trailing slash: a product pattern's
  * permalink is `/pattern/<slug>/` (owner ruling 2026-10-24, "URL 基座改
  * /pattern/").
@@ -136,15 +141,37 @@ function md_legacy_urls_rest( string $path, string $base ): string {
 function md_legacy_urls_target( string $path, ?callable $series = null, ?callable $product = null ): string {
 	$path = '/' . ltrim( $path, '/' );
 
-	$alias = rtrim( $path, '/' );
-	if ( isset( MD_LEGACY_URLS_ALIASES[ $alias ] ) ) {
-		return MD_LEGACY_URLS_ALIASES[ $alias ];
+	$lang_prefix = '';
+	$subpath     = $path;
+	if ( preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/(.*))?$#i', $path, $matches ) ) {
+		$lang_prefix = '/' . strtolower( $matches[1] );
+		$subpath     = isset( $matches[2] ) && '' !== $matches[2] ? '/' . $matches[2] : '/';
 	}
 
-	if ( md_legacy_urls_is_under( $path, MD_LEGACY_URLS_OLD_CATALOGUE ) ) {
-		$rest = md_legacy_urls_rest( $path, MD_LEGACY_URLS_OLD_CATALOGUE );
-		if ( '' === $rest ) {
-			return MD_LEGACY_URLS_CATALOGUE;
+	$alias = rtrim( $subpath, '/' );
+	if ( isset( MD_LEGACY_URLS_ALIASES[ $alias ] ) ) {
+		return md_legacy_urls_localize_series_target( $lang_prefix, MD_LEGACY_URLS_ALIASES[ $alias ] );
+	}
+
+	if ( md_legacy_urls_is_under( $subpath, MD_LEGACY_URLS_OLD_PRODUCTS_BASE ) ) {
+		$rest = md_legacy_urls_rest( $subpath, MD_LEGACY_URLS_OLD_PRODUCTS_BASE );
+		if ( '' === trim( $rest, '/' ) ) {
+			return $lang_prefix . MD_LEGACY_URLS_CATALOGUE;
+		}
+		$parts = explode( '/', trim( $rest, '/' ) );
+		if ( 1 === count( $parts ) && '' !== $parts[0] ) {
+			$resolver     = $product ?? 'md_legacy_urls_resolve_product_slug';
+			$resolved     = (string) $resolver( $parts[0] );
+			$product_slug = '' === $resolved ? $parts[0] : $resolved;
+			return $lang_prefix . MD_LEGACY_URLS_PATTERN_BASE . '/' . $product_slug . '/';
+		}
+		return $lang_prefix . MD_LEGACY_URLS_CATALOGUE;
+	}
+
+	if ( md_legacy_urls_is_under( $subpath, MD_LEGACY_URLS_OLD_CATALOGUE ) ) {
+		$rest = md_legacy_urls_rest( $subpath, MD_LEGACY_URLS_OLD_CATALOGUE );
+		if ( '' === $rest || '/' === $rest ) {
+			return $lang_prefix . MD_LEGACY_URLS_CATALOGUE;
 		}
 
 		$parts = explode( '/', trim( $rest, '/' ) );
@@ -152,28 +179,67 @@ function md_legacy_urls_target( string $path, ?callable $series = null, ?callabl
 			$resolver     = $product ?? 'md_legacy_urls_resolve_product_slug';
 			$resolved     = (string) $resolver( $parts[0] );
 			$product_slug = '' === $resolved ? $parts[0] : $resolved;
-			return MD_LEGACY_URLS_PATTERN_BASE . '/' . $product_slug . '/';
+			return $lang_prefix . MD_LEGACY_URLS_PATTERN_BASE . '/' . $product_slug . '/';
 		}
 
-		return rtrim( MD_LEGACY_URLS_CATALOGUE, '/' ) . $rest;
+		return $lang_prefix . rtrim( MD_LEGACY_URLS_CATALOGUE, '/' ) . $rest;
 	}
 
-	if ( ! md_legacy_urls_is_under( $path, MD_LEGACY_URLS_OLD_SERIES_BASE ) ) {
+	if ( ! md_legacy_urls_is_under( $subpath, MD_LEGACY_URLS_OLD_SERIES_BASE ) ) {
 		return '';
 	}
 
-	$rest  = md_legacy_urls_rest( $path, MD_LEGACY_URLS_OLD_SERIES_BASE );
+	$rest  = md_legacy_urls_rest( $subpath, MD_LEGACY_URLS_OLD_SERIES_BASE );
 	$parts = explode( '/', ltrim( $rest, '/' ) );
 	$slug  = $parts[0];
 	if ( '' === $slug ) {
-		return MD_LEGACY_URLS_SERIES_BASE . '/';
+		return $lang_prefix . MD_LEGACY_URLS_SERIES_BASE . '/';
 	}
 
 	$exists = $series ?? 'md_legacy_urls_series_exists';
 	if ( ! $exists( $slug ) ) {
-		return MD_LEGACY_URLS_CATALOGUE;
+		return $lang_prefix . MD_LEGACY_URLS_CATALOGUE;
 	}
-	return MD_LEGACY_URLS_SERIES_BASE . $rest;
+	return md_legacy_urls_localize_series_target( $lang_prefix, MD_LEGACY_URLS_SERIES_BASE . $rest );
+}
+
+/**
+ * Rewrites `/pattern-category/<en-slug>` to the localized series slug when WPML
+ * is active and a non-default language prefix is present.
+ *
+ * @param string $lang_prefix The language prefix (e.g. `/zh` or `''`).
+ * @param string $target      The unprefixed destination path.
+ * @return string The prefixed and localized destination path.
+ */
+function md_legacy_urls_localize_series_target( string $lang_prefix, string $target ): string {
+	if ( '' === $lang_prefix || ! str_starts_with( $target, MD_LEGACY_URLS_SERIES_BASE . '/' ) ) {
+		return $lang_prefix . $target;
+	}
+	if ( ! function_exists( 'get_term_by' ) || ! function_exists( 'apply_filters' ) || ! function_exists( 'has_filter' ) || ! has_filter( 'wpml_object_id' ) ) {
+		return $lang_prefix . $target;
+	}
+	$rest  = substr( $target, strlen( MD_LEGACY_URLS_SERIES_BASE . '/' ) );
+	$parts = explode( '/', $rest, 2 );
+	$slug  = $parts[0];
+	$tail  = isset( $parts[1] ) ? '/' . $parts[1] : '';
+	if ( '' === $slug ) {
+		return $lang_prefix . $target;
+	}
+	$term = get_term_by( 'slug', $slug, 'product_cat' );
+	if ( ! ( $term instanceof WP_Term ) ) {
+		return $lang_prefix . $target;
+	}
+	$lang_code = ltrim( $lang_prefix, '/' );
+	$wpml_code = 'zh' === $lang_code ? 'zh-hans' : $lang_code;
+	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML standard filter.
+	$tr_id = (int) apply_filters( 'wpml_object_id', (int) $term->term_id, 'product_cat', false, $wpml_code );
+	if ( $tr_id > 0 && function_exists( 'get_term' ) ) {
+		$tr_term = get_term( $tr_id, 'product_cat' );
+		if ( $tr_term instanceof WP_Term && '' !== $tr_term->slug ) {
+			return $lang_prefix . MD_LEGACY_URLS_SERIES_BASE . '/' . $tr_term->slug . $tail;
+		}
+	}
+	return $lang_prefix . $target;
 }
 
 /**
@@ -270,7 +336,10 @@ function md_legacy_urls_redirect(): void {
 		return;
 	}
 
-	if ( wp_safe_redirect( home_url( $url ), 301 ) ) {
+	$home        = (string) get_option( 'home' );
+	$destination = '' !== $home ? untrailingslashit( $home ) . $url : home_url( $url );
+
+	if ( wp_safe_redirect( $destination, 301 ) ) {
 		exit;
 	}
 }

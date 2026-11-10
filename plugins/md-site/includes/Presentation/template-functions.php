@@ -96,4 +96,24 @@ if ( ! function_exists( 'md_pdp_has_style' ) ) {
 		return '' !== md_pdp_style();
 	}
 }
+
+if ( ! function_exists( 'md_is_series' ) ) {
+	/**
+	 * Whether the current queried object is a series archive (product_cat),
+	 * optionally matching a specific canonical series slug.
+	 *
+	 * @param string $slug Optional canonical series slug (e.g. 'pattern-abstract').
+	 * @return bool
+	 */
+	function md_is_series( $slug = '' ): bool {
+		$term = \get_queried_object();
+		if ( ! $term instanceof \WP_Term || 'product_cat' !== $term->taxonomy ) {
+			return false;
+		}
+		$canonical = \MetalDivider\Site\Catalog::canonical_series_slug( $term );
+		return '' === (string) $slug
+			? '' !== $canonical
+			: ( (string) $slug === $canonical || (string) $slug === (string) $term->slug );
+	}
+}
 // phpcs:enable

@@ -47,6 +47,7 @@ final class SitemapDedupe {
 		add_filter( 'seopress_sitemaps_xml_index', array( $this, 'drop_empty_type_entries' ) );
 		add_filter( 'seopress_sitemaps_single_term_query', array( $this, 'disable_term_menu_order' ) );
 		add_filter( 'seopress_sitemaps_index_tax_query', array( $this, 'disable_term_menu_order' ) );
+		add_filter( 'seopress_sitemaps_single_query', array( $this, 'include_all_languages_in_posts_query' ), 20, 2 );
 	}
 
 	/**
@@ -178,6 +179,23 @@ final class SitemapDedupe {
 	public function disable_term_menu_order( array $args ): array {
 		$args['menu_order'] = false;
 		$args['orderby']    = 'name';
+		return $args;
+	}
+
+	/**
+	 * Ensures post sitemap queries include posts across all languages without WPML filtering.
+	 *
+	 * When SEOPress generates single post-type sitemaps (products, pages, posts),
+	 * WPML's frontend query filters would restrict results to the current language
+	 * unless suppress_filters is explicitly set to true.
+	 *
+	 * @param array<string, mixed> $args The query arguments for the sitemap.
+	 * @param string               $path The post type or sitemap path.
+	 * @return array<string, mixed> The query arguments with suppress_filters set to true.
+	 */
+	public function include_all_languages_in_posts_query( array $args, string $path = '' ): array {
+		unset( $path );
+		$args['suppress_filters'] = true;
 		return $args;
 	}
 }

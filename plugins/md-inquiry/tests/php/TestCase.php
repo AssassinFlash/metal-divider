@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace MetalDivider\Inquiry\Tests;
 
 use MetalDivider\Inquiry\Tests\Support\FakeWpdb;
+use MetalDivider\Inquiry\Tests\Support\PassthruFilter;
 use WP_Mock;
 use WP_Mock\Tools\TestCase as WP_Mock_TestCase;
 
@@ -28,6 +29,13 @@ abstract class TestCase extends WP_Mock_TestCase {
 	protected static ?FakeWpdb $db = null;
 
 	/**
+	 * The test locale for get_locale and determine_locale.
+	 *
+	 * @var string
+	 */
+	public static string $current_test_locale = 'en_US';
+
+	/**
 	 * Installs the hand-rolled database double as the global the queue reads.
 	 *
 	 * @return FakeWpdb The installed double.
@@ -44,6 +52,7 @@ abstract class TestCase extends WP_Mock_TestCase {
 	 * @return void
 	 */
 	public function tearDown(): void {
+		self::$current_test_locale = 'en_US';
 		unset( $GLOBALS['wpdb'] );
 		self::$db = null;
 		parent::tearDown();
@@ -67,6 +76,29 @@ abstract class TestCase extends WP_Mock_TestCase {
 				return (string) \json_encode( $value );
 			}
 		);
+		WP_Mock::userFunction( 'get_locale' )->andReturnUsing(
+			static function (): string {
+				return self::$current_test_locale;
+			}
+		);
+		WP_Mock::userFunction( 'determine_locale' )->andReturnUsing(
+			static function (): string {
+				return self::$current_test_locale;
+			}
+		);
+
+		$ref_manager = new \ReflectionProperty( \WP_Mock::class, 'event_manager' );
+		$ref_manager->setAccessible( true );
+		$event_manager = $ref_manager->getValue();
+		if ( $event_manager instanceof \WP_Mock\EventManager ) {
+			$ref_filters = new \ReflectionProperty( \WP_Mock\EventManager::class, 'filters' );
+			$ref_filters->setAccessible( true );
+			$filters                          = (array) $ref_filters->getValue( $event_manager );
+			$filters['wpml_current_language'] = new PassthruFilter( 'wpml_current_language' );
+			$filters['wpml_object_id']        = new PassthruFilter( 'wpml_object_id' );
+			$filters['wpml_permalink']        = new PassthruFilter( 'wpml_permalink' );
+			$ref_filters->setValue( $event_manager, $filters );
+		}
 	}
 
 	/**

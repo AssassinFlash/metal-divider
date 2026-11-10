@@ -32,6 +32,8 @@ final class ShortcodesTest extends TestCase {
 		parent::setUp();
 		$this->plain_text();
 		WP_Mock::userFunction( 'is_wp_error' )->zeroOrMoreTimes()->andReturn( false );
+		WP_Mock::userFunction( 'untrailingslashit' )->zeroOrMoreTimes()->andReturnUsing( static fn( string $v ) => rtrim( $v, '/' ) );
+		WP_Mock::userFunction( 'wp_json_encode' )->zeroOrMoreTimes()->andReturnUsing( static fn( $v, $flags = 0 ) => json_encode( $v, $flags ) );
 		Shortcodes::flush();
 		\MetalDivider\Site\Catalog::reset_visible_counts();
 		// The related and series cards are rendered from partials now, so the
@@ -96,6 +98,7 @@ final class ShortcodesTest extends TestCase {
 				Shortcodes::IMAGE,
 				Shortcodes::RELATED,
 				Shortcodes::SERIES_GRID,
+				Shortcodes::LANG_SWITCHER,
 			),
 			array_keys( $GLOBALS['shortcode_tags'] ),
 			'every shortcode registers, and nothing else'
@@ -1653,6 +1656,38 @@ final class ShortcodesTest extends TestCase {
 		$term->slug = $slug;
 		$term->name = ucfirst( str_replace( 'pattern-', '', $slug ) );
 		return $term;
+	}
+
+	/**
+	 * The language switcher renders desktop, mobile, and footer contexts cleanly
+	 * with zero inline scripts and zero inline style attributes.
+	 */
+	public function test_lang_switcher_renders_contexts(): void {
+		WP_Mock::userFunction( 'is_front_page' )->zeroOrMoreTimes()->andReturn( true );
+		WP_Mock::userFunction( 'home_url' )->zeroOrMoreTimes()->andReturn( 'https://metal-divider.com/' );
+
+		$shortcodes = new Shortcodes();
+
+		$desktop = $shortcodes->lang_switcher( array( 'context' => 'header-desktop' ) );
+		$this->assertStringContainsString( 'md-lang-switcher--desktop', $desktop );
+		$this->assertStringContainsString( 'data-md-lang-switcher', $desktop );
+		$this->assertStringContainsString( 'data-md-i18n-config', $desktop );
+		$this->assertStringContainsString( 'EN', $desktop );
+		$this->assertStringContainsString( 'md-lang-switcher__menu', $desktop );
+		$this->assertStringNotContainsString( '<script', $desktop );
+		$this->assertStringNotContainsString( 'style=', $desktop );
+
+		$mobile = $shortcodes->lang_switcher( array( 'context' => 'header-mobile' ) );
+		$this->assertStringContainsString( 'md-lang-switcher--mobile', $mobile );
+		$this->assertStringContainsString( 'md-lang-switcher__grid', $mobile );
+		$this->assertStringNotContainsString( '<script', $mobile );
+		$this->assertStringNotContainsString( 'style=', $mobile );
+
+		$footer = $shortcodes->lang_switcher( array( 'context' => 'footer' ) );
+		$this->assertStringContainsString( 'md-lang-switcher--footer', $footer );
+		$this->assertStringContainsString( 'md-lang-switcher__inline', $footer );
+		$this->assertStringNotContainsString( '<script', $footer );
+		$this->assertStringNotContainsString( 'style=', $footer );
 	}
 
 	/**

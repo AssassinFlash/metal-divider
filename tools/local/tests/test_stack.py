@@ -185,11 +185,15 @@ def test_the_whole_stack(stack: Stack) -> None:
         "wp-seopress-pro",
         "livecanvas",
         "28-wp-markdown-editor",
+        "sitepress-multilingual-cms",
+        "wpml-string-translation",
+        "woocommerce-multilingual",
+        "acfml",
         "md-site",
         "md-inquiry",
     ):
         assert slug in active, f"{slug} is not active (active: {active})"
-    # Polylang is phase 2: the slot in versions.py, never the plugin.
+    # WPML replaces the phase-1 Polylang slot (owner ruling 2026-10-24 & 2026-11-11).
     assert "polylang" not in stack.wp("plugin", "list")
 
     # The theme face: picostrap5 from the archive, the checkout's md-child

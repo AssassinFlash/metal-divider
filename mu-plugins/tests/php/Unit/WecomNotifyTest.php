@@ -1551,4 +1551,107 @@ final class WecomNotifyTest extends TestCase {
 		$this->assertArrayHasKey( 'email:146', $notified );
 		$this->assertArrayHasKey( 146, $notified );
 	}
+
+	/**
+	 * Non-EN chat_locale or referrer appends uppercase language tag to the
+	 * WeCom textcard title while preserving exact English title format.
+	 */
+	public function testNonEnChatLocaleOrReferrerAppendsLangTagToTextcardTitle(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH_DE' );
+
+		// 1. Explicit German chat_locale.
+		$de_res = md_wecom_notify_handle(
+			$this->event(
+				147,
+				'chat.genericbot_chat_command_transfer',
+				array(
+					'nick'        => 'Hans Müller',
+					'chat_locale' => 'de',
+				)
+			)
+		);
+		$this->assertSame( 200, $de_res['status'] );
+		$calls   = $this->calls();
+		$de_last = end( $calls );
+		$this->assertIsArray( $de_last );
+		$de_body = json_decode( (string) $de_last[1]['body'], true );
+		$this->assertSame( 'Live chat #147 [DE] — Hans Müller', $de_body['textcard']['title'] );
+
+		// 2. Arabic detected from referrer when chat_locale is omitted.
+		$ar_res = md_wecom_notify_handle(
+			$this->event(
+				148,
+				'chat.genericbot_chat_command_transfer',
+				array(
+					'nick'     => 'Ali',
+					'referrer' => 'https://metal-divider.com/ar/pattern/lotus/',
+				)
+			)
+		);
+		$this->assertSame( 200, $ar_res['status'] );
+		$calls   = $this->calls();
+		$ar_last = end( $calls );
+		$this->assertIsArray( $ar_last );
+		$ar_body = json_decode( (string) $ar_last[1]['body'], true );
+		$this->assertSame( 'Live chat #148 [AR] — Ali', $ar_body['textcard']['title'] );
+
+		// 3. Simplified Chinese normalizes zh-hans -> ZH.
+		$zh_res = md_wecom_notify_handle(
+			$this->event(
+				149,
+				'chat.genericbot_chat_command_transfer',
+				array(
+					'nick'        => 'Zhang',
+					'chat_locale' => 'zh-hans',
+				)
+			)
+		);
+		$this->assertSame( 200, $zh_res['status'] );
+		$calls   = $this->calls();
+		$zh_last = end( $calls );
+		$this->assertIsArray( $zh_last );
+		$zh_body = json_decode( (string) $zh_last[1]['body'], true );
+		$this->assertSame( 'Live chat #149 [ZH] — Zhang', $zh_body['textcard']['title'] );
+
+		// 4. English leaves title tagless.
+		$en_res = md_wecom_notify_handle(
+			$this->event(
+				150,
+				'chat.genericbot_chat_command_transfer',
+				array(
+					'nick'        => 'John',
+					'chat_locale' => 'en',
+				)
+			)
+		);
+		$this->assertSame( 200, $en_res['status'] );
+		$calls   = $this->calls();
+		$en_last = end( $calls );
+		$this->assertIsArray( $en_last );
+		$en_body = json_decode( (string) $en_last[1]['body'], true );
+		$this->assertSame( 'Live chat #150 — John', $en_body['textcard']['title'] );
+	}
+
+	/**
+	 * Visitor email saved with non-EN locale includes language tag in textcard.
+	 */
+	public function testVisitorEmailSavedWithLocaleIncludesLangTagInTextcard(): void {
+		$this->configure();
+		$this->upstream_answers( 'https://lhc.test/site_admin/user/autologin/HASH_ES' );
+
+		$res = md_wecom_notify_visitor_email(
+			151,
+			'cliente@example.es',
+			'https://metal-divider.com/es/pattern/agave/',
+			'Necesito presupuesto',
+			'es'
+		);
+		$this->assertSame( 200, $res['status'] );
+		$calls     = $this->calls();
+		$last_call = end( $calls );
+		$this->assertIsArray( $last_call );
+		$send_body = json_decode( (string) $last_call[1]['body'], true );
+		$this->assertSame( 'Live chat #151 [ES] — cliente@example.es', $send_body['textcard']['title'] );
+	}
 }

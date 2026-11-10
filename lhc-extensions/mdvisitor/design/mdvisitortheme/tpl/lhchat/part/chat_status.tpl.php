@@ -170,7 +170,7 @@
   }
   function linkifyPatterns() {
     var bodies = document.querySelectorAll('#messages .message-admin .msg-body');
-    var re = /\[([^\]]+)\]\((https?:\/\/(?:www\.|staging\.)?metal-divider\.com(?:\/[^\s)<>"']*)?|\/[a-z0-9][a-z0-9-\/]*)\)|https?:\/\/(?:www\.|staging\.)?metal-divider\.com\/[^\s)<>"']+|\/(?:pattern|product|collections)\/[a-z0-9-]+\/?/gi;
+    var re = /\[([^\]]+)\]\((https?:\/\/(?:www\.|staging\.)?metal-divider\.com(?:\/[^\s)<>"']*)?|\/[a-z0-9][a-z0-9-\/]*)\)|https?:\/\/(?:www\.|staging\.)?metal-divider\.com\/[^\s)<>"']+|\/(?:(?:zh|es|pt-br|de|fr|ar|id|vi)\/)?(?:pattern|patterns|product|pattern-category|collections)\/[a-z0-9-]+\/?/gi;
     for (var i = 0; i < bodies.length; i += 1) {
       var existingLinks = bodies[i].querySelectorAll('a[href]');
       for (var k = 0; k < existingLinks.length; k += 1) {

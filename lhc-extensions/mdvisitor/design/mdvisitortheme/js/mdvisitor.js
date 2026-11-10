@@ -137,7 +137,14 @@
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'mdv_open_quote', pageUrl: currentPageUrl }, window.location.origin);
       } else {
-        window.open('/inquiry/', '_blank', 'noopener');
+        var langMatch = ( currentPageUrl || '' ).match( /^\/(zh|es|pt-br|de|fr|ar|id|vi)(?:\/|$)/i );
+        if ( ! langMatch && currentPageUrl ) {
+          try {
+            langMatch = ( new URL( currentPageUrl, window.location.origin ).pathname ).match( /^\/(zh|es|pt-br|de|fr|ar|id|vi)(?:\/|$)/i );
+          } catch ( e ) {}
+        }
+        var prefix = langMatch && langMatch[1] ? '/' + langMatch[1].toLowerCase() : '';
+        window.open( prefix + '/inquiry/', '_blank', 'noopener' );
       }
       return;
     }

@@ -454,14 +454,21 @@ final class Partials {
 	 * @return string The markup, '' for an unknown name.
 	 */
 	private function markup( string $name ): string {
-		if ( isset( $this->contents[ $name ] ) ) {
-			return $this->contents[ $name ];
+		$lang      = \MetalDivider\Site\I18n\Languages::is_frontend_non_default()
+			? \MetalDivider\Site\I18n\Languages::current()
+			: 'en';
+		$cache_key = $lang . ':' . $name;
+		if ( isset( $this->contents[ $cache_key ] ) ) {
+			return $this->contents[ $cache_key ];
 		}
 		$markup = $this->installed( $name );
 		if ( '' === $markup ) {
 			$markup = self::file( $name );
 		}
-		$this->contents[ $name ] = $markup;
+		if ( 'en' !== $lang && \class_exists( '\MetalDivider\Site\I18n\TemplateStore' ) ) {
+			$markup = \MetalDivider\Site\I18n\TemplateStore::get_partial( $name, $markup, $lang );
+		}
+		$this->contents[ $cache_key ] = $markup;
 		return $markup;
 	}
 

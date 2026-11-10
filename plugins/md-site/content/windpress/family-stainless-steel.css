@@ -5,7 +5,7 @@
 /* Honeypot — visually + accessibility hidden, bots see + fill */
 #stainless-contact-template--21844035043581__stainless-contact .ssc-honeypot {
 position: absolute;
-left: -9999px;
+inset-inline-start: -9999px;
 top: -9999px;
 width: 1px;
 height: 1px;

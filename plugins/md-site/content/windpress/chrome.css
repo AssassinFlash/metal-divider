@@ -501,8 +501,9 @@ display: inline-flex;
 align-items: center;
 justify-content: center;
 height: 44px;
-width: 142px;
-padding: 0 10px;
+min-width: 142px;
+width: auto;
+padding-inline: 16px;
 border-radius: 999px;
 box-sizing: border-box;
 background: #141414;
@@ -703,8 +704,9 @@ height: 40px;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote{
 height: 34px;
-width: 122px;
-padding: 0 8px;
+min-width: 122px;
+width: auto;
+padding-inline: 12px;
 font-size: 12px;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote::after{ top: -5px; bottom: -5px; }
@@ -1400,6 +1402,10 @@ xo-modal[xo-name="search"] .xo-modal-content__close--abs:hover{
   rotate:180deg;
   transition:rotate .3s ease,background-color .3s ease;
 }
+[dir="rtl"] xo-modal[xo-name="search"] .xo-modal-content__close--abs{
+  right: auto;
+  left: 20px;
+}
 /* The sheet's close button is absolute against the panel and sits at the
    input's right edge. Reserve its 44px plus the 12px gutter from the field's
    wrapper, so the input, the clear button inside it and the close button no
@@ -2072,6 +2078,9 @@ top: calc(var(--md-header-h, 60px) + 16px);
   #HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions > .xo-btn-quote {
     display: none;
   }
+  #HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions > .md-lang-switcher--desktop {
+    display: none;
+  }
   #HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions > .xo-btn-whatsapp {
     height: 44px;
     min-width: 44px;
@@ -2499,3 +2508,140 @@ box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #131313 !important;
 /* Inside the dark bands the white inner ring would be the loud one; keep the
    two-tone pair anyway, so the indicator is one shape everywhere rather than
    two designs that a reviewer has to judge separately. */
+
+/* --- Language Switcher: Desktop & Mobile Drawer --- */
+.md-lang-switcher--desktop {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.md-lang-switcher--desktop .md-lang-switcher__btn {
+  height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(19, 19, 19, 0.16);
+  border-radius: 6px;
+  color: #131313;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.md-lang-switcher--desktop .md-lang-switcher__btn:hover,
+.md-lang-switcher--desktop.is-open .md-lang-switcher__btn {
+  border-color: #c9a962;
+  background: rgba(201, 169, 98, 0.08);
+}
+.md-lang-switcher--desktop .md-lang-switcher__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  min-width: 210px;
+  padding: 6px;
+  margin: 0;
+  list-style: none;
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.36);
+  z-index: 1200;
+}
+.md-lang-switcher--desktop .md-lang-switcher__menu[hidden] {
+  display: none !important;
+}
+.md-lang-switcher--desktop .md-lang-switcher__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.md-lang-switcher--desktop .md-lang-switcher__link:hover,
+.md-lang-switcher--desktop .md-lang-switcher__link:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+.md-lang-switcher--desktop .md-lang-switcher__link.is-active {
+  color: #d4b878;
+  background: rgba(201, 169, 98, 0.12);
+  font-weight: 600;
+}
+.md-lang-switcher--desktop .md-lang-switcher__code {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+.md-lang-switcher--mobile {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 8px;
+  list-style: none;
+}
+.md-lang-switcher--mobile .md-lang-switcher__link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.05);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.md-lang-switcher--mobile .md-lang-switcher__link:hover,
+.md-lang-switcher--mobile .md-lang-switcher__link:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+.md-lang-switcher--mobile .md-lang-switcher__link.is-active {
+  color: #d4b878;
+  background: rgba(201, 169, 98, 0.18);
+  font-weight: 600;
+}
+
+/* --- RTL Overrides for Chrome --- */
+[dir="rtl"] xo-modal[xo-name="search"] .xo-predictive-search__clear {
+  right: auto;
+  left: 10px;
+}
+[dir="rtl"] xo-modal[xo-name="search"] .xo-predictive-search__input {
+  padding-left: 48px;
+  padding-right: 44px;
+}
+[dir="rtl"] .md-quote-modal__close {
+  right: auto;
+  left: 12px;
+}
+[dir="rtl"] .md-quote-modal__card {
+  text-align: right;
+  padding-left: 44px;
+  padding-right: 28px;
+}
+[dir="rtl"] .md-back-to-top {
+  right: auto;
+  left: 20px;
+}
+[dir="rtl"] .xo-menu-hamburger-style1__arrow svg,
+[dir="rtl"] .xo-menu-horizontal-v1__arrow svg {
+  transform: scaleX(-1);
+}

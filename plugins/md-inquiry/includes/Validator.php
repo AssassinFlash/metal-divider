@@ -139,9 +139,9 @@ final class Validator {
 	public const SOURCE_PATTERN = '/^[a-z0-9_-]{1,64}$/';
 
 	/**
-	 * The locales the first phase carries.
+	 * The 9 canonical locales the inquiry chain supports.
 	 */
-	public const LOCALES = array( 'en' );
+	public const LOCALES = array( 'en', 'zh', 'es', 'pt-br', 'de', 'fr', 'ar', 'id', 'vi' );
 
 	/**
 	 * Validates the submitted values.
@@ -216,8 +216,8 @@ final class Validator {
 	 * @return string
 	 */
 	public static function locale( string $raw ): string {
-		$raw = \trim( $raw );
-		return \in_array( $raw, self::LOCALES, true ) ? $raw : '';
+		$norm = Locale::normalize( $raw );
+		return \in_array( $norm, self::LOCALES, true ) ? $norm : '';
 	}
 
 	/**
@@ -230,8 +230,8 @@ final class Validator {
 	 */
 	private function text( array $input, string $key, int $max ): string {
 		$value = isset( $input[ $key ] ) && \is_string( $input[ $key ] ) ? \trim( $input[ $key ] ) : '';
-		if ( \strlen( $value ) > $max ) {
-			$value = \substr( $value, 0, $max );
+		if ( \mb_strlen( $value, 'UTF-8' ) > $max ) {
+			$value = \mb_substr( $value, 0, $max, 'UTF-8' );
 		}
 		return $value;
 	}

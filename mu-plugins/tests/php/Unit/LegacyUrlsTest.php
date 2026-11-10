@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestCase;
  * @covers ::md_legacy_urls_is_under
  * @covers ::md_legacy_urls_rest
  * @covers ::md_legacy_urls_target
+ * @covers ::md_legacy_urls_localize_series_target
  * @covers ::md_legacy_urls_url
  * @covers ::md_legacy_urls_series_exists
  * @covers ::md_legacy_urls_resolve_product_slug
@@ -86,6 +87,11 @@ final class LegacyUrlsTest extends TestCase {
 			'page two'      => array( '/shop/page/2/', '/patterns/page/2/' ),
 			'page ten'      => array( '/shop/page/10/', '/patterns/page/10/' ),
 			'deep fragment' => array( '/shop/anything/else', '/patterns/anything/else' ),
+			'de bare'       => array( '/de/shop/', '/de/patterns/' ),
+			'zh bare'       => array( '/zh/shop/', '/zh/patterns/' ),
+			'fr no slash'   => array( '/fr/shop', '/fr/patterns/' ),
+			'es page two'   => array( '/es/shop/page/2/', '/es/patterns/page/2/' ),
+			'ar deep'       => array( '/ar/shop/anything/else', '/ar/patterns/anything/else' ),
 		);
 	}
 
@@ -113,6 +119,9 @@ final class LegacyUrlsTest extends TestCase {
 			'no slash'       => array( '/collections/pattern-organic', '/pattern-category/pattern-organic' ),
 			'pager'          => array( '/collections/pattern-abstract/page/3/', '/pattern-category/pattern-abstract/page/3/' ),
 			'gradient'       => array( '/collections/pattern-gradient/', '/pattern-category/pattern-gradient/' ),
+			'de series'      => array( '/de/collections/pattern-organic/', '/de/pattern-category/pattern-organic/' ),
+			'zh series'      => array( '/zh/collections/pattern-organic', '/zh/pattern-category/pattern-organic' ),
+			'pt-br series'   => array( '/pt-br/collections/pattern-abstract/page/3/', '/pt-br/pattern-category/pattern-abstract/page/3/' ),
 		);
 	}
 
@@ -131,6 +140,11 @@ final class LegacyUrlsTest extends TestCase {
 
 		self::assertSame( '/pattern/agave/', md_legacy_urls_target( '/shop/agave/', $live ) );
 		self::assertSame( '/pattern/agave/', md_legacy_urls_target( '/shop/agave', $live ) );
+		self::assertSame( '/pattern/agave/', md_legacy_urls_target( '/products/agave/', $live ) );
+		self::assertSame( '/pattern/agave/', md_legacy_urls_target( '/products/agave', $live ) );
+		self::assertSame( '/de/pattern/agave/', md_legacy_urls_target( '/de/products/agave', $live ) );
+		self::assertSame( '/patterns/', md_legacy_urls_target( '/products/', $live ) );
+		self::assertSame( '/patterns/', md_legacy_urls_target( '/products', $live ) );
 		self::assertSame( '/patterns/page/2/', md_legacy_urls_target( '/shop/page/2/', $live ), 'the pager is not a product' );
 		self::assertSame( '/patterns/anything/else', md_legacy_urls_target( '/shop/anything/else', $live ), 'a deeper path is not a product either' );
 		self::assertSame(
@@ -357,6 +371,27 @@ final class LegacyUrlsTest extends TestCase {
 
 		self::assertSame(
 			array( 'https://site.test/pattern-category/pattern-organic/?pattern_search=moroccan', 301 ),
+			$GLOBALS['md_mu_test_redirect'] ?? null
+		);
+	}
+
+	/**
+	 * When the home option is set, md_legacy_urls_redirect uses the unfiltered
+	 * home value directly so WPML hooks on home_url do not hijack bare English 301s.
+	 */
+	public function test_redirect_uses_unfiltered_home_option_when_set(): void {
+		$GLOBALS['md_mu_test_redirect_fails']  = true;
+		$GLOBALS['md_mu_test_options']['home'] = 'https://metal-divider.com';
+		$_SERVER['REQUEST_URI']                = '/de/shop/';
+
+		try {
+			md_legacy_urls_redirect();
+		} finally {
+			unset( $GLOBALS['md_mu_test_redirect_fails'], $GLOBALS['md_mu_test_options']['home'] );
+		}
+
+		self::assertSame(
+			array( 'https://metal-divider.com/de/patterns/', 301 ),
 			$GLOBALS['md_mu_test_redirect'] ?? null
 		);
 	}

@@ -48,6 +48,8 @@ if ( is_file( $md_local_file ) || is_file( $md_local_file . 'index.php' ) ) {
 }
 
 chdir( $md_local_root );
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SERVER['PHP_SELF']    = '/index.php';
 require $md_local_root . '/index.php';
 
 /**

@@ -368,3 +368,26 @@ padding-bottom: calc(96px + env(safe-area-inset-bottom));
 #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-related-card img { transition: none !important; }
 }
 .md-t0512b322 { --pt: 15;--pb: 15 }
+
+/* --- RTL Overrides for PDP --- */
+[dir="rtl"] #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero-scrim {
+  background: linear-gradient(270deg, rgba(10, 10, 10, 0.92) 0%, rgba(10, 10, 10, 0.72) 45%, rgba(10, 10, 10, 0.42) 100%);
+}
+[dir="rtl"] #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-hero,
+[dir="rtl"] #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-split {
+  text-align: right;
+}
+@media (min-width: 991px) {
+  [dir="rtl"] #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip > div {
+    padding: 20px 0 24px 24px;
+    border-right: 0;
+    border-left: 1px solid var(--cp-border);
+    margin-right: 0;
+    margin-left: 24px;
+    text-align: right;
+  }
+  [dir="rtl"] #cinematic-pdp-template--22148302078205__pattern_product_cinematic .pdp-spec-strip > div:last-child {
+    border-left: 0;
+    margin-left: 0;
+  }
+}

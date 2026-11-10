@@ -754,3 +754,27 @@ font-weight: 700;
     font-size: 22px !important;
   }
 }
+
+/* --- RTL Overrides for FAQ --- */
+[dir="rtl"] #faqs-download-template--21844278411517__faqs_download {
+  text-align: right;
+}
+[dir="rtl"] #faq-download-questions .faq-item button {
+  text-align: right;
+}
+[dir="rtl"] #faq-download-questions .fd-answer {
+  text-align: right;
+}
+[dir="rtl"] #faq-download-questions .fd-answer :is(ul, ol) {
+  padding-left: 0;
+  padding-right: 24px;
+}
+[dir="rtl"] #faq-download-questions nav[aria-label="FAQ categories"] {
+  direction: rtl;
+}
+@media (max-width: 989px) {
+  [dir="rtl"] #faq-download-questions button[aria-controls] {
+    padding-right: 20px !important;
+    padding-left: 64px !important;
+  }
+}

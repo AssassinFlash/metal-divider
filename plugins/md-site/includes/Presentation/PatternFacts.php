@@ -111,8 +111,8 @@ final class PatternFacts {
 		if ( '' === $title ) {
 			return '';
 		}
-		$parts = explode( '|', $title );
-		return trim( $parts[0] );
+		$parts = (array) \preg_split( '/\s*[|｜]\s*/u', $title, 2 );
+		return trim( (string) $parts[0] );
 	}
 
 	/**
@@ -145,8 +145,14 @@ final class PatternFacts {
 		if ( null === $term ) {
 			return '';
 		}
-		$slug = (string) $term->slug;
-		return str_starts_with( $slug, 'pattern-' ) ? substr( $slug, strlen( 'pattern-' ) ) : $slug;
+		$canonical = \MetalDivider\Site\Catalog::canonical_series_slug( $term );
+		$slug      = '' !== $canonical ? $canonical : (string) $term->slug;
+		$tail      = str_starts_with( $slug, 'pattern-' ) ? substr( $slug, strlen( 'pattern-' ) ) : $slug;
+		$current   = \MetalDivider\Site\I18n\Languages::current();
+		if ( 'en' !== $current ) {
+			return \MetalDivider\Site\I18n\Dictionary::text( 'series.' . $tail, $current );
+		}
+		return $tail;
 	}
 
 	/**
@@ -159,6 +165,10 @@ final class PatternFacts {
 		$key = self::meta( $post_id, 'best_fit' );
 		if ( '' === $key ) {
 			return '';
+		}
+		$current = \MetalDivider\Site\I18n\Languages::current();
+		if ( 'en' !== $current ) {
+			return \MetalDivider\Site\I18n\Dictionary::text( 'best_fit.' . $key, $current );
 		}
 		return self::BEST_FIT_WORDS[ $key ] ?? ucwords( str_replace( '-', ' ', $key ) );
 	}
@@ -174,7 +184,9 @@ final class PatternFacts {
 	public static function open_area( int $post_id ): string {
 		$value = self::meta( $post_id, 'open_area' );
 		if ( '' === $value || ! is_numeric( $value ) ) {
-			return self::OPEN_AREA_ON_REQUEST;
+			return 'en' === \MetalDivider\Site\I18n\Languages::current()
+				? self::OPEN_AREA_ON_REQUEST
+				: \MetalDivider\Site\I18n\Dictionary::text( 'on_request' );
 		}
 		$number = (float) $value;
 		$digits = floor( $number ) === $number ? 0 : 2;
@@ -192,12 +204,15 @@ final class PatternFacts {
 	 * @return string The badge text.
 	 */
 	public static function badge( int $post_id ): string {
-		$cell = self::open_area( $post_id );
-		if ( self::OPEN_AREA_ON_REQUEST !== $cell ) {
-			return 'Open: ' . $cell;
+		$on_request = 'en' === \MetalDivider\Site\I18n\Languages::current()
+			? self::OPEN_AREA_ON_REQUEST
+			: \MetalDivider\Site\I18n\Dictionary::text( 'on_request' );
+		$cell       = self::open_area( $post_id );
+		if ( $on_request !== $cell ) {
+			return sprintf( \MetalDivider\Site\I18n\Dictionary::text( 'open_prefix' ), $cell );
 		}
 		$fit = self::best_fit( $post_id );
-		return '' === $fit ? self::OPEN_AREA_ON_REQUEST : 'Effect: ' . $fit;
+		return '' === $fit ? $on_request : sprintf( \MetalDivider\Site\I18n\Dictionary::text( 'effect_prefix' ), $fit );
 	}
 
 	/**

@@ -154,6 +154,13 @@ return array(
 				'not_configured' => 'not configured(未配置,标记)',
 			),
 		),
+		array(
+			'key'      => 'field_md_inquiry_locale',
+			'label'    => 'Visitor Language',
+			'name'     => 'inquiry_locale',
+			'type'     => 'text',
+			'readonly' => true,
+		),
 	),
 	'location'        => array(
 		array(

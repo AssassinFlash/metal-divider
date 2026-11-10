@@ -46,6 +46,29 @@ function add_filter( string $hook, string|callable $callback, int $priority = 10
 }
 
 /**
+ * Checks if any filter has been registered for a hook.
+ *
+ * @param string                      $hook_name The name of the filter hook.
+ * @param callable|string|array|false $callback  Optional callback to check.
+ * @return bool|int
+ */
+function has_filter( string $hook_name, callable|string|array|bool $callback = false ): bool|int {
+	$hooks = $GLOBALS['md_mu_test_hooks'][ $hook_name ] ?? array();
+	if ( empty( $hooks ) ) {
+		return false;
+	}
+	if ( false === $callback ) {
+		return true;
+	}
+	foreach ( $hooks as $entry ) {
+		if ( $entry[0] === $callback ) {
+			return $entry[1];
+		}
+	}
+	return false;
+}
+
+/**
  * Removes from a hook, recorded so the tests can assert the removal.
  *
  * @param string          $hook     The hook's name.
@@ -519,6 +542,46 @@ function wp_enqueue_script( string $handle, string $src = '', array $deps = arra
 		'ver'    => $ver,
 		'args'   => $args,
 	);
+}
+
+/**
+ * Records script dequeue calls for assertions.
+ *
+ * @param string $handle The script handle.
+ * @return void
+ */
+function wp_dequeue_script( string $handle ): void {
+	$GLOBALS['md_mu_test_dequeues'][] = $handle;
+}
+
+/**
+ * Records script deregister calls for assertions.
+ *
+ * @param string $handle The script handle.
+ * @return void
+ */
+function wp_deregister_script( string $handle ): void {
+	$GLOBALS['md_mu_test_deregisters'][] = $handle;
+}
+
+/**
+ * Removes trailing forward slashes and backslashes if they exist.
+ *
+ * @param string $value What to remove the trailing slashes from.
+ * @return string String without trailing slashes.
+ */
+function untrailingslashit( string $value ): string {
+	return rtrim( $value, '/\\' );
+}
+
+/**
+ * Appends a trailing slash.
+ *
+ * @param string $value What to add the trailing slash to.
+ * @return string String with trailing slash added.
+ */
+function trailingslashit( string $value ): string {
+	return untrailingslashit( $value ) . '/';
 }
 
 /**

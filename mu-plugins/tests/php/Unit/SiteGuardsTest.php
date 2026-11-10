@@ -97,6 +97,34 @@ final class SiteGuardsTest extends TestCase {
 
 		self::assertContains( array( 'md_site_guards_headers', 1, 1 ), $hooks['send_headers'] ?? array() );
 		self::assertContains( array( 'md_site_guards_block_author_enumeration', 1, 1 ), $hooks['template_redirect'] ?? array() );
+		self::assertContains( array( 'md_site_guards_dequeue_wpml_scripts', 100, 1 ), $hooks['wp_enqueue_scripts'] ?? array() );
+	}
+
+	/**
+	 * WPML client scripts that violate CSP are dequeued and deregistered on public pages,
+	 * but untouched in admin screens.
+	 */
+	public function test_wpml_scripts_are_dequeued_and_deregistered_outside_admin(): void {
+		$GLOBALS['md_mu_test_is_admin']    = false;
+		$GLOBALS['md_mu_test_dequeues']    = array();
+		$GLOBALS['md_mu_test_deregisters'] = array();
+
+		md_site_guards_dequeue_wpml_scripts();
+
+		self::assertSame( array( 'wpml-cookie', 'wpml-browser-redirect', 'sitepress-scripts' ), $GLOBALS['md_mu_test_dequeues'] );
+		self::assertSame( array( 'wpml-cookie', 'wpml-browser-redirect', 'sitepress-scripts' ), $GLOBALS['md_mu_test_deregisters'] );
+
+		// When in admin, nothing is dequeued.
+		$GLOBALS['md_mu_test_is_admin']    = true;
+		$GLOBALS['md_mu_test_dequeues']    = array();
+		$GLOBALS['md_mu_test_deregisters'] = array();
+
+		md_site_guards_dequeue_wpml_scripts();
+
+		self::assertSame( array(), $GLOBALS['md_mu_test_dequeues'] );
+		self::assertSame( array(), $GLOBALS['md_mu_test_deregisters'] );
+
+		$GLOBALS['md_mu_test_is_admin'] = false;
 	}
 
 	/**
@@ -157,6 +185,16 @@ final class SiteGuardsTest extends TestCase {
 		// A nested path under the base is still the archive: the base is a
 		// reserved permastruct and no page can live there beside it.
 		self::assertTrue( md_site_guards_is_legacy_author_path( 'author/team/alice' ) );
+
+		// All 8 non-EN language prefixes are recognized ahead of the author base.
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'zh/author/local-admin' ) );
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'es/author/nonexistent' ) );
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'pt-br/author/nobody' ) );
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'de/author/nonexistent/' ) );
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'fr/author/nonexistent' ) );
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'ar/author/nonexistent' ) );
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'id/author/nonexistent' ) );
+		self::assertTrue( md_site_guards_is_legacy_author_path( 'vi/author/nonexistent' ) );
 	}
 
 	/**
@@ -173,6 +211,11 @@ final class SiteGuardsTest extends TestCase {
 		self::assertFalse( md_site_guards_is_legacy_author_path( 'blog/author/local-admin' ) );
 		self::assertFalse( md_site_guards_is_legacy_author_path( 'pattern/author' ) );
 		self::assertFalse( md_site_guards_is_legacy_author_path( 'blog' ) );
+
+		// Bare base under a language prefix is not an author archive.
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'de/author' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'ar/author' ) );
+		self::assertFalse( md_site_guards_is_legacy_author_path( 'zh/authors/alice' ) );
 	}
 
 	/**

@@ -232,12 +232,15 @@ final class ValidatorTest extends TestCase {
 	}
 
 	/**
-	 * The locale is normalized the same quiet way: 'en' passes this phase,
+	 * The locale is normalized the same quiet way: supported 9 locales pass,
 	 * anything else is dropped rather than trusted.
 	 */
 	public function test_the_locale_is_whitelisted(): void {
 		$this->assertSame( 'en', Validator::locale( 'en' ) );
-		$this->assertSame( '', Validator::locale( 'de' ) );
+		$this->assertSame( 'de', Validator::locale( 'de' ) );
+		$this->assertSame( 'zh', Validator::locale( 'zh-hans' ) );
+		$this->assertSame( 'pt-br', Validator::locale( 'pt_BR' ) );
+		$this->assertSame( '', Validator::locale( 'xx' ) );
 		$this->assertSame( '', Validator::locale( '<script>' ) );
 	}
 }

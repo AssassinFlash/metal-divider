@@ -54,6 +54,6 @@ final class Request {
 		if ( '' === $raw ) {
 			return '';
 		}
-		return \strlen( $raw ) > self::UA_MAX ? \substr( $raw, 0, self::UA_MAX - 1 ) . '…' : $raw;
+		return \mb_strlen( $raw, 'UTF-8' ) > self::UA_MAX ? \mb_substr( $raw, 0, self::UA_MAX - 1, 'UTF-8' ) . '…' : $raw;
 	}
 }

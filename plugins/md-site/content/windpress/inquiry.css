@@ -167,9 +167,10 @@
 }
 /* The honeypot is for bots only: off-canvas, never display:none (some
    scrapers skip hidden fields, which would defeat the trap). */
+.md-inquiry-honeypot,
 .md-inquiry .md-inquiry-honeypot {
   position: absolute;
-  left: -9999px;
+  inset-inline-start: -9999px;
   width: 1px;
   height: 1px;
   overflow: hidden;
@@ -926,4 +927,38 @@
 .md-inquiry-app:not(#md-inquiry *) .md-inquiry {
   background: none;
   padding: 0;
+}
+
+/* --- RTL Overrides for Inquiry --- */
+[dir="rtl"] .md-inquiry {
+  text-align: right;
+}
+[dir="rtl"] .md-inquiry .md-inquiry-field__select {
+  padding-right: 14px;
+  padding-left: 44px;
+  background-position: left 14px center;
+}
+[dir="rtl"] .md-inquiry .md-inquiry-promise {
+  border-left: 0;
+  border-right: 2px solid var(--md-gold, #c9a962);
+  padding-left: 0;
+  padding-right: 12px;
+  text-align: right;
+}
+[dir="rtl"] .inquiry-flow-list > li {
+  padding: 22px 62px 22px 22px;
+  text-align: right;
+}
+[dir="rtl"] .inquiry-flow-list > li::before {
+  left: auto;
+  right: 22px;
+}
+@media (max-width: 600px) {
+  [dir="rtl"] .inquiry-flow-list > li {
+    padding: 20px 52px 20px 18px;
+  }
+  [dir="rtl"] .inquiry-flow-list > li::before {
+    left: auto;
+    right: 18px;
+  }
 }

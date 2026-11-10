@@ -13,6 +13,39 @@
 (function () {
   'use strict';
 
+  function readI18nConfig() {
+    var el = document.querySelector('[data-md-i18n-config]');
+    var config = null;
+    if (el) {
+      var raw = el.getAttribute('data-md-i18n-config') || el.textContent || '';
+      if (raw) {
+        try {
+          config = JSON.parse(raw);
+        } catch (e) {
+          config = null;
+        }
+      }
+    }
+    config = config || {};
+    var rootLang = document.documentElement.lang || 'en';
+    var rootDir = document.documentElement.dir || 'ltr';
+    var strings = config.strings || {};
+    return {
+      lang: config.lang || rootLang,
+      dir: config.dir || rootDir,
+      restPrefix: config.restPrefix || '',
+      shopUrl: config.shopUrl || '/patterns/',
+      strings: {
+        kindPattern: strings.kindPattern || 'Pattern',
+        kindPage: strings.kindPage || 'Page',
+        kindArticle: strings.kindArticle || 'Article',
+        noResults: strings.noResults || 'No patterns match',
+        copyEmailSuccess: strings.copyEmailSuccess || 'Email address copied',
+        copyEmailFallback: strings.copyEmailFallback || 'Select the email address to copy it.'
+      }
+    };
+  }
+
   /* ------------------------------------------------------------------ *
    * Alpine components (registered before Alpine starts)
    * ------------------------------------------------------------------ */
@@ -1059,9 +1092,12 @@
       trigger.addEventListener('keydown', function (event) {
         var current = indexOf(trigger);
         var next = null;
-        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        var isRtl = document.documentElement.dir === 'rtl';
+        var isFwd = isRtl ? event.key === 'ArrowLeft' : event.key === 'ArrowRight';
+        var isBack = isRtl ? event.key === 'ArrowRight' : event.key === 'ArrowLeft';
+        if (isFwd || event.key === 'ArrowDown') {
           next = (current + 1) % triggers.length;
-        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        } else if (isBack || event.key === 'ArrowUp') {
           next = (current - 1 + triggers.length) % triggers.length;
         } else if (event.key === 'Home') {
           next = 0;
@@ -1561,10 +1597,11 @@
         if (!lightbox.classList.contains('active')) {
           return;
         }
-        if (event.key === 'ArrowLeft') {
+        var isRtl = document.documentElement.dir === 'rtl';
+        if (event.key === (isRtl ? 'ArrowRight' : 'ArrowLeft')) {
           event.preventDefault();
           show(index - 1);
-        } else if (event.key === 'ArrowRight') {
+        } else if (event.key === (isRtl ? 'ArrowLeft' : 'ArrowRight')) {
           event.preventDefault();
           show(index + 1);
         }
@@ -3146,12 +3183,14 @@
       slider.addEventListener('keydown', function (event) {
         var box = scope.getBoundingClientRect();
         var current = masked.getBoundingClientRect().width / (box.width || 1);
+        var isRtl = document.documentElement.dir === 'rtl';
+        var step = isRtl ? -0.05 : 0.05;
         if (event.key === 'ArrowLeft') {
           event.preventDefault();
-          set(current - 0.05);
+          set(current - step);
         } else if (event.key === 'ArrowRight') {
           event.preventDefault();
-          set(current + 0.05);
+          set(current + step);
         } else if (event.key === 'Home') {
           event.preventDefault();
           set(0);
@@ -3315,6 +3354,9 @@
   // series tile is the search-series-tile partial — so this function fills
   // values and never assembles card markup.
   function setupPredictiveSearchReset() {
+    var i18n = readI18nConfig();
+    var restPrefix = i18n.restPrefix || '';
+
     each(document.querySelectorAll('[data-predictive-search-input]'), function (input) {
       var name = input.getAttribute('data-predictive-search-input');
       var reset = document.querySelector('[data-predictive-search-reset="' + name + '"]');
@@ -3451,7 +3493,7 @@
         // production 2026-10-29). The old site searched products, pages and
         // articles together, and the field's own placeholder promises a
         // search of the site, not of the catalogue.
-        var url = '/wp-json/wp/v2/search?per_page=10&search=' + encodeURIComponent(query);
+        var url = restPrefix + '/wp-json/wp/v2/search?per_page=10&search=' + encodeURIComponent(query);
 
         fetch(url, controller ? { signal: controller.signal } : undefined)
           .then(function (response) {
@@ -3520,7 +3562,7 @@
           done({});
           return;
         }
-        fetch('/wp-json/wc/store/v1/products?per_page=24&include=' + ids.join(','), { credentials: 'same-origin' })
+        fetch(restPrefix + '/wp-json/wc/store/v1/products?per_page=24&include=' + ids.join(','), { credentials: 'same-origin' })
           .then(function (response) {
             return response.ok ? response.json() : [];
           })
@@ -3546,12 +3588,18 @@
           results.textContent = '';
         }
         if (seeAll) {
-          seeAll.href = '/patterns/?pattern_search=' + encodeURIComponent(query);
+          seeAll.href = (i18n.shopUrl || '/patterns/') + '?pattern_search=' + encodeURIComponent(query);
           seeAll.hidden = false;
         }
         if (!rows || !rows.length || !hitTemplate || !hitTemplate.content) {
           if (emptyNote) {
             emptyNote.hidden = false;
+            if (i18n.strings && i18n.strings.noResults) {
+              var textNode = emptyNote.firstChild;
+              if (textNode && textNode.nodeType === 3) {
+                textNode.textContent = i18n.strings.noResults + ' ';
+              }
+            }
           }
           if (emptyQuery) {
             emptyQuery.textContent = '"' + query + '"';
@@ -3578,7 +3626,7 @@
         }).slice(0, 6).forEach(function (row) {
           var node = hitTemplate.content.firstElementChild.cloneNode(true);
           var image = (thumbs && row.id && thumbs[row.id]) || {};
-          var kind = row.subtype === 'product' ? '' : (row.subtype === 'post' ? 'Article' : 'Page');
+          var kind = row.subtype === 'product' ? (i18n.strings.kindPattern || '') : (row.subtype === 'post' ? (i18n.strings.kindArticle || 'Article') : (i18n.strings.kindPage || 'Page'));
           fillTile(
             node,
             row.url,
@@ -3596,7 +3644,7 @@
           return;
         }
         seriesLoaded = true;
-        fetch('/wp-json/wc/store/v1/products/categories?per_page=20')
+        fetch(restPrefix + '/wp-json/wc/store/v1/products/categories?per_page=20')
           .then(function (response) {
             if (!response.ok) {
               throw new Error('series ' + response.status);
@@ -4417,7 +4465,8 @@
         select(index);
       });
       tab.addEventListener('keydown', function (event) {
-        var steps = { ArrowRight: 1, ArrowLeft: -1 };
+        var isRtl = document.documentElement.dir === 'rtl';
+        var steps = isRtl ? { ArrowRight: -1, ArrowLeft: 1 } : { ArrowRight: 1, ArrowLeft: -1 };
         if (!(event.key in steps) && event.key !== 'Home' && event.key !== 'End') {
           return;
         }
@@ -4449,15 +4498,18 @@
     var copy = root.querySelector('[data-md-footer-copy]');
     var status = root.querySelector('.md-footer__copy-status');
     if (copy && status) {
+      var i18n = readI18nConfig();
+      var copySuccess = (i18n.strings && i18n.strings.copyEmailSuccess) || 'Email address copied';
+      var copyFallback = (i18n.strings && i18n.strings.copyEmailFallback) || 'Select the email address to copy it.';
       copy.addEventListener('click', function () {
         var value = copy.getAttribute('data-md-footer-copy') || '';
         var done = function () {
           copy.setAttribute('data-copied', 'true');
-          copy.setAttribute('aria-label', 'Email address copied');
-          status.textContent = 'Email address copied.';
+          copy.setAttribute('aria-label', copySuccess);
+          status.textContent = copySuccess + '.';
         };
         var failed = function () {
-          status.textContent = 'Select the email address to copy it.';
+          status.textContent = copyFallback;
         };
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(value).then(done, failed);
@@ -4802,10 +4854,11 @@
       if (lightbox.hidden) {
         return;
       }
-      if (event.key === 'ArrowLeft') {
+      var isRtl = document.documentElement.dir === 'rtl';
+      if (event.key === (isRtl ? 'ArrowRight' : 'ArrowLeft')) {
         navigate(-1);
       }
-      if (event.key === 'ArrowRight') {
+      if (event.key === (isRtl ? 'ArrowLeft' : 'ArrowRight')) {
         navigate(1);
       }
     });
@@ -5149,6 +5202,117 @@
     }
   }
 
+  // The 9-language switcher: desktop toggle, mobile drawer grid, footer inline links.
+  function setupLangSwitcher() {
+    var switchers = document.querySelectorAll('[data-md-lang-switcher]');
+    if (!switchers.length) {
+      return;
+    }
+
+    var closeAll = function (except) {
+      each(switchers, function (switcher) {
+        if (switcher === except) {
+          return;
+        }
+        var btn = switcher.querySelector('[data-md-lang-toggle]');
+        var menu = switcher.querySelector('[data-md-lang-menu]');
+        if (btn) {
+          btn.setAttribute('aria-expanded', 'false');
+        }
+        if (menu) {
+          menu.hidden = true;
+        }
+        switcher.classList.remove('is-open');
+      });
+    };
+
+    each(switchers, function (switcher) {
+      var toggle = switcher.querySelector('[data-md-lang-toggle]');
+      var menu = switcher.querySelector('[data-md-lang-menu]');
+      if (!toggle || !menu) {
+        return;
+      }
+
+      var openMenu = function () {
+        closeAll(switcher);
+        toggle.setAttribute('aria-expanded', 'true');
+        menu.hidden = false;
+        switcher.classList.add('is-open');
+      };
+
+      var closeMenu = function (returnFocus) {
+        toggle.setAttribute('aria-expanded', 'false');
+        menu.hidden = true;
+        switcher.classList.remove('is-open');
+        if (returnFocus) {
+          toggle.focus();
+        }
+      };
+
+      toggle.addEventListener('click', function (event) {
+        event.stopPropagation();
+        var isOpen = toggle.getAttribute('aria-expanded') === 'true';
+        if (isOpen) {
+          closeMenu(false);
+        } else {
+          openMenu();
+        }
+      });
+
+      switcher.addEventListener('keydown', function (event) {
+        var links = menu.querySelectorAll('.md-lang-switcher__link');
+        if (!links.length) {
+          return;
+        }
+        var current = Array.prototype.indexOf.call(links, document.activeElement);
+
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeMenu(true);
+          return;
+        }
+
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          if (menu.hidden) {
+            openMenu();
+            links[0].focus();
+          } else {
+            var next = current >= 0 ? (current + 1) % links.length : 0;
+            links[next].focus();
+          }
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          if (menu.hidden) {
+            openMenu();
+            links[links.length - 1].focus();
+          } else {
+            var prev = current > 0 ? current - 1 : links.length - 1;
+            links[prev].focus();
+          }
+        } else if (event.key === 'Home' && !menu.hidden) {
+          event.preventDefault();
+          links[0].focus();
+        } else if (event.key === 'End' && !menu.hidden) {
+          event.preventDefault();
+          links[links.length - 1].focus();
+        }
+      });
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!event.target.closest || !event.target.closest('[data-md-lang-switcher]')) {
+        closeAll(null);
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeAll(null);
+      }
+    });
+  }
+
   function start() {
     // `md-js` is what makes `x-cloak` mean anything: the CSS only hides a
     // cloaked block once this class is on the root, so a visitor without
@@ -5163,6 +5327,7 @@
     dropDuplicateModalForm();
     setupModals();
     setupTabs();
+    setupLangSwitcher();
     // The cloned panels carry <img xo-src>, so the fill runs before the
     // lazy-load pass resolves those sources. The drawer's panels are filled
     // by the same pass and need no runtime of their own (chrome.css owns

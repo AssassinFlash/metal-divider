@@ -22,50 +22,56 @@ declare( strict_types = 1 );
  * @return array<string, mixed>
  */
 return array(
-	'key'          => 'group_md_series_meta',
-	'title'        => '系列属性 series_meta',
-	'fields'       => array(
+	'key'                    => 'group_md_series_meta',
+	'title'                  => '系列属性 series_meta',
+	'acfml_field_group_mode' => 'advanced',
+	'fields'                 => array(
 		array(
-			'key'     => 'field_md_accent_color',
-			'label'   => '强调色 Accent color',
-			'name'    => 'accent_color',
-			'type'    => 'color_picker',
-			'default' => '#c9a962',
+			'key'                 => 'field_md_accent_color',
+			'label'               => '强调色 Accent color',
+			'name'                => 'accent_color',
+			'type'                => 'color_picker',
+			'default'             => '#c9a962',
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'     => 'field_md_difficulty_level',
-			'label'   => '难度 Difficulty',
-			'name'    => 'difficulty_level',
-			'type'    => 'radio',
-			'choices' => array(
+			'key'                 => 'field_md_difficulty_level',
+			'label'               => '难度 Difficulty',
+			'name'                => 'difficulty_level',
+			'type'                => 'radio',
+			'choices'             => array(
 				'simple'   => 'Simple',
 				'moderate' => 'Moderate',
 				'complex'  => 'Complex',
 			),
+			'wpml_cf_preferences' => 1,
 		),
 		array(
-			'key'   => 'field_md_typical_applications',
-			'label' => '典型应用 Typical applications',
-			'name'  => 'typical_applications',
-			'type'  => 'textarea',
-			'rows'  => 4,
+			'key'                 => 'field_md_typical_applications',
+			'label'               => '典型应用 Typical applications',
+			'name'                => 'typical_applications',
+			'type'                => 'textarea',
+			'rows'                => 4,
+			'wpml_cf_preferences' => 2,
 		),
 		array(
-			'key'   => 'field_md_bottom_content',
-			'label' => '页底内容 Bottom content',
-			'name'  => 'bottom_content',
-			'type'  => 'wysiwyg',
+			'key'                 => 'field_md_bottom_content',
+			'label'               => '页底内容 Bottom content',
+			'name'                => 'bottom_content',
+			'type'                => 'wysiwyg',
+			'wpml_cf_preferences' => 2,
 		),
 		array(
-			'key'          => 'field_md_style_blurb',
-			'label'        => '风格简介 Style blurb',
-			'name'         => 'style_blurb',
-			'type'         => 'textarea',
-			'rows'         => 3,
-			'instructions' => 'PDP 设计意图第一段(系列级文案,同系列共用一句)。留空则该段不渲染。',
+			'key'                 => 'field_md_style_blurb',
+			'label'               => '风格简介 Style blurb',
+			'name'                => 'style_blurb',
+			'type'                => 'textarea',
+			'rows'                => 3,
+			'instructions'        => 'PDP 设计意图第一段(系列级文案,同系列共用一句)。留空则该段不渲染。',
+			'wpml_cf_preferences' => 2,
 		),
 	),
-	'location'     => array(
+	'location'               => array(
 		array(
 			array(
 				'param'    => 'taxonomy',
@@ -74,7 +80,7 @@ return array(
 			),
 		),
 	),
-	'position'     => 'normal',
-	'active'       => true,
-	'show_in_rest' => 1,
+	'position'               => 'normal',
+	'active'                 => true,
+	'show_in_rest'           => 1,
 );

@@ -12,7 +12,23 @@
   var started = false;
   var lastStoreKey = 'mdv:lastChat';
   var currentPageUrl = '';
+  var currentLocale = '';
   var syncInFlightUrl = '';
+
+  function getEffectiveLocale() {
+    if (currentLocale) {
+      return currentLocale;
+    }
+    var candidate = currentPageUrl || window.location.href;
+    try {
+      var u = new URL(candidate, window.location.origin);
+      var match = u.pathname.match(/^\/(zh|es|pt-br|de|fr|ar|id|vi)(?:\/|$)/i);
+      if (match && match[1]) {
+        return match[1].toLowerCase();
+      }
+    } catch (e) {}
+    return 'en';
+  }
 
   function normalizePageUrl(raw) {
     if (!raw || typeof raw !== 'string') {
@@ -56,11 +72,16 @@
       return;
     }
     syncInFlightUrl = clean;
+    var locale = getEffectiveLocale();
+    var payload = { chat_id: chatId, hash: chatHash, page_url: clean };
+    if (locale && locale !== 'en') {
+      payload.lang = locale;
+    }
     fetch(window.location.origin + '/wp-json/md/v1/chat/context', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, hash: chatHash, page_url: clean })
+      body: JSON.stringify(payload)
     }).then(function (res) {
       if (res.ok) {
         try {
@@ -335,11 +356,16 @@
       setStatus('Saving...', '');
       var button = form.querySelector('button');
       button.disabled = true;
+      var locale = getEffectiveLocale();
+      var payload = { chat_id: chatId, hash: chatHash, email: value, page_url: currentPageUrl };
+      if (locale && locale !== 'en') {
+        payload.lang = locale;
+      }
       fetch(window.location.origin + '/wp-json/md/v1/chat/email', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, hash: chatHash, email: value, page_url: currentPageUrl })
+        body: JSON.stringify(payload)
       }).then(function (response) {
         return response.json().catch(function () {
           return {};
@@ -424,7 +450,9 @@
         patternUrl: rec.patternUrl
       }, window.location.origin);
     } else {
-      window.open('/inquiry/', '_blank', 'noopener');
+      var locale = getEffectiveLocale();
+      var prefix = locale && locale !== 'en' ? '/' + locale : '';
+      window.open(prefix + '/inquiry/', '_blank', 'noopener');
     }
   });
 
@@ -433,6 +461,9 @@
       return;
     }
     if (event.data && event.data.type === 'mdv_host_context' && event.data.pageUrl) {
+      if (event.data.lang) {
+        currentLocale = String(event.data.lang).toLowerCase();
+      }
       setPageUrl(event.data.pageUrl);
     }
   });
