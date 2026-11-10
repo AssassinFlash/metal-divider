@@ -59,20 +59,20 @@
 
 (每轮追加,最新在上。更早条目里的「690KB 收口」「CDN 回源下一步」「用分页或少渲染图案减重」已被上面的性能记录作废,不另改写历史。)
 
-### 2026-11-10 老板验收前全站 15 项深度排雷与视觉/功能闭环(批次十五 · 进行中)
+### 2026-11-10 老板验收前全站 15 项深度排雷与视觉/功能闭环(批次十五 · 已完成)
 
-- **审计基线与反偷懒/反幻觉门禁**:基线实拍截图存 `/tmp/md-audit-20261110/01..07-*.png`;全程由 **DeepSeek Flash / Max** 并发实现与独立挑刺终审 + **Gemini 4 Argon / High** 多模态视觉终审双盲把关:
-  - [ ] **P0-1 搜索弹层死锁与样式修复(`md-chrome.js:3366`、`chrome.css:1488`)**:修复 `if (inflight !== controller && controller)` 在 `inflight = null` 后恒真导致 `paint()` 永不执行的死锁;补齐 `.md-search-hit__kind` 样式并将桌面搜索框焦点环从深底不可见的 `#131313` 改为 `#d4b878`。
-  - [ ] **P0-2 AI 客服面板内外双重遮挡修复(`mdvisitor-launcher.css`、`mdvisitor.css`、`md-chat-launcher.php`)**:限制 `.mdvl-card` 最大高度避让顶部 Sticky Header;紧凑化启动页 `.md-start .md-hero` 与 `.md-action`,确保 `.md-panel` 独立滚动、不再被底部输入框压死截断 `Talk to a person` 与快捷胶囊。
-  - [ ] **P0-3 滚动态 Sticky Header 顶部露底修复(`chrome.css:348`、`chrome.css:1945`)**:消除外层 `header#lc-header`(`top:0`)与内层 `#HeaderV9`(`top:32px/46px`)错位造成的顶部穿透露底缝隙,移动端 `≤600px` 强制 `top:0`。
-  - [ ] **P0-4 移动端 PDP 底部三层浮层叠罗汉消解(`chrome.css:1659`、`mdvisitor-launcher.css:83`、`pdp.css`)**:移动端 PDP 存在吸底栏时隐藏 `.md-back-to-top`,并将 `.mdvl-launcher` 收敛为紧凑胶囊/徽章,消除遮挡正文与 H2 标题。
-  - [ ] **P0-5 内嵌表单空态 Turnstile 全宽空白虚线框消除与网格对齐(`inquiry.css:141`)**:移除 `interaction-only` 空态下的全宽 `65px` 虚线框(避免误导为图纸上传框),统一内嵌表单字段列宽右边界。
-  - [ ] **P1-6 首页 1440 首屏右栏主 CTA 卡片防截断与浮窗避让(`home.html`)**:紧凑化首屏右栏指标间距,使底部 `Get Custom Quote in 24h` 卡片在 1440 常规视口内完整露出并避开右下角客服胶囊。
-  - [ ] **P1-7 报价弹窗双列紧凑化、图案名三次重复去重与 Message 引导词(`chrome.css`、`inquiry.js`、`Form.php`、`pdp.html`)**:桌面弹窗 `Name`/`Email` 双列排布降低总高;当 `code` 与 `name` 同名时隐藏重复代码行;为 PDP 触发器补齐真实 `data-pattern-*`;为 `Message` 补齐引导 placeholder。
-  - [ ] **P1-8 表单提交失败重绘后自动打开弹窗或滚动聚焦(`Form.php`、`inquiry.js`)**:失败态输出 `data-md-inquiry-failed="1"`,前端自动打开 `#md-quote-modal` 或平滑滚动至内嵌报错表单并聚焦。
-  - [ ] **P1-9 旧 URL 301 补齐(`/collections/pattern-arabic/`、`/shop/<slug>/`、2 个族页别名)(`md-legacy-urls.php`)**:修复 `pattern-arabic` 301 到 `/pattern-category/pattern-moroccan-arabic/`,修复 `/shop/<slug>/` 301 到 `/pattern/<slug>/`,补齐 `/perforated-metal-panels/` 与 `/outdoor-privacy-screens/` 301。
-  - [ ] **P1-10 移动端汉堡抽屉补齐 Gallery 并与桌面主导航对齐(`header.html`)**:在移动抽屉补齐 `/project-gallery/` 入口并对齐导航顺序与守卫测试。
-  - [ ] **P2-1..5 细节与安全优化(`inquiry.html`、`header.html`、`footer.html`、`Request.php`、`SchemaFilters.php`、`pdp.css`)**:修复 `/inquiry/` 第三张图宽高比属性(`480×479`)与 Header logo 整数宽高;补齐空表单与页脚 WhatsApp 预填问候语;`Request::ip()` 仅信 `REMOTE_ADDR`;修正目录分页 `ItemList` Schema 与 `https` Organization logo;对齐 `pdp.css` `990px` 断点。
+- **审计基线与反偷懒/反幻觉门禁**:全程由 **DeepSeek Flash / Max** 并发实现与三轮独立挑刺终审(`da993a36` → `668084d5` → `3fbaf0e7`,最终 **Total FAIL = 0,15/15 闭环**) + 真 Chrome 同机位前后截图视觉核验把关,生产部署批次 `20261110T180609243781Z-a80b304`、WindPress 缓存 `1794332881`:
+  - [x] **P0-1 搜索弹层死锁与样式修复(`md-chrome.js`、`chrome.css`)**:修复 `if (inflight !== controller && controller)` 在 `inflight = null` 后恒真导致 `paint()` 永不执行的死锁(改为 `if (inflight && inflight !== controller)` + `requestSerial` 序号守卫);清洗搜索结果标题末尾 `| Architectural Metal Screen Pattern` 后缀;分离右上角关闭钮与清除钮重叠;补齐 `.md-search-hit__kind` 样式并将桌面搜索框焦点环改为 `#d4b878`。
+  - [x] **P0-2 AI 客服面板内外双重遮挡修复(`mdvisitor-launcher.css`、`mdvisitor.css`、`md-chat-launcher.php`)**:限制 `.mdvl-card` 最大高度 `min(580px, calc(100dvh - var(--md-header-h, 60px) - 36px))` 避让顶部 Sticky Header;紧凑化启动页 `.md-start .md-hero` 与 `.md-action`,确保 `.md-panel` 独立滚动、不再被底部输入框压死截断 `Talk to a person` 与快捷胶囊(版本 `20261110b`)。
+  - [x] **P0-3 滚动态 Sticky Header 顶部露底修复(`chrome.css`)**:消除外层 `header#lc-header`(`top:0`)与内层 `#HeaderV9`(`top:32px/46px`)错位造成的顶部穿透露底缝隙,移动端 `≤600px` 强制 `top:0`。
+  - [x] **P0-4 移动端 PDP 底部三层浮层叠罗汉消解(`chrome.css`、`mdvisitor-launcher.css`、`pdp.css`)**:移动端 `≤990px` PDP 隐藏 `.md-back-to-top`,并将 `.mdvl-launcher` 收敛为 `44×44px` 圆形 `MD` 徽章(`bottom: calc(84px + env(safe-area-inset-bottom))`),消除对正文与标题的遮挡。
+  - [x] **P0-5 内嵌表单空态 Turnstile 全宽空白虚线框消除与网格对齐(`inquiry.css`、`Form.php`、`inquiry.js`)**:移除 `interaction-only` 空态下的全宽 `65px` 虚线框(`:empty { display: none; }` + `--mounting` 状态类),统一内嵌表单全宽字段(`Phone`/`Message`/`Optional`/`Promise`/`Note`)的 `grid-column: 1 / -1` 右边界。
+  - [x] **P1-6 首页 1440 首屏右栏主 CTA 卡片防截断与浮窗避让(`home.html`)**:紧凑化首屏右栏指标字号与间距(`lg:pt-8 lg:pb-24`、`lg:mb-14`),实测 1440×755 视口下右栏底部卡片 `bottom=669.25px < launcher.top=677px` 完整露出且零重叠。
+  - [x] **P1-7 报价弹窗双列紧凑化、图案名三次重复去重与 Message 引导词(`chrome.css`、`Pattern.php`、`Form.php`、`WhatsApp.php`、`inquiry.js`、`pdp.html`)**:桌面弹窗 `Name`/`Email` 双列排布降低总高;服务端 `Pattern::clean_title()` 与前端 `cleanTitle()` 剥离 `| Architectural Metal Screen Pattern` SEO 后缀,当 `code` 与 `name` 同名时服务端 `hidden` 隐藏重复代码行且 WhatsApp 不拼重复 `(Agave)`;保留 `[md_inquiry_whatsapp]` 的 `%0A` 换行;为 PDP 全部 5 个触发器补齐真实 `data-pattern-*`;为 `Message` 补齐引导 placeholder。
+  - [x] **P1-8 表单提交失败重绘后自动打开弹窗或滚动聚焦(`Form.php`、`inquiry.js`)**:失败态输出 `data-md-inquiry-failed="1"`,前端 `revealFailedForm()` 自动打开 `#md-quote-modal` 或平滑滚动至内嵌报错表单并聚焦首个错误控件。
+  - [x] **P1-9 旧 URL 301 补齐与单跳直达(`/collections/pattern-arabic/`、`/shop/<slug>/`、2 个族页别名)(`md-legacy-urls.php`)**:修复 `pattern-arabic` 301 到 `/pattern-category/pattern-moroccan-arabic/`,修复 `/shop/<slug>/` 单跳直达 `/pattern/<slug>-architectural-metal-screen-pattern/`,补齐 `/perforated-metal-panels/` 与 `/outdoor-privacy-screens/` 301。
+  - [x] **P1-10 移动端汉堡抽屉补齐 Gallery 并与桌面主导航对齐(`header.html`)**:在移动抽屉补齐 `/project-gallery/` 入口并对齐导航顺序与守卫测试。
+  - [x] **P2-1..5 细节、安全与 Sitemap 优化(`inquiry.html`、`header.html`、`footer.html`、`home.html`、`Request.php`、`SchemaFilters.php`、`SitemapDedupe.php`、`pdp.css`)**:修复 `/inquiry/` 第三张图宽高比属性(`480×479`)与 Header logo 整数宽高(`53`/`103`);补齐空表单、首页底部与页脚 WhatsApp 预填问候语;`Request::ip()` 仅信 `REMOTE_ADDR`;修正目录分页 `ItemList` Schema 与 `https` Organization logo;修复 SEOPress 10.4 + Woo `menu_order` 冲突使 `product_cat-sitemap1.xml` 恢复输出全部 9 个系列 URL;对齐 `pdp.css` `990px` 断点。
 
 ### 2026-11-03 批次十二/十三独立深度审计排雷与全链路实测闭环(批次十四)
 
