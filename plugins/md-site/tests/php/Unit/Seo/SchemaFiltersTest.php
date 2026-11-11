@@ -268,16 +268,8 @@ final class SchemaFiltersTest extends TestCase {
 		);
 		// The gallery product: eight images, so the cap keeps the
 		// schema at the spec's "featured + first six".
-		$GLOBALS['md_wc_product_double'] = new class() { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- a test double's handoff, not a plugin global.
-			/**
-			 * The gallery ids.
-			 *
-			 * @return int[]
-			 */
-			public function get_gallery_image_ids(): array {
-				return array( 2, 3, 4, 5, 6, 7, 8, 9 );
-			}
-		};
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- a test double's handoff, not a plugin global.
+		$GLOBALS['md_wc_product_double'] = new \FakeGalleryProduct( array( 2, 3, 4, 5, 6, 7, 8, 9 ) );
 
 		$json = ( new SchemaFilters() )->product(
 			array(

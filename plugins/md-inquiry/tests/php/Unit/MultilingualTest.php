@@ -96,8 +96,7 @@ final class MultilingualTest extends TestCase {
 		// Mail\Queue::substr500() truncation at 500 chars via reflection.
 		$long_msg   = \str_repeat( '金属隔断', 150 ); // 600 characters
 		$ref_substr = new \ReflectionMethod( Queue::class, 'substr500' );
-		$ref_substr->setAccessible( true );
-		$cut_500 = $ref_substr->invoke( null, $long_msg );
+		$cut_500    = $ref_substr->invoke( null, $long_msg );
 		$this->assertSame( 500, \mb_strlen( $cut_500, 'UTF-8' ) );
 		$this->assertSame( \mb_substr( $long_msg, 0, 499, 'UTF-8' ) . '…', $cut_500 );
 	}

@@ -87,12 +87,10 @@ abstract class TestCase extends WP_Mock_TestCase {
 			}
 		);
 
-		$ref_manager = new \ReflectionProperty( \WP_Mock::class, 'event_manager' );
-		$ref_manager->setAccessible( true );
+		$ref_manager   = new \ReflectionProperty( \WP_Mock::class, 'event_manager' );
 		$event_manager = $ref_manager->getValue();
 		if ( $event_manager instanceof \WP_Mock\EventManager ) {
-			$ref_filters = new \ReflectionProperty( \WP_Mock\EventManager::class, 'filters' );
-			$ref_filters->setAccessible( true );
+			$ref_filters                      = new \ReflectionProperty( \WP_Mock\EventManager::class, 'filters' );
 			$filters                          = (array) $ref_filters->getValue( $event_manager );
 			$filters['wpml_current_language'] = new PassthruFilter( 'wpml_current_language' );
 			$filters['wpml_object_id']        = new PassthruFilter( 'wpml_object_id' );
