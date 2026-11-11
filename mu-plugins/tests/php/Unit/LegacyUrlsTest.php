@@ -245,6 +245,13 @@ final class LegacyUrlsTest extends TestCase {
 		self::assertSame( '/perforated-panels/', md_legacy_urls_target( '/perforated-metal-panels', $live ) );
 		self::assertSame( '/perforated-panels/', md_legacy_urls_target( '/perforated-metal-panels/', $live ) );
 		self::assertSame( '/outdoor-privacy-landscape-screens/', md_legacy_urls_target( '/outdoor-privacy-screens/', $live ) );
+		self::assertSame( '/', md_legacy_urls_target( '/pages', $live ) );
+		self::assertSame( '/', md_legacy_urls_target( '/pages/', $live ) );
+		self::assertSame( '/fr/', md_legacy_urls_target( '/fr/pages', $live ) );
+		self::assertSame( '/faqs/', md_legacy_urls_target( '/pages/faqs', $live ) );
+		self::assertSame( '/fr/faqs/', md_legacy_urls_target( '/fr/pages/faqs', $live ) );
+		self::assertSame( '/zh/faqs/', md_legacy_urls_target( '/zh/pages/faqs/', $live ) );
+		self::assertSame( '/ar/custom-metal-divider-screens/', md_legacy_urls_target( '/ar/pages/custom-metal-divider', $live ) );
 	}
 
 	/**

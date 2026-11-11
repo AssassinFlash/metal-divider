@@ -1187,19 +1187,21 @@ final class Catalog {
 		if ( $total < 2 ) {
 			return '';
 		}
+		$lang  = \MetalDivider\Site\I18n\Languages::current();
 		$links = \paginate_links(
 			array(
 				'total'     => $total,
 				'current'   => max( 1, (int) \get_query_var( 'paged' ) ),
 				'type'      => 'array',
-				'prev_text' => 'Previous',
-				'next_text' => 'Next',
+				'prev_text' => 'en' === $lang ? 'Previous' : \MetalDivider\Site\I18n\Dictionary::text( 'pager_prev', $lang ),
+				'next_text' => 'en' === $lang ? 'Next' : \MetalDivider\Site\I18n\Dictionary::text( 'pager_next', $lang ),
 			)
 		);
 		if ( array() === $links ) {
 			return '';
 		}
-		return '<nav class="pattern-catalog__pagination" aria-label="Pattern pages">' . implode( '', $links ) . '</nav>';
+		$aria = 'en' === $lang ? 'Pattern pages' : \esc_attr( \MetalDivider\Site\I18n\Dictionary::text( 'pager_aria', $lang ) );
+		return '<nav class="pattern-catalog__pagination" aria-label="' . $aria . '">' . implode( '', $links ) . '</nav>';
 	}
 
 	/**
@@ -1216,21 +1218,20 @@ final class Catalog {
 		$pages  = max( 1, (int) $query->max_num_pages );
 		$page   = max( 1, (int) \get_query_var( 'paged' ) );
 		$search = $this->requested_search();
+		$lang   = \MetalDivider\Site\I18n\Languages::current();
+		$noun   = 1 === $found
+			? ( 'en' === $lang ? 'pattern' : \MetalDivider\Site\I18n\Dictionary::text( 'pattern_singular', $lang ) )
+			: ( 'en' === $lang ? 'patterns' : \MetalDivider\Site\I18n\Dictionary::text( 'pattern_plural', $lang ) );
 		if ( '' !== $search ) {
-			return sprintf(
-				'Search results for "%s" — <strong>%d</strong> %s',
-				\esc_html( $search ),
-				$found,
-				1 === $found ? 'pattern' : 'patterns'
-			);
+			$fmt = 'en' === $lang
+				? 'Search results for "%1$s" — <strong>%2$d</strong> %3$s'
+				: \MetalDivider\Site\I18n\Dictionary::text( 'catalog_search_summary', $lang );
+			return sprintf( $fmt, \esc_html( $search ), $found, $noun );
 		}
-		return sprintf(
-			'Showing <strong>%d</strong> %s &middot; Page %d of %d',
-			$found,
-			1 === $found ? 'pattern' : 'patterns',
-			$page,
-			$pages
-		);
+		$fmt = 'en' === $lang
+			? 'Showing <strong>%1$d</strong> %2$s &middot; Page %3$d of %4$d'
+			: \MetalDivider\Site\I18n\Dictionary::text( 'catalog_summary', $lang );
+		return sprintf( $fmt, $found, $noun, $page, $pages );
 	}
 
 	/**
@@ -1272,16 +1273,30 @@ final class Catalog {
 			return '';
 		}
 		$search = $this->requested_search();
+		$lang   = \MetalDivider\Site\I18n\Languages::current();
 		if ( '' !== $search ) {
-			return sprintf(
-				'<div class="pattern-catalog__empty" data-pattern-empty><h3>No patterns match &ldquo;%s&rdquo;</h3><p>Try a pattern name or a family, or <a href="%s">clear the search</a> to see everything this page lists.</p></div>',
-				\esc_html( $search ),
-				\esc_url( $this->archive_form_action() )
-			);
+			$title_fmt = 'en' === $lang
+				? 'No patterns match &ldquo;%s&rdquo;'
+				: \MetalDivider\Site\I18n\Dictionary::text( 'empty_search_title', $lang );
+			$body_fmt  = 'en' === $lang
+				? 'Try a pattern name or a family, or <a href="%s">clear the search</a> to see everything this page lists.'
+				: \MetalDivider\Site\I18n\Dictionary::text( 'empty_search_body', $lang );
+			return '<div class="pattern-catalog__empty" data-pattern-empty><h3>' .
+				sprintf( $title_fmt, \esc_html( $search ) ) .
+				'</h3><p>' .
+				sprintf( $body_fmt, \esc_url( $this->archive_form_action() ) ) .
+				'</p></div>';
 		}
-		return sprintf(
-			'<div class="pattern-catalog__empty" data-pattern-empty><h3>No patterns here yet</h3><p>This series carries no published patterns at the moment. <a href="%s">Browse all patterns</a> to find the families that do.</p></div>',
-			$this->shop_base()
-		);
+		$title_text = 'en' === $lang
+			? 'No patterns here yet'
+			: \esc_html( \MetalDivider\Site\I18n\Dictionary::text( 'empty_series_title', $lang ) );
+		$body_fmt   = 'en' === $lang
+			? 'This series carries no published patterns at the moment. <a href="%s">Browse all patterns</a> to find the families that do.'
+			: \MetalDivider\Site\I18n\Dictionary::text( 'empty_series_body', $lang );
+		return '<div class="pattern-catalog__empty" data-pattern-empty><h3>' .
+			$title_text .
+			'</h3><p>' .
+			sprintf( $body_fmt, $this->shop_base() ) .
+			'</p></div>';
 	}
 }

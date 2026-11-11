@@ -71,10 +71,27 @@ const MD_LEGACY_URLS_PATTERN_BASE = '/pattern';
  * pages were linked on the old site under longer names.
  */
 const MD_LEGACY_URLS_ALIASES = array(
-	'/collections/pattern-arabic'      => '/pattern-category/pattern-moroccan-arabic/',
-	'/pattern-category/pattern-arabic' => '/pattern-category/pattern-moroccan-arabic/',
-	'/perforated-metal-panels'         => '/perforated-panels/',
-	'/outdoor-privacy-screens'         => '/outdoor-privacy-landscape-screens/',
+	'/collections/pattern-arabic'              => '/pattern-category/pattern-moroccan-arabic/',
+	'/pattern-category/pattern-arabic'         => '/pattern-category/pattern-moroccan-arabic/',
+	'/perforated-metal-panels'                 => '/perforated-panels/',
+	'/outdoor-privacy-screens'                 => '/outdoor-privacy-landscape-screens/',
+	'/pages'                                   => '/',
+	'/pages/about-us'                          => '/about-us/',
+	'/pages/chinese-style-artistic-screens'    => '/chinese-style-artistic-screens/',
+	'/pages/custom-metal-divider'              => '/custom-metal-divider-screens/',
+	'/pages/custom-metal-divider-screens'      => '/custom-metal-divider-screens/',
+	'/pages/expanded-metal-panels'             => '/expanded-metal-panels/',
+	'/pages/faqs'                              => '/faqs/',
+	'/pages/glass-hybrid-screens'              => '/glass-hybrid-screens/',
+	'/pages/laser-cut-geometric-metal-screens' => '/laser-cut-geometric-metal-screens/',
+	'/pages/laser-cut-panels'                  => '/laser-cut-panels/',
+	'/pages/manufacturing-process'             => '/manufacturing-process/',
+	'/pages/outdoor-privacy-landscape-screens' => '/outdoor-privacy-landscape-screens/',
+	'/pages/outdoor-privacy-screens'           => '/outdoor-privacy-landscape-screens/',
+	'/pages/perforated-metal-panels'           => '/perforated-panels/',
+	'/pages/perforated-panels'                 => '/perforated-panels/',
+	'/pages/project-gallery'                   => '/project-gallery/',
+	'/pages/stainless-steel-screens'           => '/stainless-steel-screens/',
 );
 
 /**

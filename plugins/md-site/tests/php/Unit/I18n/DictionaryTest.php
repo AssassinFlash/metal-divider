@@ -125,4 +125,34 @@ final class DictionaryTest extends TestCase {
 		$this->assertSame( 'non_existent_key', Dictionary::text( 'non_existent_key', 'en' ) );
 		$this->assertSame( 'non_existent_key', Dictionary::text( 'non_existent_key', 'zh' ) );
 	}
+
+	/**
+	 * Verifies catalog summary, pagination, empty-state, and PDP hero sentence keys are localized across all target languages.
+	 */
+	public function test_catalog_and_pdp_hero_ui_keys_localized_across_all_target_languages(): void {
+		$keys = array(
+			'hero_sentence',
+			'hero_sentence_fit',
+			'catalog_summary',
+			'catalog_search_summary',
+			'pattern_plural',
+			'pager_prev',
+			'pager_next',
+			'pager_aria',
+			'empty_search_title',
+			'empty_search_body',
+			'empty_series_title',
+			'empty_series_body',
+		);
+
+		foreach ( Languages::TARGETS as $code ) {
+			foreach ( $keys as $key ) {
+				$en_val = Dictionary::text( $key, 'en' );
+				$tr_val = Dictionary::text( $key, $code );
+				$this->assertNotEmpty( $tr_val, "Key {$key} empty in {$code}" );
+				$this->assertNotSame( $key, $tr_val, "Key {$key} missing in {$code}" );
+				$this->assertNotSame( $en_val, $tr_val, "Key {$key} still in English in {$code}" );
+			}
+		}
+	}
 }

@@ -330,6 +330,12 @@ final class Shortcodes {
 	 */
 	private function hero_sentence(): string {
 		$word = $this->best_fit_word();
+		$lang = \MetalDivider\Site\I18n\Languages::current();
+		if ( 'en' !== $lang ) {
+			return '' === $word
+				? \MetalDivider\Site\I18n\Dictionary::text( 'hero_sentence', $lang )
+				: sprintf( \MetalDivider\Site\I18n\Dictionary::text( 'hero_sentence_fit', $lang ), $word );
+		}
 		return '' === $word ? self::HERO_SENTENCE : sprintf( self::HERO_SENTENCE_FIT, $word );
 	}
 
