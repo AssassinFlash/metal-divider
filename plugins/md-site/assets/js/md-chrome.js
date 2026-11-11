@@ -153,9 +153,32 @@
         kindArticle: strings.kindArticle || 'Article',
         noResults: strings.noResults || 'No patterns match',
         copyEmailSuccess: strings.copyEmailSuccess || 'Email address copied',
-        copyEmailFallback: strings.copyEmailFallback || 'Select the email address to copy it.'
+        copyEmailFallback: strings.copyEmailFallback || 'Select the email address to copy it.',
+        searchPlaceholder: strings.searchPlaceholder || 'Search patterns',
+        searchPrompt: strings.searchPrompt || 'Search patterns by name, or start from a series.',
+        nav: strings.nav || {}
       }
     };
+  }
+
+  // Replace the textContent of every [data-md-i18n] element using the nav
+  // dictionary from the i18n config. Called once at page boot so mega-menu
+  // labels and other static header strings are localised without a server
+  // round-trip. The attribute value is the English source key.
+  function localizeStaticTexts(i18n) {
+    if (!i18n || !i18n.lang || i18n.lang === 'en') {
+      return;
+    }
+    var nav = i18n.strings.nav;
+    if (!nav || typeof nav !== 'object') {
+      return;
+    }
+    each(document.querySelectorAll('[data-md-i18n]'), function (el) {
+      var key = el.getAttribute('data-md-i18n');
+      if (key && nav[key]) {
+        el.textContent = nav[key];
+      }
+    });
   }
 
   function withWpmlLang(url, i18n) {
@@ -3515,6 +3538,24 @@
     var i18n = readI18nConfig();
     var restPrefix = i18n.restPrefix || '';
 
+    // Localise the search input placeholder and prompt text using the strings
+    // shipped in the i18n config. The placeholder is a plain HTML attribute;
+    // the prompt is static text inside [data-md-search-prompt].
+    if (i18n.lang && i18n.lang !== 'en') {
+      var searchPlaceholder = i18n.strings.searchPlaceholder;
+      var searchPromptText  = i18n.strings.searchPrompt;
+      each(document.querySelectorAll('[data-predictive-search-input]'), function (inp) {
+        if (searchPlaceholder) {
+          inp.placeholder  = searchPlaceholder;
+          inp.setAttribute('aria-label', searchPlaceholder);
+        }
+      });
+      var promptEl = document.querySelector('[data-md-search-prompt]');
+      if (promptEl && searchPromptText) {
+        promptEl.textContent = searchPromptText;
+      }
+    }
+
     each(document.querySelectorAll('[data-predictive-search-input]'), function (input) {
       var name = input.getAttribute('data-predictive-search-input');
       var reset = document.querySelector('[data-predictive-search-reset="' + name + '"]');
@@ -5571,6 +5612,10 @@
     // their presentation).
     fillMegaMenus();
     setupDesktopMegaPanels();
+    // Replace [data-md-i18n] text nodes with localised strings from the i18n
+    // config. Runs after fillMegaMenus() so that cloned mega-menu panels are
+    // already in the live DOM when the selector runs.
+    localizeStaticTexts(readI18nConfig());
     setupLazyload();
     setupSticky();
     setupFooterDock();
