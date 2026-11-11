@@ -145,7 +145,7 @@ final class HeaderOrderAndFacadeIndexTest extends TestCase {
 			'Pattern',
 			'Manufacturing process',
 			'Gallery',
-			'FAQs & Download',
+			'Resources',
 			'About',
 			'Contact',
 		);

@@ -1046,13 +1046,28 @@ final class Shortcodes {
 		$current      = \MetalDivider\Site\I18n\Languages::current();
 		$aria_label   = \MetalDivider\Site\I18n\Dictionary::text( 'switcher_aria_label' );
 		$active_short = 'EN';
+		$active_label = 'English';
 
 		foreach ( $items as $it ) {
 			if ( $it['active'] ) {
 				$active_short = $it['short'];
+				$active_label = $it['label'];
 				break;
 			}
 		}
+
+		$config      = array(
+			'lang'       => $current,
+			'wpmlLang'   => \MetalDivider\Site\I18n\Languages::to_wpml( $current ),
+			'dir'        => \MetalDivider\Site\I18n\Languages::is_rtl( $current ) ? 'rtl' : 'ltr',
+			'restPrefix' => 'en' === $current ? '' : '/' . $current,
+			'shopUrl'    => \MetalDivider\Site\I18n\Languages::home_url( '/patterns/', $current ),
+			'strings'    => \MetalDivider\Site\I18n\Dictionary::chrome_config( $current ),
+		);
+		$json_config = (string) \wp_json_encode( $config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+
+		$globe_svg   = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>';
+		$chevron_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="md-lang-switcher__chevron" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>';
 
 		if ( 'header-mobile' === $context ) {
 			$grid_items = '';
@@ -1071,8 +1086,17 @@ final class Shortcodes {
 				);
 			}
 			return sprintf(
-				'<nav class="md-lang-switcher md-lang-switcher--mobile" aria-label="%s"><ul class="md-lang-switcher__grid" role="list">%s</ul></nav>',
+				'<details class="md-lang-switcher md-lang-switcher--mobile" data-md-i18n-config="%s">' .
+				'<summary class="md-lang-switcher__summary" aria-label="%s">' .
+				'<span class="md-lang-switcher__summary-lead">%s<span class="md-lang-switcher__current">%s</span></span>%s' .
+				'</summary>' .
+				'<ul class="md-lang-switcher__grid" role="list">%s</ul>' .
+				'</details>',
+				\esc_attr( $json_config ),
 				\esc_attr( $aria_label ),
+				$globe_svg,
+				\esc_html( $active_label ),
+				$chevron_svg,
 				$grid_items
 			);
 		}
@@ -1101,17 +1125,6 @@ final class Shortcodes {
 		}
 
 		// Default: header-desktop.
-		$config      = array(
-			'lang'       => $current,
-			'dir'        => \MetalDivider\Site\I18n\Languages::is_rtl( $current ) ? 'rtl' : 'ltr',
-			'restPrefix' => 'en' === $current ? '' : '/' . $current,
-			'shopUrl'    => \MetalDivider\Site\I18n\Languages::home_url( '/patterns/', $current ),
-			'strings'    => \MetalDivider\Site\I18n\Dictionary::chrome_config( $current ),
-		);
-		$json_config = (string) \wp_json_encode( $config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
-
-		$globe_svg   = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>';
-		$chevron_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="md-lang-switcher__chevron" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>';
 
 		$menu_items = '';
 		foreach ( $items as $it ) {

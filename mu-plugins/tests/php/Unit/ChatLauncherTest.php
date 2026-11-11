@@ -150,6 +150,7 @@ final class ChatLauncherTest extends TestCase {
 		$enqueue = $GLOBALS['md_mu_test_enqueues'][0];
 		self::assertSame( 'md-chat-launcher', $enqueue['handle'] );
 		self::assertSame( md_chat_launcher_script_url(), $enqueue['src'] );
+		self::assertSame( '20261111b', MD_CHAT_LAUNCHER_VERSION );
 		self::assertSame( MD_CHAT_LAUNCHER_VERSION, $enqueue['ver'] );
 		self::assertTrue( $enqueue['args']['in_footer'] );
 		self::assertSame( 'defer', $enqueue['args']['strategy'] );

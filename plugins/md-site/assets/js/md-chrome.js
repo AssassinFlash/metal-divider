@@ -13,6 +13,115 @@
 (function () {
   'use strict';
 
+  var WPML_LANG_MAP = {
+    en: 'en',
+    zh: 'zh-hans',
+    es: 'es',
+    'pt-br': 'pt-br',
+    de: 'de',
+    fr: 'fr',
+    ar: 'ar',
+    id: 'id',
+    vi: 'vi'
+  };
+
+  var HTML_NAMED_ENTITIES = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+    nbsp: ' ',
+    ndash: '\u2013',
+    mdash: '\u2014',
+    lsquo: '\u2018',
+    rsquo: '\u2019',
+    ldquo: '\u201C',
+    rdquo: '\u201D',
+    laquo: '\u00AB',
+    raquo: '\u00BB',
+    hellip: '\u2026',
+    middot: '\u00B7',
+    bull: '\u2022',
+    copy: '\u00A9',
+    reg: '\u00AE',
+    trade: '\u2122'
+  };
+
+  var WA_LOCALIZED_GREETINGS = {
+    zh: {
+      general: '您好 Metal Divider，我想咨询定制不锈钢金属屏风项目报价。',
+      pattern: '您好 Metal Divider，我想咨询 %s 图案的定制报价。'
+    },
+    es: {
+      general: 'Hola Metal Divider, me gustaría solicitar un presupuesto para un proyecto personalizado de celosías metálicas en acero inoxidable.',
+      pattern: 'Hola Metal Divider, me gustaría solicitar un presupuesto personalizado para el patrón %s.'
+    },
+    'pt-br': {
+      general: 'Olá Metal Divider, gostaria de solicitar um orçamento para um projeto personalizado de painéis metálicos em aço inoxidável.',
+      pattern: 'Olá Metal Divider, gostaria de solicitar um orçamento personalizado para o padrão %s.'
+    },
+    de: {
+      general: 'Hallo Metal Divider, ich interessiere mich für ein individuelles Projekt mit Edelstahl-Metalltrennwänden und bitte um ein Angebot.',
+      pattern: 'Hallo Metal Divider, ich möchte gerne ein individuelles Angebot für das Muster %s anfragen.'
+    },
+    fr: {
+      general: 'Bonjour Metal Divider, je souhaite obtenir un devis pour un projet sur mesure de panneaux métalliques en acier inoxydable.',
+      pattern: 'Bonjour Metal Divider, je souhaiterais recevoir un devis sur mesure pour le motif %s.'
+    },
+    ar: {
+      general: 'مرحباً Metal Divider، أود الاستفسار عن عرض أسعار لمشروع فواصل وشاشات معدنية مخصصة من الفولاذ المقاوم للصدأ.',
+      pattern: 'مرحباً Metal Divider، أود طلب عرض أسعار مخصص لنمط %s.'
+    },
+    id: {
+      general: 'Halo Metal Divider, saya tertarik untuk meminta penawaran proyek partisi logam stainless steel kustom.',
+      pattern: 'Halo Metal Divider, saya ingin meminta penawaran kustom untuk pola %s.'
+    },
+    vi: {
+      general: 'Xin chào Metal Divider, tôi muốn nhận báo giá cho dự án vách ngăn kim loại thép không gỉ theo yêu cầu.',
+      pattern: 'Xin chào Metal Divider, tôi muốn nhận báo giá theo yêu cầu cho họa tiết %s.'
+    }
+  };
+
+  function normalizeCanonicalLang(raw) {
+    var clean = String(raw || '').trim().toLowerCase().replace(/_/g, '-');
+    if (!clean) {
+      return 'en';
+    }
+    if (clean === 'zh' || clean.indexOf('zh-') === 0) {
+      return 'zh';
+    }
+    if (clean === 'pt' || clean === 'pt-br' || clean.indexOf('pt-') === 0) {
+      return 'pt-br';
+    }
+    if (Object.prototype.hasOwnProperty.call(WPML_LANG_MAP, clean)) {
+      return clean;
+    }
+    var two = clean.slice(0, 2);
+    if (two !== 'pt' && Object.prototype.hasOwnProperty.call(WPML_LANG_MAP, two)) {
+      return two;
+    }
+    return 'en';
+  }
+
+  // Pure codepoint/table decoder for REST API titles — never touches innerHTML.
+  function decodeHtmlEntities(value) {
+    return String(value || '').replace(/&(?:#(\d+)|#x([0-9a-fA-F]+)|([a-zA-Z]+));/g, function (full, dec, hex, named) {
+      var code = dec ? parseInt(dec, 10) : (hex ? parseInt(hex, 16) : NaN);
+      if (!isNaN(code) && code > 0 && code <= 0x10FFFF) {
+        try {
+          return String.fromCodePoint ? String.fromCodePoint(code) : String.fromCharCode(code);
+        } catch (err) {
+          return full;
+        }
+      }
+      if (named && Object.prototype.hasOwnProperty.call(HTML_NAMED_ENTITIES, named)) {
+        return HTML_NAMED_ENTITIES[named];
+      }
+      return full;
+    });
+  }
+
   function readI18nConfig() {
     var el = document.querySelector('[data-md-i18n-config]');
     var config = null;
@@ -29,12 +138,15 @@
     config = config || {};
     var rootLang = document.documentElement.lang || 'en';
     var rootDir = document.documentElement.dir || 'ltr';
+    var lang = normalizeCanonicalLang(config.lang || rootLang);
+    var wpmlLang = String(config.wpmlLang || WPML_LANG_MAP[lang] || lang).trim().toLowerCase();
     var strings = config.strings || {};
     return {
-      lang: config.lang || rootLang,
+      lang: lang,
+      wpmlLang: wpmlLang,
       dir: config.dir || rootDir,
       restPrefix: config.restPrefix || '',
-      shopUrl: config.shopUrl || '/patterns/',
+      shopUrl: config.shopUrl || (lang !== 'en' ? '/' + lang + '/patterns/' : '/patterns/'),
       strings: {
         kindPattern: strings.kindPattern || 'Pattern',
         kindPage: strings.kindPage || 'Page',
@@ -44,6 +156,46 @@
         copyEmailFallback: strings.copyEmailFallback || 'Select the email address to copy it.'
       }
     };
+  }
+
+  function withWpmlLang(url, i18n) {
+    if (!i18n || !i18n.lang || i18n.lang === 'en') {
+      return url;
+    }
+    var wpml = i18n.wpmlLang || WPML_LANG_MAP[i18n.lang] || i18n.lang;
+    var sep = url.indexOf('?') === -1 ? '?' : '&';
+    return url + sep + 'lang=' + encodeURIComponent(wpml);
+  }
+
+  function ensureLocalizedHref(href, i18n) {
+    var raw = String(href || '').trim();
+    if (!raw || !i18n || !i18n.lang || i18n.lang === 'en') {
+      return raw;
+    }
+    var prefix = '/' + i18n.lang;
+    try {
+      var parsed = new URL(raw, window.location.origin);
+      if (parsed.origin !== window.location.origin) {
+        return raw;
+      }
+      var path = parsed.pathname || '/';
+      if (
+        path === prefix
+        || path.indexOf(prefix + '/') === 0
+        || /^\/wp-(?:content|json|admin|includes)(?:\/|$)/.test(path)
+      ) {
+        return raw;
+      }
+      parsed.pathname = prefix + (path.charAt(0) === '/' ? path : '/' + path);
+      return /^https?:\/\//i.test(raw)
+        ? parsed.toString()
+        : (parsed.pathname + parsed.search + parsed.hash);
+    } catch (err) {
+      if (raw.charAt(0) === '/' && raw !== prefix && raw.indexOf(prefix + '/') !== 0) {
+        return prefix + raw;
+      }
+      return raw;
+    }
   }
 
   /* ------------------------------------------------------------------ *
@@ -376,12 +528,13 @@
     }
   }
 
-  // WordPress titles carry the presentation suffix SEOPress appends to a
-  // product's SEO title ("Agave | Architectural Metal Screen Pattern"). That
-  // string is metadata, not the pattern's name: search result cards and the
-  // quote context both read titles from the site and must show the clean name.
+  // WordPress titles carry the presentation suffix SEOPress/WPML appends to a
+  // product's SEO title ("Agave | Architectural Metal Screen Pattern",
+  // "Skyfall Gradient | 建筑金属屏风图案", etc.) and REST endpoints can carry
+  // HTML entities ("Timothy&#8217;s Vine"). Decode entities without innerHTML
+  // and strip any trailing pipe segment so cards and dialogs show clean names.
   function cleanPatternTitle(value) {
-    return String(value || '').replace(/\s*\|\s*Architectural Metal Screen Pattern\s*$/i, '').trim();
+    return decodeHtmlEntities(value).replace(/\s*[|｜].*$/, '').trim();
   }
 
   // A quote CTA can fire on the inquiry face too: the shared header and the
@@ -462,8 +615,13 @@
       codeEl.textContent = patternCode;
     }
     var note = slot.querySelector('[data-md-inquiry-pattern-eyebrow]');
-    if (note && intent) {
-      note.textContent = intent;
+    if (note && intent && intent !== 'Selected pattern') {
+      var appCfg = null;
+      try {
+        appCfg = JSON.parse(app.getAttribute('data-md-inquiry') || '{}');
+      } catch (err) {}
+      var intentMap = appCfg && appCfg.i18n && appCfg.i18n.intentLabels;
+      note.textContent = (intentMap && intentMap[intent]) ? intentMap[intent] : intent;
     }
     var thumbEl = slot.querySelector('[data-md-inquiry-pattern-thumb]');
     if (thumbEl && thumb) {
@@ -503,7 +661,7 @@
         modalTitle.__mdDefaultTitle = modalTitle.textContent;
       }
       modalTitle.textContent = label
-        ? 'Request a quote · ' + label
+        ? modalTitle.__mdDefaultTitle + ' · ' + cleanPatternTitle(label)
         : modalTitle.__mdDefaultTitle;
     }
   }
@@ -3380,10 +3538,8 @@
       var requestSerial = 0;
       var seriesLoaded = false;
 
-      var decodeText = function (value) {
-        var box = document.createElement('textarea');
-        box.innerHTML = value || '';
-        return box.value;
+      var canonicalSeriesSlug = function (slug) {
+        return String(slug || '').toLowerCase().replace(/-(?:zh-hans|pt-br|zh|es|de|fr|ar|id|vi)$/, '');
       };
 
       var fillTile = function (node, href, src, alt, label, kind) {
@@ -3391,32 +3547,37 @@
         var image = node.querySelector('img');
         var name = node.querySelector('.md-search-tile__name, .md-search-hit__name');
         if (link && href) {
-          link.href = href;
+          link.href = ensureLocalizedHref(href, i18n);
         }
-        if (image) {
-          if (src) {
+        if (src) {
+          node.classList.remove('md-search-hit--no-thumb');
+          if (image) {
+            image.hidden = false;
             image.src = src;
-            image.alt = alt || '';
-          } else {
+            image.alt = cleanPatternTitle(alt || '');
+          }
+        } else {
+          node.classList.add('md-search-hit--no-thumb');
+          if (image) {
             // A result with no picture must not keep the frame. The WordPress
             // search API answers with a title, a url and a subtype and no
             // media, so a page or an article has nothing to put here — leaving
-            // the img in place paints an empty grey box beside the title,
-            // which is the same blank-card defect the replica was rebuilt to
-            // remove. The media wrapper and the img both go; the row keeps its
-            // title and, for non-patterns, gains a kind label.
+            // the img in place paints an empty grey box beside the title. Hide
+            // and drop the empty media box and attach the no-thumb modifier.
+            image.hidden = true;
+            image.removeAttribute('src');
             var media = image.closest('.md-search-hit__media, .md-search-tile__media');
             (media || image).remove();
-            if (kind && name) {
-              var tag = document.createElement('span');
-              tag.className = 'md-search-hit__kind';
-              tag.textContent = kind;
-              name.parentNode.insertBefore(tag, name);
-            }
+          }
+          if (kind && name && name.parentNode) {
+            var tag = document.createElement('span');
+            tag.className = 'md-search-hit__kind';
+            tag.textContent = kind;
+            name.parentNode.insertBefore(tag, name);
           }
         }
         if (name) {
-          name.textContent = cleanPatternTitle(decodeText(label));
+          name.textContent = cleanPatternTitle(label);
         }
       };
 
@@ -3493,7 +3654,10 @@
         // production 2026-10-29). The old site searched products, pages and
         // articles together, and the field's own placeholder promises a
         // search of the site, not of the catalogue.
-        var url = restPrefix + '/wp-json/wp/v2/search?per_page=10&search=' + encodeURIComponent(query);
+        var url = withWpmlLang(
+          restPrefix + '/wp-json/wp/v2/search?per_page=10&search=' + encodeURIComponent(query),
+          i18n
+        );
 
         fetch(url, controller ? { signal: controller.signal } : undefined)
           .then(function (response) {
@@ -3562,7 +3726,10 @@
           done({});
           return;
         }
-        fetch(restPrefix + '/wp-json/wc/store/v1/products?per_page=24&include=' + ids.join(','), { credentials: 'same-origin' })
+        fetch(
+          withWpmlLang(restPrefix + '/wp-json/wc/store/v1/products?per_page=24&include=' + ids.join(','), i18n),
+          { credentials: 'same-origin' }
+        )
           .then(function (response) {
             return response.ok ? response.json() : [];
           })
@@ -3588,7 +3755,7 @@
           results.textContent = '';
         }
         if (seeAll) {
-          seeAll.href = (i18n.shopUrl || '/patterns/') + '?pattern_search=' + encodeURIComponent(query);
+          seeAll.href = ensureLocalizedHref(i18n.shopUrl || '/patterns/', i18n) + '?pattern_search=' + encodeURIComponent(query);
           seeAll.hidden = false;
         }
         if (!rows || !rows.length || !hitTemplate || !hitTemplate.content) {
@@ -3610,18 +3777,35 @@
           emptyNote.hidden = true;
         }
 
-        // WordPress ranks by its own relevance. Keep a name-first sort so a
-        // body mention cannot outrank a pattern named for the query inside
-        // the rows this panel shows.
+        // Pattern hits with thumbnails always lead the grid so slot 1 never
+        // renders an imageless page card; within each tier, prefix and title
+        // matches outrank body/motif matches.
         var needle = query.toLowerCase();
+        var hasThumb = function (row) {
+          var img = thumbs && row && row.id ? thumbs[row.id] : null;
+          return !!(img && (img.thumbnail || img.src));
+        };
+        var typeRank = function (row) {
+          if (row && row.subtype === 'product' && hasThumb(row)) {
+            return 0;
+          }
+          if (row && row.subtype === 'product') {
+            return 1;
+          }
+          return 2;
+        };
         var score = function (row) {
-          var title = (row.title || '').toLowerCase();
+          var title = cleanPatternTitle(row && row.title ? row.title : '').toLowerCase();
           if (title.indexOf(needle) === 0) {
             return 0;
           }
           return title.indexOf(needle) === -1 ? 2 : 1;
         };
         rows.slice().sort(function (a, b) {
+          var tierDiff = typeRank(a) - typeRank(b);
+          if (tierDiff !== 0) {
+            return tierDiff;
+          }
           return score(a) - score(b);
         }).slice(0, 6).forEach(function (row) {
           var node = hitTemplate.content.firstElementChild.cloneNode(true);
@@ -3644,7 +3828,7 @@
           return;
         }
         seriesLoaded = true;
-        fetch(restPrefix + '/wp-json/wc/store/v1/products/categories?per_page=20')
+        fetch(withWpmlLang(restPrefix + '/wp-json/wc/store/v1/products/categories?per_page=20', i18n))
           .then(function (response) {
             if (!response.ok) {
               throw new Error('series ' + response.status);
@@ -3664,11 +3848,12 @@
               'pattern-moroccan-arabic'
             ];
             var tiles = (rows || []).filter(function (row) {
-              return row && row.slug && row.slug.indexOf('pattern-') === 0 && row.permalink;
+              var base = row && row.slug ? canonicalSeriesSlug(row.slug) : '';
+              return base.indexOf('pattern-') === 0 && row.permalink;
             });
             tiles.sort(function (a, b) {
-              var ai = order.indexOf(a.slug);
-              var bi = order.indexOf(b.slug);
+              var ai = order.indexOf(canonicalSeriesSlug(a.slug));
+              var bi = order.indexOf(canonicalSeriesSlug(b.slug));
               return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
             });
             var seed = seriesTemplate.content.firstElementChild;
@@ -5313,6 +5498,57 @@
     });
   }
 
+  function setupLocalizedWhatsAppLinks() {
+    var i18n = readI18nConfig();
+    if (!i18n.lang || i18n.lang === 'en') {
+      return;
+    }
+    var dict = WA_LOCALIZED_GREETINGS[i18n.lang];
+    if (!dict) {
+      return;
+    }
+    each(
+      document.querySelectorAll('a[href*="wa.me/85264731687?text="]:not(.md-inquiry-whatsapp):not(.md-inquiry-whatsapp-link)'),
+      function (anchor) {
+        var href = anchor.getAttribute('href') || '';
+        var qIndex = href.indexOf('?text=');
+        if (qIndex === -1) {
+          return;
+        }
+        var base = href.slice(0, qIndex);
+        var rawQuery = href.slice(qIndex + 6).split('&')[0];
+        var decoded = '';
+        try {
+          decoded = decodeURIComponent(rawQuery.replace(/\+/g, '%20')).trim();
+        } catch (err) {
+          return;
+        }
+        if (!/^Hi(?:\b|,)/i.test(decoded)) {
+          return;
+        }
+        var lines = decoded.split(/\r?\n/);
+        var refLines = lines.slice(1).filter(function (line) {
+          return /^Ref:/i.test(line.trim());
+        });
+        var patMatch = lines[0].match(/pattern\s+([^\n(]+?)(?:\s*\((https?:\/\/[^)]+)\))?\.?\s*$/i);
+        var nextLines = [];
+        if (patMatch && patMatch[1]) {
+          var cleanName = cleanPatternTitle(patMatch[1]);
+          nextLines.push(dict.pattern.replace('%s', cleanName));
+          if (patMatch[2]) {
+            nextLines.push(ensureLocalizedHref(patMatch[2], i18n));
+          }
+        } else {
+          nextLines.push(dict.general);
+        }
+        refLines.forEach(function (ref) {
+          nextLines.push(ref.trim());
+        });
+        anchor.setAttribute('href', base + '?text=' + encodeURIComponent(nextLines.join('\n')));
+      }
+    );
+  }
+
   function start() {
     // `md-js` is what makes `x-cloak` mean anything: the CSS only hides a
     // cloaked block once this class is on the root, so a visitor without
@@ -5325,6 +5561,7 @@
     // Before any dialog can open: a page that renders the inquiry form itself
     // must not also carry the dialog's copy (duplicate ids, inert controls).
     dropDuplicateModalForm();
+    setupLocalizedWhatsAppLinks();
     setupModals();
     setupTabs();
     setupLangSwitcher();

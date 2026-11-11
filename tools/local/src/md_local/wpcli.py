@@ -64,6 +64,16 @@ class WpCli:
             *args,
         ]
 
+    def _env(self, extra: dict[str, str] | None = None) -> dict[str, str]:
+        """Propagate the pinned PHP binary and php.ini across WP_CLI::launch_self()."""
+        return environment(
+            {
+                "PHPRC": str(self.instance.php_ini),
+                "WP_CLI_PHP": str(self.php),
+                **(extra or {}),
+            }
+        )
+
     def run(
         self,
         *args: str,
@@ -76,7 +86,7 @@ class WpCli:
             input=stdin,
             capture_output=True,
             text=True,
-            env=environment(env),
+            env=self._env(env),
             cwd=self.instance.dir,
             check=False,
         )
@@ -89,7 +99,7 @@ class WpCli:
         """Run a command attached to the terminal; return its exit status."""
         return subprocess.run(
             self.command(*args),
-            env=environment(),
+            env=self._env(),
             cwd=self.instance.dir,
             check=False,
         ).returncode

@@ -90,4 +90,33 @@ final class UrlLocalizerTest extends TestCase {
 		$this->assertStringContainsString( 'href="http://127.0.0.1:9890/pattern/agave/" hreflang="en"', $rewritten );
 		$this->assertStringContainsString( 'href="http://127.0.0.1:9890/zh/patterns/"', $rewritten );
 	}
+
+	/**
+	 * Verifies rewrite_html prefixes all internal links inside `<template xo-mega-menu-name="...">`
+	 * and `<template id="md-search-hit">` while keeping static media paths untouched.
+	 */
+	public function test_rewrite_html_localizes_links_inside_template_mega_menu_and_search_hit(): void {
+		WP_Mock::userFunction( 'get_option' )->with( 'home' )->andReturn( 'https://metal-divider.com' );
+
+		$html = '<template xo-mega-menu-name="header-mega-menu-v1" xo-mega-menu-index="0">'
+			. '<div class="mmv2__wrap">'
+			. '<p class="mmv2__hub"><a class="mmv2__hub-link" href="/stainless-steel-screens/">Stainless steel screens</a></p>'
+			. '<div class="mmv2__item">'
+			. '<a class="mmv2__img" href="/laser-cut-geometric-metal-screens/">'
+			. '<img is="xo-lazyload" xo-src="/wp-content/uploads/2026/10/ext-gold-laser-cut-screen-collage-480w.webp" alt="Screen">'
+			. '</a>'
+			. '<h4 class="mmv2__title"><a class="mmv2__link" href="/laser-cut-geometric-metal-screens/">Laser-Cut &amp; Geometric Metal Screens</a></h4>'
+			. '</div>'
+			. '</div>'
+			. '</template>'
+			. '<template id="md-search-hit"><li class="md-search-hit"><a class="md-search-hit__link" href="/patterns/"></a></li></template>';
+
+		$zh_html = UrlLocalizer::rewrite_html( $html, 'zh' );
+
+		$this->assertStringContainsString( 'href="/zh/stainless-steel-screens/"', $zh_html );
+		$this->assertStringContainsString( 'href="/zh/laser-cut-geometric-metal-screens/"', $zh_html );
+		$this->assertStringContainsString( 'href="/zh/patterns/"', $zh_html );
+		$this->assertStringContainsString( 'xo-src="/wp-content/uploads/2026/10/ext-gold-laser-cut-screen-collage-480w.webp"', $zh_html );
+		$this->assertSame( $html, UrlLocalizer::rewrite_html( $html, 'en' ) );
+	}
 }

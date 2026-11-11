@@ -102,6 +102,19 @@ function md_kb_endpoint_canonical_product_id( int $post_id ): int {
 }
 
 /**
+ * Detect the canonical locale code ('en', 'zh', 'es', 'pt-br', 'de', 'fr',
+ * 'ar', 'id', 'vi') from visitor message text first (native script or strong
+ * language markers), falling back to the page URL path prefix, default 'en'.
+ *
+ * @param string $page_url  The page URL or referrer where the chat is open.
+ * @param string $user_text The visitor's message text.
+ * @return string The canonical locale code (default 'en').
+ */
+function md_kb_endpoint_detect_locale( string $page_url, string $user_text ): string {
+	return md_kb_endpoint_detect_language( $user_text, $page_url, '' );
+}
+
+/**
  * Detect the visitor's canonical language code ('en', 'zh', 'es', 'pt-br',
  * 'de', 'fr', 'ar', 'id', 'vi') from question content, explicit parameter,
  * or page URL path prefix.
@@ -121,6 +134,19 @@ function md_kb_endpoint_detect_language( string $question, string $page_url = ''
 			$normalized_explicit = 'pt-br';
 		} elseif ( in_array( $raw, array( 'en', 'es', 'pt-br', 'de', 'fr', 'ar', 'id', 'vi' ), true ) ) {
 			$normalized_explicit = $raw;
+		}
+	}
+
+	$url_locale = '';
+	$clean_url  = trim( $page_url );
+	if ( '' !== $clean_url ) {
+		if ( 1 === preg_match( '#(?:^|//[^/]+)/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $clean_url, $m ) ) {
+			$url_locale = strtolower( $m[1] );
+		} else {
+			$path = (string) wp_parse_url( $clean_url, PHP_URL_PATH );
+			if ( 1 === preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $path, $m ) ) {
+				$url_locale = strtolower( $m[1] );
+			}
 		}
 	}
 
@@ -146,28 +172,25 @@ function md_kb_endpoint_detect_language( string $question, string $page_url = ''
 		if ( 1 === preg_match( '/\b(?:xin\s+chào|báo\s+giá|vách\s+ngăn|thép\s+không\s+gỉ|hoa\s+văn|giao\s+hàng)\b/iu', $trimmed_q ) ) {
 			return 'vi';
 		}
-		if ( 1 === preg_match( '/\b(?:hallo|guten\s+tag|danke|bitte|wie\s+viel|was\s+kostet|muster|versand|lieferung|lieferzeit|edelstahl|innenbereich|außenbereich|angebot|katalog|abmessungen|stärke)\b/iu', $trimmed_q ) ) {
+		if ( 1 === preg_match( '/\b(?:hallo|guten\s+tag|danke|bitte|wie\s+viel|was\s+kostet|können\s+sie|mitarbeiter|versand|lieferung|lieferzeit|edelstahl|innenbereich|außenbereich|öffnungsanteil|angebot|katalog|abmessungen|stärke)\b/iu', $trimmed_q ) ) {
 			return 'de';
 		}
-		if ( 1 === preg_match( '/\b(?:bonjour|merci|s\'il\s+vous\s+pla[iî]t|combien|prix|devis|échantillon|livraison|expédition|délai|acier\s+inoxydable|extérieur|intérieur|catalogue|épaisseur)\b/iu', $trimmed_q ) ) {
+		if ( 1 === preg_match( '/\b(?:bonjour|merci|s[\'’]il\s+vous\s+pla[iî]t|pouvez-vous|livrez-vous|combien|prix|devis|[eé]chantillon|livraison|exp[eé]dition|d[eé]lai|acier\s+inoxydable|ext[eé]rieur|int[eé]rieur|catalogue|[eé]paisseur)\b/iu', $trimmed_q ) ) {
 			return 'fr';
 		}
-		if ( 1 === preg_match( '/\b(?:hola|buenos\s+d[ií]as|gracias|por\s+favor|cu[aá]nto|precio|cotizaci[oó]n|presupuesto|muestra|env[ií]o|plazo|acero\s+inoxidable|cat[aá]logo|patr[oó]n|patrones|espesor|grosor)\b/iu', $trimmed_q ) ) {
+		if ( 1 === preg_match( '/\b(?:hola|buenos\s+d[ií]as|gracias|por\s+favor|cu[aá]nto|cu[aá]l\s+es|realizan\s+env[ií]os|precio|cotizaci[oó]n|presupuesto|muestra|env[ií]o|plazo|acero\s+inoxidable|cat[aá]logo|patr[oó]n|patrones|espesor|grosor)\b/iu', $trimmed_q ) ) {
 			return 'es';
 		}
-		if ( 1 === preg_match( '/\b(?:ol[aá]|bom\s+dia|obrigad[oa]|por\s+favor|quanto\s+custa|pre[çc]o|or[çc]amento|amostra|frete|prazo|a[çc]o\s+inoxid[aá]vel|cat[aá]logo|padr[aã]o|padr[oõ]es|espessura)\b/iu', $trimmed_q ) ) {
+		if ( 1 === preg_match( '/\b(?:ol[aá]|bom\s+dia|obrigad[oa]|voc[êe]s|gostaria|quanto\s+custa|pre[çc]o|or[çc]amento|amostra|frete|prazo|a[çc]o\s+inoxid[aá]vel|padr[aã]o|padr[oõ]es|espessura)\b/iu', $trimmed_q ) ) {
 			return 'pt-br';
 		}
-		if ( 1 === preg_match( '/\b(?:halo|selamat\s+pagi|selamat\s+siang|terima\s+kasih|tolong|berapa|harga|penawaran|sampel|contoh|pengiriman|ongkir|baja\s+tahan\s+karat|katalog|pola|ketebalan|rekomendasi)\b/iu', $trimmed_q ) ) {
+		if ( 1 === preg_match( '/\b(?:halo|selamat\s+pagi|selamat\s+siang|terima\s+kasih|tolong|bisakah\s+anda|apakah\s+anda|berapa|harga|penawaran|sampel|pengiriman|ongkir|baja\s+tahan\s+karat|pola|ketebalan|rekomendasi|merekomendasikan)\b/iu', $trimmed_q ) ) {
 			return 'id';
 		}
 
 		// 4. Fallback to URL path prefix before generic English keywords when ambiguous.
-		if ( '' !== $page_url ) {
-			$path = (string) wp_parse_url( $page_url, PHP_URL_PATH );
-			if ( preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $path, $m ) ) {
-				return strtolower( $m[1] );
-			}
+		if ( '' !== $url_locale ) {
+			return $url_locale;
 		}
 
 		if ( 1 === preg_match( '/\b(?:hello|hi|please|thank\s+you|thanks|how\s+much|price|quote|cost|shipping|lead\s+time|sample|stainless\s+steel|pattern|screen|can\s+you|what\s+is|where|do\s+you|recommend)\b/iu', $trimmed_q ) ) {
@@ -181,11 +204,8 @@ function md_kb_endpoint_detect_language( string $question, string $page_url = ''
 	}
 
 	// 6. Fallback to URL path prefix.
-	if ( '' !== $page_url ) {
-		$path = (string) wp_parse_url( $page_url, PHP_URL_PATH );
-		if ( preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $path, $m ) ) {
-			return strtolower( $m[1] );
-		}
+	if ( '' !== $url_locale ) {
+		return $url_locale;
 	}
 
 	return 'en';
@@ -284,14 +304,14 @@ function md_kb_endpoint_answer( array $input ): array {
 		return array(
 			'status' => 200,
 			'body'   => array(
-				'msg'     => md_kb_endpoint_injection_handoff_message(),
+				'msg'     => md_kb_endpoint_injection_handoff_message( $visitor_lang ),
 				'action'  => 'transfer_operator',
 				'sources' => array(),
 			),
 		);
 	}
 	if ( md_kb_endpoint_asks_shipping( $q ) ) {
-		$shipping_sources = '' !== md_kb_endpoint_partial_fact_message( $q, $resolved )
+		$shipping_sources = '' !== md_kb_endpoint_partial_fact_message( $q, $resolved, $visitor_lang )
 			? array_merge( $resolved_sources, array( 'Packing and shipping' ) )
 			: array( 'Packing and shipping' );
 		return array(
@@ -381,7 +401,7 @@ function md_kb_endpoint_answer( array $input ): array {
 	$answer = md_kb_endpoint_call_model( md_kb_endpoint_messages( $q, $context, $history, $visitor_lang ) );
 
 	if ( is_string( $answer ) ) {
-		$fallback_answer = md_kb_endpoint_pattern_upstream_fallback( $q, $resolved, $pattern, $results );
+		$fallback_answer = md_kb_endpoint_pattern_upstream_fallback( $q, $resolved, $pattern, $results, $visitor_lang );
 		if ( null === $fallback_answer ) {
 			return array(
 				'status' => 502,
@@ -408,10 +428,10 @@ function md_kb_endpoint_answer( array $input ): array {
 		$answer['answer']  = trim( (string) preg_replace( '/\s+[^.?!]*\bbe(?:ing)?\s+checked\s+with\s+the\s+team\b[^.?!]*[.?!]?$/iu', '', $answer['answer'] ) );
 	}
 
-	$answer = md_kb_endpoint_preserve_known_facts( $q, $resolved, $answer );
+	$answer = md_kb_endpoint_preserve_known_facts( $q, $resolved, $answer, $visitor_lang );
 
 	// A question that kept a published fact is not an unanswered gap, even when the rest transfers.
-	if ( $answer['handoff'] && md_kb_endpoint_is_knowledge_gap( $answer, $visitor_lang ) && 0 === $pattern['hits'] && '' === md_kb_endpoint_partial_fact_message( $q, $resolved ) ) {
+	if ( $answer['handoff'] && md_kb_endpoint_is_knowledge_gap( $answer, $visitor_lang ) && 0 === $pattern['hits'] && '' === md_kb_endpoint_partial_fact_message( $q, $resolved, $visitor_lang ) ) {
 		$trimmed_context = trim( $context );
 		$gap_reason      = '' === $trimmed_context ? 'no_context' : 'grounding';
 		md_kb_endpoint_log_unanswered( $q, $gap_reason );
@@ -489,7 +509,7 @@ function md_kb_endpoint_commercial_handoff_message( string $lang = 'en' ): strin
  */
 function md_kb_endpoint_wants_human( string $q ): bool {
 	return 1 === preg_match(
-		'/\b(?:talk\s+to\s+(?:a\s+)?(?:human|person|agent|someone|representative|team|operator)|speak\s+(?:to|with)\s+(?:a\s+)?(?:human|person|agent|someone|representative|operator)|connect\s+me\s+(?:with|to)|real\s+person|human\s+agent|live\s+agent|hablar\s+con\s+(?:un\s+)?(?:humano|agente|persona|operador)|agente\s+humano|persona\s+real|falar\s+com\s+(?:um\s+)?(?:humano|atendente|agente|pessoa|operador)|atendente\s+humano|mit\s+(?:einem\s+)?(?:menschen|mitarbeiter|berater|operator)\s+sprechen|parler\s+[àa]\s+(?:un\s+)?(?:humain|agent|conseiller|opérateur|personne)|agent\s+humain|bicara\s+dengan\s+(?:manusia|agen|petugas|operator)|nói\s+chuyện\s+với\s+(?:người|nhân\s+viên|tư\s+vấn))\b|转人工|人工客服|找人工|真人客服|联系客服|التحدث\s+مع\s+(?:إنسان|شخص|موظف|خدمة\s+العملاء)|خدمة\s+العملاء|وكيل\s+بشري/iu',
+		'/\b(?:talk\s+to\s+(?:a\s+)?(?:human|person|agent|someone|representative|team|operator)|speak\s+(?:to|with)\s+(?:a\s+)?(?:human|person|agent|someone|representative|operator)|connect\s+me\s+(?:with|to)|real\s+person|human\s+agent|live\s+agent|hablar\s+con\s+(?:un[ao]?\s+)?(?:humano|agente|persona|asesor|operador|representante)|contactar\s+(?:a\s+|con\s+)?(?:un[ao]?\s+)?(?:humano|persona|agente|asesor|ventas)|p[aá]same\s+con\s+(?:un[ao]?\s+)?(?:humano|persona|agente|asesor)|agente\s+humano|persona\s+real|asesor\s+(?:humano|comercial|de\s+ventas)|falar\s+com\s+(?:um[a]?\s+)?(?:humano|atendente|agente|pessoa|consultor|operador|vendedor)|atendente\s+humano|pessoa\s+real|consultor\s+de\s+vendas|mit\s+(?:einem\s+|einer\s+)?(?:menschen|mitarbeiter(?:in)?|berater(?:in)?|operator|kundenberater|vertrieb)\s+(?:sprechen|reden|verbinden)|verbinden\s+sie\s+mich|echter?\s+mensch|menschliche[rn]?\s+(?:mitarbeiter|berater)|parler\s+[àa]\s+(?:un[e]?\s+)?(?:humain|agent|conseiller|op[eé]rateur|personne|commercial)|contacter\s+(?:un[e]?\s+)?(?:humain|conseiller|commercial)|agent\s+humain|personne\s+r[eé]elle|conseiller\s+commercial|(?:bicara|berbicara|hubungkan(?:\s+saya)?)\s+dengan\s+(?:manusia|agen|petugas|konsultan|operator|staf|tim\s+sales)|agen\s+manusia|(?:nói\s+chuyện|trao\s+đổi|gặp|kết\s+nối)\s+(?:với\s+)?(?:người(?:\s+thật)?|nhân\s+viên|chuyên\s+viên|tư\s+vấn(?:\s+viên)?)|người\s+thật)\b|^\s*(?:人工|真人)\s*[？?!！。.]?\s*$|转人工|人工客服|人工顾问|客服代表|转接人工|找人沟通|找人工|真人|联系客服|联系销售|人工服务|转接客服|التحدث\s+(?:مع|إلى)\s+(?:إنسان|شخص|موظف|بشري|مختص|ممثل\s+مبيعات|خدمة\s+العملاء)|تواصل\s+مع\s+(?:موظف|بشري|مختص|ممثل\s+مبيعات)|تحويل\s+(?:لموظف|إلى\s+موظف)|خدمة\s+العملاء|وكيل\s+بشري|موظف\s+بشري|ممثل\s+مبيعات/iu',
 		$q
 	);
 }
@@ -508,7 +528,7 @@ function md_kb_endpoint_asks_commercial( string $q ): bool {
 		return true;
 	}
 	return 1 === preg_match(
-		'/\b(?:price|pricing|quote|quotation|cost\b(?!\s*-?\s*effective)|how\s+much|lead[\s-]*time|delivery\s+(?:time|date)|moq|minimum\s+order|samples?|precio|precios|cotizaci[oó]n|cotizaciones|presupuesto|cu[aá]nto\s+cuesta|pedido\s+m[ií]nimo|muestras?|pre[çc]o|pre[çc]os|or[çc]amento|or[çc]amentos|quanto\s+custa|amostras?|preis|preise|kostet?|angebot|kostenvoranschlag|lieferzeit|mindestbestellmenge|muster|prix|co[uû]t|devis|combien|d[eé]lai\s+de\s+livraison|commande\s+minimale|échantillons?|harga|biaya|penawaran|berapa|sampel|giá|báo\s+giá|chi\s+phí|bao\s+nhiêu|mẫu)\b|价格|报价|交期|交货|起订|样品|多少钱|单价|费用|运费|发货(?!到)|سعر|أسعار|عرض\s+سعر|كم\s+السعر|تكلفة|عينة|عينات/iu',
+		'/\b(?:price|pricing|quote|quotation|cost\b(?!\s*-?\s*effective)|how\s+much|lead[\s-]*time|delivery\s+(?:time|date)|moq|minimum\s+order|samples?|swatches?|precio|precios|cotizaci[oó]n|cotizaciones|presupuesto|cu[aá]nto\s+(?:cuesta|vale|tarda)|plazo\s+de\s+(?:entrega|fabricaci[oó]n|producci[oó]n)|tiempo\s+de\s+(?:entrega|fabricaci[oó]n|producci[oó]n)|pedido\s+m[ií]nimo|cantidad\s+m[ií]nima|muestras?|muestrarios?|pre[çc]o|pre[çc]os|or[çc]amento|or[çc]amentos|quanto\s+custa|prazo\s+(?:m[eé]dio\s+)?de\s+(?:entrega|produ[çc][aã]o|fabrica[çc][aã]o)|tempo\s+de\s+(?:entrega|produ[çc][aã]o)|quantidade\s+m[ií]nima|amostras?|mostru[aá]rios?|preis|preise|kostet?|angebot|kostenvoranschlag|lieferzeit|lieferfrist|produktionszeit|fertigungszeit|mindestbestellmenge|mindestmenge|farbmuster|oberfl[aä]chenmuster|materialmuster|handmuster|musterst[uü]ck|probest[uü]ck|prix|co[uû]t|devis|combien\s+(?:co[uû]te\w*|ça\s+co[uû]te|de\s+temps|faut-il)|d[eé]lai\s+(?:de\s+(?:livraison|fabrication|production)|habituel)|commande\s+minimale|quantit[eé]\s+minimale|[eé]chantillons?|nuanciers?|harga|biaya|penawaran|berapa\s+(?:harga\w*|biaya\w*|lama|minimum|moq|ongkir\w*)|waktu\s+(?:pengerjaan|produksi|pengiriman)|pesanan\s+minimum|sampel|giá|báo\s+giá|chi\s+phí|bao\s+nhiêu|bao\s+lâu|thời\s+gian\s+(?:gia\s+công|sản\s+xuất|giao\s+hàng|làm\s+hàng)|số\s+lượng\s+(?:đặt\s+)?tối\s+thiểu|mẫu\s+(?:thử|vật\s+liệu|bề\s+mặt|màu|inox)|gửi\s+mẫu|xin\s+mẫu|bảng\s+màu)\b|价格|报价|交期|工期|交货期|交货|起订|起订量|最小起订|样品|小样|色板|多少钱|单价|费用|运费(?:多少|价格|报价|怎么算|贵|标准)|多少运费|سعر|أسعار|عرض\s+سعر|كم\s+(?:السعر|التكلفة|يكلف)|تكلفة|مدة\s+(?:التسليم|التصنيع|التنفيذ|التجهيز)|وقت\s+التسليم|الحد\s+الأدنى\s+للطلب|أقل\s+كمية|عينة|عينات/iu',
 		$q
 	);
 }
@@ -540,7 +560,7 @@ function md_kb_endpoint_asks_shipping( string $q ): bool {
 		return false;
 	}
 	return 1 === preg_match(
-		'/\b(?:do\s+you\s+(?:ship|deliver)|can\s+you\s+(?:ship|deliver)|ship\s+to|deliver\s+to|ship\s+(?:internationally|worldwide)|deliver\s+(?:internationally|worldwide)|shipping\s+(?:to|options|methods|terms)|freight|env[ií]os?\s+a|env[ií]an\s+a|pueden\s+enviar\s+a|entrega\s+en|transporte\s+mar[ií]timo|transporte\s+a[eé]reo|envios?\s+para|enviam\s+para|entregam\s+em|(?:versand|versenden\s+sie)\s+nach|liefern\s+sie\s+nach|seefracht|luftfracht|exp[eé]dition\s+vers|livrez-vous\s+[àa]|fret\s+maritime|fret\s+a[eé]rien|kirim\s+ke|pengiriman\s+ke|bisa\s+kirim\s+ke|ongkir|kargo\s+laut|kargo\s+udara|vận\s+chuyển\s+đến|giao\s+hàng\s+đến|có\s+thể\s+giao\s+đến)\b|发货到|送到|运到|发到|能发.*吗|海运|空运|شحن\s+إلى|هل\s+تشحنون\s+إلى|الشحن\s+البحري|الشحن\s+الجوي/iu',
+		'/\b(?:do\s+you\s+(?:ship|deliver)|can\s+you\s+(?:ship|deliver)|ship\s+to|deliver\s+to|ship\s+(?:internationally|worldwide)|deliver\s+(?:internationally|worldwide)|shipping\s+(?:to|options|methods|terms)|freight|wooden\s+crates?|customs\s+clearance|env[ií]os?\s+(?:a|internacionales)|realizan\s+env[ií]os|hacen\s+env[ií]os|env[ií]an\s+a|pueden\s+enviar\s+a|entrega\s+(?:en|internacional)|transporte\s+(?:mar[ií]timo|a[eé]reo|internacional)|despacho\s+aduanero|aduanas?|cajas?\s+de\s+madera|exportaci[oó]n|envios?\s+(?:para|internacionais)|envio\s+internacional|enviam\s+para|entregam\s+em|frete\s+(?:mar[ií]timo|a[eé]reo|internacional)|desembara[çc]o|alf[aâ]ndega|caixas?\s+de\s+madeira|exporta[çc][aã]o|(?:versand|versenden\s+sie|liefern\s+sie)(?:\s+international)?(?:\s+(?:nach|in))?|international(?:er)?\s+versand|weltweiter?\s+versand|seefracht|luftfracht|verzollung|zollabfertigung|holzkisten?|exportverpackung|exp[eé]dition\s+(?:vers|internationale)|livraison\s+internationale|livrez-vous|exp[eé]diez-vous|fret\s+(?:maritime|a[eé]rien)|d[eé]douanement|douane|caisses?\s+en\s+bois|kirim\s+ke|pengiriman\s+(?:ke|internasional)|melayani\s+pengiriman|bisa\s+kirim\s+ke|ongkir|kargo\s+(?:laut|udara)|ekspor|bea\s+cukai|kepabeanan|peti\s+kayu|vận\s+chuyển(?:\s+quốc\s+tế|\s+đến)?|giao\s+hàng\s+(?:quốc\s+tế|đến)|có\s+(?:thể\s+)?giao\s+(?:hàng\s+)?đến|đường\s+biển|đường\s+hàng\s+không|xuất\s+khẩu|thông\s+quan|hải\s+quan|kiện\s+gỗ)\b|发货|发往|运输|海运|空运|出口|送到|运到|发到|能发.*吗|清关|报关|木箱|国际物流|运费|شحن\s+(?:إلى|دولي)|الشحن\s+(?:الدولي|البحري|الجوي)|(?:هل\s+)?تشحنون|توصيل\s+دولي|تخليص\s+جمركي|جمارك|صناديق\s+خشبية|تصدير/iu',
 		$q
 	);
 }
@@ -578,7 +598,7 @@ function md_kb_endpoint_shipping_message( string $lang = 'en' ): string {
  */
 function md_kb_endpoint_shipping_reply( string $q, string $context, array $sources = array( 'Packing and shipping' ), string $lang = 'en' ): string {
 	$parts = array();
-	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
+	$facts = md_kb_endpoint_partial_fact_message( $q, $context, $lang );
 	if ( '' !== $facts ) {
 		$parts[] = $facts;
 	}
@@ -597,7 +617,7 @@ function md_kb_endpoint_shipping_reply( string $q, string $context, array $sourc
  */
 function md_kb_endpoint_commercial_reply( string $q, string $context, string $lang = 'en' ): string {
 	$parts = array();
-	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
+	$facts = md_kb_endpoint_partial_fact_message( $q, $context, $lang );
 	if ( '' !== $facts ) {
 		$parts[] = $facts;
 	}
@@ -660,7 +680,10 @@ function md_kb_endpoint_asks_dimensions( string $q ): bool {
  * @return bool Whether the question is the starter prompt.
  */
 function md_kb_endpoint_asks_pattern_check_prompt( string $q ): bool {
-	return 1 === preg_match( '/^\s*i\s+have\s+a\s+pattern\s+in\s+mind[.!]?\s+can\s+you\s+help\s+me\s+check\s+it\??\s*$/iu', $q );
+	return 1 === preg_match(
+		'/^\s*(?:i\s+have\s+a\s+pattern\s+in\s+mind[.!]?\s+can\s+you\s+help\s+me\s+check\s+it\??|我有心仪的图案[，,.]?\s*能帮我核对一下吗[？?]?|tengo\s+un\s+patr[oó]n\s+en\s+mente[.!]?\s*¿?pueden\s+ayudarme\s+a\s+revisarlo\??|tenho\s+um\s+padr[aã]o\s+em\s+mente[.!]?\s*podem\s+me\s+ajudar\s+a\s+conferir\??|ich\s+habe\s+ein\s+bestimmtes\s+muster\s+im\s+sinn[.!]?\s*k[oö]nnen\s+sie\s+es\s+f[uü]r\s+mich\s+pr[uü]fen\??|j[\'’]ai\s+un\s+motif\s+pr[eé]cis\s+en\s+t[êe]te[.!]?\s*pouvez-vous\s+m[\'’]aider\s+[àa]\s+le\s+v[eé]rifier\s*\??|لدي\s+نمط\s+معين\s+في\s+ذهني[.!]?\s*هل\s+يمكنك\s+مساعدتي\s+في\s+التحقق\s+منه[؟?]?|saya\s+sudah\s+memiliki\s+pilihan\s+pola[.!]?\s*bisa\s+bantu\s+memeriksanya\??|tôi\s+đã\s+chọn\s+được\s+một\s+mẫu\s+hoa\s+văn[.!]?\s*bạn\s+có\s+thể\s+giúp\s+tôi\s+kiểm\s+tra\s+không\??)\s*$/iu',
+		$q
+	);
 }
 
 /**
@@ -682,14 +705,58 @@ function md_kb_endpoint_pattern_check_prompt_reply( string $resolved, array $res
 			$name  = md_kb_endpoint_pattern_display_name( $block );
 			$oa    = trim( (string) ( $block['open_area'] ?? '' ) );
 			$fit   = str_replace( array( '-', '_' ), ' ', trim( (string) ( $block['best_fit'] ?? '' ) ) );
-			$parts = array( 'You are viewing ' . $name . ' (' . MD_KB_ENDPOINT_MATERIAL . ')' );
-			if ( '' !== $oa ) {
-				$parts[] = 'open area: ' . $oa;
+			if ( 'en' === $lang ) {
+				$parts = array( 'You are viewing ' . $name . ' (' . MD_KB_ENDPOINT_MATERIAL . ')' );
+				if ( '' !== $oa ) {
+					$parts[] = 'open area: ' . $oa;
+				}
+				if ( '' !== $fit ) {
+					$parts[] = 'best fit: ' . $fit;
+				}
+				$msg = implode( ', ', $parts ) . '. Tell me what you would like to check — or share another pattern name or code.';
+			} else {
+				$viewing_templates = array(
+					'zh'    => '您当前正在浏览图案 %1$s（%2$s）%3$s。请告诉我您想核对的细节，或发送其他图案名称或编号。',
+					'es'    => 'Está viendo el patrón %1$s (%2$s)%3$s. Indíqueme qué desea consultar o comparta otro nombre o código de patrón.',
+					'pt-br' => 'Você está visualizando o padrão %1$s (%2$s)%3$s. Diga o que gostaria de conferir ou informe outro nome ou código de padrão.',
+					'de'    => 'Sie sehen gerade das Muster %1$s (%2$s)%3$s. Sagen Sie mir gerne, was Sie prüfen möchten, oder nennen Sie einen anderen Musternamen oder Code.',
+					'fr'    => 'Vous consultez le motif %1$s (%2$s)%3$s. Indiquez-moi ce que vous souhaitez vérifier ou partagez un autre nom ou code de motif.',
+					'ar'    => 'أنت تستعرض الآن النمط %1$s (%2$s)%3$s. أخبرني بما تود التحقق منه — أو شارك اسم أو رمز نمط آخر.',
+					'id'    => 'Anda sedang melihat pola %1$s (%2$s)%3$s. Beri tahu saya detail yang ingin Anda periksa, atau sebutkan nama maupun kode pola lainnya.',
+					'vi'    => 'Bạn đang xem mẫu hoa văn %1$s (%2$s)%3$s. Hãy cho tôi biết bạn muốn kiểm tra thông tin gì — hoặc gửi tên hay mã hoa văn khác.',
+				);
+				$oa_labels         = array(
+					'zh'    => '镂空率：',
+					'es'    => 'área abierta: ',
+					'pt-br' => 'área aberta: ',
+					'de'    => 'Öffnungsanteil: ',
+					'fr'    => 'ouverture : ',
+					'ar'    => 'نسبة الفتحات: ',
+					'id'    => 'area terbuka: ',
+					'vi'    => 'tỷ lệ lỗ thoáng: ',
+				);
+				$fit_labels        = array(
+					'zh'    => '适用场景：',
+					'es'    => 'aplicación: ',
+					'pt-br' => 'aplicação: ',
+					'de'    => 'Einsatzbereich: ',
+					'fr'    => 'usage : ',
+					'ar'    => 'الاستخدام الأنسب: ',
+					'id'    => 'aplikasi: ',
+					'vi'    => 'ứng dụng: ',
+				);
+				$extra             = array();
+				if ( '' !== $oa ) {
+					$extra[] = ( $oa_labels[ $lang ] ?? 'open area: ' ) . $oa;
+				}
+				if ( '' !== $fit ) {
+					$extra[] = ( $fit_labels[ $lang ] ?? 'best fit: ' ) . $fit;
+				}
+				$sep    = 'zh' === $lang ? '，' : ', ';
+				$suffix = array() !== $extra ? $sep . implode( $sep, $extra ) : '';
+				$tpl    = $viewing_templates[ $lang ] ?? 'You are viewing %1$s (%2$s)%3$s.';
+				$msg    = sprintf( $tpl, $name, MD_KB_ENDPOINT_MATERIAL, $suffix );
 			}
-			if ( '' !== $fit ) {
-				$parts[] = 'best fit: ' . $fit;
-			}
-			$msg    = implode( ', ', $parts ) . '. Tell me what you would like to check — or share another pattern name or code.';
 			$labels = md_kb_endpoint_source_labels( $resolved_sources );
 			if ( array() !== $labels ) {
 				$msg .= md_kb_endpoint_source_footer( $resolved_sources, $lang );
@@ -705,10 +772,21 @@ function md_kb_endpoint_pattern_check_prompt_reply( string $resolved, array $res
 			);
 		}
 	}
+	$prompts = array(
+		'en'    => 'Of course — share the pattern name or code (or open the pattern page) and tell me what you would like to check, such as open area, visual density, repeat behavior, series, or application.',
+		'zh'    => '当然可以——请发送图案名称或编号（或直接打开对应图案页面），并告诉我您想核对的信息，例如镂空率、视觉密度、拼接循环方式、所属系列或适用场景。',
+		'es'    => 'Por supuesto: comparta el nombre o código del patrón (o abra su página) e indíqueme qué desea revisar, como el área abierta, densidad visual, repetición, serie o aplicación.',
+		'pt-br' => 'Claro — informe o nome ou código do padrão (ou abra a página do padrão) e diga o que gostaria de conferir, como área aberta, densidade visual, repetição, série ou aplicação.',
+		'de'    => 'Sehr gerne — nennen Sie mir den Musternamen oder Code (oder öffnen Sie die Musterseite) und sagen Sie mir, was Sie prüfen möchten, z. B. Öffnungsanteil, optische Dichte, Rapport, Serie oder Einsatzbereich.',
+		'fr'    => 'Bien sûr — indiquez le nom ou le code du motif (ou ouvrez sa page) et précisez ce que vous souhaitez vérifier : taux d’ouverture, densité visuelle, répétition, série ou application.',
+		'ar'    => 'بكل سرور — شارك اسم النمط أو رمزه (أو افتح صفحة النمط) وأخبرني بما تود التحقق منه، مثل نسبة الفتحات أو الكثافة البصرية أو نظام التكرار أو السلسلة أو مجال الاستخدام.',
+		'id'    => 'Tentu — sebutkan nama atau kode pola (atau buka halaman polanya) dan beri tahu apa yang ingin Anda periksa, seperti area terbuka, kepadatan visual, pengulangan motif, seri, atau aplikasi.',
+		'vi'    => 'Tất nhiên — vui lòng gửi tên hoặc mã hoa văn (hoặc mở trang hoa văn đó) và cho tôi biết bạn muốn kiểm tra thông tin gì, chẳng hạn như tỷ lệ lỗ thoáng, mật độ thị giác, quy luật lặp, bộ sưu tập hay ứng dụng.',
+	);
 	return array(
 		'status' => 200,
 		'body'   => array(
-			'msg'           => 'Of course — share the pattern name or code (or open the pattern page) and tell me what you would like to check, such as open area, visual density, repeat behavior, series, or application.',
+			'msg'           => $prompts[ $lang ] ?? $prompts['en'],
 			'action'        => '',
 			'sources'       => array(),
 			'source_labels' => array(),
@@ -770,7 +848,7 @@ function md_kb_endpoint_showroom_reply( string $lang = 'en' ): string {
  */
 function md_kb_endpoint_dimensions_reply( string $q, string $context, string $lang = 'en' ): string {
 	$parts = array();
-	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
+	$facts = md_kb_endpoint_partial_fact_message( $q, $context, $lang );
 	if ( '' !== $facts ) {
 		$parts[] = $facts;
 	}
@@ -822,7 +900,7 @@ function md_kb_endpoint_unverified_fact_handoff_message( string $lang = 'en' ): 
  */
 function md_kb_endpoint_unverified_fact_reply( string $q, string $context, string $lang = 'en' ): string {
 	$parts = array();
-	$facts = md_kb_endpoint_partial_fact_message( $q, $context );
+	$facts = md_kb_endpoint_partial_fact_message( $q, $context, $lang );
 	if ( '' !== $facts ) {
 		$parts[] = $facts;
 	}
@@ -856,10 +934,22 @@ function md_kb_endpoint_drawing_check_message( string $lang = 'en' ): string {
  * The sentence used when a published fact was kept and the rest of the
  * question still has to be checked. It does not deny the fact just stated.
  *
+ * @param string $lang The visitor language.
  * @return string The remainder sentence.
  */
-function md_kb_endpoint_remainder_message(): string {
-	return 'The rest of that is being checked with our team.';
+function md_kb_endpoint_remainder_message( string $lang = 'en' ): string {
+	$messages = array(
+		'en'    => 'The rest of that is being checked with our team.',
+		'zh'    => '其余部分正在与我们的团队核实。',
+		'es'    => 'El resto lo está consultando nuestro equipo.',
+		'pt-br' => 'O restante está sendo verificado com nossa equipe.',
+		'de'    => 'Den übrigen Teil klären wir mit unserem Team.',
+		'fr'    => 'Le reste est en cours de vérification auprès de notre équipe.',
+		'ar'    => 'تتم مراجعة الجزء المتبقي مع فريقنا.',
+		'id'    => 'Selebihnya sedang kami pastikan bersama tim kami.',
+		'vi'    => 'Phần còn lại đang được xác minh với đội ngũ của chúng tôi.',
+	);
+	return $messages[ $lang ] ?? $messages['en'];
 }
 
 /**
@@ -868,15 +958,16 @@ function md_kb_endpoint_remainder_message(): string {
  *
  * @param string $facts The confirmed sentences, '' when none.
  * @param string $reply The reply so far.
+ * @param string $lang  The visitor language.
  * @return string The reply to send.
  */
-function md_kb_endpoint_with_kept_facts( string $facts, string $reply ): string {
+function md_kb_endpoint_with_kept_facts( string $facts, string $reply, string $lang = 'en' ): string {
 	$reply = trim( $reply );
 	if ( '' === $facts ) {
 		return $reply;
 	}
-	if ( md_kb_endpoint_no_answer_message() === $reply ) {
-		$reply = md_kb_endpoint_remainder_message();
+	if ( md_kb_endpoint_no_answer_message() === $reply || md_kb_endpoint_no_answer_message( $lang ) === $reply ) {
+		$reply = md_kb_endpoint_remainder_message( $lang );
 	}
 	return '' === $reply ? $facts : $facts . ' ' . $reply;
 }
@@ -910,20 +1001,21 @@ function md_kb_endpoint_without_drawing_promise( string $message ): string {
  *
  * @param string                                               $q       The visitor's question.
  * @param string                                               $context The resolved pattern facts, '' when none.
- * @param array{answer: string, handoff: bool, reason: string} $answer The model's reply.
+ * @param array{answer: string, handoff: bool, reason: string} $answer  The model's reply.
+ * @param string                                               $lang    The visitor language.
  * @return array{answer: string, handoff: bool, reason: string} The reply to send.
  */
-function md_kb_endpoint_preserve_known_facts( string $q, string $context, array $answer ): array {
+function md_kb_endpoint_preserve_known_facts( string $q, string $context, array $answer, string $lang = 'en' ): array {
 	if ( $answer['handoff'] ) {
-		$missing = md_kb_endpoint_missing_fact_message( $q, $context, $answer['answer'] );
+		$missing = md_kb_endpoint_missing_fact_message( $q, $context, $answer['answer'], $lang );
 		if ( '' !== $missing ) {
-			$answer['answer'] = md_kb_endpoint_with_kept_facts( $missing, $answer['answer'] );
+			$answer['answer'] = md_kb_endpoint_with_kept_facts( $missing, $answer['answer'], $lang );
 			if ( '' === $answer['reason'] || 'none' === $answer['reason'] ) {
 				$answer['reason'] = 'no_knowledge';
 			}
 		}
 	}
-	return md_kb_endpoint_guard_unverified_cad( $q, $context, $answer );
+	return md_kb_endpoint_guard_unverified_cad( $q, $context, $answer, $lang );
 }
 
 /**
@@ -932,10 +1024,11 @@ function md_kb_endpoint_preserve_known_facts( string $q, string $context, array 
  *
  * @param string                                               $q       The visitor's question.
  * @param string                                               $context The resolved pattern facts, '' when none.
- * @param array{answer: string, handoff: bool, reason: string} $answer The reply so far.
+ * @param array{answer: string, handoff: bool, reason: string} $answer  The reply so far.
+ * @param string                                               $lang    The visitor language.
  * @return array{answer: string, handoff: bool, reason: string} The reply to send.
  */
-function md_kb_endpoint_guard_unverified_cad( string $q, string $context, array $answer ): array {
+function md_kb_endpoint_guard_unverified_cad( string $q, string $context, array $answer, string $lang = 'en' ): array {
 	if ( ! md_kb_endpoint_unverified_cad_must_transfer( $q, $context ) ) {
 		return $answer;
 	}
@@ -945,15 +1038,19 @@ function md_kb_endpoint_guard_unverified_cad( string $q, string $context, array 
 		$answer['reason'] = 'no_knowledge';
 	}
 	$reply   = md_kb_endpoint_without_drawing_promise( $answer['answer'] );
-	$missing = md_kb_endpoint_missing_fact_message( $q, $context, $reply );
-	$reply   = md_kb_endpoint_with_kept_facts( $missing, $reply );
+	$missing = md_kb_endpoint_missing_fact_message( $q, $context, $reply, $lang );
+	$reply   = md_kb_endpoint_with_kept_facts( $missing, $reply, $lang );
 	$handed  = str_contains( $reply, md_kb_endpoint_drawing_check_message() )
+		|| str_contains( $reply, md_kb_endpoint_drawing_check_message( $lang ) )
 		|| str_contains( $reply, md_kb_endpoint_remainder_message() )
-		|| str_contains( $reply, md_kb_endpoint_no_answer_message() );
+		|| str_contains( $reply, md_kb_endpoint_remainder_message( $lang ) )
+		|| str_contains( $reply, md_kb_endpoint_no_answer_message() )
+		|| str_contains( $reply, md_kb_endpoint_no_answer_message( $lang ) );
 	if ( ! $handed ) {
+		$check = md_kb_endpoint_drawing_check_message( $lang );
 		$reply = '' !== $reply
-			? rtrim( $reply ) . ' ' . md_kb_endpoint_drawing_check_message()
-			: md_kb_endpoint_drawing_check_message();
+			? rtrim( $reply ) . ' ' . $check
+			: $check;
 	}
 	$answer['answer'] = $reply;
 	return $answer;
@@ -968,7 +1065,7 @@ function md_kb_endpoint_guard_unverified_cad( string $q, string $context, array 
  */
 function md_kb_endpoint_asks_cad_availability( string $q ): bool {
 	return 1 === preg_match(
-		'/\b(?:have|has|got|get|provide|send|share|request|available|availability)\b.{0,40}\b(?:cad|dxf|drawings?)\b|\bcad\s+status\b|\b(?:cad|dxf|drawings?)\b.{0,40}\b(?:available|availability|status|provided?|sent?|shared?)\b|(?:有|发|给|提供|分享|要|需要|查|看).{0,12}(?:图纸|CAD|DXF)|(?:图纸|CAD|DXF).{0,12}(?:有|发|给|提供|分享|可以|能)/iu',
+		'/\b(?:have|has|got|get|provide|send|share|request|available|availability)\b.{0,40}\b(?:cad|dxf|drawings?)\b|\bcad\s+status\b|\b(?:cad|dxf|drawings?)\b.{0,40}\b(?:available|availability|status|provided?|sent?|shared?)\b|\b(?:enviar|proporcionar|facilitar|fornecer|disponibilizar|envoyer|fournir|partager|kirim\w*|mengirim\w*|menyediakan|gửi|cung\s+cấp)\b.{0,35}\b(?:cad|cao|dxf)\b|\b(?:cad|cao|dxf)(?:-dateien)?\b.{0,45}\b(?:bereitstellen|senden|schicken|verf[uü]gbar|disponibles?|dispon[ií]vel|tersedia)\b|(?:有|发|给|提供|分享|要|需要|查|看).{0,12}(?:图纸|CAD|DXF)|(?:图纸|CAD|DXF).{0,12}(?:有|发|给|提供|分享|可以|能)|(?:إرسال|تزويد\w*|توفير).{0,25}(?:CAD|DXF)/iu',
 		$q
 	);
 }
@@ -1040,11 +1137,12 @@ function md_kb_endpoint_promises_drawing( string $message ): bool {
  *
  * @param string $q       The visitor's question.
  * @param string $context The resolved pattern facts, '' when none.
+ * @param string $lang    The canonical visitor language code.
  * @return string The sentences, '' when nothing asked is confirmed.
  */
-function md_kb_endpoint_partial_fact_message( string $q, string $context ): string {
+function md_kb_endpoint_partial_fact_message( string $q, string $context, string $lang = 'en' ): string {
 	$sentences = array();
-	foreach ( md_kb_endpoint_partial_fact_pieces( $q, $context ) as $piece ) {
+	foreach ( md_kb_endpoint_partial_fact_pieces( $q, $context, $lang ) as $piece ) {
 		$sentences[] = $piece['sentence'];
 	}
 	return implode( ' ', $sentences );
@@ -1056,11 +1154,12 @@ function md_kb_endpoint_partial_fact_message( string $q, string $context ): stri
  * @param string $q       The visitor's question.
  * @param string $context The resolved pattern facts, '' when none.
  * @param string $reply   The reply so far.
+ * @param string $lang    The visitor language.
  * @return string The missing sentences, '' when none are missing.
  */
-function md_kb_endpoint_missing_fact_message( string $q, string $context, string $reply ): string {
+function md_kb_endpoint_missing_fact_message( string $q, string $context, string $reply, string $lang = 'en' ): string {
 	$missing = array();
-	foreach ( md_kb_endpoint_partial_fact_pieces( $q, $context ) as $piece ) {
+	foreach ( md_kb_endpoint_partial_fact_pieces( $q, $context, $lang ) as $piece ) {
 		if ( ! md_kb_endpoint_reply_has_value( $reply, $piece['value'] ) ) {
 			$missing[] = $piece['sentence'];
 		}
@@ -1085,7 +1184,7 @@ function md_kb_endpoint_answer_uses_resolved_pattern( string $q, string $resolve
 	if ( '' !== md_kb_endpoint_partial_fact_message( $q, $resolved ) || md_kb_endpoint_asks_cad_availability( $q ) ) {
 		return true;
 	}
-	if ( 1 === preg_match( '/\b(?:this|that|it|its|current|open\s*area|density|repeat|motif|series|best\s*fit|cad|dxf|sku)\b|这个|这款|它|它的|镂空率/iu', $q ) ) {
+	if ( 1 === preg_match( '/\b(?:this|that|it|its|current|open\s*area|density|repeat|motif|series|best\s*fit|cad|dxf|sku)\b|这个|这款|它|它的|镂空率|开孔率/iu', $q ) ) {
 		return true;
 	}
 	foreach ( md_kb_endpoint_pattern_fact_blocks( $resolved ) as $block ) {
@@ -1112,12 +1211,24 @@ function md_kb_endpoint_answer_uses_resolved_pattern( string $q, string $resolve
  * @param string                                                         $resolved The resolved pattern context.
  * @param array{context: string, sources: array<int, string>, hits: int} $pattern  The pattern lookup or recommendation result.
  * @param array<int, mixed>                                              $results  The retrieved knowledge hits.
+ * @param string                                                         $lang     The visitor language.
  * @return array{answer: string, handoff: bool, reason: string}|null The deterministic reply, or null when no published fact covers the question.
  */
-function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, array $pattern, array $results = array() ): ?array {
+function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, array $pattern, array $results = array(), string $lang = 'en' ): ?array {
 	if ( md_kb_endpoint_wants_human( $q ) ) {
+		$human_replies = array(
+			'en'    => 'I am connecting you with our team — someone will follow up with you shortly.',
+			'zh'    => '正在为您转接我们的团队——顾问将很快与您联系。',
+			'es'    => 'Le estoy comunicando con nuestro equipo; alguien le atenderá en breve.',
+			'pt-br' => 'Estou conectando você com nossa equipe — alguém entrará em contato em breve.',
+			'de'    => 'Ich verbinde Sie mit unserem Team — ein Mitarbeiter meldet sich in Kürze bei Ihnen.',
+			'fr'    => 'Je vous mets en relation avec notre équipe — un conseiller vous répondra sous peu.',
+			'ar'    => 'أقوم الآن بتوصيلك بفريقنا — سيتابع معك أحد المختصين قريباً.',
+			'id'    => 'Saya sedang menghubungkan Anda dengan tim kami — petugas kami akan segera menindaklanjuti.',
+			'vi'    => 'Tôi đang kết nối bạn với đội ngũ của chúng tôi — chuyên viên sẽ phản hồi bạn ngay.',
+		);
 		return array(
-			'answer'  => 'I am connecting you with our team — someone will follow up with you shortly.',
+			'answer'  => $human_replies[ $lang ] ?? $human_replies['en'],
 			'handoff' => true,
 			'reason'  => 'human_request',
 		);
@@ -1132,27 +1243,63 @@ function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, 
 			$url     = trim( (string) ( $block['permalink'] ?? '' ) );
 			$link    = '' !== $url ? '[' . $name . '](' . $url . ')' : $name;
 			$details = array();
-			if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['series'] ?? '' ) ) ) {
-				$details[] = trim( (string) $block['series'] ) . ' series';
+			if ( 'en' === $lang ) {
+				if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['series'] ?? '' ) ) ) {
+					$details[] = trim( (string) $block['series'] ) . ' series';
+				}
+				if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['open_area'] ?? '' ) ) ) {
+					$details[] = trim( (string) $block['open_area'] ) . ' open area';
+				}
+				if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['best_fit'] ?? '' ) ) ) {
+					$details[] = 'best fit: ' . str_replace( array( '-', '_' ), ' ', trim( (string) $block['best_fit'] ) );
+				}
+				$items[] = $link . ( array() !== $details ? ' (' . implode( ', ', $details ) . ')' : '' );
+			} else {
+				if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['series'] ?? '' ) ) ) {
+					$details[] = trim( (string) $block['series'] );
+				}
+				if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['open_area'] ?? '' ) ) ) {
+					$oa_label  = array(
+						'zh'    => '镂空率 ',
+						'es'    => 'área abierta ',
+						'pt-br' => 'área aberta ',
+						'de'    => 'Öffnungsanteil ',
+						'fr'    => 'ouverture ',
+						'ar'    => 'نسبة الفتحات ',
+						'id'    => 'area terbuka ',
+						'vi'    => 'lỗ thoáng ',
+					);
+					$details[] = ( $oa_label[ $lang ] ?? '' ) . trim( (string) $block['open_area'] );
+				}
+				if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['best_fit'] ?? '' ) ) ) {
+					$details[] = str_replace( array( '-', '_' ), ' ', trim( (string) $block['best_fit'] ) );
+				}
+				$items[] = $link . ( array() !== $details ? ' (' . implode( ', ', $details ) . ')' : '' );
 			}
-			if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['open_area'] ?? '' ) ) ) {
-				$details[] = trim( (string) $block['open_area'] ) . ' open area';
-			}
-			if ( md_kb_endpoint_pattern_value_is_answerable( (string) ( $block['best_fit'] ?? '' ) ) ) {
-				$details[] = 'best fit: ' . str_replace( array( '-', '_' ), ' ', trim( (string) $block['best_fit'] ) );
-			}
-			$items[] = $link . ( array() !== $details ? ' (' . implode( ', ', $details ) . ')' : '' );
 		}
 		if ( array() !== $items ) {
+			$intros = array(
+				'en'    => 'Here are the closest matching patterns from our catalog: ',
+				'zh'    => '以下是我们图库中最匹配的图案推荐：',
+				'es'    => 'Aquí tiene los patrones más adecuados de nuestro catálogo: ',
+				'pt-br' => 'Aqui estão os padrões mais compatíveis do nosso catálogo: ',
+				'de'    => 'Hier sind die am besten passenden Muster aus unserem Katalog: ',
+				'fr'    => 'Voici les motifs les plus adaptés de notre catalogue : ',
+				'ar'    => 'إليك أقرب الأنماط المطابقة من كتالوجنا: ',
+				'id'    => 'Berikut pola yang paling sesuai dari katalog kami: ',
+				'vi'    => 'Dưới đây là các mẫu hoa văn phù hợp nhất từ danh mục của chúng tôi: ',
+			);
+			$sep    = 'zh' === $lang ? '；' : '; ';
+			$end    = 'zh' === $lang ? '。' : '.';
 			return array(
-				'answer'  => 'Here are the closest matching patterns from our catalog: ' . implode( '; ', $items ) . '.',
+				'answer'  => ( $intros[ $lang ] ?? $intros['en'] ) . implode( $sep, $items ) . $end,
 				'handoff' => false,
 				'reason'  => 'none',
 			);
 		}
 	}
 	if ( '' !== $resolved ) {
-		$partial = md_kb_endpoint_partial_fact_message( $q, $resolved );
+		$partial = md_kb_endpoint_partial_fact_message( $q, $resolved, $lang );
 		if ( '' !== $partial ) {
 			return array(
 				'answer'  => $partial,
@@ -1161,22 +1308,24 @@ function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, 
 			);
 		}
 	}
-	foreach ( $results as $hit ) {
-		if ( ! is_array( $hit ) || 'knowledge' !== ( $hit['type'] ?? '' ) ) {
-			continue;
-		}
-		$content = trim( (string) ( $hit['content'] ?? '' ) );
-		if ( '' === $content ) {
-			continue;
-		}
-		$paragraphs = preg_split( '/\n\s*\n/u', $content );
-		$summary    = is_array( $paragraphs ) ? trim( $paragraphs[0] ) : $content;
-		if ( '' !== $summary ) {
-			return array(
-				'answer'  => $summary,
-				'handoff' => false,
-				'reason'  => 'none',
-			);
+	if ( 'en' === $lang ) {
+		foreach ( $results as $hit ) {
+			if ( ! is_array( $hit ) || 'knowledge' !== ( $hit['type'] ?? '' ) ) {
+				continue;
+			}
+			$content = trim( (string) ( $hit['content'] ?? '' ) );
+			if ( '' === $content ) {
+				continue;
+			}
+			$paragraphs = preg_split( '/\n\s*\n/u', $content );
+			$summary    = is_array( $paragraphs ) ? trim( $paragraphs[0] ) : $content;
+			if ( '' !== $summary ) {
+				return array(
+					'answer'  => $summary,
+					'handoff' => false,
+					'reason'  => 'none',
+				);
+			}
 		}
 	}
 	return null;
@@ -1187,9 +1336,10 @@ function md_kb_endpoint_pattern_upstream_fallback( string $q, string $resolved, 
  *
  * @param string $q       The visitor's question.
  * @param string $context The resolved pattern facts, '' when none.
+ * @param string $lang    The visitor language.
  * @return array<int, array{value: string, sentence: string}> The asked, confirmed facts.
  */
-function md_kb_endpoint_partial_fact_pieces( string $q, string $context ): array {
+function md_kb_endpoint_partial_fact_pieces( string $q, string $context, string $lang = 'en' ): array {
 	$fields = md_kb_endpoint_asked_pattern_fields( $q );
 	if ( array() === $fields ) {
 		return array();
@@ -1202,7 +1352,7 @@ function md_kb_endpoint_partial_fact_pieces( string $q, string $context ): array
 			if ( ! md_kb_endpoint_pattern_value_is_answerable( $value ) ) {
 				continue;
 			}
-			$sentence = md_kb_endpoint_pattern_fact_sentence( $name, $field, $value );
+			$sentence = md_kb_endpoint_pattern_fact_sentence( $name, $field, $value, $lang );
 			if ( '' === $sentence ) {
 				continue;
 			}
@@ -1243,13 +1393,13 @@ function md_kb_endpoint_reply_has_value( string $reply, string $value ): bool {
  */
 function md_kb_endpoint_asked_pattern_fields( string $q ): array {
 	$wanted = array(
-		'open_area'      => '/\bopen[\s-]*area\b/iu',
-		'best_fit'       => '/\b(?:good|best)\s+fit\b|\bsuitable\b|\bsuitability\b|\bfit\s+for\b|\bused\s+for\b|\bapplications?\b/iu',
-		'material'       => '/\b(?:what|which)\s+(?:material|grade)\b|\bmade\s+of\b|\bmaterial\s+is\b|\bgrade\s+is\b/iu',
-		'visual_density' => '/\bvisual\s+density\b|\bdensity\s+of\b|\bhow\s+dense\b/iu',
-		'cad_status'     => '/\bcad\b|\bdxf\b|\bdrawings?\b/iu',
-		'code'           => '/\bpattern\s+code\b|\bsku\b|\bwhat(?:\'s| is) the code\b/iu',
-		'permalink'      => '/\bpermalink\b|\bpattern\s+link\b|\bwhere\s+can\s+i\s+(?:see|find)\b/iu',
+		'open_area'      => '/\bopen[\s-]*area\b|\b[aá]rea\s+(?:abierta|aberta|vazada)\b|\b[oö]ffnungsanteil\b|\bfreie\s+fl[aä]che\b|\btaux\s+d[\'’]ouverture\b|\barea\s+terbuka\b|\btỷ\s+lệ\s+lỗ\s+thoáng\b|\bđộ\s+thoáng\b|镂空率|开孔率|穿孔率|نسبة\s+الفتحات|نسبة\s+فتحات/iu',
+		'best_fit'       => '/\b(?:good|best)\s+fit\b|\bsuitable\b|\bsuitability\b|\bfit\s+for\b|\bused\s+for\b|\bapplications?\b|\badecuad[oa]\b|\baplicaci[oó]n\b|\baplicac[aã]o\b|\beinsatzbereich\b|\bgeeignet\b|\badapt[eé]\b|\bcocok\s+untuk\b|\bphù\s+hợp\b|适用场景|适合用|مناسب\s+لـ|مجال\s+الاستخدام/iu',
+		'material'       => '/\b(?:what|which)\s+(?:material|grade)\b|\bmade\s+of\b|\bmaterial\s+is\b|\bgrade\s+is\b|\bqu[eé]\s+material\b|\bde\s+qu[eé]\s+material\b|\bwelches\s+material\b|\bquel\s+mat[eé]riau\b|\bbahan\s+apa\b|\bvật\s+liệu\s+gì\b|什么材质|哪种材质|材质是什么|ما\s+هي\s+المادة|نوع\s+المعدن/iu',
+		'visual_density' => '/\bvisual\s+density\b|\bdensity\s+of\b|\bhow\s+dense\b|\bdensidad\s+visual\b|\bdensidade\s+visual\b|\boptische\s+dichte\b|\bdensit[eé]\s+visuelle\b|\bkepadatan\s+visual\b|\bmật\s+độ\s+thị\s+giác\b|视觉密度|الكثافة\s+البصرية/iu',
+		'cad_status'     => '/\bcad\b|\bdxf\b|\bdrawings?\b|图纸|مخطط\s+cad/iu',
+		'code'           => '/\bpattern\s+code\b|\bsku\b|\bwhat(?:\'s| is) the code\b|\bc[oó]digo\s+del?\s+(?:patr[oó]n|padr[aã]o)\b|\bmustercode\b|\bcode\s+du\s+motif\b|\bkode\s+pola\b|\bmã\s+hoa\s+văn\b|图案编号|编号是多少|رمز\s+النمط/iu',
+		'permalink'      => '/\bpermalink\b|\bpattern\s+link\b|\bwhere\s+can\s+i\s+(?:see|find)\b|\benlace\s+del\s+patr[oó]n\b|\blink\s+do\s+padr[aã]o\b|\bmusterlink\b|\blien\s+du\s+motif\b|\btautan\s+pola\b|\blink\s+hoa\s+văn\b|图案链接|页面链接|رابط\s+النمط/iu',
 	);
 	$fields = array();
 	foreach ( $wanted as $field => $pattern ) {
@@ -1333,32 +1483,113 @@ function md_kb_endpoint_pattern_value_is_answerable( string $value ): bool {
  * @param string $name  The pattern's display name.
  * @param string $field The field name.
  * @param string $value The published value.
+ * @param string $lang  The visitor language.
  * @return string The sentence, '' when the field is not spoken.
  */
-function md_kb_endpoint_pattern_fact_sentence( string $name, string $field, string $value ): string {
-	if ( 'open_area' === $field ) {
-		return $name . "'s open area is " . $value . '.';
+function md_kb_endpoint_pattern_fact_sentence( string $name, string $field, string $value, string $lang = 'en' ): string {
+	if ( 'en' === $lang ) {
+		if ( 'open_area' === $field ) {
+			return $name . "'s open area is " . $value . '.';
+		}
+		if ( 'best_fit' === $field ) {
+			$fit = trim( str_replace( array( '-', '_' ), ' ', $value ) );
+			return $name . "'s published fit is " . $fit . '.';
+		}
+		if ( 'material' === $field ) {
+			return $name . "'s material is " . $value . '.';
+		}
+		if ( 'visual_density' === $field ) {
+			return $name . "'s visual density is " . $value . '.';
+		}
+		if ( 'cad_status' === $field ) {
+			return $name . "'s CAD status is " . $value . '.';
+		}
+		if ( 'code' === $field ) {
+			return $name . "'s pattern code is " . $value . '.';
+		}
+		if ( 'permalink' === $field ) {
+			return $name . "'s page is " . $value . '.';
+		}
+		return '';
 	}
-	if ( 'best_fit' === $field ) {
-		$fit = trim( str_replace( array( '-', '_' ), ' ', $value ) );
-		return $name . "'s published fit is " . $fit . '.';
+
+	$display_val = 'best_fit' === $field ? trim( str_replace( array( '-', '_' ), ' ', $value ) ) : $value;
+	$templates   = array(
+		'open_area'      => array(
+			'zh'    => '%1$s 的镂空率为 %2$s。',
+			'es'    => 'El área abierta de %1$s es %2$s.',
+			'pt-br' => 'A área aberta de %1$s é %2$s.',
+			'de'    => 'Der Öffnungsanteil von %1$s beträgt %2$s.',
+			'fr'    => 'Le taux d’ouverture de %1$s est de %2$s.',
+			'ar'    => 'نسبة الفتحات لنمط %1$s هي %2$s.',
+			'id'    => 'Area terbuka %1$s adalah %2$s.',
+			'vi'    => 'Tỷ lệ lỗ thoáng của %1$s là %2$s.',
+		),
+		'best_fit'       => array(
+			'zh'    => '%1$s 的推荐适用场景为 %2$s。',
+			'es'    => 'El uso recomendado de %1$s es %2$s.',
+			'pt-br' => 'O uso recomendado de %1$s é %2$s.',
+			'de'    => 'Der empfohlene Einsatzbereich von %1$s ist %2$s.',
+			'fr'    => 'L’usage recommandé de %1$s est %2$s.',
+			'ar'    => 'مجال الاستخدام الموصى به لنمط %1$s هو %2$s.',
+			'id'    => 'Penggunaan yang direkomendasikan untuk %1$s adalah %2$s.',
+			'vi'    => 'Ứng dụng phù hợp của %1$s là %2$s.',
+		),
+		'material'       => array(
+			'zh'    => '%1$s 的材质为 %2$s。',
+			'es'    => 'El material de %1$s es %2$s.',
+			'pt-br' => 'O material de %1$s é %2$s.',
+			'de'    => 'Das Material von %1$s ist %2$s.',
+			'fr'    => 'Le matériau de %1$s est %2$s.',
+			'ar'    => 'مادة نمط %1$s هي %2$s.',
+			'id'    => 'Material %1$s adalah %2$s.',
+			'vi'    => 'Vật liệu của %1$s là %2$s.',
+		),
+		'visual_density' => array(
+			'zh'    => '%1$s 的视觉密度为 %2$s。',
+			'es'    => 'La densidad visual de %1$s es %2$s.',
+			'pt-br' => 'A densidade visual de %1$s é %2$s.',
+			'de'    => 'Die optische Dichte von %1$s ist %2$s.',
+			'fr'    => 'La densité visuelle de %1$s est %2$s.',
+			'ar'    => 'الكثافة البصرية لنمط %1$s هي %2$s.',
+			'id'    => 'Kepadatan visual %1$s adalah %2$s.',
+			'vi'    => 'Mật độ thị giác của %1$s là %2$s.',
+		),
+		'cad_status'     => array(
+			'zh'    => '%1$s 的 CAD 状态为 %2$s。',
+			'es'    => 'El estado CAD de %1$s es %2$s.',
+			'pt-br' => 'O status CAD de %1$s é %2$s.',
+			'de'    => 'Der CAD-Status von %1$s ist %2$s.',
+			'fr'    => 'Le statut CAO/CAD de %1$s est %2$s.',
+			'ar'    => 'حالة ملف CAD لنمط %1$s هي %2$s.',
+			'id'    => 'Status CAD %1$s adalah %2$s.',
+			'vi'    => 'Trạng thái CAD của %1$s là %2$s.',
+		),
+		'code'           => array(
+			'zh'    => '%1$s 的图案编号为 %2$s。',
+			'es'    => 'El código de patrón de %1$s es %2$s.',
+			'pt-br' => 'O código do padrão %1$s é %2$s.',
+			'de'    => 'Der Mustercode von %1$s lautet %2$s.',
+			'fr'    => 'Le code du motif %1$s est %2$s.',
+			'ar'    => 'رمز النمط %1$s هو %2$s.',
+			'id'    => 'Kode pola %1$s adalah %2$s.',
+			'vi'    => 'Mã hoa văn của %1$s là %2$s.',
+		),
+		'permalink'      => array(
+			'zh'    => '%1$s 的详情页为 %2$s。',
+			'es'    => 'La página de %1$s es %2$s.',
+			'pt-br' => 'A página de %1$s é %2$s.',
+			'de'    => 'Die Seite von %1$s ist %2$s.',
+			'fr'    => 'La page de %1$s est %2$s.',
+			'ar'    => 'صفحة نمط %1$s هي %2$s.',
+			'id'    => 'Halaman %1$s adalah %2$s.',
+			'vi'    => 'Trang chi tiết của %1$s là %2$s.',
+		),
+	);
+	if ( isset( $templates[ $field ][ $lang ] ) ) {
+		return sprintf( $templates[ $field ][ $lang ], $name, $display_val );
 	}
-	if ( 'material' === $field ) {
-		return $name . "'s material is " . $value . '.';
-	}
-	if ( 'visual_density' === $field ) {
-		return $name . "'s visual density is " . $value . '.';
-	}
-	if ( 'cad_status' === $field ) {
-		return $name . "'s CAD status is " . $value . '.';
-	}
-	if ( 'code' === $field ) {
-		return $name . "'s pattern code is " . $value . '.';
-	}
-	if ( 'permalink' === $field ) {
-		return $name . "'s page is " . $value . '.';
-	}
-	return '';
+	return md_kb_endpoint_pattern_fact_sentence( $name, $field, $value, 'en' );
 }
 
 /**
@@ -1366,10 +1597,22 @@ function md_kb_endpoint_pattern_fact_sentence( string $name, string $field, stri
  * instructions. The model is not asked, and the sentence does not quote
  * the instructions or the attempt.
  *
+ * @param string $lang The visitor language.
  * @return string The handoff copy.
  */
-function md_kb_endpoint_injection_handoff_message(): string {
-	return 'I can only help with questions about our architectural metal screens — I am connecting you with the team.';
+function md_kb_endpoint_injection_handoff_message( string $lang = 'en' ): string {
+	$messages = array(
+		'en'    => 'I can only help with questions about our architectural metal screens — I am connecting you with the team.',
+		'zh'    => '我仅能解答关于建筑金属屏风图案的咨询——正在为您转接团队顾问。',
+		'es'    => 'Solo puedo ayudar con consultas sobre nuestras celosías metálicas arquitectónicas; le estoy comunicando con el equipo.',
+		'pt-br' => 'Só posso ajudar com dúvidas sobre nossos painéis metálicos arquitetônicos — estou conectando você com a equipe.',
+		'de'    => 'Ich kann nur Fragen zu unseren architektonischen Metallblenden beantworten — ich verbinde Sie mit dem Team.',
+		'fr'    => 'Je peux uniquement répondre aux questions sur nos panneaux métalliques architecturaux — je vous mets en relation avec l’équipe.',
+		'ar'    => 'يمكنني المساعدة فقط في الاستفسارات المتعلقة بالقواطع المعدنية المعمارية — أقوم بتوصيلك مع الفريق.',
+		'id'    => 'Saya hanya dapat membantu pertanyaan seputar sekat logam arsitektural kami — saya menghubungkan Anda dengan tim.',
+		'vi'    => 'Tôi chỉ có thể hỗ trợ các câu hỏi về vách ngăn kim loại kiến trúc — tôi đang kết nối bạn với đội ngũ.',
+	);
+	return $messages[ $lang ] ?? $messages['en'];
 }
 
 /**
@@ -2024,7 +2267,7 @@ function md_kb_endpoint_chat_history( int $chat_id, string $q ): array {
 		if ( 1 === preg_match( '/^Hi\s*[—–-]\s*I[\'’]?m\s+Metal Divider[\'’]?s AI assistant\b/iu', $raw_msg ) ) {
 			continue;
 		}
-		$clean_msg = trim( (string) preg_replace( '/\n\nBased on:.*$/s', '', $raw_msg ) );
+		$clean_msg = trim( (string) preg_replace( '/\n\n(?:Based on:|参考来源：|Basado en:|Com base em:|Basierend auf:|Basé sur\s*:|بناءً على:|Berdasarkan:|Dựa trên:).*$/su', '', $raw_msg ) );
 		if ( '' === $clean_msg ) {
 			continue;
 		}
@@ -2120,7 +2363,7 @@ function md_kb_endpoint_assistant_turn_pattern_lookup( string $raw_turn, string 
 			$candidates[] = strtolower( $slug );
 		}
 	}
-	if ( preg_match_all( '/Based on:\s*([^\n]+)/iu', $raw_turn, $footer_matches ) ) {
+	if ( preg_match_all( '/(?:Based on:|参考来源：|Basado en:|Com base em:|Basierend auf:|Basé sur\s*:|بناءً على:|Berdasarkan:|Dựa trên:)\s*([^\n]+)/iu', $raw_turn, $footer_matches ) ) {
 		foreach ( $footer_matches[1] as $footer_line ) {
 			foreach ( explode( ';', $footer_line ) as $part ) {
 				if ( 1 === preg_match( '/^Pattern\s+(.+)$/iu', trim( $part ), $pat_match ) ) {
@@ -2246,7 +2489,7 @@ function md_kb_endpoint_augment_recommendation_query( string $q, array $matched_
  */
 function md_kb_endpoint_asks_recommendation( string $q ): bool {
 	$explicit_recommend = 1 === preg_match(
-		'/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?|any\s+patterns?|show\s+(?:me\s+)?patterns?|looking\s+for\s+(?:a\s+)?patterns?|patterns?\s+(?:for|with|that|suitable|in|like|similar)|similar\s+(?:patterns?\s+)?to|alternatives?\s+to)\b|推荐|哪(?:款|些|种)图案|什么图案|类似|\b(?:recomiend[aoesn]?|recomendar|recomendaci[oó]n|sugier[aen]?|sugerir|sugerencia|qu[eé]\s+patrones?|cu[aá]les\s+patrones?|recomenda[çc][aã]o|recomenda[rm]?|quais\s+padr[oõ]es|empfehlen|empfehlung|welche\s+muster|sugg[eé]rer|suggestion|quels\s+motifs?|menyarankan|pola\s+apa|rekomendasikan|gợi\s+ý|khuyến\s+nghị|mẫu\s+nào|đề\s+xuất)\b|توصية|اقتراح|أي\s+نمط|رشح/iu',
+		'/\b(?:recommend(?:ation|s)?|suggest(?:ion|ions)?|which\s+patterns?|what\s+patterns?|any\s+patterns?|show\s+(?:me\s+)?patterns?|looking\s+for\s+(?:a\s+)?patterns?|patterns?\s+(?:for|with|that|suitable|in|like|similar)|similar\s+(?:patterns?\s+)?to|alternatives?\s+to)\b|推荐|图案推荐|哪(?:款|些|种)(?:图案|屏风)?|选哪(?:个|款)|什么图案|建议.{0,8}图案|类似|\b(?:recomiend[aoesn]?|recomendar|recomendaci[oó]n|sugier[aen]?|sugerir|sugerencia|qu[eé]\s+patrones?|cu[aá]les\s+patrones?|recomenda[çc][aã]o|recomenda[rm]?|quais\s+padr[oõ]es|empfehlen|empfehlung|welche\s+muster|recommander|recommandation|sugg[eé]rer|suggestion|quels\s+motifs?|menyarankan|sarankan|pola\s+apa|merekomendasikan|rekomendasikan|rekomendasi|gợi\s+ý|khuyến\s+nghị|mẫu\s+(?:hoa\s+văn\s+)?nào|đề\s+xuất)\b|توصية|اقتراح|أي\s+نمط|ترشيح|توصي|تقترح|رشح/iu',
 		$q
 	);
 	if ( ! $explicit_recommend && 1 === preg_match( '/\bthis\s+(?:pattern|screen)\b/iu', $q ) ) {
@@ -2259,11 +2502,11 @@ function md_kb_endpoint_asks_recommendation( string $q ): bool {
 		return false;
 	}
 	return 1 === preg_match(
-		'/\b(?:geometric|organic|abstract|moroccan(?:[\s-]+arabic)?|arabic|perforated|gradient|landscape|asian|chinese|vintage(?:[\s-]+retro)?|retro|botanical|floral|mural|emt|expanded\s+metal|glass[\s-]+hybrid|laminated\s+glass|repeat(?:ing)?\s+patterns?|(?:low|medium|balanced|high|open|custom)\s+density|dense\s+patterns?)\b|\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b.*\bopen[\s-]*area\b|\bopen[\s-]*area\b.*\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b|\b(?:low|high|medium|balanced)\s+open[\s-]*area\b|几何|有机|抽象|摩洛哥|阿拉伯|穿孔|渐变|山水|中式|复古|植物|花卉|壁画|扩张网|夹胶玻璃|低密度|中密度|均衡密度|高密度|定制密度|\d{1,2}\s*%.*镂空|镂空.*\d{1,2}\s*%|\b(?:geom[eé]trico|org[aá]nico|abstracto|abstrato|abstrakt|abstrait|marroqu[ií]|gelocht|perforado|perforé|paisaje|paisagem|landschaft|paysage|asi[aá]tico|chino|chin[êe]s|asiatisch|asiatique|bot[aá]nico|flor|hoja|folha|mural|metal\s+expandido|streckmetall|vidrio\s+laminado|vidro\s+laminado)\b|هندسي|عضوي|مغربي|مشربية|مثقب|طبيعي|جدارية|معدن\s+ممدد/iu',
+		'/\b(?:geometric|organic|abstract|moroccan(?:[\s-]+arabic)?|arabic|perforated|gradient|landscape|asian|chinese|vintage(?:[\s-]+retro)?|retro|botanical|floral|mural|emt|expanded\s+metal|glass[\s-]+hybrid|laminated\s+glass|repeat(?:ing)?\s+patterns?|(?:low|medium|balanced|high|open|custom)\s+density|dense\s+patterns?)\b|\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b.*\b(?:open[\s-]*area|[aá]rea\s+(?:abierta|aberta)|[oö]ffnungsanteil|ouverture|area\s+terbuka|lỗ\s+thoáng)\b|\b(?:open[\s-]*area|[aá]rea\s+(?:abierta|aberta)|[oö]ffnungsanteil|ouverture|area\s+terbuka|lỗ\s+thoáng)\b.*\b\d{1,2}(?:\.\d+)?\s*(?:%|percent)\b|\b(?:low|high|medium|balanced)\s+open[\s-]*area\b|几何|有机|自然|抽象|摩洛哥|阿拉伯|穿孔|冲孔|渐变|山水|景观|东方|中式|复古|植物|花卉|壁画|扩张网|夹胶玻璃|低密度|中密度|均衡密度|高密度|定制密度|\d{1,2}\s*%.*(?:镂空|开孔)|(?:镂空|开孔).*\d{1,2}\s*%|\b(?:geom[eé]trico|geometrisch|g[eé]om[eé]trique|geometris|org[aá]nico|organisch|organique|organik|abstracto|abstrato|abstrakt|abstrait|abstrak|marroqu[ií]|marokkanisch|marocain|gelocht|perforado|perfor[eé]|berlubang|paisaje|paisagem|landschaft|paysage|pemandangan|asi[aá]tico|chino|chin[êe]s|asiatisch|asiatique|bot[aá]nico|flor|hoja|folha|mural|metal\s+expandido|streckmetall|vidrio\s+laminado|vidro\s+laminado)\b|هندسي|عضوي|مغربي|مشربية|مثقب|طبيعي|جدارية|معدن\s+ممدد|نسبة\s+فتحات.*\d{1,2}\s*%/iu',
 		$q
 	) || (
-		1 === preg_match( '/\b(?:outdoor|exterior|facade|privacy|partition|divider|interior|indoor|room\s+divider|balustrade|railing|cladding|sunshade|weather|hotel|lobby|architectural[\s-]+screening|decorative[\s-]+screening|repeat)\b|室外|户外|外墙|幕墙|隐私|隔断|屏风|室内|护栏|栏杆|遮阳|酒店|大堂|循环|\b(?:außen|innen|séparateur|garde-corps|luar\s+ruangan|dalam\s+ruangan|ngoài\s+trời|trong\s+nhà|vách\s+ngăn)\b|خارجي|داخلي|واجهة|قاطع/iu', $q )
-		&& 1 === preg_match( '/\b(?:patterns?|designs?|styles?|options?|suitable|fit)\b|图案|款式|适合|\b(?:patrones?|padr[oõ]es|muster|motifs?|pola|mẫu)\b|نمط|تصميم/iu', $q )
+		1 === preg_match( '/\b(?:outdoor|exterior|facade|privacy|partition|divider|interior|indoor|room\s+divider|balustrade|railing|cladding|sunshade|weather|hotel|lobby|architectural[\s-]+screening|decorative[\s-]+screening|repeat)\b|室外|户外|外墙|立面|庭院|幕墙|隐私|隔断|屏风|室内|护栏|栏杆|遮阳|酒店|大堂|循环|\b(?:außen(?:bereich)?|innen(?:bereich)?|ext[eé]rieur[es]?|int[eé]rieur[es]?|extern[oa]s?|intern[oa]s?|s[eé]parateur|garde-corps|luar\s+ruangan|dalam\s+ruangan|ngoài\s+trời|trong\s+nhà|vách\s+ngăn)\b|خارجي(?:ة)?|داخلي(?:ة)?|واجهة|قاطع/iu', $q )
+		&& 1 === preg_match( '/\b(?:patterns?|designs?|styles?|options?|suitable|fit)\b|图案|款式|适合|\b(?:patrones?|padr[oõ]es|muster|motifs?|pola|mẫu)\b|نمط|أنماط|تصميم/iu', $q )
 	);
 }
 
@@ -2486,11 +2729,11 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 			'needles' => array( 'geometric' ),
 		),
 		array(
-			'regex'   => '/\b(?:organic|org[aá]nico|organisch|organique|organik)\b|有机|عضوي|hữu\s+cơ/iu',
+			'regex'   => '/\b(?:organic|org[aá]nico|org[aâ]nico|organisch|organique|organik)\b|有机|自然|عضوي|hữu\s+cơ|tự\s+nhiên/iu',
 			'needles' => array( 'organic' ),
 		),
 		array(
-			'regex'   => '/\b(?:abstract|abstracto|abstrato|abstrakt|abstrait|abstrak)\b|抽象|مُجرّد|trừu\s+tượng/iu',
+			'regex'   => '/\b(?:abstract|abstracto|abstrato|abstrakt|abstrait|abstrak)\b|抽象|مُجرّد|مجرد|trừu\s+tượng/iu',
 			'needles' => array( 'abstract' ),
 		),
 		array(
@@ -2498,19 +2741,19 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 			'needles' => array( 'moroccan-arabic', 'moroccan', 'arabic' ),
 		),
 		array(
-			'regex'   => '/\b(?:perforated|perforado|gelocht|perforé|berlubang)\b|穿孔|مثقب|đục\s+lỗ/iu',
+			'regex'   => '/\b(?:perforated|perforado|perfurado|gelocht|perfor[eé]|berlubang)\b|穿孔|冲孔|打孔|مثقب|đục\s+lỗ/iu',
 			'needles' => array( 'perforated' ),
 		),
 		array(
-			'regex'   => '/\b(?:gradient|degradado|gradiente|verlauf|d[eé]grad[eé]|gradien)\b|渐变|تدرج/iu',
+			'regex'   => '/\b(?:gradient|degradado|gradiente|verlauf|d[eé]grad[eé]|gradien)\b|渐变|تدرج|chuyển\s+sắc/iu',
 			'needles' => array( 'gradient' ),
 		),
 		array(
-			'regex'   => '/\b(?:landscape|paisaje|paisagem|landschaft|paysage|pemandangan)\b|山水|风景|طبيعي|phong\s+cảnh/iu',
+			'regex'   => '/\b(?:landscape|paisaje|paisagem|landschaft|paysage|pemandangan|lanskap)\b|山水|景观|风景|طبيعي|مشهد\s+طبيعي|phong\s+cảnh|cảnh\s+quan/iu',
 			'needles' => array( 'landscape' ),
 		),
 		array(
-			'regex'   => '/\b(?:asian|chinese|asi[aá]tico|chino|chin[êe]s|asiatisch|chinesisch|asiatique|chinois|asia|cina)\b|中式|亚洲|آسيوي|صيني|châu\s+á|trung\s+quốc/iu',
+			'regex'   => '/\b(?:asian|chinese|asi[aá]tico|chino|chin[êe]s|asiatisch|chinesisch|asiatique|chinois|asia|cina)\b|东方|新中式|中式|亚洲|آسيوي|شرقي|صيني|á\s+đông|châu\s+á|trung\s+quốc/iu',
 			'needles' => array( 'asian', 'chinese' ),
 		),
 		array(
@@ -2595,11 +2838,11 @@ function md_kb_endpoint_pattern_score( WP_Post $post, string $q ): int {
 	}
 
 	$asks_outdoor = 1 === preg_match(
-		'/\b(?:outdoor|exterior|facade|cladding|sunshade|balustrade|railing|weather|außen|façade|garde-corps|luar\s+ruangan|ngoài\s+trời)\b|室外|户外|外墙|幕墙|遮阳|护栏|栏杆|خارجي|واجهة/iu',
+		'/\b(?:outdoor|exterior|extern[oa]s?|ext[eé]rieur[es]?|facade|fachada|fassade|façade|brise-vue|sichtschutz|cladding|sunshade|balustrade|railing|weather|außen(?:bereich)?|garde-corps|luar\s+ruangan|eksterior|fasad|ngoài\s+trời|mặt\s+tiền)\b|室外|户外|外墙|立面|庭院|幕墙|遮阳|护栏|栏杆|خارجي(?:ة)?|واجهة|فناء/iu',
 		$q
 	);
 	$asks_indoor  = 1 === preg_match(
-		'/\b(?:indoor|interior|room\s+divider|partition|divider|lobby|innen|séparateur|dalam\s+ruangan|trong\s+nhà|vách\s+ngăn)\b|室内|隔断|屏风|大堂|داخلي|قاطع/iu',
+		'/\b(?:indoor|interior|intern[oa]s?|int[eé]rieur[es]?|room\s+divider|partition|divider|lobby|innen(?:bereich)?|s[eé]parateur|dalam\s+ruangan|trong\s+nhà|vách\s+ngăn)\b|室内|隔断|屏风|大堂|داخلي(?:ة)?|قاطع/iu',
 		$q
 	);
 	if ( $asks_outdoor ) {
@@ -3081,13 +3324,16 @@ function md_kb_endpoint_system_prompt( string $visitor_lang = 'en' ): string {
 		'vi'    => 'Vietnamese (Tiếng Việt)',
 	);
 	$target_lang = $lang_names[ $visitor_lang ] ?? $visitor_lang;
+	$zh_glossary = 'zh' === $visitor_lang
+		? 'Simplified Chinese terminology rule: strictly use "图案", "屏风", "询盘", and "报价"; NEVER use "产品", "订单", "款式", or "花型". '
+		: '';
 
 	return $base . ' '
 		. 'IMPORTANT MULTILINGUAL INSTRUCTIONS: '
-		. 'The visitor is communicating in ' . $target_lang . '. '
-		. 'You MUST write your entire response ("answer") naturally and professionally in ' . $target_lang . '. '
+		. 'Reply naturally and professionally in the language used by the visitor\'s question (or in ' . $target_lang . ' when the question has no clear language of its own). '
+		. $zh_glossary
 		. 'The only permitted material is strictly Stainless Steel (304 / 316); never state aluminum, corten steel, copper, brass, or mild steel. '
-		. 'All pattern links MUST preserve the language prefix /' . $visitor_lang . '/pattern/<slug>/ in their URLs. '
+		. 'All pattern links MUST preserve the language prefix /' . $visitor_lang . '/pattern/<slug>/ in their URLs verbatim. '
 		. 'When none of the question is covered, return reason "no_knowledge" and reply exactly: "' . $no_answer . '".';
 }
 
@@ -3112,7 +3358,7 @@ function md_kb_endpoint_messages( string $q, string $context, array $history, st
 	);
 	foreach ( array_slice( $history, -6 ) as $turn ) {
 		if ( 1 === preg_match( '/^Assistant:\s*(.*)$/isu', $turn, $assistant_match ) ) {
-			$clean_assistant = trim( (string) preg_replace( '/\n\nBased on:.*$/s', '', $assistant_match[1] ) );
+			$clean_assistant = trim( (string) preg_replace( '/\n\n(?:Based on:|参考来源：|Basado en:|Com base em:|Basierend auf:|Basé sur\s*:|بناءً على:|Berdasarkan:|Dựa trên:).*$/su', '', $assistant_match[1] ) );
 			if ( '' !== $clean_assistant ) {
 				$messages[] = array(
 					'role'    => 'assistant',

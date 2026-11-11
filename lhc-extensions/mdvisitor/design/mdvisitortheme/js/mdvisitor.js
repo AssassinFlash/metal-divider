@@ -11,6 +11,123 @@
   var tabs = Array.prototype.slice.call(card.querySelectorAll('.md-tabs [data-mdv-go]'));
   var live = doc.getElementById('mdv-live');
   var currentPageUrl = '';
+  var currentLocale = '';
+
+  var COPY = {
+    en: {
+      wa: 'Hi Metal Divider team, I have an inquiry from: ',
+      waBase: 'Hi Metal Divider team, I have an inquiry about your stainless steel screens.',
+      send: 'Send message',
+      filled: 'Question filled in. Not sent yet.',
+      noMatch: 'No matching questions.'
+    },
+    zh: {
+      wa: '您好 Metal Divider 团队，我想咨询关于此页面的屏风图案：',
+      waBase: '您好 Metal Divider 团队，我想咨询定制不锈钢屏风图案。',
+      send: '发送消息',
+      filled: '问题已填入输入框，尚未发送。',
+      noMatch: '未找到匹配的问题。'
+    },
+    es: {
+      wa: 'Hola equipo de Metal Divider, tengo una consulta desde: ',
+      waBase: 'Hola equipo de Metal Divider, tengo una consulta sobre sus paneles metálicos.',
+      send: 'Enviar mensaje',
+      filled: 'Pregunta completada. Aún no enviada.',
+      noMatch: 'No hay preguntas coincidentes.'
+    },
+    'pt-br': {
+      wa: 'Olá equipe Metal Divider, tenho uma consulta a partir de: ',
+      waBase: 'Olá equipe Metal Divider, gostaria de informações sobre seus painéis metálicos.',
+      send: 'Enviar mensagem',
+      filled: 'Pergunta preenchida. Ainda não enviada.',
+      noMatch: 'Nenhuma pergunta correspondente.'
+    },
+    de: {
+      wa: 'Hallo Metal Divider Team, ich habe eine Anfrage zu dieser Seite: ',
+      waBase: 'Hallo Metal Divider Team, ich habe eine Anfrage zu Ihren Edelstahlpaneelen.',
+      send: 'Nachricht senden',
+      filled: 'Frage eingefügt. Noch nicht gesendet.',
+      noMatch: 'Keine passenden Fragen gefunden.'
+    },
+    fr: {
+      wa: 'Bonjour l’équipe Metal Divider, j’ai une question depuis : ',
+      waBase: 'Bonjour l’équipe Metal Divider, j’ai une question concernant vos panneaux métalliques.',
+      send: 'Envoyer le message',
+      filled: 'Question préremplie. Pas encore envoyée.',
+      noMatch: 'Aucune question correspondante.'
+    },
+    ar: {
+      wa: 'مرحباً فريق Metal Divider، لدي استفسار بخصوص هذه الصفحة: ',
+      waBase: 'مرحباً فريق Metal Divider، لدي استفسار حول القواطع المعدنية المعمارية.',
+      send: 'إرسال الرسالة',
+      filled: 'تم إدراج السؤال في الحقل. لم يتم الإرسال بعد.',
+      noMatch: 'لا توجد أسئلة مطابقة.'
+    },
+    id: {
+      wa: 'Halo tim Metal Divider, saya memiliki pertanyaan dari halaman: ',
+      waBase: 'Halo tim Metal Divider, saya ingin bertanya mengenai panel baja tahan karat Anda.',
+      send: 'Kirim pesan',
+      filled: 'Pertanyaan telah diisi. Belum dikirim.',
+      noMatch: 'Tidak ada pertanyaan yang cocok.'
+    },
+    vi: {
+      wa: 'Xin chào đội ngũ Metal Divider, tôi có câu hỏi từ trang: ',
+      waBase: 'Xin chào đội ngũ Metal Divider, tôi muốn tư vấn về tấm vách ngăn inox của bên mình.',
+      send: 'Gửi tin nhắn',
+      filled: 'Đã điền câu hỏi. Chưa gửi đi.',
+      noMatch: 'Không có câu hỏi phù hợp.'
+    }
+  };
+
+  function normalizeLocale(raw) {
+    if (!raw || typeof raw !== 'string') { return ''; }
+    var clean = raw.toLowerCase().trim();
+    if (clean.indexOf('zh') === 0) { return 'zh'; }
+    if (clean.indexOf('pt') === 0) { return 'pt-br'; }
+    if (/^(?:en|es|pt-br|de|fr|ar|id|vi)$/.test(clean)) { return clean; }
+    return '';
+  }
+
+  function localeFromUrl(raw) {
+    if (!raw || typeof raw !== 'string') { return ''; }
+    try {
+      var u = new URL(raw, window.location.origin);
+      var m = u.pathname.match(/^\/(zh|es|pt-br|de|fr|ar|id|vi)(?:\/|$)/i);
+      return m && m[1] ? m[1].toLowerCase() : '';
+    } catch (err) {
+      return '';
+    }
+  }
+
+  function getCopy() {
+    return COPY[currentLocale] || COPY.en;
+  }
+
+  function applySendButtonLabel() {
+    var sendAnchor = doc.querySelector('#ChatSendButtonContainer a');
+    if (sendAnchor) {
+      var label = getCopy().send;
+      sendAnchor.setAttribute('aria-label', label);
+      sendAnchor.setAttribute('title', label);
+    }
+  }
+
+  function setLocale(candidate, dirCandidate) {
+    var norm = normalizeLocale(candidate);
+    if (!norm) { return; }
+    currentLocale = norm;
+    var dir = (dirCandidate === 'rtl' || currentLocale === 'ar') ? 'rtl' : 'ltr';
+    doc.documentElement.setAttribute('lang', currentLocale);
+    doc.documentElement.setAttribute('dir', dir);
+    card.setAttribute('dir', dir);
+    card.setAttribute('data-mdv-lang', currentLocale);
+    try {
+      window.sessionStorage.setItem('mdv_lang', currentLocale);
+      window.sessionStorage.setItem('mdv_dir', dir);
+    } catch (err) {}
+    applySendButtonLabel();
+    updateWhatsAppLinks();
+  }
 
   function normalizePageUrl(raw) {
     if (!raw || typeof raw !== 'string') { return ''; }
@@ -26,9 +143,9 @@
 
   function updateWhatsAppLinks() {
     var base = 'https://wa.me/85264731687';
-    var href = currentPageUrl
-      ? base + '?text=' + encodeURIComponent('Hi Metal Divider team, I have a question from: ' + currentPageUrl)
-      : base;
+    var copy = getCopy();
+    var text = currentPageUrl ? (copy.wa + currentPageUrl) : copy.waBase;
+    var href = base + '?text=' + encodeURIComponent(text);
     Array.prototype.forEach.call(doc.querySelectorAll('[data-mdv-wa]'), function (el) {
       el.setAttribute('href', href);
     });
@@ -41,6 +158,12 @@
     try {
       window.sessionStorage.setItem('mdv:pageUrl', currentPageUrl);
     } catch (err) {}
+    if (!currentLocale || currentLocale === 'en') {
+      var urlLoc = localeFromUrl(currentPageUrl);
+      if (urlLoc) {
+        setLocale(urlLoc);
+      }
+    }
     if (form) {
       var refInput = form.querySelector('input[name="URLRefer"]');
       if (refInput) { refInput.value = currentPageUrl; }
@@ -49,16 +172,33 @@
   }
 
   (function initPageContext() {
+    var queryLang = '';
+    var queryDir = '';
     var fromQuery = '';
     try {
-      fromQuery = new URLSearchParams(window.location.search).get('URLReferer') || '';
+      var params = new URLSearchParams(window.location.search);
+      queryLang = params.get('mdvlang') || '';
+      queryDir = params.get('mdvdir') || '';
+      fromQuery = params.get('URLReferer') || '';
     } catch (err) {}
+    var attrLang = card.getAttribute('data-mdv-lang') || '';
+    var storedLang = '';
     var fromSession = '';
     try {
+      storedLang = window.sessionStorage.getItem('mdv_lang') || '';
       fromSession = window.sessionStorage.getItem('mdv:pageUrl') || '';
     } catch (err) {}
     var fromRef = doc.referrer || '';
-    setPageUrl(fromQuery || fromSession || fromRef);
+    var resolvedUrl = fromQuery || fromSession || fromRef;
+    var initialLang = normalizeLocale(queryLang) ||
+      (attrLang && attrLang !== 'en' ? normalizeLocale(attrLang) : '') ||
+      localeFromUrl(resolvedUrl) ||
+      normalizeLocale(storedLang) ||
+      normalizeLocale(attrLang) ||
+      'en';
+    setLocale(initialLang, queryDir);
+    setPageUrl(resolvedUrl);
+    applySendButtonLabel();
     updateWhatsAppLinks();
   }());
 
@@ -97,7 +237,7 @@
       var end = question.value.length;
       question.setSelectionRange(end, end);
     }
-    if (live) { live.textContent = 'Question filled in. Not sent yet.'; }
+    if (live) { live.textContent = getCopy().filled; }
   }
 
   function closeOpenFaq() {
@@ -137,14 +277,9 @@
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'mdv_open_quote', pageUrl: currentPageUrl }, window.location.origin);
       } else {
-        var langMatch = ( currentPageUrl || '' ).match( /^\/(zh|es|pt-br|de|fr|ar|id|vi)(?:\/|$)/i );
-        if ( ! langMatch && currentPageUrl ) {
-          try {
-            langMatch = ( new URL( currentPageUrl, window.location.origin ).pathname ).match( /^\/(zh|es|pt-br|de|fr|ar|id|vi)(?:\/|$)/i );
-          } catch ( e ) {}
-        }
-        var prefix = langMatch && langMatch[1] ? '/' + langMatch[1].toLowerCase() : '';
-        window.open( prefix + '/inquiry/', '_blank', 'noopener' );
+        var loc = currentLocale && currentLocale !== 'en' ? currentLocale : localeFromUrl(currentPageUrl);
+        var prefix = loc ? '/' + loc : '';
+        window.open(prefix + '/inquiry/', '_blank', 'noopener');
       }
       return;
     }
@@ -188,7 +323,7 @@
         row.hidden = !!(needle && row.textContent.toLowerCase().indexOf(needle) === -1);
         if (!row.hidden) { visible += 1; }
       });
-      if (live) { live.textContent = (needle && visible === 0) ? 'No matching questions.' : ''; }
+      if (live) { live.textContent = (needle && visible === 0) ? getCopy().noMatch : ''; }
     });
   }
 
@@ -204,12 +339,17 @@
       try { window.sessionStorage.setItem('mdv:pageUrl', currentPageUrl); } catch (err) {}
     }
     Array.prototype.forEach.call(card.querySelectorAll('.md-resume'), function (link) {
-      link.href = saved.url;
+      var resumeUrl = saved.url;
+      if (currentLocale && resumeUrl.indexOf('mdvlang=') === -1) {
+        resumeUrl += (resumeUrl.indexOf('?') === -1 ? '?' : '&') + 'mdvlang=' + encodeURIComponent(currentLocale);
+      }
+      link.href = resumeUrl;
       link.hidden = false;
       link.addEventListener('click', function () {
-        if (currentPageUrl) {
-          try { window.sessionStorage.setItem('mdv:pageUrl', currentPageUrl); } catch (err) {}
-        }
+        try {
+          if (currentPageUrl) { window.sessionStorage.setItem('mdv:pageUrl', currentPageUrl); }
+          if (currentLocale) { window.sessionStorage.setItem('mdv_lang', currentLocale); }
+        } catch (err) {}
       });
     });
     Array.prototype.forEach.call(card.querySelectorAll('.md-resume-reset'), function (button) {
@@ -243,8 +383,13 @@
 
   window.addEventListener('message', function (event) {
     if (event.origin !== window.location.origin) { return; }
-    if (event.data && event.data.type === 'mdv_host_context' && event.data.pageUrl) {
-      setPageUrl(event.data.pageUrl);
+    if (event.data && event.data.type === 'mdv_host_context') {
+      if (event.data.lang) {
+        setLocale(String(event.data.lang), event.data.dir ? String(event.data.dir) : '');
+      }
+      if (event.data.pageUrl) {
+        setPageUrl(event.data.pageUrl);
+      }
     }
   });
 

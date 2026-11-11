@@ -183,9 +183,21 @@ final class Languages {
 	 * Whether the current request is a non-default language on the front-end.
 	 */
 	public static function is_frontend_non_default(): bool {
-		$is_admin = \function_exists( 'is_admin' ) && \is_admin();
-		$is_cli   = \defined( 'WP_CLI' ) && WP_CLI;
-		return ! $is_admin && ! $is_cli && self::SOURCE !== self::current();
+		if ( \defined( 'WP_CLI' ) && WP_CLI ) {
+			return false;
+		}
+		if ( self::SOURCE === self::current() ) {
+			return false;
+		}
+		$is_admin = false;
+		if ( \function_exists( 'is_admin' ) ) {
+			try {
+				$is_admin = (bool) \is_admin();
+			} catch ( \Throwable $e ) {
+				$is_admin = false;
+			}
+		}
+		return ! $is_admin;
 	}
 
 	/**

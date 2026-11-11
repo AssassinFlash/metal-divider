@@ -174,4 +174,68 @@ final class WhatsAppTest extends TestCase {
 		$this->assertStringContainsString( \rawurlencode( 'Ref: pattern-pdp/faq/whatsapp' ), $html );
 		$this->assertStringContainsString( '%0APattern%3A%20Apiary%20%28APIARY%29%0ARef%3A', $html );
 	}
+
+	/**
+	 * Non-English locales render native business greetings in cta_text(),
+	 * form_text(), and render_shortcode() across all 8 target languages while
+	 * keeping English byte-identical.
+	 */
+	public function test_multilingual_whatsapp_prefills_cover_all_nine_languages(): void {
+		$this->mock_passthroughs();
+
+		$pattern = array(
+			'post_id' => 42,
+			'name'    => 'Agave | 建筑金属屏风图案',
+			'code'    => 'Agave',
+			'url'     => 'https://metal-divider.com/zh/pattern/agave/',
+			'thumb'   => '',
+		);
+		$source  = array(
+			'page'   => 'pattern-pdp',
+			'module' => 'hero',
+			'button' => 'request_quote',
+		);
+
+		$this->assertSame(
+			"您好 Metal Divider，我想咨询 Agave 图案的定制报价。\nRef: pattern-pdp/hero/whatsapp",
+			WhatsApp::cta_text( 'hero', $pattern, 'pattern-pdp', 'zh' )
+		);
+		$this->assertSame(
+			"您好 Metal Divider，我想咨询定制不锈钢金属屏风项目报价。\nRef: inquiry/hero/whatsapp",
+			WhatsApp::cta_text( 'hero', null, 'inquiry', 'zh' )
+		);
+		$this->assertSame(
+			"您好，我是 陈女士 (陈氏设计)。\n我想咨询这款图案的报价：\nAgave\n需要 30 块面板。\nRef: pattern-pdp/hero/request_quote",
+			WhatsApp::form_text( '陈女士', '陈氏设计', '需要 30 块面板。', $pattern, $source, 'zh' )
+		);
+		$this->assertSame(
+			"您好 Metal Divider，我想咨询 Agave 图案的定制报价。\nRef: pattern-pdp/hero/request_quote",
+			WhatsApp::form_text( '', '', '', $pattern, $source, 'zh' )
+		);
+
+		foreach ( array( 'zh', 'es', 'pt-br', 'de', 'fr', 'ar', 'id', 'vi' ) as $lang ) {
+			$cta_with_pattern = WhatsApp::cta_text( 'hero', $pattern, 'pattern-pdp', $lang );
+			$cta_general      = WhatsApp::cta_text( 'hero', null, 'inquiry', $lang );
+			$this->assertStringNotContainsString( "Hi, I'm interested", $cta_with_pattern, "Pattern CTA leaked English in {$lang}" );
+			$this->assertStringNotContainsString( 'Pattern: ', $cta_with_pattern, "Pattern prefix leaked English in {$lang}" );
+			$this->assertStringContainsString( 'Agave', $cta_with_pattern );
+			$this->assertStringContainsString( 'Ref: pattern-pdp/hero/whatsapp', $cta_with_pattern );
+			$this->assertStringNotContainsString( "Hi, I'm interested", $cta_general, "General CTA leaked English in {$lang}" );
+			$this->assertStringContainsString( 'Ref: inquiry/hero/whatsapp', $cta_general );
+		}
+
+		WP_Mock::onFilter( 'wpml_current_language' )->withAnyArgs()->reply( 'zh-hans' );
+		WP_Mock::userFunction( 'shortcode_atts' )->once()->andReturnUsing(
+			static function ( array $defaults, array $atts ): array {
+				return \array_merge( $defaults, $atts );
+			}
+		);
+		WP_Mock::userFunction( 'get_post' )->andReturn( null );
+
+		$zh_anchor = ( new WhatsApp() )->render_shortcode( array( 'module' => 'hero' ), '' );
+		$this->assertStringContainsString(
+			\rawurlencode( '您好 Metal Divider，我想咨询定制不锈钢金属屏风项目报价。' ),
+			$zh_anchor
+		);
+	}
 }

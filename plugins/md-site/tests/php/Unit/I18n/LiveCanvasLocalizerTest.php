@@ -69,4 +69,24 @@ final class LiveCanvasLocalizerTest extends TestCase {
 		$localizer->register();
 		$this->assertConditionsMet();
 	}
+
+	/**
+	 * Verifies rewrite_urls mirrors RTL arrows for Arabic and cleans banned glossary terms for Chinese.
+	 */
+	public function test_rewrite_urls_mirrors_rtl_arrows_and_sanitizes_zh_glossary(): void {
+		WP_Mock::userFunction( 'is_admin' )->zeroOrMoreTimes()->andReturn( false );
+		WP_Mock::userFunction( 'wp_doing_ajax' )->zeroOrMoreTimes()->andReturn( false );
+		WP_Mock::userFunction( 'wp_doing_cron' )->zeroOrMoreTimes()->andReturn( false );
+		WP_Mock::userFunction( 'get_option' )->zeroOrMoreTimes()->with( 'home' )->andReturn( 'https://metal-divider.com' );
+
+		$localizer = new LiveCanvasLocalizer();
+
+		Languages::force_for_tests( 'ar' );
+		$ar_out = $localizer->rewrite_urls( '<a href="/inquiry/">اطلب عرض سعر →</a>' );
+		$this->assertSame( '<a href="/ar/inquiry/">اطلب عرض سعر ←</a>', $ar_out );
+
+		Languages::force_for_tests( 'zh' );
+		$zh_out = $localizer->rewrite_urls( '<a href="/patterns/">浏览产品目录与批量订单</a>' );
+		$this->assertSame( '<a href="/zh/patterns/">浏览图案目录与批量项目</a>', $zh_out );
+	}
 }

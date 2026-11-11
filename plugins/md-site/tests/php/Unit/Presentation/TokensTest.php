@@ -42,14 +42,11 @@ final class TokensTest extends TestCase {
 	 * panel measured 2.14–3.28:1 — the whole light-surface half of the site
 	 * (`--md-gold-ink` holds 4.86:1 there). Same hue, separate role.
 	 *
-	 * Re-pinned 2026-10-31 for the header band's two upper tiers: the owner
-	 * ruled the blank above the header too tall (GOAL.md 2026-10-31). The
-	 * >=1200 tier was 113px only because the old site's 37px announcement
-	 * strip added it, and that strip held no text at any width (measured at
-	 * 1440, visitor state); it is gone from the markup and the band is 60px
-	 * from 991 up — the 44px controls plus symmetric 8px.
+	 * Re-pinned 2026-11-11 for the 1181px desktop header cutover and the
+	 * multilingual display/body font fallbacks (`html[lang^="vi"]`,
+	 * `html[lang^="zh"]`, `html[lang^="ar"]`).
 	 */
-	private const NORMALIZED_SHA256 = '527d7af1da6d8a2017778aa4588b01e7cc8fec56aca3b7714fcd5a9d749dfc5a';
+	private const NORMALIZED_SHA256 = 'da1305bab289cd0d8105e20306b5e7dc38bd2937459b31cf7ec5255ee200f42f';
 
 	/**
 	 * The exported stylesheet carries the design tokens of the MASTER.md
@@ -70,11 +67,15 @@ final class TokensTest extends TestCase {
 		$this->assertStringContainsString( '--md-gold-accent: #d4af37', $css );
 		$this->assertStringContainsString( '--md-cream: #faf9f7', $css );
 		$this->assertStringContainsString( '--md-whatsapp: #25D366', $css );
-		$this->assertStringContainsString( '--md-font-display: "Playfair Display", Georgia, serif', $css );
-		$this->assertStringContainsString( '--md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif', $css );
+		$this->assertStringContainsString( '--md-font-display: "Playfair Display", Georgia,', $css );
+		$this->assertStringContainsString( '--md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI",', $css );
+		$this->assertStringContainsString( 'html[lang^="vi"]', $css );
+		$this->assertStringContainsString( 'html[lang^="zh"]', $css );
+		$this->assertStringContainsString( 'html[lang^="ar"]', $css );
 		$this->assertStringContainsString( '--md-container: 1400px', $css );
 		$this->assertStringContainsString( '--md-header-h: 73px', $css, 'the sticky band height is a token the sticky rails and anchors read' );
-		$this->assertStringContainsString( '--md-header-h: 60px', $css, 'the compact band from 991 up: 44px controls plus symmetric 8px (owner ruling 2026-10-31)' );
+		$this->assertStringContainsString( '--md-header-h: 60px', $css, 'the compact band from 1181 up: 44px controls plus symmetric 8px' );
+		$this->assertStringContainsString( '@media (min-width: 1181px)', $css, 'the compact desktop band activates at the 1181px header cutover' );
 		$this->assertStringNotContainsString( '--md-header-h: 113px', $css, 'the 37px announcement strip that made the old>=1200 tier 113px is gone' );
 		$this->assertStringContainsString( '/wp-content/plugins/md-site/assets/fonts/inter-var.woff2', $css, 'the fonts are self-hosted from this plugin (OFL), never a third-party CDN' );
 

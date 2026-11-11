@@ -278,24 +278,24 @@ final class Form {
 			$out .= $this->empty_pattern_slot();
 		}
 		$out .= $this->notice_markup();
-		$out .= $this->field( 'name', __( 'Name', 'md-inquiry' ), 'text', true, 'name', __( 'Jane Chan', 'md-inquiry' ) );
-		$out .= $this->field( 'email', __( 'Email', 'md-inquiry' ), 'email', true, 'email', __( 'jane@studio.com', 'md-inquiry' ) );
-		$out .= $this->field( 'phone', __( 'Phone / WhatsApp (optional)', 'md-inquiry' ), 'tel', false, 'tel', __( '+852 0000 0000', 'md-inquiry' ) );
+		$out .= $this->field( 'name', $this->t( 'Name' ), 'text', true, 'name', $this->t( 'Jane Chan' ) );
+		$out .= $this->field( 'email', $this->t( 'Email' ), 'email', true, 'email', $this->t( 'jane@studio.com' ) );
+		$out .= $this->field( 'phone', $this->t( 'Phone / WhatsApp (optional)' ), 'tel', false, 'tel', $this->t( '+852 0000 0000' ) );
 		$out .= $this->message_field( null !== $pattern );
 		$out .= $this->optional_fields();
 
 		$out .= $this->honeypot();
 		$out .= $this->turnstile( $source );
-		$out .= '<p class="md-inquiry-promise">' . \esc_html__( 'We reply within 24 hours on business days. Your details are used only to answer this inquiry — we do not share them.', 'md-inquiry' ) . '</p>';
+		$out .= '<p class="md-inquiry-promise">' . \esc_html( $this->t( 'We reply within 24 hours on business days. Your details are used only to answer this inquiry — we do not share them.' ) ) . '</p>';
 		$note = null !== $pattern
-			? __( 'The WhatsApp button opens a chat pre-filled with your details and this pattern. Choosing WhatsApp does not submit this form.', 'md-inquiry' )
-			: __( 'The WhatsApp button opens a chat pre-filled with your details. Choosing WhatsApp does not submit this form.', 'md-inquiry' );
+			? $this->t( 'The WhatsApp button opens a chat pre-filled with your details and this pattern. Choosing WhatsApp does not submit this form.' )
+			: $this->t( 'The WhatsApp button opens a chat pre-filled with your details. Choosing WhatsApp does not submit this form.' );
 		$out .= '<p class="md-inquiry-note">' . \esc_html( $note ) . '</p>';
 		$out .= '</div>';
 
 		$out .= '<div class="md-inquiry-actions">';
-		$out .= '<button type="submit" class="md-inquiry-submit"' . ( $this->config->turnstile_is_configured() ? ' disabled' : '' ) . '>' . \esc_html__( 'Send inquiry', 'md-inquiry' ) . '</button>';
-		$out .= '<a class="md-inquiry-whatsapp" href="' . $this->whatsapp_href( WhatsApp::cta_text( $source['module'], $pattern, $source['page'] ) ) . '" target="_blank" rel="noopener">' . \esc_html__( 'Send via WhatsApp instead', 'md-inquiry' ) . '</a>';
+		$out .= '<button type="submit" class="md-inquiry-submit"' . ( $this->config->turnstile_is_configured() ? ' disabled' : '' ) . '>' . \esc_html( $this->t( 'Send inquiry' ) ) . '</button>';
+		$out .= '<a class="md-inquiry-whatsapp" href="' . $this->whatsapp_href( WhatsApp::cta_text( $source['module'], $pattern, $source['page'], $form_locale ) ) . '" target="_blank" rel="noopener">' . \esc_html( $this->t( 'Send via WhatsApp instead' ) ) . '</a>';
 		$out .= '</div>';
 		$out .= '</form>';
 		$out .= '</div>';
@@ -338,7 +338,7 @@ final class Form {
 			$repeats = \strtolower( \trim( $pattern['code'] ) ) === \strtolower( \trim( $pattern['name'] ) );
 			$out    .= '<span data-md-inquiry-pattern-code class="md-inquiry-pattern__code"' . ( $repeats ? ' hidden' : '' ) . '>' . \esc_html( $pattern['code'] ) . '</span>';
 		}
-		$out .= '<span data-md-inquiry-pattern-eyebrow class="md-inquiry-pattern__note">' . \esc_html__( 'This pattern is attached to your inquiry.', 'md-inquiry' ) . '</span>';
+		$out .= '<span data-md-inquiry-pattern-eyebrow class="md-inquiry-pattern__note">' . \esc_html( $this->t( 'This pattern is attached to your inquiry.' ) ) . '</span>';
 		$out .= '</figcaption>';
 		$out .= '</figure>';
 		return $out;
@@ -354,7 +354,7 @@ final class Form {
 		$out  = '<div class="md-inquiry-pattern" data-md-inquiry-pattern-slot hidden>';
 		$out .= '<img class="md-inquiry-pattern__thumb" data-md-inquiry-pattern-thumb alt="" hidden>';
 		$out .= '<div class="md-inquiry-pattern__caption">';
-		$out .= '<span class="md-inquiry-pattern__note" data-md-inquiry-pattern-eyebrow>' . \esc_html__( 'Selected pattern', 'md-inquiry' ) . '</span>';
+		$out .= '<span class="md-inquiry-pattern__note" data-md-inquiry-pattern-eyebrow>' . \esc_html( $this->t( 'Selected pattern' ) ) . '</span>';
 		$out .= '<strong class="md-inquiry-pattern__name" data-md-inquiry-pattern-title></strong>';
 		$out .= '</div>';
 		$out .= '</div>';
@@ -375,13 +375,13 @@ final class Form {
 			}
 		}
 		$out  = '<details class="md-inquiry-optional"' . $open . '>';
-		$out .= '<summary class="md-inquiry-optional__summary">' . \esc_html__( 'Project details (company, country, scope, quantity — optional)', 'md-inquiry' ) . '</summary>';
+		$out .= '<summary class="md-inquiry-optional__summary">' . \esc_html( $this->t( 'Project details (company, country, scope, quantity — optional)' ) ) . '</summary>';
 		$out .= '<div class="md-inquiry-optional__body">';
-		$out .= $this->field( 'company', __( 'Company (optional)', 'md-inquiry' ), 'text', false, 'organization', __( 'Chan Design Studio', 'md-inquiry' ) );
-		$out .= $this->select_field( 'country', __( 'Country (optional)', 'md-inquiry' ), Validator::COUNTRIES, __( 'Select country (optional)', 'md-inquiry' ), false, 'country-name' );
-		$out .= $this->select_field( 'scope', __( 'Project scope (optional)', 'md-inquiry' ), Validator::SCOPES, __( 'Select project scope (optional)', 'md-inquiry' ), false, 'off' );
-		$out .= $this->select_field( 'route', __( 'Inquiry route (optional)', 'md-inquiry' ), Validator::ROUTES, __( 'Select inquiry route (optional)', 'md-inquiry' ), false, 'off' );
-		$out .= $this->select_field( 'quantity', __( 'Estimated quantity (optional)', 'md-inquiry' ), Validator::QUANTITIES, __( 'Select quantity range (optional)', 'md-inquiry' ), false, 'off' );
+		$out .= $this->field( 'company', $this->t( 'Company (optional)' ), 'text', false, 'organization', $this->t( 'Chan Design Studio' ) );
+		$out .= $this->select_field( 'country', $this->t( 'Country (optional)' ), Validator::COUNTRIES, $this->t( 'Select country (optional)' ), false, 'country-name' );
+		$out .= $this->select_field( 'scope', $this->t( 'Project scope (optional)' ), Validator::SCOPES, $this->t( 'Select project scope (optional)' ), false, 'off' );
+		$out .= $this->select_field( 'route', $this->t( 'Inquiry route (optional)' ), Validator::ROUTES, $this->t( 'Select inquiry route (optional)' ), false, 'off' );
+		$out .= $this->select_field( 'quantity', $this->t( 'Estimated quantity (optional)' ), Validator::QUANTITIES, $this->t( 'Select quantity range (optional)' ), false, 'off' );
 		$out .= $this->confirm_field();
 		$out .= '</div>';
 		$out .= '</details>';
@@ -470,14 +470,14 @@ final class Form {
 		$error   = $this->state->error( 'message' );
 		$invalid = '' !== $error ? ' md-inquiry-field--invalid' : '';
 		$label   = $has_pattern
-			? __( 'Message (optional — the pattern is already attached)', 'md-inquiry' )
-			: __( 'Message', 'md-inquiry' );
+			? $this->t( 'Message (optional — the pattern is already attached)' )
+			: $this->t( 'Message' );
 
 		// The placeholder is the one line of guidance the textarea had none of:
 		// every neighbouring input carries one, and the label alone ("Message")
 		// left the highest-intent field on the form asking for nothing in
 		// particular. It names what a useful brief contains, not a format.
-		$placeholder = \esc_attr__( 'Dimensions, panel count, indoor or outdoor application, finish preference...', 'md-inquiry' );
+		$placeholder = \esc_attr( $this->t( 'Dimensions, panel count, indoor or outdoor application, finish preference...' ) );
 
 		$out  = '<p class="md-inquiry-field md-inquiry-field--message' . $invalid . '">';
 		$out .= '<label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-message' ) ) . '">' . \esc_html( $label ) . '</label>';
@@ -489,7 +489,7 @@ final class Form {
 		// reply — which is also how the internal mail already frames it
 		// ("attaching them to your reply helps us quote faster").
 		$out .= '<span class="md-inquiry-field__hint" id="' . \esc_attr( $this->id_of( 'md-inquiry-message-hint' ) ) . '">'
-			. \esc_html__( 'Quantities, dimensions, timeline, finish preferences — anything you already have. Have a drawing, DXF, DWG or PDF? Send it in reply to the confirmation email and it reaches the same engineer.', 'md-inquiry' )
+			. \esc_html( $this->t( 'Quantities, dimensions, timeline, finish preferences — anything you already have. Have a drawing, DXF, DWG or PDF? Send it in reply to the confirmation email and it reaches the same engineer.' ) )
 			. '</span>';
 		$out .= $this->error_span( 'message', $error );
 		$out .= '</p>';
@@ -529,7 +529,7 @@ final class Form {
 		$out  = '<p class="md-inquiry-field md-inquiry-field--confirm' . $invalid . '">';
 		$out .= '<label class="md-inquiry-confirm" for="' . \esc_attr( $id ) . '">';
 		$out .= '<input class="md-inquiry-confirm__input" type="checkbox" id="' . \esc_attr( $id ) . '" name="md_inquiry_confirm" value="1"' . $checked . $this->invalid_attrs( 'confirm', $error ) . '>';
-		$out .= '<span class="md-inquiry-confirm__text">' . \esc_html__( 'I confirm this inquiry is for an architectural or commercial project. (optional)', 'md-inquiry' ) . '</span>';
+		$out .= '<span class="md-inquiry-confirm__text">' . \esc_html( $this->t( 'I confirm this inquiry is for an architectural or commercial project. (optional)' ) ) . '</span>';
 		$out .= '</label>';
 		$out .= $this->error_span( 'confirm', $error );
 		$out .= '</p>';
@@ -596,7 +596,7 @@ final class Form {
 	 * @return string
 	 */
 	private function honeypot(): string {
-		return '<p class="md-inquiry-honeypot" aria-hidden="true"><label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-website' ) ) . '">' . \esc_html__( 'Leave this field empty', 'md-inquiry' ) . '</label><input class="md-inquiry-field__input" type="text" id="' . \esc_attr( $this->id_of( 'md-inquiry-website' ) ) . '" name="website" autocomplete="off" tabindex="-1"></p>';
+		return '<p class="md-inquiry-honeypot" aria-hidden="true"><label class="md-inquiry-field__label" for="' . \esc_attr( $this->id_of( 'md-inquiry-website' ) ) . '">' . \esc_html( $this->t( 'Leave this field empty' ) ) . '</label><input class="md-inquiry-field__input" type="text" id="' . \esc_attr( $this->id_of( 'md-inquiry-website' ) ) . '" name="website" autocomplete="off" tabindex="-1"></p>';
 	}
 
 	/**
@@ -745,32 +745,38 @@ final class Form {
 	 * @return array<string, mixed>
 	 */
 	private function config_json( ?array $pattern, array $source ): array {
-		$i18n = array(
-			'turnstileExpired'   => __( 'Verification expired. Please try again.', 'md-inquiry' ),
-			'turnstileError'     => __( 'Verification could not run. Please refresh the page and try again.', 'md-inquiry' ),
-			'errorName'          => __( 'Please enter your name.', 'md-inquiry' ),
-			'errorEmail'         => __( 'Please enter a valid email address.', 'md-inquiry' ),
-			'errorCountry'       => __( 'Please choose your country.', 'md-inquiry' ),
-			'errorScope'         => __( 'Please choose the project scope.', 'md-inquiry' ),
-			'errorRoute'         => __( 'Please choose an inquiry route.', 'md-inquiry' ),
-			'errorQuantity'      => __( 'Please choose a quantity range.', 'md-inquiry' ),
-			'errorMessage'       => __( 'Please add a short message.', 'md-inquiry' ),
-			'errorConfirm'       => __( 'Please confirm this inquiry is for an architectural or commercial project.', 'md-inquiry' ),
-			'errorSummary'       => __( 'Please complete the highlighted fields.', 'md-inquiry' ),
-			// phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Pattern SKU placeholder.
-			'modalTitleWithCode' => __( 'Request a quote · %s', 'md-inquiry' ),
-			'defaultModalTitle'  => __( 'Request a quote', 'md-inquiry' ),
-			'selectedPattern'    => __( 'Selected pattern', 'md-inquiry' ),
-			'selectedRequest'    => __( 'Selected request', 'md-inquiry' ),
-			'fieldFallback'      => __( 'Please complete this field.', 'md-inquiry' ),
-			// phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment, WordPress.WP.I18n.UnorderedPlaceholdersText -- WhatsApp JS template.
-			'waGreeting'         => __( 'Hi, I\'m %s%s.', 'md-inquiry' ),
-			'waInquiryPrefix'    => __( 'Inquiry: ', 'md-inquiry' ),
-			'waDefaultIntro'     => __( 'Hi Metal Divider, I\'d like to discuss a stainless steel screen project.', 'md-inquiry' ),
+		$locale = Locale::current();
+		$i18n   = array(
+			'turnstileExpired'   => $this->t( 'Verification expired. Please try again.' ),
+			'turnstileError'     => $this->t( 'Verification could not run. Please refresh the page and try again.' ),
+			'errorName'          => $this->t( 'Please enter your name.' ),
+			'errorEmail'         => $this->t( 'Please enter a valid email address.' ),
+			'errorCountry'       => $this->t( 'Please choose your country.' ),
+			'errorScope'         => $this->t( 'Please choose the project scope.' ),
+			'errorRoute'         => $this->t( 'Please choose an inquiry route.' ),
+			'errorQuantity'      => $this->t( 'Please choose a quantity range.' ),
+			'errorMessage'       => $this->t( 'Please add a short message.' ),
+			'errorConfirm'       => $this->t( 'Please confirm this inquiry is for an architectural or commercial project.' ),
+			'errorSummary'       => $this->t( 'Please complete the highlighted fields.' ),
+			'modalTitleWithCode' => $this->t( 'Request a quote · %s' ),
+			'defaultModalTitle'  => $this->t( 'Request a quote' ),
+			'selectedPattern'    => $this->t( 'Selected pattern' ),
+			'selectedRequest'    => $this->t( 'Selected request' ),
+			'fieldFallback'      => $this->t( 'Please complete this field.' ),
+			'waGreeting'         => $this->t( 'Hi, I\'m %s%s.' ),
+			'waInquiryPrefix'    => $this->t( 'Inquiry: ' ),
+			'waDefaultIntro'     => 'en' === $locale
+				? $this->t( 'Hi Metal Divider, I\'d like to discuss a stainless steel screen project.' )
+				: Translations::translate( WhatsApp::GREETING, $locale ),
 		);
 
-		if ( null !== $pattern || 'en' !== Locale::current() ) {
-			$i18n['waPatternIntro'] = __( 'I\'d like a quote for this pattern:', 'md-inquiry' );
+		if ( null !== $pattern || 'en' !== $locale ) {
+			$i18n['waPatternIntro'] = $this->t( 'I\'d like a quote for this pattern:' );
+		}
+
+		if ( 'en' !== $locale ) {
+			$i18n['waPatternQuoteFmt'] = Translations::translate( "Hi Metal Divider, I'd like a quote for the %s pattern.", $locale );
+			$i18n['intentLabels']      = Translations::intent_labels( $locale );
 		}
 
 		return array(
@@ -786,6 +792,22 @@ final class Form {
 	}
 
 	/**
+	 * Translates a form string deterministically for non-English locales while
+	 * keeping WordPress gettext passthrough on English.
+	 *
+	 * @param string $text The source English string.
+	 * @return string
+	 */
+	private function t( string $text ): string {
+		$locale = Locale::current();
+		if ( 'en' !== $locale ) {
+			return Translations::translate( $text, $locale );
+		}
+		// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText -- deterministic lookup over fixed form strings.
+		return \__( $text, 'md-inquiry' );
+	}
+
+	/**
 	 * A failure notice's wording, by its key.
 	 *
 	 * @param string $key The notice key.
@@ -793,12 +815,12 @@ final class Form {
 	 */
 	private function notice( string $key ): string {
 		return match ( $key ) {
-			'rate_limited' => __( 'You\'re sending inquiries too quickly. Please wait a few minutes and try again.', 'md-inquiry' ),
-			'nonce'        => __( 'Your form session expired. Please reload the page and try again.', 'md-inquiry' ),
-			'turnstile'    => __( 'Verification failed. Please refresh the page and try again.', 'md-inquiry' ),
-			'spam'         => __( 'We could not accept this submission. If this keeps happening, reach us on WhatsApp or by email.', 'md-inquiry' ),
-			'storage'      => __( 'Your inquiry could not be saved right now. Please try again, or reach us on WhatsApp or by email.', 'md-inquiry' ),
-			default        => __( 'Please complete the highlighted fields.', 'md-inquiry' ),
+			'rate_limited' => $this->t( 'You\'re sending inquiries too quickly. Please wait a few minutes and try again.' ),
+			'nonce'        => $this->t( 'Your form session expired. Please reload the page and try again.' ),
+			'turnstile'    => $this->t( 'Verification failed. Please refresh the page and try again.' ),
+			'spam'         => $this->t( 'We could not accept this submission. If this keeps happening, reach us on WhatsApp or by email.' ),
+			'storage'      => $this->t( 'Your inquiry could not be saved right now. Please try again, or reach us on WhatsApp or by email.' ),
+			default        => $this->t( 'Please complete the highlighted fields.' ),
 		};
 	}
 }

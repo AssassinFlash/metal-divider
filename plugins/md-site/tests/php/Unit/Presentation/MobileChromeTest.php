@@ -31,8 +31,8 @@ final class MobileChromeTest extends TestCase {
 		$css    = $this->volume( 'chrome.css' );
 
 		$this->assertStringNotContainsString( 'menu-hamburger-style1-top__brand', $header, 'the drawer must not repeat the header brand' );
-		$this->assertSame( 5, substr_count( $header, "aria-label='Close menu'" ), 'the drawer and its four submenus each have a close control' );
-		$this->assertSame( 5, substr_count( $header, "class='md-drawer-cta'" ), 'every drawer panel keeps the quote that left the top bar' );
+		$this->assertSame( 4, substr_count( $header, "aria-label='Close menu'" ), 'the drawer and its three submenus each have a close control' );
+		$this->assertSame( 4, substr_count( $header, "class='md-drawer-cta'" ), 'every drawer panel keeps the quote that left the top bar' );
 		$this->assertStringContainsString( "href='#open-quote'", $header );
 		$this->assertStringContainsString( "data-quote-source='mobile-drawer'", $header );
 		$this->assertStringContainsString( 'width: 100%', $css, 'the drawer content is full width' );
@@ -255,12 +255,19 @@ final class MobileChromeTest extends TestCase {
 		$this->assertStringNotContainsString(
 			"href='#'",
 			$header,
-			'a header row with no destination must not ship as a link — it is a disclosure button'
+			'a header row with no destination must not ship as a link'
 		);
-		$this->assertStringContainsString( 'data-nav-disclosure', $header );
-		$this->assertStringContainsString( "aria-controls='header-resources-menu'", $header );
-		$this->assertStringContainsString( "id='header-resources-menu'", $header, 'the control names the panel it opens' );
-		$this->assertStringContainsString( 'is-disclosure-open', $css, 'the click state shows the same panel the hover state does' );
+		$this->assertStringNotContainsString(
+			'/blog/',
+			$header,
+			'the empty /blog/ index is not linked from the desktop or mobile navigation'
+		);
+		$this->assertMatchesRegularExpression(
+			"#href='/faqs/'[^>]*>\\s*<h3[^>]*>\\s*Resources\\s*</h3>#",
+			$header,
+			'Resources links directly to /faqs/ without an awkward single-item dropdown'
+		);
+		$this->assertStringContainsString( 'is-disclosure-open', $css, 'the disclosure click state rule stays available in chrome.css' );
 	}
 
 	/**

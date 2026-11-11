@@ -152,7 +152,8 @@ final class LiveCanvasLocalizer {
 	}
 
 	/**
-	 * Rewrites internal URLs in rendered LiveCanvas content.
+	 * Rewrites internal URLs and applies target-language post-processing
+	 * (RTL arrow mirroring and Chinese glossary rules) in rendered LiveCanvas content.
 	 *
 	 * @param mixed $content Template HTML content.
 	 * @return mixed
@@ -162,7 +163,15 @@ final class LiveCanvasLocalizer {
 			return $content;
 		}
 
-		return UrlLocalizer::rewrite_html( $content, Languages::current() );
+		$lang = Languages::current();
+		if ( 'zh' === $lang ) {
+			$content = TemplateStore::sanitize_zh_glossary_html( $content );
+		}
+		if ( Languages::is_rtl( $lang ) ) {
+			$content = TemplateStore::mirror_rtl_arrows_html( $content );
+		}
+
+		return UrlLocalizer::rewrite_html( $content, $lang );
 	}
 
 	/**

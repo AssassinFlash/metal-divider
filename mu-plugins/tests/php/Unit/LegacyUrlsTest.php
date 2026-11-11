@@ -89,6 +89,8 @@ final class LegacyUrlsTest extends TestCase {
 			'deep fragment' => array( '/shop/anything/else', '/patterns/anything/else' ),
 			'de bare'       => array( '/de/shop/', '/de/patterns/' ),
 			'zh bare'       => array( '/zh/shop/', '/zh/patterns/' ),
+			'zh no slash'   => array( '/zh/shop', '/zh/patterns/' ),
+			'pt-br bare'    => array( '/pt-br/shop/', '/pt-br/patterns/' ),
 			'fr no slash'   => array( '/fr/shop', '/fr/patterns/' ),
 			'es page two'   => array( '/es/shop/page/2/', '/es/patterns/page/2/' ),
 			'ar deep'       => array( '/ar/shop/anything/else', '/ar/patterns/anything/else' ),
@@ -115,13 +117,16 @@ final class LegacyUrlsTest extends TestCase {
 	 */
 	public static function series_paths(): array {
 		return array(
-			'trailing slash' => array( '/collections/pattern-organic/', '/pattern-category/pattern-organic/' ),
-			'no slash'       => array( '/collections/pattern-organic', '/pattern-category/pattern-organic' ),
-			'pager'          => array( '/collections/pattern-abstract/page/3/', '/pattern-category/pattern-abstract/page/3/' ),
-			'gradient'       => array( '/collections/pattern-gradient/', '/pattern-category/pattern-gradient/' ),
-			'de series'      => array( '/de/collections/pattern-organic/', '/de/pattern-category/pattern-organic/' ),
-			'zh series'      => array( '/zh/collections/pattern-organic', '/zh/pattern-category/pattern-organic' ),
-			'pt-br series'   => array( '/pt-br/collections/pattern-abstract/page/3/', '/pt-br/pattern-category/pattern-abstract/page/3/' ),
+			'trailing slash'  => array( '/collections/pattern-organic/', '/pattern-category/pattern-organic/' ),
+			'no slash'        => array( '/collections/pattern-organic', '/pattern-category/pattern-organic/' ),
+			'pager'           => array( '/collections/pattern-abstract/page/3/', '/pattern-category/pattern-abstract/page/3/' ),
+			'pager no slash'  => array( '/collections/pattern-abstract/page/3', '/pattern-category/pattern-abstract/page/3/' ),
+			'gradient'        => array( '/collections/pattern-gradient/', '/pattern-category/pattern-gradient/' ),
+			'de series'       => array( '/de/collections/pattern-organic/', '/de/pattern-category/pattern-organic/' ),
+			'zh series'       => array( '/zh/collections/pattern-organic', '/zh/pattern-category/pattern-organic/' ),
+			'zh series slash' => array( '/zh/collections/pattern-organic/', '/zh/pattern-category/pattern-organic/' ),
+			'pt-br series'    => array( '/pt-br/collections/pattern-abstract/page/3/', '/pt-br/pattern-category/pattern-abstract/page/3/' ),
+			'pt-br no slash'  => array( '/pt-br/collections/pattern-abstract/page/3', '/pt-br/pattern-category/pattern-abstract/page/3/' ),
 		);
 	}
 
@@ -400,6 +405,70 @@ final class LegacyUrlsTest extends TestCase {
 		self::assertSame(
 			array( 'https://metal-divider.com/de/patterns/', 301 ),
 			$GLOBALS['md_mu_test_redirect'] ?? null
+		);
+	}
+
+	/**
+	 * `/zh/shop/` and `/zh/shop` redirect in a single 301 hop to `/zh/patterns/`,
+	 * keeping both the `/zh/` prefix and query parameters even when WPML rewrites
+	 * `REQUEST_URI` or appends `/zh/` to the `home` option.
+	 */
+	public function test_zh_shop_redirects_preserve_lang_prefix_and_query_in_single_hop(): void {
+		$GLOBALS['md_mu_test_redirect_fails']  = true;
+		$GLOBALS['md_mu_test_options']['home'] = 'https://metal-divider.com/zh/';
+		$_SERVER['REQUEST_URI']                = '/zh/shop/?q=bamboo';
+
+		try {
+			md_legacy_urls_redirect();
+			self::assertSame(
+				array( 'https://metal-divider.com/zh/patterns/?q=bamboo', 301 ),
+				$GLOBALS['md_mu_test_redirect'] ?? null
+			);
+
+			unset( $GLOBALS['md_mu_test_redirect'] );
+			$GLOBALS['md_mu_test_options']['home'] = 'https://metal-divider.com';
+			$_SERVER['REQUEST_URI']                = '/shop/?q=bamboo';
+			$wpml_cb                               = static fn (): string => 'zh-hans';
+			add_filter( 'wpml_current_language', $wpml_cb );
+			try {
+				md_legacy_urls_redirect();
+			} finally {
+				remove_filter( 'wpml_current_language', $wpml_cb );
+			}
+
+			self::assertSame(
+				array( 'https://metal-divider.com/zh/patterns/?q=bamboo', 301 ),
+				$GLOBALS['md_mu_test_redirect'] ?? null
+			);
+		} finally {
+			unset( $GLOBALS['md_mu_test_redirect_fails'], $GLOBALS['md_mu_test_options']['home'] );
+		}
+	}
+
+	/**
+	 * Localized series targets always carry a trailing slash so `/zh/collections/<series>`
+	 * lands on `/zh/pattern-category/<localized-slug>/` in a single 301 hop.
+	 */
+	public function test_localized_series_targets_keep_trailing_slash_in_one_hop(): void {
+		$resolver = static function ( string $slug, string $wpml_code ): string {
+			return 'zh-hans' === $wpml_code ? $slug . '-zh' : $slug . '-' . $wpml_code;
+		};
+
+		self::assertSame(
+			'/zh/pattern-category/pattern-organic-zh/',
+			md_legacy_urls_localize_series_target( '/zh', '/pattern-category/pattern-organic', $resolver )
+		);
+		self::assertSame(
+			'/zh/pattern-category/pattern-organic-zh/',
+			md_legacy_urls_localize_series_target( '/zh', '/pattern-category/pattern-organic/', $resolver )
+		);
+		self::assertSame(
+			'/zh/pattern-category/pattern-abstract-zh/page/3/',
+			md_legacy_urls_localize_series_target( '/zh', '/pattern-category/pattern-abstract/page/3', $resolver )
+		);
+		self::assertSame(
+			'/de/pattern-category/pattern-organic-de/',
+			md_legacy_urls_localize_series_target( '/de', '/pattern-category/pattern-organic', $resolver )
 		);
 	}
 

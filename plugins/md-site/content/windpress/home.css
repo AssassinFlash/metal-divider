@@ -402,26 +402,46 @@ animation: none;
 [class^="emt-nav-btn"],[class*=" emt-nav-btn"]{ display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
 
 /* =========================
-   The proof carousel's card: one two-column card per screen
-   The owner's restored form (GOAL.md 2026-10-30 late-2, item 1; also the
-   brief's own words) is a single card per screen laid out in two columns —
-   the photograph at ~691px on the left, the title, the gold serif quote and
-   the description stacked on the right — stepped by the two round arrows
-   with the four gold progress bars and the "1 / 4" counter underneath.
-
-   The capture renders this section as two narrower cards side by side, each
-   with its photo above its text (measured on 1440-old-home.png: left photo
-   x25–720, right photo x770–1345, both texts below at y13258+). The written
-   spec asks for the two-column card instead, and it is the more specific
-   instruction, so that is what this rule builds; the copy, the photographs
-   and the controls are the capture's own either way.
-
-   The 691px is the capture's own `sizes` value for this photo ("(min-width:
-   1024px) 692px"), not a new number.
+   Home specification-map micro-swatches & desktop 4-column proof grid
+   1. `.spec-map__avatars`: crisp architectural square swatches (`rounded-lg`
+      with fine gold borders) instead of overlapping circular social avatars.
+   2. `home-outcomes`: mobile (<1024px) preserves the horizontal snap carousel;
+      desktop (>=1024px) presents all four factory proof cards side-by-side in
+      a balanced 4-column grid without clipped half-slides.
+   3. Hero right-column CTA stack keeps generous desktop bottom clearance so
+      wrapped DE/FR copy never collides with `#mdvl-open` at bottom-right.
    ========================= */
+@media (min-width: 1024px){
+#home-hero-ioh-template--21844031930621__hero_banner_custom_Yy8fzp > .relative{
+padding-bottom: 104px !important;
+}
+}
+.spec-map__avatars{
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 10px;
+margin: 0 auto 16px;
+}
+.spec-map__avatar{
+width: 56px;
+height: 56px;
+margin: 0 !important;
+border-radius: 8px !important;
+border: 1px solid rgba(201, 169, 98, 0.45) !important;
+background: #141414;
+overflow: hidden;
+flex-shrink: 0;
+box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.spec-map__avatar img{
+display: block;
+width: 100%;
+height: 100%;
+object-fit: cover;
+border-radius: 0 !important;
+}
 [data-home-outcomes-track]{
-/* One full-width card per screen: the gap would only add scroll the step
-   arithmetic has to correct for. */
 column-gap: 0;
 }
 .home-outcomes-card{
@@ -431,36 +451,47 @@ display: grid;
 gap: 24px;
 scroll-snap-align: start;
 }
-@media (min-width: 1180px){
-.home-outcomes-card{
-grid-template-columns: minmax(0, 691px) minmax(0, 1fr);
-gap: 40px;
-align-items: center;
-}
-}
 .home-outcomes-media img{
 display: block;
-}
-@media (min-width: 1180px){
-/* The photo fills the left column's own height instead of holding the 16/7
-   letterbox the stacked layout uses. */
-.home-outcomes-media{
-height: 100%;
-}
-.home-outcomes-media > div{
-height: 100%;
-}
-.home-outcomes-media img{
-height: 100%;
-}
 }
 .home-outcomes-body{
 padding-left: 0;
 padding-right: 0;
 }
-@media (min-width: 1180px){
+@media (min-width: 1024px){
+[data-home-outcomes-track]{
+display: grid !important;
+grid-template-columns: repeat(4, minmax(0, 1fr));
+gap: 20px !important;
+margin-left: 0 !important;
+margin-right: 0 !important;
+padding-left: 0 !important;
+padding-right: 0 !important;
+padding-bottom: 0 !important;
+overflow: visible !important;
+scroll-snap-type: none !important;
+}
+.home-outcomes-card{
+min-width: 0;
+display: flex;
+flex-direction: column;
+gap: 18px;
+padding: 16px;
+border-radius: 14px;
+border: 1px solid rgba(255, 255, 255, 0.1);
+background: rgba(255, 255, 255, 0.03);
+}
+.home-outcomes-media > div{
+aspect-ratio: 16 / 10 !important;
+}
 .home-outcomes-body{
-padding-top: 0;
+padding-top: 0 !important;
+display: flex;
+flex-direction: column;
+flex: 1 1 auto;
+}
+#home-outcomes-template--21844031930621__why_choose_us_DeyqPH [data-home-outcomes-track] + div{
+display: none !important;
 }
 }
 

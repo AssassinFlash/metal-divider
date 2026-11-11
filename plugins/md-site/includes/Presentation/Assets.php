@@ -80,9 +80,45 @@ final class Assets {
 	 * Adds the front-end hook.
 	 */
 	public function register(): void {
+		\add_action( 'wp_head', array( $this, 'preload_fonts_and_i18n_config' ), 1 );
 		\add_action( 'wp_enqueue_scripts', array( $this, 'enqueue' ) );
 		\add_action( 'wp_enqueue_scripts', array( $this, 'retire_plugin_assets' ), 320 );
 		\add_action( 'wp_head', array( $this, 'strip_windpress_metadata' ), 1000000 );
+	}
+
+	/**
+	 * Emits early woff2 font preloads for LCP headings/body and guarantees
+	 * `[data-md-i18n-config]` is present in `<head>` even on chromeless faces.
+	 */
+	public function preload_fonts_and_i18n_config(): void {
+		if ( \is_admin() ) {
+			return;
+		}
+		$fonts_base = \plugin_dir_url( dirname( __DIR__, 2 ) . '/md-site.php' ) . 'assets/fonts/';
+		foreach ( array( 'inter-var.woff2', 'playfair-display-var.woff2' ) as $font_file ) {
+			printf(
+				'<link rel="preload" as="font" type="font/woff2" href="%s" crossorigin>' . "\n",
+				\esc_url( $fonts_base . $font_file )
+			);
+		}
+
+		$current     = \MetalDivider\Site\I18n\Languages::current();
+		$config      = array(
+			'lang'       => $current,
+			'wpmlLang'   => \MetalDivider\Site\I18n\Languages::to_wpml( $current ),
+			'dir'        => \MetalDivider\Site\I18n\Languages::is_rtl( $current ) ? 'rtl' : 'ltr',
+			'restPrefix' => 'en' === $current ? '' : '/' . $current,
+			'shopUrl'    => \MetalDivider\Site\I18n\Languages::home_url( '/patterns/', $current ),
+			'strings'    => \MetalDivider\Site\I18n\Dictionary::chrome_config( $current ),
+		);
+		$json_config = (string) \wp_json_encode( $config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+		if ( '' !== $json_config ) {
+			printf(
+				'<meta name="md-i18n-config" content="%s" data-md-i18n-config="%s">' . "\n",
+				\esc_attr( $current ),
+				\esc_attr( $json_config )
+			);
+		}
 	}
 
 	/**

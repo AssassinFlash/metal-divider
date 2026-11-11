@@ -12,5 +12,5 @@
 - **复刻页 Replicated page**:以旧站视觉为基准逐像素重建的页面。
 - **升级 Upgrade**:在复刻基线上被裁定允许的设计或代码改进;逐页型记账,边界由「内容改写边界」票定。
 - **终稿媒体集 Final Media Set**:本地管线产出的、上传即用的优化媒体文件(变体尺寸、格式、压缩全部完成);服务器零运行时转换。
-- **主域名 Canonical Domain**:metal-divider.com;metalpartition.com 全站 301 并入。
-- **语种 Locale**:首期只做 EN(完整);ZH/ES/PT-BR/DE/FR/AR/ID/VI 为二期(业主自购翻译资源后启动,引擎结论备而不用)。
+- **主域名 Canonical Domain**:`metal-divider.com` 独立运营；`metalpartition.com`（旧 Shopify 站）为绝对禁区，原样保留不触碰、不做跨域名 301（见 `AGENTS.md` 2026-10-25 终版裁定）。
+- **语种 Locale**:全站同域 9 语种上线（2026-11-11 落地）：`EN`（根路径 `/` 默认）及 8 个子目录语种 `/zh/`、`/es/`、`/pt-br/`、`/de/`、`/fr/`、`/ar/`（RTL）、`/id/`、`/vi/`。

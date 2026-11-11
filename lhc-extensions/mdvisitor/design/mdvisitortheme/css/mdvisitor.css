@@ -305,11 +305,15 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
   max-height:100%!important;
   overflow:hidden!important;
 }
-.md-start .md-hero{padding:10px 16px 12px!important}
-.md-start .md-topline{margin-bottom:6px!important}
-.md-start .md-avatar-hero{width:36px!important;height:36px!important;margin-bottom:6px!important}
-.md-start .md-hero h1{font-size:26px!important;margin-bottom:3px!important}
-.md-start .md-hero-sub{font-size:13.5px!important;margin-bottom:8px!important}
+.md-start .md-hero{padding:9px 16px 10px!important}
+.md-start .md-topline{margin-bottom:4px!important}
+.md-start .md-topline .md-icon-btn{width:30px;height:30px;flex:0 0 30px;font-size:17px}
+.md-start .md-avatar-hero{width:32px!important;height:32px!important;margin-bottom:5px!important}
+.md-start .md-avatar-hero svg{width:19px;height:19px}
+.md-start .md-avatar-hero i{width:10px;height:10px}
+.md-start .md-hero h1{font-size:24px!important;line-height:1.08!important;margin-bottom:2px!important}
+.md-start .md-hero-sub{font-size:13px!important;line-height:1.35!important;margin-bottom:6px!important}
+.md-start .md-status{padding:4px 9px;font-size:10px}
 /* The offline leave-a-message panel keeps its own inset (its last line has to
  * clear the home indicator), so it is the one panel this does not re-pad; it
  * already scrolls through the base .md-panel rule. */
@@ -318,12 +322,21 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
   min-height:0!important;
   overflow-y:auto!important;
   overflow-x:hidden!important;
-  padding:12px 14px 14px!important;
+  padding:9px 14px 10px!important;
 }
-.md-start .md-action{min-height:50px!important;padding:7px 11px!important;margin-bottom:6px!important}
-.md-start .md-start-composer{flex:0 0 auto!important;position:relative!important;z-index:2}
-.md-start .md-tabs{flex:0 0 48px!important}
-.md-start .md-faq .md-tabs{flex:0 0 48px!important}
+.md-start .md-section-head{margin:0 1px 6px}
+.md-start .md-action{min-height:46px!important;padding:6px 10px!important;margin-bottom:5px!important}
+.md-start .md-action-icon{width:34px;height:34px;flex:0 0 34px;border-radius:10px;font-size:14px}
+.md-start .md-action-copy b{font-size:12.5px}
+.md-start .md-action-copy small{font-size:10.3px}
+.md-start .md-text-link{margin-top:1px;padding:6px 2px 2px}
+.md-start .md-chips{margin-top:6px;gap:5px}
+.md-start .md-chips button{font-size:9.8px;padding:5px 9px}
+.md-start .md-panel-foot{padding-top:8px;font-size:10.2px}
+.md-start .md-start-composer{flex:0 0 auto!important;position:relative!important;z-index:2;padding:6px 10px 6px}
+.md-start-composer #ChatMessageContainer #id_Question{min-height:40px;padding:9px 44px 9px 12px}
+.md-start .md-tabs{flex:0 0 44px!important}
+.md-start .md-faq .md-tabs{flex:0 0 44px!important}
 
 /* Charcoal is the default hero. Forest is opt-in: ?mdvtheme=forest */
 .md-card.md-start .md-hero{
@@ -422,7 +435,7 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:8px;
-  padding:8px 14px;
+  padding:6px 14px;
   background:#161513;
   border-bottom:1px solid rgba(197,165,114,.32);
 }
@@ -431,7 +444,7 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
   align-items:center;
   justify-content:center;
   gap:6px;
-  min-height:34px;
+  min-height:32px;
   padding:0 10px;
   border-radius:8px;
   font-size:12px;
@@ -466,5 +479,93 @@ html,body,#widget-layout,#widget-layout>.col-12,#widget-content-body{height:100%
   outline:2px solid #d4b483;
   outline-offset:2px;
 }
+
+/* Arabic RTL support */
+[dir="rtl"] .md-card,
+.md-card[dir="rtl"]{
+  direction:rtl;
+  text-align:right;
+}
+[dir="rtl"] .md-hero:after,
+.md-card[dir="rtl"] .md-hero:after{
+  right:auto;
+  left:-66px;
+}
+[dir="rtl"] .md-brand-tag,
+.md-card[dir="rtl"] .md-brand-tag,
+[dir="rtl"] .md-eyebrow,
+.md-card[dir="rtl"] .md-eyebrow,
+[dir="rtl"] .md-offline label,
+.md-card[dir="rtl"].md-offline label,
+[dir="rtl"] .md-offline .col-form-label,
+.md-card[dir="rtl"].md-offline .col-form-label{
+  letter-spacing:0;
+  text-transform:none;
+}
+[dir="rtl"] .md-hero h1,
+.md-card[dir="rtl"] .md-hero h1,
+[dir="rtl"] .md-faq-head h2,
+.md-card[dir="rtl"] .md-faq-head h2{
+  letter-spacing:0;
+}
+[dir="rtl"] .md-avatar i,
+.md-card[dir="rtl"] .md-avatar i{
+  right:auto;
+  left:0;
+}
+[dir="rtl"] .md-spark,
+.md-card[dir="rtl"] .md-spark{
+  margin-right:0;
+  margin-left:5px;
+}
+[dir="rtl"] .md-resume-reset,
+.md-card[dir="rtl"] .md-resume-reset,
+[dir="rtl"] .md-action,
+.md-card[dir="rtl"] .md-action,
+[dir="rtl"] .md-text-link,
+.md-card[dir="rtl"] .md-text-link,
+[dir="rtl"] .md-faq-q,
+.md-card[dir="rtl"] .md-faq-q,
+[dir="rtl"] .md-search input,
+.md-card[dir="rtl"] .md-search input{
+  text-align:right;
+}
+[dir="rtl"] .md-chev,
+.md-card[dir="rtl"] .md-chev,
+[dir="rtl"] .md-resume .md-chev,
+.md-card[dir="rtl"] .md-resume .md-chev{
+  margin-left:0;
+  margin-right:auto;
+  display:inline-block;
+  transform:scaleX(-1);
+}
+[dir="rtl"] .md-resume-icon,
+.md-card[dir="rtl"] .md-resume-icon,
+[dir="rtl"] .md-text-link span,
+.md-card[dir="rtl"] .md-text-link span,
+[dir="rtl"] .md-faq-q i,
+.md-card[dir="rtl"] .md-faq-q i,
+[dir="rtl"] .md-primary span,
+.md-card[dir="rtl"] .md-primary span,
+[dir="rtl"] .md-faq-head .md-back,
+.md-card[dir="rtl"] .md-faq-head .md-back{
+  display:inline-block;
+  transform:scaleX(-1);
+}
+[dir="rtl"] .md-start-composer #ChatMessageContainer #ChatSendButtonContainer,
+.md-card[dir="rtl"] .md-start-composer #ChatMessageContainer #ChatSendButtonContainer{
+  right:auto!important;
+  left:5px!important;
+}
+[dir="rtl"] .md-start-composer #ChatMessageContainer #ChatSendButtonContainer a i,
+.md-card[dir="rtl"] .md-start-composer #ChatMessageContainer #ChatSendButtonContainer a i{
+  transform:scaleX(-1);
+}
+[dir="rtl"] .md-start-composer #ChatMessageContainer #id_Question,
+.md-card[dir="rtl"] .md-start-composer #ChatMessageContainer #id_Question{
+  padding:9px 12px 9px 44px;
+  text-align:right;
+}
+
 
 

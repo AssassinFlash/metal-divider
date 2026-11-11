@@ -297,13 +297,23 @@ final class TranslationValidator {
 			}
 		}
 
-		// 6. Chinese glossary guard (GLOSSARY.md: 图案 not 款式/花型; 询盘 not 订单).
-		if ( 'zh' === $lang && ! str_contains( $source_lower, 'style' ) ) {
-			foreach ( array( '款式', '花型' ) as $banned_zh ) {
-				if ( str_contains( $normalized_trans, $banned_zh ) ) {
-					$problems[] = sprintf( 'Banned Chinese glossary term: "%s" (use 图案)', $banned_zh );
-					break;
+		// 6. Chinese glossary guard (GLOSSARY.md: 图案 not 款式/花型; 询盘/项目/委托/批次 not 订单; 图案/屏风/板材 not 产品).
+		if ( 'zh' === $lang ) {
+			if ( ! str_contains( $source_lower, 'style' ) ) {
+				foreach ( array( '款式', '花型' ) as $banned_zh ) {
+					if ( str_contains( $normalized_trans, $banned_zh ) ) {
+						$problems[] = sprintf( 'Banned Chinese glossary term: "%s" (use 图案)', $banned_zh );
+						break;
+					}
 				}
+			}
+
+			if ( str_contains( $normalized_trans, '订单' ) ) {
+				$problems[] = 'Banned Chinese glossary term: "订单" (NEVER translate order/orders as 订单; use 项目 / 委托 / 批次)';
+			}
+
+			if ( str_contains( $normalized_trans, '产品' ) ) {
+				$problems[] = 'Banned Chinese glossary term: "产品" (NEVER translate product/products as 产品; use 图案 / 屏风 / 板材)';
 			}
 		}
 

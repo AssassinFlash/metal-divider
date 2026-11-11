@@ -3834,6 +3834,138 @@ final class KbEndpointTest extends TestCase {
 	}
 
 	/**
+	 * Verifies md_kb_endpoint_detect_locale(), German/Vietnamese sample-vs-pattern
+	 * disambiguation, Chinese glossary enforcement, localized recommendation URLs,
+	 * and end-to-end ZH/AR/DE answers through md_kb_endpoint_answer().
+	 */
+	public function test_detect_locale_and_end_to_end_zh_ar_de_concierge_flows(): void {
+		// 1. md_kb_endpoint_detect_locale( $page_url, $user_text ) prioritizes script/language over URL prefix.
+		self::assertSame( 'zh', md_kb_endpoint_detect_locale( 'https://metal-divider.com/pattern/agave/', '请问这款屏风镂空率是多少？' ) );
+		self::assertSame( 'ar', md_kb_endpoint_detect_locale( 'https://metal-divider.com/pattern/agave/', 'هل يمكن ترشيح نقوش هندسية؟' ) );
+		self::assertSame( 'vi', md_kb_endpoint_detect_locale( 'https://metal-divider.com/pattern/agave/', 'Bạn có thể gợi ý mẫu hoa văn hình học không?' ) );
+		self::assertSame( 'de', md_kb_endpoint_detect_locale( 'https://metal-divider.com/de/pattern/agave/', 'Agave 304' ) );
+		self::assertSame( 'pt-br', md_kb_endpoint_detect_locale( '//staging.metal-divider.com/pt-br/patterns/', 'MD-101' ) );
+		self::assertSame( 'en', md_kb_endpoint_detect_locale( 'https://metal-divider.com/pattern/agave/', 'MD-101' ) );
+
+		// 2. German "Muster" and Vietnamese "mẫu" (meaning pattern) trigger recommendation, NOT commercial handoff.
+		$de_rec = 'Können Sie 2 bis 3 geometrische Muster mit ca. 35 % Öffnungsanteil für den Außenbereich empfehlen?';
+		self::assertFalse( md_kb_endpoint_asks_commercial( $de_rec ) );
+		self::assertTrue( md_kb_endpoint_asks_recommendation( $de_rec ) );
+
+		$vi_rec = 'Bạn có thể gợi ý 2–3 mẫu hoa văn hình học có độ thoáng khoảng 35% cho ngoài trời không?';
+		self::assertFalse( md_kb_endpoint_asks_commercial( $vi_rec ) );
+		self::assertTrue( md_kb_endpoint_asks_recommendation( $vi_rec ) );
+
+		$ar_rec = 'هل يمكنك ترشيح 2–3 نقوش هندسية بنسبة تفريغ تقارب 35% للاستخدام الخارجي؟';
+		self::assertFalse( md_kb_endpoint_asks_commercial( $ar_rec ) );
+		self::assertTrue( md_kb_endpoint_asks_recommendation( $ar_rec ) );
+
+		// German/Vietnamese explicit sample requests DO trigger commercial handoff.
+		self::assertTrue( md_kb_endpoint_asks_commercial( 'Können Sie ein Farbmuster oder Materialmuster senden?' ) );
+		self::assertTrue( md_kb_endpoint_asks_commercial( 'Bên bạn có gửi mẫu thử inox 316 không?' ) );
+
+		// Chinese general shipping question goes to asks_shipping (not intercepted by asks_commercial), while '运费多少' stays commercial.
+		self::assertTrue( md_kb_endpoint_asks_commercial( '运费多少' ) );
+		self::assertFalse( md_kb_endpoint_asks_commercial( '你们支持海运或空运发往我的国家吗？如何打包保护？' ) );
+		self::assertTrue( md_kb_endpoint_asks_shipping( '你们支持海运或空运发往我的国家吗？如何打包保护？' ) );
+
+		// Chinese glossary rule is present in system prompt and zero forbidden words appear in ZH deterministic copy.
+		$zh_prompt = md_kb_endpoint_system_prompt( 'zh' );
+		self::assertStringContainsString( '图案', $zh_prompt );
+		self::assertStringContainsString( '询盘', $zh_prompt );
+		$zh_check_reply = md_kb_endpoint_pattern_check_prompt_reply( '', array(), 'zh' );
+		foreach ( array(
+			md_kb_endpoint_commercial_handoff_message( 'zh' ),
+			md_kb_endpoint_shipping_message( 'zh' ),
+			(string) $zh_check_reply['body']['msg'],
+			md_kb_endpoint_fallback_message( 'zh' ),
+		) as $zh_copy ) {
+			self::assertStringNotContainsString( '产品', $zh_copy );
+			self::assertStringNotContainsString( '订单', $zh_copy );
+		}
+
+		// 3. End-to-end ZH shipping answer returns Chinese wooden-crate reply + 参考来源：.
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"{}"}}]}' );
+		$zh_ship = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => '你们支持海运或空运发往我的国家吗？如何打包保护？',
+					'page_url' => 'https://metal-divider.com/zh/patterns/',
+				),
+			)
+		);
+		self::assertSame( 200, $zh_ship['status'] );
+		self::assertStringContainsString( '木箱', (string) $zh_ship['body']['msg'] );
+		self::assertStringContainsString( '参考来源：Packing and shipping', (string) $zh_ship['body']['msg'] );
+
+		// 4. End-to-end ZH pattern fact + commercial handoff preserves Chinese open-area sentence + 304/316 handoff.
+		$this->plant_pattern();
+		$GLOBALS['md_mu_test_permalinks'][101] = 'https://metal-divider.com/pattern/agave/';
+
+		$zh_fact = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => '这款图案的镂空率是多少，报价怎么算？',
+					'page_url' => 'https://metal-divider.com/zh/pattern/agave/',
+				),
+			)
+		);
+		self::assertSame( 200, $zh_fact['status'] );
+		self::assertStringContainsString( 'Agave 的镂空率为 32%。', (string) $zh_fact['body']['msg'] );
+		self::assertStringContainsString( '304', (string) $zh_fact['body']['msg'] );
+		self::assertStringNotContainsString( '产品', (string) $zh_fact['body']['msg'] );
+
+		// 5. End-to-end AR & DE recommendation passes localized /ar/pattern/.../ and /de/pattern/.../ permalinks into PATTERN FACTS,
+		// and deterministic upstream fallback renders localized Markdown links.
+		$GLOBALS['md_mu_test_terms'][101] = array(
+			'product_cat' => array(
+				(object) array(
+					'slug' => 'pattern-geometric',
+					'name' => 'Geometric',
+				),
+			),
+		);
+		$this->configure_kb(
+			array(),
+			$this->model_reply( 'نرشح نمط [Agave](https://metal-divider.com/ar/pattern/agave/) للاستخدام الخارجي.', false, 'none' )
+		);
+		$ar_out = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => $ar_rec,
+					'page_url' => 'https://metal-divider.com/ar/patterns/',
+				),
+			)
+		);
+		self::assertSame( 200, $ar_out['status'] );
+		self::assertStringContainsString( 'https://metal-divider.com/ar/pattern/agave/', (string) $ar_out['body']['msg'] );
+		self::assertStringContainsString( 'بناءً على:', (string) $ar_out['body']['msg'] );
+		$http_calls = $this->recorded( 'md_mu_test_http' );
+		self::assertNotEmpty( $http_calls );
+		$sent_payload = json_decode( (string) ( $http_calls[0][1]['body'] ?? '' ), true );
+		self::assertStringContainsString( '/ar/pattern/agave/', (string) ( $sent_payload['messages'][1]['content'] ?? '' ) );
+
+		// Upstream failure on DE recommendation produces localized /de/pattern/agave/ deterministic card!
+		$GLOBALS['md_mu_test_http'] = array();
+		$this->configure_kb( array(), '{"choices":[{"message":{"content":"not-json"}}]}' );
+		$de_fallback = md_kb_endpoint_answer(
+			array(
+				'header' => $this->bearer(),
+				'body'   => array(
+					'q'        => $de_rec,
+					'page_url' => 'https://metal-divider.com/de/patterns/',
+				),
+			)
+		);
+		self::assertSame( 200, $de_fallback['status'] );
+		self::assertStringContainsString( '[Agave](https://metal-divider.com/de/pattern/agave/)', (string) $de_fallback['body']['msg'] );
+		self::assertStringContainsString( 'Basierend auf:', (string) $de_fallback['body']['msg'] );
+	}
+
+	/**
 	 * A recorded bootstrap global, reset between the tests.
 	 *
 	 * @param string $name The global's name.

@@ -24,6 +24,11 @@ final class Translator {
 	private const TM_FILE_NAME = 'i18n-tm-cache.json';
 
 	/**
+	 * Mandatory Simplified Chinese glossary rules enforced during translation and retry prompts.
+	 */
+	public const ZH_GLOSSARY_SYSTEM_PROMPT = 'Simplified Chinese (zh) glossary rules: NEVER translate "order/orders" as "订单" — always use "项目", "委托", or "批次"; NEVER translate "product/products" as "产品" — always use "图案", "屏风", or "板材"; NEVER translate "pattern/patterns" as "款式" or "花型" — always use "图案".';
+
+	/**
 	 * Path to translation memory cache file.
 	 *
 	 * @var string
@@ -708,15 +713,21 @@ final class Translator {
 	}
 
 	/**
-	 * Translates an HTML document using Segmenter and TranslationValidator.
+	 * Translates an HTML document using Segmenter and TranslationValidator,
+	 * including inner markup of `<template>` elements.
 	 *
 	 * @param string $html Full HTML string.
 	 * @param string $lang Target canonical language code.
 	 */
 	public function translate_html_document( string $html, string $lang ): string {
+		$html = $this->transform_template_blocks(
+			$html,
+			fn( string $inner ): string => $this->translate_html_document( $inner, $lang )
+		);
+
 		$doc = $this->segmenter->segment_html( $html );
 		if ( empty( $doc['segments'] ) ) {
-			return $html;
+			return 'zh' === $lang ? TemplateStore::sanitize_zh_glossary_html( $html ) : $html;
 		}
 
 		$segment_texts = array();
@@ -731,7 +742,73 @@ final class Translator {
 			$translated_list[] = $translated_map[ $src_text ] ?? $src_text;
 		}
 
-		return $this->segmenter->reassemble( $doc, $translated_list );
+		$assembled = $this->segmenter->reassemble( $doc, $translated_list );
+		return 'zh' === $lang ? TemplateStore::sanitize_zh_glossary_html( $assembled ) : $assembled;
+	}
+
+	/**
+	 * Walks `<template ...>...</template>` elements using HtmlTokenizer and applies
+	 * a transformation callback to each top-level template's inner HTML losslessly.
+	 *
+	 * @param string   $html          Source HTML.
+	 * @param callable $inner_handler `fn(string $inner_html): string` callback.
+	 */
+	private function transform_template_blocks( string $html, callable $inner_handler ): string {
+		if ( false === stripos( $html, '<template' ) ) {
+			return $html;
+		}
+
+		$tokenizer      = new HtmlTokenizer();
+		$tokens         = $tokenizer->tokens( $html );
+		$out            = '';
+		$template_depth = 0;
+		$open_tag       = '';
+		$inner_buf      = '';
+
+		foreach ( $tokens as $token ) {
+			if ( HtmlTokenizer::TYPE_TAG === $token['type'] && 'template' === $token['name'] ) {
+				$self_closing = ! $token['closing'] && str_ends_with( rtrim( substr( $token['raw'], 0, -1 ) ), '/' );
+				if ( ! $token['closing'] && ! $self_closing ) {
+					if ( 0 === $template_depth ) {
+						$open_tag       = $token['raw'];
+						$inner_buf      = '';
+						$template_depth = 1;
+					} else {
+						++$template_depth;
+						$inner_buf .= $token['raw'];
+					}
+					continue;
+				}
+
+				if ( $token['closing'] ) {
+					if ( $template_depth > 1 ) {
+						--$template_depth;
+						$inner_buf .= $token['raw'];
+					} elseif ( 1 === $template_depth ) {
+						$template_depth = 0;
+						$transformed    = (string) $inner_handler( $inner_buf );
+						$out           .= $open_tag . $transformed . $token['raw'];
+						$open_tag       = '';
+						$inner_buf      = '';
+					} else {
+						$out .= $token['raw'];
+					}
+					continue;
+				}
+			}
+
+			if ( $template_depth > 0 ) {
+				$inner_buf .= $token['raw'];
+			} else {
+				$out .= $token['raw'];
+			}
+		}
+
+		if ( $template_depth > 0 ) {
+			$out .= $open_tag . $inner_buf;
+		}
+
+		return $out;
 	}
 
 	/**
@@ -805,7 +882,9 @@ final class Translator {
 			}
 			$key = $lang . ':' . hash( 'sha256', $seg );
 			if ( isset( $this->tm_cache[ $key ] ) ) {
-				$results[ $seg ] = $this->tm_cache[ $key ];
+				$results[ $seg ] = 'zh' === $lang
+					? TemplateStore::sanitize_zh_glossary_text( $this->tm_cache[ $key ] )
+					: $this->tm_cache[ $key ];
 			} else {
 				$misses[] = $seg;
 			}
@@ -946,10 +1025,18 @@ final class Translator {
 			}
 		};
 
-		$add_html = function ( string $html ) use ( &$seen ): void {
+		$add_html = null;
+		$add_html = function ( string $html ) use ( &$seen, &$add_html ): void {
 			if ( '' === trim( $html ) ) {
 				return;
 			}
+			$this->transform_template_blocks(
+				$html,
+				static function ( string $inner ) use ( &$add_html ): string {
+					$add_html( $inner );
+					return $inner;
+				}
+			);
 			$doc = $this->segmenter->segment_html( $html );
 			foreach ( $doc['segments'] as $seg ) {
 				$s = $seg['text'];
@@ -1041,13 +1128,22 @@ final class Translator {
 
 		for ( $attempt = 0; $attempt < 2 && ! empty( $problems ); $attempt++ ) {
 			try {
-				$retry_chunk = $this->client->translate_batch( $lang, array( $src_item ), implode( '; ', $problems ) );
+				$feedback = implode( '; ', $problems );
+				if ( 'zh' === $lang ) {
+					$feedback .= ' | ' . self::ZH_GLOSSARY_SYSTEM_PROMPT;
+				}
+				$retry_chunk = $this->client->translate_batch( $lang, array( $src_item ), $feedback );
 				$tr_item     = TranslationValidator::normalize_digits( $retry_chunk[0] ?? '' );
 				$problems    = $this->validator->validate( $src_item, $tr_item, $lang );
 			} catch ( \Throwable $e ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				throw new RuntimeException( sprintf( 'Translation validation failed for "%s" (%s): %s', $src_item, $lang, $e->getMessage() ) );
 			}
+		}
+
+		if ( ! empty( $problems ) && 'zh' === $lang ) {
+			$tr_item  = TemplateStore::sanitize_zh_glossary_text( $tr_item );
+			$problems = $this->validator->validate( $src_item, $tr_item, $lang );
 		}
 
 		if ( ! empty( $problems ) ) {

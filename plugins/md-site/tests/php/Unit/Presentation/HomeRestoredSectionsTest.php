@@ -182,13 +182,8 @@ final class HomeRestoredSectionsTest extends TestCase {
 	}
 
 	/**
-	 * The proof cards are one two-column card per screen, not flat slides.
-	 *
-	 * The written spec asks for the photograph at ~691px on the left and the
-	 * title, quote and description on the right. The card is therefore a
-	 * grid whose two columns are declared in the home volume, and the photo
-	 * declares the width it actually renders, so a phone is not handed a
-	 * 1400px file for a 310px box.
+	 * The proof cards stay a horizontal snap carousel on mobile and present all
+	 * four cards in a steady 4-column grid on desktop (`>=1024px`).
 	 */
 	public function test_the_proof_card_is_the_two_column_card_the_spec_asks_for(): void {
 		$home = $this->home();
@@ -197,22 +192,20 @@ final class HomeRestoredSectionsTest extends TestCase {
 		$this->assertMatchesRegularExpression(
 			'/\.home-outcomes-card\{[^}]*flex:\s*0 0 100%/',
 			$css,
-			'one card per screen'
+			'one card per screen on mobile'
 		);
 		$this->assertMatchesRegularExpression(
-			'/@media \(min-width: 1180px\)\{\s*\.home-outcomes-card\{\s*grid-template-columns:\s*minmax\(0, 691px\) minmax\(0, 1fr\)/',
+			'/@media \(min-width: 1024px\)\{[\s\S]*?\[data-home-outcomes-track\]\{[^}]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/',
 			$css,
-			'the two-column card: a 691px photo column and the text beside it'
+			'desktop (>=1024px) lays out all four proof cards in a balanced 4-column grid'
 		);
 
-		// The photo's declared width is the column's, and it is inside the
-		// card's media box rather than a bare slide.
 		$this->assertStringContainsString( 'home-outcomes-media', $home, 'the card names its media box' );
 		$this->assertStringContainsString( 'home-outcomes-body', $home, 'and its text column' );
 		$this->assertSame(
 			4,
-			substr_count( $home, 'sizes="(min-width: 1180px) 691px, calc(100vw - 40px)"' ),
-			'every card photo declares the column it renders in'
+			substr_count( $home, 'sizes="(min-width: 1600px) 365px, (min-width: 1024px) calc(25vw - 35px), calc(100vw - 40px)"' ),
+			'every card photo declares its 4-column desktop width and mobile full-width box'
 		);
 	}
 

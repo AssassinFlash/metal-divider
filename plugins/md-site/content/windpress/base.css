@@ -64,21 +64,21 @@
   /* Fonts and scale. "san-serif" is the old head's literal fallback text
      (sic) — the family is Inter / Playfair Display and the fallback never
      applies while the self-hosted faces load. */
-  --font-sans: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans Arabic", "Geeza Pro", sans-serif;
-  --md-font-sans: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans Arabic", "Geeza Pro", sans-serif;
+  --font-sans: Inter, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+  --md-font-sans: Inter, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
   --font-body-desktop-size: 1.6rem;
   --font-body-mobile-size: 1.5rem;
-  --font-body-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans Arabic", "Geeza Pro", sans-serif;
+  --font-body-family: Inter, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
   --font-body-style: ;
   --font-body-weight: 400;
   --font-body-weight-bold: 400;
-  --font-heading-family: "Playfair Display", san-serif;
+  --font-heading-family: "Playfair Display", Georgia, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", serif;
   --font-heading-style: ;
   --font-heading-weight: 600;
   --font-body-scale: 1.0;
   --font-heading-scale: 1.4;
   --font-body-line-height: calc(1 + 0.8 / var(--font-body-scale));
-  --font-custom-family: Montserrat, san-serif;
+  --font-custom-family: Montserrat, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif;
 
   /* Old <head> color scheme 1 — the :root scheme. Only the three the carried
      volumes consume are restored here; the other scheme colors have no
@@ -236,23 +236,69 @@ main p:not([class*="max-w-"]) {
 }
 
 /* ---------------------------------------------------------------- *
- * Arabic RTL: cursive Arabic scripts disconnect when tracking /
- * positive letter-spacing is applied. Zero letter-spacing site-wide
- * for Arabic elements.
+ * Multilingual display typography & Arabic RTL resets.
+ *
+ * 1. Self-hosted Playfair Display ships the base Latin subset only:
+ *    Vietnamese double-diacritics fall back glyph-by-glyph mid-word.
+ *    Use full-coverage serif stacks for `vi`, crisp CJK sans for `zh`
+ *    (avoiding jagged SimSun serif fallback), and Naskh/Geeza stacks
+ *    with comfortable line-height for `ar`.
+ * 2. Cursive Arabic scripts disconnect whenever positive tracking is
+ *    inherited or declared via Tailwind `tracking-*` utilities.
+ * 3. Email and phone inputs stay LTR for Latin characters/digits while
+ *    aligning right to match surrounding RTL form labels.
  * ---------------------------------------------------------------- */
-[dir="rtl"] body,
-[dir="rtl"] h1,
-[dir="rtl"] h2,
-[dir="rtl"] h3,
-[dir="rtl"] h4,
-[dir="rtl"] h5,
-[dir="rtl"] h6,
-[dir="rtl"] p,
-[dir="rtl"] a,
-[dir="rtl"] button,
-[dir="rtl"] span,
-[dir="rtl"] th,
-[dir="rtl"] td,
-[dir="rtl"] label {
+html[lang^="vi"] {
+  --font-heading-family: Georgia, "Times New Roman", "Noto Serif", serif;
+}
+
+html[lang^="vi"] :is(h1, h2, h3, h4, .font-serif, [class*="Playfair_Display"]) {
+  font-family: Georgia, "Times New Roman", "Noto Serif", serif !important;
+}
+
+html[lang^="zh"] {
+  --font-heading-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --font-body-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+html[lang^="zh"] :is(body, h1, h2, h3, h4, .font-serif, [class*="Playfair_Display"]) {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+html[lang^="ar"] {
+  --font-heading-family: "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+  --font-body-family: "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+}
+
+html[lang^="ar"] :is(h1, h2, h3, h4, .font-serif, [class*="Playfair_Display"]) {
+  font-family: "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+  line-height: 1.38;
+}
+
+[dir="rtl"],
+[dir="rtl"] *,
+[dir="rtl"] *::before,
+[dir="rtl"] *::after {
   letter-spacing: 0 !important;
+}
+
+[dir="rtl"] input[type="email"],
+[dir="rtl"] input[type="tel"] {
+  direction: ltr;
+  text-align: right;
+}
+
+[dir="rtl"] :is(.btn, .pag__route-arrow, .md-404__card-arrow, .ty-action__arrow, .xo-menu-hamburger-style1__arrow--mega-menu svg) {
+  /* Directional right-pointing arrows mirror naturally in RTL; container `.btn` keeps normal reading flow */
+}
+
+[dir="rtl"] :is(.pag__route-arrow, .md-404__card-arrow, .ty-action__arrow, .xo-menu-hamburger-style1__arrow--mega-menu svg, a[data-quote-source] > svg:last-child) {
+  transform: scaleX(-1);
+}
+
+/* Hide WordPress empty-category fallback ("No categories") across all
+   languages so an unpopulated taxonomy never renders a dead pill. */
+.cat-item-none,
+:is(#md-blog-index,#md-blog-category,#md-blog-search) .cat-item-none {
+  display: none !important;
 }

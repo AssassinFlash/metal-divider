@@ -22,7 +22,7 @@
 
 	var START_PATH = '/chat/index.php/chat/chatwidget/(department)/1';
 	var CSS_PATH = '/chat/extension/mdvisitor/design/mdvisitortheme/css/mdvisitor-launcher.css';
-	var CSS_VERSION = '20261111a';
+	var CSS_VERSION = '20261111b';
 
 	if ( location.pathname.indexOf( '/chat/' ) === 0 ) {
 		return;
@@ -82,7 +82,7 @@
 
 	var LABELS = {
 		en: { ask: 'Ask Metal Divider', assistant: 'Metal Divider assistant' },
-		zh: { ask: '咨询 Metal Divider', assistant: 'Metal Divider 智能助手' },
+		zh: { ask: '咨询 Metal Divider', assistant: 'Metal Divider AI 顾问' },
 		es: { ask: 'Preguntar a Metal Divider', assistant: 'Asistente de Metal Divider' },
 		'pt-br': { ask: 'Pergunte à Metal Divider', assistant: 'Assistente Metal Divider' },
 		de: { ask: 'Metal Divider fragen', assistant: 'Metal Divider Assistent' },
@@ -141,6 +141,7 @@
 		card.id = 'mdvl-card';
 		card.setAttribute( 'role', 'dialog' );
 		card.setAttribute( 'aria-label', i18n.assistant );
+		card.setAttribute( 'dir', currentDir );
 		card.hidden = true;
 
 		var frame = null;
@@ -169,9 +170,9 @@
 			}
 			frame = document.createElement( 'iframe' );
 			frame.className = 'mdvl-frame';
-			frame.title = 'Metal Divider assistant';
+			frame.title = i18n.assistant;
 			frame.addEventListener( 'load', sendHostContext );
-			frame.src = START_PATH + '?v=' + Date.now() + '&URLReferer=' + encodeURIComponent( window.location.href ) + '&r=' + encodeURIComponent( window.location.origin );
+			frame.src = START_PATH + '?v=' + Date.now() + '&mdvlang=' + encodeURIComponent( currentLocale ) + '&mdvdir=' + encodeURIComponent( currentDir ) + '&URLReferer=' + encodeURIComponent( window.location.href ) + '&r=' + encodeURIComponent( window.location.origin );
 			card.appendChild( frame );
 		}
 

@@ -48,8 +48,8 @@
   --md-gold-ink: #85692e;
   --md-cream: #faf9f7;
   --md-whatsapp: #25D366;
-  --md-font-display: "Playfair Display", Georgia, serif;
-  --md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --md-font-display: "Playfair Display", Georgia, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", serif;
+  --md-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
   --md-container: 1400px;
   /* The sticky header band's real height, and therefore the offset every
      sticky rail, in-page anchor and scroll target must clear. Measured in
@@ -70,7 +70,21 @@
   --md-header-h: 73px;
 }
 
-@media (min-width: 991px) {
+html[lang^="vi"] {
+  --md-font-display: Georgia, "Times New Roman", "Noto Serif", serif;
+}
+
+html[lang^="zh"] {
+  --md-font-display: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --md-font-sans: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+html[lang^="ar"] {
+  --md-font-display: "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+  --md-font-sans: "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+}
+
+@media (min-width: 1181px) {
   :root {
     --md-header-h: 60px;
   }

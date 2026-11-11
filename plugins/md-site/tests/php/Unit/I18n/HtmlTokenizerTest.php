@@ -57,4 +57,39 @@ final class HtmlTokenizerTest extends TestCase {
 		$this->assertStringContainsString( 'alt="New &quot;Quoted&quot; &amp; Clean"', $replaced );
 		$this->assertStringContainsString( 'src="/img.jpg"', $replaced );
 	}
+
+	/**
+	 * Verifies `<template>` blocks (desktop Mega Menu and predictive search hit) are
+	 * tokenized into inner tags and text nodes rather than swallowed as opaque raw text.
+	 */
+	public function test_template_mega_menu_and_search_hit_tokenized_losslessly(): void {
+		$html = '<template xo-mega-menu-name="header-mega-menu-v1" xo-mega-menu-index="0">'
+			. '<div class="mmv2"><p class="mmv2__hub"><a class="mmv2__hub-link" href="/stainless-steel-screens/">Stainless steel screens</a></p>'
+			. '<h4 class="mmv2__title"><a class="mmv2__link" href="/laser-cut-panels/">Laser Cut Panels</a></h4></div>'
+			. '</template>'
+			. '<template id="md-search-hit"><li class="md-search-hit"><a class="md-search-hit__link" href="/patterns/"><span class="md-search-hit__name"></span></a></li></template>';
+
+		$tokenizer = new HtmlTokenizer();
+		$tokens    = $tokenizer->tokens( $html );
+
+		$assembled = '';
+		$tag_names = array();
+		$texts     = array();
+		foreach ( $tokens as $token ) {
+			$assembled .= $token['raw'];
+			if ( HtmlTokenizer::TYPE_TAG === $token['type'] && ! $token['closing'] ) {
+				$tag_names[] = $token['name'];
+			}
+			if ( HtmlTokenizer::TYPE_TEXT === $token['type'] && '' !== trim( $token['raw'] ) ) {
+				$texts[] = trim( $token['raw'] );
+			}
+		}
+
+		$this->assertSame( $html, $assembled );
+		$this->assertContains( 'template', $tag_names );
+		$this->assertContains( 'a', $tag_names );
+		$this->assertContains( 'li', $tag_names );
+		$this->assertContains( 'Stainless steel screens', $texts );
+		$this->assertContains( 'Laser Cut Panels', $texts );
+	}
 }

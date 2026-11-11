@@ -387,9 +387,10 @@ box-sizing: border-box;
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
 min-height: var(--md-header-h, 60px);
 display: grid;
-grid-template-columns: auto 1fr auto;
+grid-template-columns: auto minmax(0, 1fr) auto;
 align-items: center;
-gap: 28px;
+gap: 16px;
+min-width: 0;
 padding: 0;
 }
 /* The band the token names is this grid alone: the >=1200 strip above it is
@@ -406,6 +407,7 @@ min-height: var(--md-header-h, 60px);
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo{
 display: flex;
 align-items: center;
+flex-shrink: 0;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-logo__link{
 display: flex;
@@ -435,13 +437,16 @@ object-fit: contain;
 /* Nav */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-nav{
 justify-self: center;
+min-width: 0;
+overflow: visible;
 position: static !important;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions{
 display: flex;
 align-items: center;
-gap: 14px;
+gap: 10px;
 justify-self: end;
+flex-shrink: 0;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn{
 width: 44px;
@@ -449,6 +454,7 @@ height: 44px;
 display: inline-flex;
 align-items: center;
 justify-content: center;
+flex-shrink: 0;
 border-radius: 999px;
 color: #000;
 transition: background .2s ease;
@@ -467,6 +473,7 @@ position: relative;
 display: inline-flex;
 align-items: center;
 justify-content: center;
+flex-shrink: 0;
 gap: 6px;
 height: 44px;
 min-width: 44px;
@@ -500,8 +507,9 @@ position: relative;
 display: inline-flex;
 align-items: center;
 justify-content: center;
+flex-shrink: 0;
 height: 44px;
-min-width: 142px;
+min-width: 132px;
 width: auto;
 padding-inline: 16px;
 border-radius: 999px;
@@ -530,8 +538,9 @@ transform: translateY(-1px);
 background: #000;
 box-shadow: 0 10px 24px rgba(0,0,0,.14);
 }
-/* Desktop navigation: 15px Inter links; 13px Playfair uppercase labels;
-   20px item spacing; hover is the old 50% black, not gold. */
+/* Desktop navigation: symmetric logical item gap, zero overflow clipping in
+   LTR or RTL, and compact WhatsApp pill between 1181px and 1460px so long
+   DE/FR/PT/ES/AR labels stay single-line. */
 #HeaderV9-sections--21844031144189__header_v1_main{
 --color-foreground: 0, 0, 0;
 --color-background: 255, 255, 255;
@@ -540,11 +549,17 @@ box-shadow: 0 10px 24px rgba(0,0,0,.14);
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1{
 display: flex;
 align-items: center;
+flex-wrap: nowrap;
+gap: 14px;
+overflow: visible;
 margin: 0;
 padding: 0;
 list-style: none;
 }
-#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item{ position: relative; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item{
+position: relative;
+flex-shrink: 0;
+}
 /* The tap floor for the desktop rail, in the base layer so every width gets
    it. Measured 2026-10-27 at 1440: the seven top-level links were 15.8px and
    the sub-menu rows 32.5px — the rail is the primary way around the site and
@@ -558,7 +573,7 @@ align-items: center;
 justify-content: space-between;
 gap: 4px;
 min-height: 44px;
-padding: 0 20px 0 0;
+padding: 0 2px;
 border: 0;
 background: none;
 cursor: pointer;
@@ -567,27 +582,42 @@ font-family: "Inter", sans-serif;
 font-size: 15px;
 font-weight: 500;
 line-height: 16px;
+white-space: nowrap;
 text-decoration: none;
 transition: color .3s ease;
 }
-/* The zero left padding is for the first TOP-LEVEL nav row only (aligning
-   "Screens" with the container edge). Scoped to the top menu's direct item:
-   an unscoped :first-child also matched the first row of every submenu
-   panel, zeroing its left padding and printing "FAQs & Download" flush
-   against the panel edge (owner-reported 2026-10-30; measured computed
-   padding was `0 15px 0 0` on that row). */
-#HeaderV9-sections--21844031144189__header_v1_main ul.xo-menu-horizontal-v1 > .xo-menu-horizontal-v1__item:first-child > .xo-menu-horizontal-v1__link{ padding-left: 0; }
+#HeaderV9-sections--21844031144189__header_v1_main ul.xo-menu-horizontal-v1 > .xo-menu-horizontal-v1__item:first-child > .xo-menu-horizontal-v1__link{ padding-inline-start: 0; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__label{
 margin: 0;
 padding: 0;
 color: #000;
 font-family: "Playfair Display", serif;
-font-size: 13px;
+font-size: 12.5px;
 font-weight: 500;
 line-height: 15.79px;
 text-transform: uppercase;
 white-space: nowrap;
 transition: color .3s ease;
+}
+@media (min-width: 1181px) and (max-width: 1460px){
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{ gap: 12px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1{ gap: 10px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__label{ font-size: 12px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-header-actions{ gap: 8px; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-whatsapp{ width: 44px; padding: 0; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-whatsapp__label{ display: none; }
+#HeaderV9-sections--21844031144189__header_v1_main .xo-btn-quote{ min-width: 0; padding-inline: 14px; font-size: 12px; }
+}
+[dir="rtl"] #HeaderV9-sections--21844031144189__header_v1_main .xo-header-nav,
+[dir="rtl"] #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1{
+overflow: visible !important;
+}
+[dir="rtl"] #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__sub-menu{
+left: auto;
+right: 0;
+}
+[dir="rtl"] #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub:hover .xo-menu-horizontal-v1__label{
+transform: translateX(-5px);
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:hover > .xo-menu-horizontal-v1__link,
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item--hover:hover > .xo-menu-horizontal-v1__link .xo-menu-horizontal-v1__label{
@@ -620,16 +650,6 @@ transform: none;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__link--sub{
 padding: 0 15px;
-/* Sub-menu rows: the old site's computed values, read in real Chrome
-   (metalpartition.com, 2026-10-26, 1280 and 1440): Inter 15px / 22.5px,
-   weight 500, row 33px tall, label padding 5px 0, menu 95px.
-   The conversion had left these on Playfair 15px/19px, which made every row
-   29px and the menu 88px — a 4px row and 7px menu drift, and the wrong
-   typeface for a utility menu. The panel's own card titles keep Playfair;
-   only the plain row list is Inter.
-   33px is under this site's 44px floor, so the row gets the floor too; the
-   menu is 95px for two rows either way, because 44 + 44 + the 15px padding
-   on each side still fits inside the box it grows into. */
 align-items: center;
 display: flex;
 min-height: 44px;
@@ -654,11 +674,6 @@ transition: transform .3s ease, color .3s ease;
 transform: translateX(5px);
 color: #000;
 }
-/* The Resources disclosure. Its row carries no destination, so it opens on
-   click as well as hover: hover alone is unreachable on touch, and the row
-   previously shipped as `<a href="#">` — a link that did nothing. The open
-   state is the same panel the hover state shows, so pointer and keyboard
-   users see one behaviour, not two. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__item.is-disclosure-open > .xo-menu-horizontal-v1__sub-menu{
 opacity: 1;
 pointer-events: auto;
@@ -668,11 +683,11 @@ transform: none;
 font: inherit;
 }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-menu-horizontal-v1__mega-menu:empty{ display: none; }
-/* Responsive: 73px white band, icon logo, no search, 34px CTA,
-   44x44 hamburger hit area. */
+/* Responsive: <=1180px switches cleanly to mobile hamburger bar so tablet and
+   1024px–1180px laptop widths never wrap or clip multilingual desktop nav. */
 #HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display: none; }
 #HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display: block; }
-@media (max-width: 990px){
+@media (max-width: 1180px){
 #HeaderV9-sections--21844031144189__header_v1_main .desktop-only{ display: none !important; }
 #HeaderV9-sections--21844031144189__header_v1_main .mobile-only{ display: block; }
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-grid{
@@ -692,11 +707,6 @@ max-width: 80px;
 max-height: 34px;
 object-fit: contain;
 }
-/* The old mobile header keeps the search entry beside the quote button
-   (40x40, 20px icon); only the desktop nav and top bar drop out.
-   The quote pill's own 34px height stays as the visual pill, and its hit box
-   reaches the 44px floor through the ::after expansion below — measured at
-   390 on 2026-10-31, the button was 34 tall and the floor needs 44. */
 #HeaderV9-sections--21844031144189__header_v1_main .xo-header-icon-btn{
 display: inline-flex;
 width: 40px;
@@ -804,14 +814,14 @@ padding: 12px 4px 14px;
 box-sizing: border-box;
 }
 /* ✅ 桌面：一行显示 mm-cols（你填几个=几列，最多6） */
-@media (min-width: 991px){
+@media (min-width: 1181px){
 [data-id="sections--21844031144189__mega_menu_v2_HEAtbw"] .mmv2__grid{
 grid-template-columns: repeat(var(--mm-cols), minmax(0, 1fr));
 max-width: 1400px; /* 你主题 container 大概也是这个级别 */
 }
 }
 /* 中屏：3列更稳 */
-@media (max-width: 1023px){
+@media (max-width: 1180px){
 [data-id="sections--21844031144189__mega_menu_v2_HEAtbw"] .mmv2__grid{
 grid-template-columns: repeat(var(--mm-cols), minmax(0, 1fr));
 max-width: 1400px;
@@ -927,13 +937,13 @@ max-width: 1400px;
 padding: 12px 4px 14px;
 box-sizing: border-box;
 }
-@media (min-width: 991px){
+@media (min-width: 1181px){
 [data-id="sections--21844031144189__mega_menu_v2_x7pRC4"] .mmv2__grid{
 grid-template-columns: repeat(var(--mm-cols), minmax(0, 1fr));
 max-width: 1400px; /* 你主题 container 大概也是这个级别 */
 }
 }
-@media (max-width: 1023px){
+@media (max-width: 1180px){
 [data-id="sections--21844031144189__mega_menu_v2_x7pRC4"] .mmv2__grid{
 grid-template-columns: repeat(var(--mm-cols), minmax(0, 1fr));
 max-width: 1400px;
@@ -1488,11 +1498,34 @@ xo-modal[xo-name="search"] .xo-field-input__input::placeholder{
   line-height:1.3;
   color:#fff;
 }
-/* A hit with no picture (a page or an article) gains this label instead of an
-   empty grey frame. It sits above the name, inset to the name's 12px gutter;
-   the -4px bottom margin pairs with the name's 10px top padding. */
+/* A hit with no picture (a page or an article) spans the full grid width as a
+   compact architectural row card rather than sitting beside 260px image cards
+   and leaving a 190px blank void underneath. */
+.md-search-hit:not(:has(.md-search-hit__media)),
+.md-search-hit--no-thumb{
+  grid-column:1 / -1;
+}
+.md-search-hit:not(:has(.md-search-hit__media)) .md-search-hit__link,
+.md-search-hit--no-thumb .md-search-hit__link{
+  flex-direction:row;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  min-height:52px;
+  padding:10px 16px;
+  border-radius:12px;
+  background:linear-gradient(135deg, #1d1d1d 0%, #151515 100%);
+  border-color:rgba(201, 169, 98, 0.24);
+}
+.md-search-hit:not(:has(.md-search-hit__media)) .md-search-hit__link:hover,
+.md-search-hit--no-thumb .md-search-hit__link:hover{
+  border-color:rgba(201, 169, 98, 0.52);
+  background:#222222;
+}
 .md-search-hit__kind{
-  display:inline-block;
+  display:inline-flex;
+  align-items:center;
+  flex-shrink:0;
   margin:10px 12px -4px;
   font-family:Inter, sans-serif;
   font-size:11px;
@@ -1500,6 +1533,22 @@ xo-modal[xo-name="search"] .xo-field-input__input::placeholder{
   letter-spacing:0.08em;
   text-transform:uppercase;
   color:#d4b878;
+}
+.md-search-hit:not(:has(.md-search-hit__media)) .md-search-hit__kind,
+.md-search-hit--no-thumb .md-search-hit__kind{
+  order:2;
+  margin:0;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(201, 169, 98, 0.28);
+  background:rgba(201, 169, 98, 0.1);
+}
+.md-search-hit:not(:has(.md-search-hit__media)) .md-search-hit__name,
+.md-search-hit--no-thumb .md-search-hit__name{
+  order:1;
+  padding:0;
+  flex:1 1 auto;
+  min-width:0;
 }
 .md-search-empty,
 .xo-predictive-search__prompt,
@@ -2063,11 +2112,12 @@ top: calc(var(--md-header-h, 60px) + 16px);
   display: none;
 }
 
-/* Mobile app chrome. These rules sit last so they win over the carried
-   300px drawer, the 34px quote pill and the 32px search close. The quote
-   leaves the top bar (the drawer CTA carries it) and the drawer brand line
-   is gone from the markup, so the header logo is the only mark. */
-@media (max-width: 990px) {
+/* Mobile & laptop app chrome (<= 1180px, matching the header hamburger cutover).
+   These rules sit last so they win over the carried 300px drawer, the 34px
+   quote pill and the 32px search close. The quote leaves the top bar (the
+   drawer CTA carries it) and the drawer brand line is gone from the markup, so
+   the header logo is the only mark. */
+@media (max-width: 1180px) {
   #HeaderV9-sections--21844031144189__header_v1_main xo-container {
     padding-left: 16px;
     padding-right: 16px;
@@ -2106,7 +2156,7 @@ top: calc(var(--md-header-h, 60px) + 16px);
     background: #141414;
     color: #fff;
     box-shadow: none;
-    padding-bottom: calc(144px + env(safe-area-inset-bottom));
+    padding-bottom: calc(168px + env(safe-area-inset-bottom));
   }
   .menu-hamburger-style1-top {
     position: sticky;
@@ -2177,13 +2227,15 @@ top: calc(var(--md-header-h, 60px) + 16px);
     align-items: center;
     justify-content: center;
     min-height: 48px;
-    padding: 0 16px;
+    padding: 8px 14px;
     border-radius: 14px;
     background: #c9a962;
     color: #141414;
     font-family: Inter, sans-serif;
-    font-size: 16px;
+    font-size: 14px;
+    line-height: 1.25;
     font-weight: 700;
+    text-align: center;
     text-decoration: none;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
   }
@@ -2197,13 +2249,15 @@ top: calc(var(--md-header-h, 60px) + 16px);
     align-items: center;
     justify-content: center;
     min-height: 48px;
-    padding: 0 16px;
+    padding: 8px 14px;
     border-radius: 14px;
     background: #25d366;
     color: #0a2e14;
     font-family: Inter, sans-serif;
-    font-size: 16px;
+    font-size: 14px;
+    line-height: 1.25;
     font-weight: 700;
+    text-align: center;
     text-decoration: none;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
   }
@@ -2514,6 +2568,8 @@ box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #131313 !important;
   position: relative;
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .md-lang-switcher--desktop .md-lang-switcher__btn {
   height: 44px;
@@ -2522,6 +2578,7 @@ box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #131313 !important;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
   background: transparent;
   border: 1px solid rgba(19, 19, 19, 0.16);
   border-radius: 6px;
@@ -2585,13 +2642,58 @@ box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #131313 !important;
   opacity: 0.6;
 }
 
-.md-lang-switcher--mobile {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+details.md-lang-switcher--mobile {
+  display: block;
   margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.md-lang-switcher--mobile .md-lang-switcher__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  color: #ffffff;
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.md-lang-switcher--mobile .md-lang-switcher__summary::-webkit-details-marker {
+  display: none;
+}
+.md-lang-switcher--mobile .md-lang-switcher__summary::marker {
+  content: "";
+}
+.md-lang-switcher--mobile .md-lang-switcher__summary-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.md-lang-switcher--mobile .md-lang-switcher__summary-lead svg {
+  color: #c9a962;
+  flex-shrink: 0;
+}
+.md-lang-switcher--mobile .md-lang-switcher__chevron {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.7);
+  transition: transform 0.2s ease;
+}
+details.md-lang-switcher--mobile[open] .md-lang-switcher__chevron {
+  transform: rotate(180deg);
+}
+.md-lang-switcher--mobile .md-lang-switcher__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 6px 16px 14px;
+  margin: 0;
   list-style: none;
 }
 .md-lang-switcher--mobile .md-lang-switcher__link {
@@ -2600,23 +2702,262 @@ box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #131313 !important;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 6px 8px;
-  border-radius: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
   font-size: 13px;
+  line-height: 1.25;
   color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   text-decoration: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .md-lang-switcher--mobile .md-lang-switcher__link:hover,
 .md-lang-switcher--mobile .md-lang-switcher__link:focus-visible {
   background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(201, 169, 98, 0.4);
   color: #ffffff;
 }
 .md-lang-switcher--mobile .md-lang-switcher__link.is-active {
   color: #d4b878;
   background: rgba(201, 169, 98, 0.18);
+  border-color: rgba(201, 169, 98, 0.55);
   font-weight: 600;
+}
+
+/* --- Custom Architectural 404 Page (themes/md-child/404.php) --- */
+.md-404 {
+  position: relative;
+  overflow: hidden;
+  background-color: #0a0a0a;
+  color: #ffffff;
+  padding: 80px 20px 96px;
+  min-height: calc(100dvh - var(--md-header-h, 60px));
+  display: flex;
+  align-items: center;
+}
+.md-404__lattice {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image:
+    linear-gradient(45deg, #c9a962 1px, transparent 1px),
+    linear-gradient(-45deg, #c9a962 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+.md-404__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+.md-404__header {
+  max-width: 720px;
+  margin-bottom: 40px;
+}
+.md-404__eyebrow {
+  margin: 0 0 14px;
+  color: #c9a962;
+  font-family: var(--md-font-sans, "Inter", sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.md-404__title {
+  margin: 0 0 18px;
+  color: #ffffff;
+  font-family: var(--md-font-display, "Playfair Display", Georgia, serif);
+  font-size: clamp(30px, 4.2vw, 48px);
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.md-404__lede {
+  margin: 0;
+  max-width: 680px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  line-height: 1.65;
+}
+.md-404__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .md-404 {
+    padding: 104px 40px 120px;
+  }
+  .md-404__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+.md-404__card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 84px;
+  padding: 20px 22px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(20, 20, 20, 0.86);
+  color: #ffffff;
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+.md-404__card:hover {
+  border-color: rgba(201, 169, 98, 0.6);
+  background: rgba(26, 26, 26, 0.96);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+.md-404__card--primary {
+  border-color: rgba(201, 169, 98, 0.55);
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.18) 0%, rgba(20, 20, 20, 0.92) 100%);
+}
+.md-404__card--primary:hover {
+  border-color: #d4b878;
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.28) 0%, rgba(26, 26, 26, 0.96) 100%);
+}
+.md-404__card-index {
+  flex-shrink: 0;
+  font-family: var(--md-font-sans, "Inter", sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 700;
+  color: #c9a962;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(201, 169, 98, 0.12);
+  border: 1px solid rgba(201, 169, 98, 0.28);
+}
+.md-404__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.md-404__card-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #ffffff;
+}
+.md-404__card-sub {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.75);
+}
+.md-404__card-arrow {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: #c9a962;
+  transition: transform 0.2s ease;
+}
+.md-404__card:hover .md-404__card-arrow {
+  transform: translateX(3px);
+}
+
+/* --- Inquiry Thank-You Enhancements (inquiry-thank-you.html) --- */
+.md-inquiry-ty .ty {
+  max-width: 920px;
+}
+.md-inquiry-ty .md-inquiry-thank-you-pattern {
+  margin: 18px 0 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(201, 169, 98, 0.38);
+  background: rgba(201, 169, 98, 0.1);
+  color: #ffffff;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.md-inquiry-ty .md-inquiry-thank-you-code {
+  color: #d4b878;
+  font-weight: 700;
+}
+.md-inquiry-ty .ty-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin: 28px 0;
+}
+@media (min-width: 750px) {
+  .md-inquiry-ty .ty-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.md-inquiry-ty .ty-step {
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+.md-inquiry-ty .ty-step__num {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(201, 169, 98, 0.14);
+  color: #c9a962;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.md-inquiry-ty .ty-step__title {
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.md-inquiry-ty .ty-step__desc {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.md-inquiry-ty .ty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
+}
+.md-inquiry-ty .ty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+.md-inquiry-ty .ty-btn--primary {
+  background: linear-gradient(90deg, #c9a962 0%, #d4b878 100%);
+  color: #141414;
+  border: 1px solid transparent;
+}
+.md-inquiry-ty .ty-btn--primary:hover {
+  color: #141414;
+  transform: translateY(-1px);
+}
+.md-inquiry-ty .ty-btn--secondary {
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.md-inquiry-ty .ty-btn--secondary:hover {
+  border-color: rgba(201, 169, 98, 0.55);
+  color: #d4b878;
 }
 
 /* --- RTL Overrides for Chrome --- */
@@ -2642,6 +2983,9 @@ box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #131313 !important;
   left: 20px;
 }
 [dir="rtl"] .xo-menu-hamburger-style1__arrow svg,
-[dir="rtl"] .xo-menu-horizontal-v1__arrow svg {
+[dir="rtl"] .xo-menu-horizontal-v1__arrow svg,
+[dir="rtl"] .md-404__card-arrow,
+[dir="rtl"] .md-inquiry-ty .ty-action__arrow {
+  display: inline-block;
   transform: scaleX(-1);
 }

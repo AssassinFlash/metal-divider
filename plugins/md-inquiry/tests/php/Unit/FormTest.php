@@ -1558,4 +1558,33 @@ TURNSTILE_BEHAVIOR;
 		$this->assertStringContainsString( 'name="md_inquiry_source_page" value="patterns"', $html );
 		$this->assertStringNotContainsString( 'canyon-road-architectural-metal-screen-pattern', $html );
 	}
+
+	/**
+	 * Non-English forms localize eyebrows, submit/WhatsApp buttons, prefilled
+	 * WhatsApp links, and behavior config (`selectedPattern`, `selectedRequest`,
+	 * `waPatternQuoteFmt`, `intentLabels`) deterministically via Translations.
+	 */
+	public function test_non_english_form_localizes_eyebrows_whatsapp_and_quote_intents(): void {
+		WP_Mock::onFilter( 'wpml_current_language' )->withAnyArgs()->reply( 'zh-hans' );
+
+		$html = $this->render( '', array() );
+
+		$this->assertStringContainsString( '>已选图案</span>', $html );
+		$this->assertStringContainsString( '>发送询盘</button>', $html );
+		$this->assertStringContainsString( '>改用 WhatsApp 咨询</a>', $html );
+		$this->assertStringNotContainsString( '>Selected pattern</span>', $html );
+		$this->assertStringContainsString(
+			\rawurlencode( '您好 Metal Divider，我想咨询定制不锈钢金属屏风项目报价。' ),
+			$html
+		);
+
+		\preg_match( '/data-md-inquiry="(.*?)"><div class="md-inquiry">/', $html, $matches );
+		$this->assertNotEmpty( $matches[1] ?? '' );
+		$cfg = \json_decode( \html_entity_decode( $matches[1], \ENT_QUOTES ), true );
+		$this->assertIsArray( $cfg );
+		$this->assertSame( '已选图案', $cfg['i18n']['selectedPattern'] ?? '' );
+		$this->assertSame( '已选需求', $cfg['i18n']['selectedRequest'] ?? '' );
+		$this->assertSame( '您好 Metal Divider，我想咨询 %s 图案的定制报价。', $cfg['i18n']['waPatternQuoteFmt'] ?? '' );
+		$this->assertSame( '申领 304 / 316 不锈钢实物表面样板', $cfg['i18n']['intentLabels']['Request Physical SS 304/316 Finish Samples'] ?? '' );
+	}
 }

@@ -187,10 +187,14 @@ function md_chat_email_pattern_slug( string $url ): string {
  * @return string The language code ('en', 'zh', etc.), default 'en'.
  */
 function md_chat_email_page_locale( string $url ): string {
-	if ( '' === $url ) {
+	$candidate = trim( $url );
+	if ( '' === $candidate ) {
 		return 'en';
 	}
-	$path = wp_parse_url( $url, PHP_URL_PATH );
+	if ( 1 === preg_match( '#(?:^|//[^/]+)/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $candidate, $matches ) ) {
+		return strtolower( $matches[1] );
+	}
+	$path = wp_parse_url( $candidate, PHP_URL_PATH );
 	if ( is_string( $path ) && 1 === preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $path, $matches ) ) {
 		return strtolower( $matches[1] );
 	}
@@ -283,7 +287,13 @@ function md_chat_email_transcript( int $chat_id ): string {
 			if ( 1 === preg_match( '/^Hi\s*[—–-]\s*I[\'’]?m\s+Metal Divider[\'’]?s AI assistant\b/iu', $text ) ) {
 				continue;
 			}
-			$text = trim( (string) preg_replace( '/(?:\R+|\s+)Based on:\s*[^\r\n]+$/u', '', $text ) );
+			$text = trim(
+				(string) preg_replace(
+					'/(?:\R+|\s+)(?:Based on:|参考来源：|Basado en:|Com base em:|Basierend auf:|Basé sur\s*:|بناءً على:|Berdasarkan:|Dựa trên:)\s*[^\r\n]+$/u',
+					'',
+					$text
+				)
+			);
 			if ( '' === $text ) {
 				continue;
 			}
@@ -342,9 +352,11 @@ function md_chat_email_record_inquiry( int $chat_id, string $email, object $row,
 	}
 
 	$stored_referrer = isset( $row->referrer ) && is_string( $row->referrer ) ? md_chat_email_sanitize_page_url( $row->referrer ) : '';
-	$effective_url   = '' !== $page_url ? $page_url : $stored_referrer;
-	$pattern_slug    = md_chat_email_pattern_slug( $effective_url );
-	$pattern         = null;
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated and host-allowlisted by md_chat_email_sanitize_page_url().
+	$http_referer  = isset( $_SERVER['HTTP_REFERER'] ) && is_string( $_SERVER['HTTP_REFERER'] ) ? md_chat_email_sanitize_page_url( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '';
+	$effective_url = '' !== $page_url ? $page_url : ( '' !== $stored_referrer ? $stored_referrer : $http_referer );
+	$pattern_slug  = md_chat_email_pattern_slug( $effective_url );
+	$pattern       = null;
 
 	$pattern_class = md_chat_email_inquiry_class( 'Pattern' );
 	if ( '' !== $pattern_slug && class_exists( $pattern_class ) ) {
@@ -597,10 +609,18 @@ function md_chat_email_respond( $request ) {
 		);
 	}
 
+	$stored_referrer = isset( $row->referrer ) && is_string( $row->referrer ) ? md_chat_email_sanitize_page_url( $row->referrer ) : '';
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated and host-allowlisted by md_chat_email_sanitize_page_url().
+	$http_referer  = isset( $_SERVER['HTTP_REFERER'] ) && is_string( $_SERVER['HTTP_REFERER'] ) ? md_chat_email_sanitize_page_url( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '';
+	$effective_url = '' !== $page_url ? $page_url : ( '' !== $stored_referrer ? $stored_referrer : $http_referer );
+
 	$lang   = isset( $body['lang'] ) && is_string( $body['lang'] ) ? trim( $body['lang'] ) : '';
-	$locale = md_chat_email_normalize_locale( $lang );
-	if ( 'en' === $locale && '' !== $page_url ) {
-		$locale = md_chat_email_page_locale( $page_url );
+	$locale = '' !== $lang ? md_chat_email_normalize_locale( $lang ) : '';
+	if ( '' === $locale ) {
+		$locale = md_chat_email_page_locale( $effective_url );
+		if ( 'en' === $locale && isset( $row->chat_locale ) && is_string( $row->chat_locale ) && '' !== trim( $row->chat_locale ) ) {
+			$locale = md_chat_email_normalize_locale( $row->chat_locale );
+		}
 	}
 
 	$data   = array( 'email' => $email );
@@ -630,9 +650,7 @@ function md_chat_email_respond( $request ) {
 
 	set_transient( $rate_key, 1, 60 );
 
-	$transcript      = md_chat_email_transcript( $chat_id );
-	$stored_referrer = isset( $row->referrer ) && is_string( $row->referrer ) ? md_chat_email_sanitize_page_url( $row->referrer ) : '';
-	$effective_url   = '' !== $page_url ? $page_url : $stored_referrer;
+	$transcript = md_chat_email_transcript( $chat_id );
 
 	md_chat_email_record_inquiry( $chat_id, $email, $row, $page_url, $transcript, $locale );
 

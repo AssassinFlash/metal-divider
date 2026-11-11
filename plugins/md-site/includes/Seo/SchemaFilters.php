@@ -54,6 +54,10 @@ final class SchemaFilters {
 		add_filter( 'seopress_schemas_auto_article_json', array( $this, 'article' ) );
 		add_filter( 'seopress_pro_breadcrumbs_crumbs', array( $this, 'crumbs' ) );
 		add_filter( 'seopress_titles_title', array( $this, 'title' ) );
+		add_filter( 'seopress_titles_desc', array( $this, 'description' ) );
+		add_filter( 'seopress_social_og_title', array( $this, 'og_title' ) );
+		add_filter( 'seopress_social_og_desc', array( $this, 'og_desc' ) );
+		add_filter( 'pre_get_document_title', array( $this, 'title' ), 20 );
 		add_filter( 'seopress_pro_breadcrumbs_json_remove_home', '__return_false' );
 
 		// The catalogue is a page listing 146 patterns, and no SEOPress builder
@@ -310,11 +314,40 @@ final class SchemaFilters {
 	}
 
 	/**
+	 * WooCommerce default shop/product archive breadcrumb labels across locales
+	 * that must be normalized to the pattern catalog label.
+	 */
+	private const SHOP_CRUMB_LABELS = array(
+		'shop',
+		'products',
+		'商店',
+		'商品',
+		'产品',
+		'tienda',
+		'productos',
+		'loja',
+		'produtos',
+		'boutique',
+		'produits',
+		'produkte',
+		'المتجر',
+		'المنتجات',
+		'toko',
+		'produk',
+		'cửa hàng',
+		'sản phẩm',
+	);
+
+	/**
 	 * The breadcrumb trails (spec 22 S4): the pixel-gate replica's
 	 * own markup is the visible truth, and its trails are two-level —
 	 * Home, then the page — so the JSON-LD carries the same shape.
 	 * SEOPress's defaults would walk the shop base and the series
 	 * term on pattern pages and the /pages shell on content pages.
+	 *
+	 * Localizes the root Home crumb and replaces any WooCommerce Shop
+	 * archive crumb ("Shop" / "商店" / "Tienda" / etc.) with the
+	 * localized pattern library label.
 	 *
 	 * @param array<int, array<int, mixed>> $crumbs The crumbs.
 	 * @return array<int, array<int, mixed>> The shaped crumbs.
@@ -323,6 +356,29 @@ final class SchemaFilters {
 		if ( array() === $crumbs ) {
 			return $crumbs;
 		}
+
+		$lang = \MetalDivider\Site\I18n\Languages::current();
+		if ( isset( $crumbs[0] ) ) {
+			$crumbs[0][0] = \MetalDivider\Site\I18n\Dictionary::text( 'home_breadcrumb', $lang );
+			if ( 'en' !== $lang && isset( $crumbs[0][1] ) && is_string( $crumbs[0][1] ) && '' !== $crumbs[0][1] ) {
+				$crumbs[0][1] = \MetalDivider\Site\I18n\UrlLocalizer::rewrite_url( $crumbs[0][1], $lang );
+			}
+		}
+
+		foreach ( $crumbs as $index => $crumb ) {
+			if ( 0 === $index ) {
+				continue;
+			}
+			if ( $this->is_patterns_archive_crumb( $crumb ) ) {
+				$crumbs[ $index ][0] = \MetalDivider\Site\I18n\Dictionary::text( 'patterns_breadcrumb', $lang );
+				if ( 'en' !== $lang && isset( $crumbs[ $index ][1] ) && is_string( $crumbs[ $index ][1] ) && '' !== $crumbs[ $index ][1] ) {
+					$crumbs[ $index ][1] = \MetalDivider\Site\I18n\UrlLocalizer::rewrite_url( $crumbs[ $index ][1], $lang );
+				}
+			} elseif ( isset( $crumbs[ $index ][0] ) && is_string( $crumbs[ $index ][0] ) ) {
+				$crumbs[ $index ][0] = self::decode_title_entities( $crumbs[ $index ][0] );
+			}
+		}
+
 		if ( is_singular( 'product' ) ) {
 			// Home > Pattern (the replica's PDP trail).
 			return array( $crumbs[0], $crumbs[ count( $crumbs ) - 1 ] );
@@ -336,15 +392,210 @@ final class SchemaFilters {
 	}
 
 	/**
-	 * The final title's whitespace: a template carrying the pagination
-	 * variable (spec 22 §2.2 T13) renders an empty page number on page
-	 * one, leaving a doubled or trailing space; collapse and trim.
+	 * The final title: localizes front-page and pattern-catalog titles on
+	 * non-default languages, decodes residual numeric/named HTML entities
+	 * (such as `&#038;` / `&amp;#038;` / `&#8217;`), and collapses doubled
+	 * or trailing pagination whitespace.
 	 *
 	 * @param string $title The assembled title.
-	 * @return string The title, whitespace-normalized.
+	 * @return string The localized, entity-clean, whitespace-normalized title.
 	 */
 	public function title( string $title ): string {
+		$localized = $this->localized_archive_or_home_title();
+		if ( null !== $localized ) {
+			$title = $localized;
+		}
+		$title = self::decode_title_entities( $title );
 		return trim( (string) preg_replace( '/ {2,}/u', ' ', $title ) );
+	}
+
+	/**
+	 * Meta description filter (`seopress_titles_desc`): supplies localized
+	 * descriptions for the front page and pattern catalog archive on
+	 * non-default frontend requests.
+	 *
+	 * @param string $desc The assembled meta description.
+	 * @return string The localized meta description.
+	 */
+	public function description( string $desc ): string {
+		$localized = $this->localized_archive_or_home_desc();
+		if ( null !== $localized ) {
+			return $localized;
+		}
+		return self::decode_title_entities( $desc );
+	}
+
+	/**
+	 * Open Graph title filter (`seopress_social_og_title`): handles both
+	 * SEOPress's `<meta property="og:title" content="...">` tag string and
+	 * plain string specifications.
+	 *
+	 * @param string $value Current OG title tag or string.
+	 * @return string Localized OG title tag or string.
+	 */
+	public function og_title( string $value ): string {
+		$localized = $this->localized_archive_or_home_title();
+		if ( null !== $localized ) {
+			return self::replace_meta_tag_or_plain( $value, $localized );
+		}
+		if ( '' === $value ) {
+			return $value;
+		}
+		if ( str_starts_with( ltrim( $value ), '<meta ' ) ) {
+			return (string) preg_replace_callback(
+				'/(content\s*=\s*")([^"]*)(")/i',
+				static function ( array $m ): string {
+					$clean = self::decode_title_entities( $m[2] );
+					return $m[1] . self::escape_meta_attr( $clean ) . $m[3];
+				},
+				$value
+			);
+		}
+		return self::decode_title_entities( $value );
+	}
+
+	/**
+	 * Open Graph description filter (`seopress_social_og_desc`): handles both
+	 * SEOPress's `<meta property="og:description" content="...">` tag string and
+	 * plain string specifications.
+	 *
+	 * @param string $value Current OG description tag or string.
+	 * @return string Localized OG description tag or string.
+	 */
+	public function og_desc( string $value ): string {
+		$localized = $this->localized_archive_or_home_desc();
+		if ( null !== $localized ) {
+			return self::replace_meta_tag_or_plain( $value, $localized );
+		}
+		return $value;
+	}
+
+	/**
+	 * Resolves localized SEO title for front page or pattern catalog archive on
+	 * non-default frontend languages, or null when current route uses per-post/term meta.
+	 */
+	private function localized_archive_or_home_title(): ?string {
+		$lang = \MetalDivider\Site\I18n\Languages::current();
+		if ( \MetalDivider\Site\I18n\Languages::SOURCE === $lang || ! \MetalDivider\Site\I18n\Languages::is_frontend_non_default() ) {
+			return null;
+		}
+
+		$paged = $this->current_page_number();
+
+		if ( \function_exists( 'is_front_page' ) && \is_front_page() ) {
+			$base = \MetalDivider\Site\I18n\Dictionary::text( 'seo_home_title', $lang );
+			return $paged > 1 ? $base . ' — ' . sprintf( \MetalDivider\Site\I18n\Dictionary::text( 'seo_page_num', $lang ), $paged ) : $base;
+		}
+
+		if ( $this->is_pattern_catalog_archive() ) {
+			$base = \MetalDivider\Site\I18n\Dictionary::text( 'seo_shop_title', $lang );
+			return $paged > 1 ? $base . ' — ' . sprintf( \MetalDivider\Site\I18n\Dictionary::text( 'seo_page_num', $lang ), $paged ) : $base;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Resolves localized SEO description for front page or pattern catalog archive on
+	 * non-default frontend languages, or null when current route uses per-post/term meta.
+	 */
+	private function localized_archive_or_home_desc(): ?string {
+		$lang = \MetalDivider\Site\I18n\Languages::current();
+		if ( \MetalDivider\Site\I18n\Languages::SOURCE === $lang || ! \MetalDivider\Site\I18n\Languages::is_frontend_non_default() ) {
+			return null;
+		}
+
+		if ( \function_exists( 'is_front_page' ) && \is_front_page() ) {
+			return \MetalDivider\Site\I18n\Dictionary::text( 'seo_home_desc', $lang );
+		}
+
+		if ( $this->is_pattern_catalog_archive() ) {
+			return \MetalDivider\Site\I18n\Dictionary::text( 'seo_shop_desc', $lang );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Determines whether the current request is the pattern catalog archive (and not a search query).
+	 */
+	private function is_pattern_catalog_archive(): bool {
+		if ( \function_exists( 'is_search' ) && \is_search() ) {
+			return false;
+		}
+		if ( \function_exists( 'is_shop' ) && \is_shop() ) {
+			return true;
+		}
+		return \function_exists( 'is_post_type_archive' ) && \is_post_type_archive( 'product' );
+	}
+
+	/**
+	 * Reads current pagination page number (`paged` or `page`), >= 1.
+	 */
+	private function current_page_number(): int {
+		if ( ! \function_exists( 'get_query_var' ) ) {
+			return 1;
+		}
+		return max( 1, (int) \get_query_var( 'paged' ), (int) \get_query_var( 'page' ) );
+	}
+
+	/**
+	 * Checks whether a breadcrumb item represents the WooCommerce shop / patterns archive.
+	 *
+	 * @param array<int, mixed> $crumb Breadcrumb tuple `[label, url]`.
+	 */
+	private function is_patterns_archive_crumb( array $crumb ): bool {
+		$url = isset( $crumb[1] ) && is_string( $crumb[1] ) ? trim( $crumb[1] ) : '';
+		if ( '' !== $url ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+			$path = \function_exists( 'wp_parse_url' ) ? \wp_parse_url( $url, PHP_URL_PATH ) : parse_url( $url, PHP_URL_PATH );
+			if ( is_string( $path ) && 1 === preg_match( '#^(?:/(?:en|zh|es|pt-br|de|fr|ar|id|vi))?/(?:patterns|shop)(?:/page/\d+)?/?$#i', $path ) ) {
+				return true;
+			}
+		}
+
+		$label = isset( $crumb[0] ) && is_string( $crumb[0] ) ? mb_strtolower( trim( $crumb[0] ) ) : '';
+		return '' !== $label && in_array( $label, self::SHOP_CRUMB_LABELS, true );
+	}
+
+	/**
+	 * Decodes residual single- or double-encoded HTML entities (e.g. `&#038;`, `&amp;#038;`, `&#8217;`)
+	 * while keeping angle brackets safe.
+	 *
+	 * @param string $text Input title or label text.
+	 */
+	private static function decode_title_entities( string $text ): string {
+		if ( '' === $text || ! str_contains( $text, '&' ) ) {
+			return $text;
+		}
+
+		// Unwrap double-escaped entities produced when esc_attr() ran after wptexturize().
+		$unwrapped = (string) preg_replace( '/&amp;(#\d+|#x[0-9a-fA-F]+|[a-zA-Z0-9]+);/', '&$1;', $text );
+		$decoded   = html_entity_decode( $unwrapped, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8' );
+		return str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), $decoded );
+	}
+
+	/**
+	 * Replaces `content="..."` when `$current` is an HTML `<meta>` tag, or returns plain `$replacement` otherwise.
+	 *
+	 * @param string $current     Filter input (HTML `<meta ...>` tag or plain string).
+	 * @param string $replacement Unescaped localized text.
+	 */
+	private static function replace_meta_tag_or_plain( string $current, string $replacement ): string {
+		if ( str_starts_with( ltrim( $current ), '<meta ' ) ) {
+			$escaped = self::escape_meta_attr( $replacement );
+			return (string) preg_replace( '/(content\s*=\s*")[^"]*(")/i', '$1' . addcslashes( $escaped, '\\$' ) . '$2', $current, 1 );
+		}
+		return $replacement;
+	}
+
+	/**
+	 * Escapes a value for placement inside a double-quoted HTML `<meta content="...">` attribute.
+	 *
+	 * @param string $value Plain text value.
+	 */
+	private static function escape_meta_attr( string $value ): string {
+		return htmlspecialchars( $value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8' );
 	}
 
 	/**

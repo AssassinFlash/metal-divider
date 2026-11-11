@@ -102,6 +102,8 @@ final class DictionaryTest extends TestCase {
 			'kindArticle',
 			'copied',
 			'copyFailed',
+			'copyEmailSuccess',
+			'copyEmailFallback',
 			'viewAllResults',
 			'clearSearch',
 			'closeLabel',
@@ -153,6 +155,39 @@ final class DictionaryTest extends TestCase {
 				$this->assertNotSame( $key, $tr_val, "Key {$key} missing in {$code}" );
 				$this->assertNotSame( $en_val, $tr_val, "Key {$key} still in English in {$code}" );
 			}
+		}
+	}
+
+	/**
+	 * Verifies SEO metadata keys and breadcrumb labels exist in all 9 languages and obey Chinese glossary rules.
+	 */
+	public function test_seo_and_breadcrumb_keys_localized_and_glossary_clean(): void {
+		$seo_keys = array(
+			'patterns_breadcrumb',
+			'seo_home_title',
+			'seo_home_desc',
+			'seo_shop_title',
+			'seo_shop_desc',
+			'seo_page_num',
+		);
+
+		foreach ( Languages::ALL as $code ) {
+			foreach ( $seo_keys as $key ) {
+				$val = Dictionary::text( $key, $code );
+				$this->assertNotEmpty( $val, "Key {$key} empty in {$code}" );
+				$this->assertNotSame( $key, $val, "Key {$key} missing in {$code}" );
+				if ( 'en' !== $code && 'seo_page_num' !== $key ) {
+					$this->assertNotSame( Dictionary::text( $key, 'en' ), $val, "Key {$key} untranslated in {$code}" );
+				}
+			}
+		}
+
+		// Simplified Chinese SEO and breadcrumb strings must never contain banned terms 订单 / 产品 / 商店.
+		foreach ( $seo_keys as $key ) {
+			$zh_val = Dictionary::text( $key, 'zh' );
+			$this->assertStringNotContainsString( '订单', $zh_val );
+			$this->assertStringNotContainsString( '产品', $zh_val );
+			$this->assertStringNotContainsString( '商店', $zh_val );
 		}
 	}
 }

@@ -1672,13 +1672,15 @@ final class ShortcodesTest extends TestCase {
 		$this->assertStringContainsString( 'md-lang-switcher--desktop', $desktop );
 		$this->assertStringContainsString( 'data-md-lang-switcher', $desktop );
 		$this->assertStringContainsString( 'data-md-i18n-config', $desktop );
+		$this->assertStringContainsString( 'wpmlLang', $desktop );
 		$this->assertStringContainsString( 'EN', $desktop );
 		$this->assertStringContainsString( 'md-lang-switcher__menu', $desktop );
 		$this->assertStringNotContainsString( '<script', $desktop );
 		$this->assertStringNotContainsString( 'style=', $desktop );
 
 		$mobile = $shortcodes->lang_switcher( array( 'context' => 'header-mobile' ) );
-		$this->assertStringContainsString( 'md-lang-switcher--mobile', $mobile );
+		$this->assertStringContainsString( '<details class="md-lang-switcher md-lang-switcher--mobile"', $mobile );
+		$this->assertStringContainsString( 'md-lang-switcher__summary', $mobile );
 		$this->assertStringContainsString( 'md-lang-switcher__grid', $mobile );
 		$this->assertStringNotContainsString( '<script', $mobile );
 		$this->assertStringNotContainsString( 'style=', $mobile );

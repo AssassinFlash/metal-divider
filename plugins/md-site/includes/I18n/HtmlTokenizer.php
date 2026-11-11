@@ -32,7 +32,6 @@ final class HtmlTokenizer {
 		'svg',
 		'code',
 		'pre',
-		'template',
 		'xmp',
 		'iframe',
 		'noembed',

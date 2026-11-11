@@ -169,4 +169,38 @@ final class TranslationsTest extends TestCase {
 		$this->assertStringNotContainsString( '购物车', $zh_email['body'] );
 		$this->assertStringNotContainsString( '花型', $zh_email['body'] );
 	}
+
+	/**
+	 * WhatsApp prefill templates, modal eyebrows, and template quote intents
+	 * are translated across all 8 target languages without English residue.
+	 */
+	public function test_whatsapp_and_quote_intent_translations_cover_all_languages(): void {
+		$non_en = array( 'zh', 'es', 'pt-br', 'de', 'fr', 'ar', 'id', 'vi' );
+
+		$this->assertSame( array(), Translations::intent_labels( 'en' ) );
+		$this->assertSame(
+			'Vui lòng điền vào trường này.',
+			Translations::translate( 'Please complete this field.', 'vi' )
+		);
+
+		foreach ( $non_en as $lang ) {
+			$general = Translations::translate( "Hi, I'm interested in a custom metal divider screen project.", $lang );
+			$pattern = Translations::translate( "Hi Metal Divider, I'd like a quote for the %s pattern.", $lang );
+			$sel_pat = Translations::translate( 'Selected pattern', $lang );
+			$sel_req = Translations::translate( 'Selected request', $lang );
+
+			$this->assertNotSame( "Hi, I'm interested in a custom metal divider screen project.", $general, "Missing general WhatsApp greeting for {$lang}" );
+			$this->assertNotSame( "Hi Metal Divider, I'd like a quote for the %s pattern.", $pattern, "Missing pattern WhatsApp greeting for {$lang}" );
+			$this->assertStringContainsString( '%s', $pattern, "Pattern WhatsApp greeting must retain %s placeholder in {$lang}" );
+			$this->assertNotSame( 'Selected pattern', $sel_pat, "Missing Selected pattern in {$lang}" );
+			$this->assertNotSame( 'Selected request', $sel_req, "Missing Selected request in {$lang}" );
+
+			$labels = Translations::intent_labels( $lang );
+			$this->assertCount( count( Translations::INTENT_KEYS ), $labels );
+			foreach ( Translations::INTENT_KEYS as $key ) {
+				$this->assertArrayHasKey( $key, $labels );
+				$this->assertNotSame( $key, $labels[ $key ], "Intent '{$key}' untranslated in {$lang}" );
+			}
+		}
+	}
 }

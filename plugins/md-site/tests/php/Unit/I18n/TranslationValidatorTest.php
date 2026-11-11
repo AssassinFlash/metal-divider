@@ -153,4 +153,19 @@ final class TranslationValidatorTest extends TestCase {
 		$problems = $validator->validate( 'Architectural pattern screen.', '建筑花型屏风。', 'zh' );
 		$this->assertNotEmpty( $problems );
 	}
+
+	/**
+	 * Verifies Chinese banned terms 订单 and 产品 are strictly rejected by validator.
+	 */
+	public function test_chinese_banned_order_and_product_terms_rejected(): void {
+		$validator = new TranslationValidator();
+
+		$order_problems = $validator->validate( 'Every batch order is inspected before crating.', '每笔批量订单在装箱前均经过检验。', 'zh' );
+		$this->assertNotEmpty( $order_problems );
+		$this->assertStringContainsString( '订单', implode( '; ', $order_problems ) );
+
+		$product_problems = $validator->validate( 'Browse our stainless steel products.', '浏览我们的不锈钢产品。', 'zh' );
+		$this->assertNotEmpty( $product_problems );
+		$this->assertStringContainsString( '产品', implode( '; ', $product_problems ) );
+	}
 }

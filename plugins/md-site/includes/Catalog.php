@@ -210,6 +210,36 @@ final class Catalog {
 
 
 	/**
+	 * Canonical ACF motif keys.
+	 *
+	 * @var list<string>
+	 */
+	private const MOTIF_KEYS = array(
+		'abstract',
+		'organic',
+		'geometric',
+		'moroccan',
+		'arabic',
+		'landscape',
+		'leaf',
+		'vine',
+		'floral',
+		'asian',
+		'vintage-retro',
+		'garden',
+		'bamboo',
+		'lattice',
+		'perforated',
+	);
+
+	/**
+	 * Memoized 9-language semantic search index keyed by normalized phrase.
+	 *
+	 * @var array<string, array{motifs: list<string>, series: list<string>, keywords: list<string>}>|null
+	 */
+	private static ?array $semantic_index = null;
+
+	/**
 	 * Registers the shortcodes and the query filter.
 	 */
 	public function register(): void {
@@ -229,6 +259,7 @@ final class Catalog {
 		\add_shortcode( self::ARCHIVE_ACTION, array( $this, 'archive_form_action' ) );
 		\add_shortcode( self::EMPTY_STATE, array( $this, 'empty_state' ) );
 		\add_action( 'pre_get_posts', array( $this, 'filter_query' ), 20 );
+		\add_filter( 'posts_search', array( $this, 'expand_semantic_product_search' ), 20, 2 );
 	}
 
 	/**
@@ -1025,11 +1056,685 @@ final class Catalog {
 	/**
 	 * The search this request asked for.
 	 *
+	 * Reads `pattern_search` first (the archive search control) and falls back
+	 * to `q` (the predictive-search modal form when submitted with Enter), so
+	 * `/<lang>/patterns/?q=...` filters the query, updates the result summary,
+	 * preserves the search across sort changes, and refills the input.
+	 *
 	 * @return string The sanitized term, '' when the request names none.
 	 */
 	private function requested_search(): string {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display of the query the filter already read.
-		return isset( $_GET['pattern_search'] ) ? \sanitize_text_field( \wp_unslash( (string) $_GET['pattern_search'] ) ) : '';
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only display of the query the filter already read.
+		$term = isset( $_GET['pattern_search'] ) ? trim( \sanitize_text_field( \wp_unslash( (string) $_GET['pattern_search'] ) ) ) : '';
+		if ( '' === $term && isset( $_GET['q'] ) ) {
+			$term = trim( \sanitize_text_field( \wp_unslash( (string) $_GET['q'] ) ) );
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		return $term;
+	}
+
+	/**
+	 * Expands WP_Query's native text search so native-language motif and series
+	 * terms across all 9 languages also match pattern `motifs` ACF meta,
+	 * `product_cat` series assignments, and canonical English title stems.
+	 *
+	 * Pattern titles keep their proper English design names (`Leaf Skeleton`,
+	 * `Bamboo`, `Skyfall Gradient`), so a raw title/content `LIKE` misses
+	 * queries like `树叶`, `竹`, `几何`, `Blätter`, or `أوراق شجر`. Wrapping the
+	 * OR branch inside `posts_search` preserves WPML's language filter,
+	 * `post_status = 'publish'`, and `exclude-from-catalog` visibility across
+	 * the main archive, Woo Store API, and core `/wp/v2/search`.
+	 *
+	 * @param string    $search WordPress's assembled search SQL fragment.
+	 * @param \WP_Query $query  The active WP_Query instance.
+	 * @return string Expanded SQL fragment when semantic targets match, unchanged otherwise.
+	 */
+	public function expand_semantic_product_search( string $search, \WP_Query $query ): string {
+		if ( '' === trim( $search ) || ! $this->query_targets_products( $query ) ) {
+			return $search;
+		}
+		$raw_term = $query->get( 's' );
+		if ( ! is_string( $raw_term ) || '' === trim( $raw_term ) ) {
+			return $search;
+		}
+
+		$targets = self::resolve_semantic_targets( $raw_term );
+		if ( array() === $targets['motifs'] && array() === $targets['series'] && array() === $targets['keywords'] ) {
+			return $search;
+		}
+
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! $wpdb instanceof \wpdb || '' === $wpdb->posts ) {
+			return $search;
+		}
+
+		$clauses = $this->build_semantic_sql_clauses( $wpdb, $targets );
+		if ( array() === $clauses ) {
+			return $search;
+		}
+
+		$product_type_check = (string) $wpdb->prepare( "%i.post_type = 'product'", $wpdb->posts );
+		if ( '' === $product_type_check ) {
+			return $search;
+		}
+
+		$product_branch = sprintf(
+			'(%s AND (%s))',
+			$product_type_check,
+			implode( ' OR ', $clauses )
+		);
+
+		$matches = array();
+		if ( 1 === preg_match( '/^(.*?)\s+AND\s+\(([^()]*\.post_password\s*=\s*\'\')\)\s*$/s', $search, $matches ) ) {
+			$inner = (string) preg_replace( '/^\s*AND\s+/i', '', trim( $matches[1] ) );
+			if ( '' !== $inner ) {
+				return ' AND ( ' . $inner . ' OR ' . $product_branch . ' ) AND (' . $matches[2] . ') ';
+			}
+		}
+
+		$inner = (string) preg_replace( '/^\s*AND\s+/i', '', trim( $search ) );
+		if ( '' === $inner ) {
+			return $search;
+		}
+		return ' AND ( ' . $inner . ' OR ' . $product_branch . ' ) ';
+	}
+
+	/**
+	 * Resolves a raw search string into canonical motif keys, series slugs, and
+	 * English title stems across all 9 supported languages.
+	 *
+	 * @param string $raw_query Raw visitor search query.
+	 * @return array{motifs: list<string>, series: list<string>, keywords: list<string>}
+	 */
+	public static function resolve_semantic_targets( string $raw_query ): array {
+		$normalized = self::lowercase( trim( $raw_query ) );
+		if ( '' === $normalized ) {
+			return array(
+				'motifs'   => array(),
+				'series'   => array(),
+				'keywords' => array(),
+			);
+		}
+
+		$raw_tokens = preg_split( '/[\s,.;:!?\/|｜\-_"\'“”‘’«»„‟()\[\]]+/u', $normalized, -1, PREG_SPLIT_NO_EMPTY );
+		$tokens     = is_array( $raw_tokens ) ? $raw_tokens : array( $normalized );
+		$motifs     = array();
+		$series     = array();
+		$keywords   = array();
+
+		foreach ( self::semantic_index() as $phrase => $entry ) {
+			if ( ! self::phrase_matches_query( $phrase, $normalized, $tokens ) ) {
+				continue;
+			}
+			foreach ( $entry['motifs'] as $motif ) {
+				$motifs[ $motif ] = true;
+			}
+			foreach ( $entry['series'] as $series_slug ) {
+				$series[ $series_slug ] = true;
+			}
+			foreach ( $entry['keywords'] as $keyword ) {
+				$keywords[ $keyword ] = true;
+			}
+		}
+
+		return array(
+			'motifs'   => array_keys( $motifs ),
+			'series'   => array_keys( $series ),
+			'keywords' => array_keys( $keywords ),
+		);
+	}
+
+	/**
+	 * Whether a WP_Query searches products (main archive, series tax, Woo Store
+	 * API, or core multi-type REST search).
+	 *
+	 * @param \WP_Query $query Active query.
+	 * @return bool
+	 */
+	private function query_targets_products( \WP_Query $query ): bool {
+		$post_type = $query->get( 'post_type' );
+		if ( 'product' === $post_type ) {
+			return true;
+		}
+		if ( is_array( $post_type ) && in_array( 'product', $post_type, true ) ) {
+			return true;
+		}
+		return $query->is_post_type_archive( 'product' ) || $query->is_tax( 'product_cat' );
+	}
+
+	/**
+	 * Builds prepared SQL predicates for matched motifs, series, and keywords.
+	 *
+	 * @param \wpdb                                                                     $wpdb    Global wpdb instance.
+	 * @param array{motifs: list<string>, series: list<string>, keywords: list<string>} $targets Semantic targets.
+	 * @return list<string>
+	 */
+	private function build_semantic_sql_clauses( \wpdb $wpdb, array $targets ): array {
+		$clauses = array();
+
+		if ( '' !== $wpdb->postmeta ) {
+			foreach ( $targets['motifs'] as $motif ) {
+				$like     = '%' . $wpdb->esc_like( '"' . $motif . '"' ) . '%';
+				$prepared = (string) $wpdb->prepare(
+					"EXISTS (SELECT 1 FROM %i md_pm WHERE md_pm.post_id = %i.ID AND md_pm.meta_key = 'motifs' AND md_pm.meta_value LIKE %s)",
+					$wpdb->postmeta,
+					$wpdb->posts,
+					$like
+				);
+				if ( '' !== $prepared ) {
+					$clauses[] = $prepared;
+				}
+			}
+		}
+
+		if ( '' !== $wpdb->term_relationships && '' !== $wpdb->term_taxonomy && '' !== $wpdb->terms && array() !== $targets['series'] ) {
+			$slug_candidates = array();
+			foreach ( $targets['series'] as $series_slug ) {
+				$slug_candidates[ $series_slug ] = true;
+				foreach ( \MetalDivider\Site\I18n\Languages::ALL as $code ) {
+					$slug_candidates[ $series_slug . '-' . $code ] = true;
+					$wpml_code                                     = \MetalDivider\Site\I18n\Languages::to_wpml( $code );
+					$slug_candidates[ $series_slug . '-' . $wpml_code ] = true;
+				}
+			}
+			$slug_equals = array();
+			foreach ( array_keys( $slug_candidates ) as $candidate_slug ) {
+				$eq = (string) $wpdb->prepare( 'md_t.slug = %s', $candidate_slug );
+				if ( '' !== $eq ) {
+					$slug_equals[] = $eq;
+				}
+			}
+			if ( array() !== $slug_equals ) {
+				$head = (string) $wpdb->prepare(
+					"EXISTS (SELECT 1 FROM %i md_tr INNER JOIN %i md_tt ON md_tr.term_taxonomy_id = md_tt.term_taxonomy_id INNER JOIN %i md_t ON md_tt.term_id = md_t.term_id WHERE md_tr.object_id = %i.ID AND md_tt.taxonomy = 'product_cat' AND (",
+					$wpdb->term_relationships,
+					$wpdb->term_taxonomy,
+					$wpdb->terms,
+					$wpdb->posts
+				);
+				if ( '' !== $head ) {
+					$clauses[] = $head . implode( ' OR ', $slug_equals ) . '))';
+				}
+			}
+		}
+
+		foreach ( $targets['keywords'] as $keyword ) {
+			$like     = '%' . $wpdb->esc_like( $keyword ) . '%';
+			$prepared = (string) $wpdb->prepare(
+				'%i.post_title LIKE %s',
+				$wpdb->posts,
+				$like
+			);
+			if ( '' !== $prepared ) {
+				$clauses[] = $prepared;
+			}
+		}
+
+		return $clauses;
+	}
+
+	/**
+	 * Checks whether a normalized synonym phrase matches the query safely.
+	 *
+	 * @param string             $phrase     Normalized index phrase.
+	 * @param string             $normalized Normalized full query.
+	 * @param array<int, string> $tokens     Tokenized query words.
+	 * @return bool
+	 */
+	private static function phrase_matches_query( string $phrase, string $normalized, array $tokens ): bool {
+		if ( '' === $phrase ) {
+			return false;
+		}
+		if ( $phrase === $normalized ) {
+			return true;
+		}
+		if ( 1 === preg_match( '/\p{Han}/u', $phrase ) ) {
+			return str_contains( $normalized, $phrase );
+		}
+		if ( str_contains( $phrase, ' ' ) ) {
+			return str_contains( $normalized, $phrase );
+		}
+		return in_array( $phrase, $tokens, true );
+	}
+
+	/**
+	 * Builds (once per process) the 9-language synonym index from Dictionary
+	 * motif/series labels plus natural morphological stems and plurals.
+	 *
+	 * @return array<string, array{motifs: list<string>, series: list<string>, keywords: list<string>}>
+	 */
+	private static function semantic_index(): array {
+		if ( null !== self::$semantic_index ) {
+			return self::$semantic_index;
+		}
+
+		$index          = array();
+		$motif_to_extra = array(
+			'abstract'      => array(
+				'series'   => array( 'pattern-abstract' ),
+				'keywords' => array( 'Abstract' ),
+			),
+			'organic'       => array(
+				'series'   => array( 'pattern-organic' ),
+				'keywords' => array( 'Organic' ),
+			),
+			'geometric'     => array(
+				'series'   => array( 'pattern-geometric' ),
+				'keywords' => array( 'Geometric' ),
+			),
+			'moroccan'      => array(
+				'series'   => array( 'pattern-moroccan-arabic' ),
+				'keywords' => array( 'Moroccan' ),
+			),
+			'arabic'        => array(
+				'series'   => array( 'pattern-moroccan-arabic' ),
+				'keywords' => array( 'Arabic' ),
+			),
+			'landscape'     => array(
+				'series'   => array( 'pattern-landscape' ),
+				'keywords' => array( 'Landscape' ),
+			),
+			'leaf'          => array(
+				'series'   => array(),
+				'keywords' => array( 'Leaf' ),
+			),
+			'vine'          => array(
+				'series'   => array(),
+				'keywords' => array( 'Vine' ),
+			),
+			'floral'        => array(
+				'series'   => array(),
+				'keywords' => array( 'Floral', 'Flower', 'Blossom' ),
+			),
+			'asian'         => array(
+				'series'   => array( 'pattern-asian' ),
+				'keywords' => array( 'Asian' ),
+			),
+			'vintage-retro' => array(
+				'series'   => array( 'pattern-vintage-retro' ),
+				'keywords' => array( 'Vintage', 'Retro' ),
+			),
+			'garden'        => array(
+				'series'   => array(),
+				'keywords' => array( 'Garden' ),
+			),
+			'bamboo'        => array(
+				'series'   => array(),
+				'keywords' => array( 'Bamboo' ),
+			),
+			'lattice'       => array(
+				'series'   => array(),
+				'keywords' => array( 'Lattice' ),
+			),
+			'perforated'    => array(
+				'series'   => array( 'pattern-perforated' ),
+				'keywords' => array( 'Perforated' ),
+			),
+		);
+
+		foreach ( self::MOTIF_KEYS as $motif ) {
+			$target = array(
+				'motifs'   => array( $motif ),
+				'series'   => $motif_to_extra[ $motif ]['series'],
+				'keywords' => $motif_to_extra[ $motif ]['keywords'],
+			);
+			self::add_semantic_phrase( $index, $motif, $target );
+			foreach ( \MetalDivider\Site\I18n\Languages::ALL as $lang ) {
+				$label = \MetalDivider\Site\I18n\Dictionary::text( 'motif.' . $motif, $lang );
+				self::add_semantic_label_variants( $index, $label, $target );
+			}
+		}
+
+		$series_to_motifs = array(
+			'pattern-abstract'        => array(
+				'motifs'   => array( 'abstract' ),
+				'keywords' => array( 'Abstract' ),
+			),
+			'pattern-geometric'       => array(
+				'motifs'   => array( 'geometric' ),
+				'keywords' => array( 'Geometric' ),
+			),
+			'pattern-moroccan-arabic' => array(
+				'motifs'   => array( 'moroccan', 'arabic' ),
+				'keywords' => array( 'Moroccan', 'Arabic' ),
+			),
+			'pattern-organic'         => array(
+				'motifs'   => array( 'organic' ),
+				'keywords' => array( 'Organic' ),
+			),
+			'pattern-perforated'      => array(
+				'motifs'   => array( 'perforated' ),
+				'keywords' => array( 'Perforated' ),
+			),
+			'pattern-gradient'        => array(
+				'motifs'   => array(),
+				'keywords' => array( 'Gradient' ),
+			),
+			'pattern-landscape'       => array(
+				'motifs'   => array( 'landscape' ),
+				'keywords' => array( 'Landscape' ),
+			),
+			'pattern-asian'           => array(
+				'motifs'   => array( 'asian' ),
+				'keywords' => array( 'Asian' ),
+			),
+			'pattern-vintage-retro'   => array(
+				'motifs'   => array( 'vintage-retro' ),
+				'keywords' => array( 'Vintage', 'Retro' ),
+			),
+		);
+
+		foreach ( self::SERIES_ORDER as $series_slug ) {
+			$short  = substr( $series_slug, strlen( 'pattern-' ) );
+			$target = array(
+				'motifs'   => $series_to_motifs[ $series_slug ]['motifs'],
+				'series'   => array( $series_slug ),
+				'keywords' => $series_to_motifs[ $series_slug ]['keywords'],
+			);
+			self::add_semantic_phrase( $index, $short, $target );
+			foreach ( \MetalDivider\Site\I18n\Languages::ALL as $lang ) {
+				$label = \MetalDivider\Site\I18n\Dictionary::text( 'series.' . $short, $lang );
+				self::add_semantic_label_variants( $index, $label, $target );
+			}
+		}
+
+		$aliases = array(
+			'leaf'          => array(
+				'树叶',
+				'叶片',
+				'叶',
+				'leaves',
+				'foliage',
+				'hojas',
+				'folhas',
+				'blätter',
+				'blaetter',
+				'feuilles',
+				'ورق',
+				'أوراق',
+				'اوراق',
+				'ورقة',
+				'شجر',
+				'dedaunan',
+				'lá',
+			),
+			'bamboo'        => array(
+				'竹',
+				'竹子',
+				'竹叶',
+				'bambu',
+				'خيزران',
+				'بامبو',
+				'tre',
+				'trúc',
+			),
+			'floral'        => array(
+				'花卉',
+				'花朵',
+				'花',
+				'flower',
+				'flowers',
+				'blossom',
+				'botanical',
+				'flores',
+				'flor',
+				'blumen',
+				'blume',
+				'fleurs',
+				'fleur',
+				'زهرة',
+				'زهور',
+				'ورد',
+				'bunga-bunga',
+				'hoa',
+			),
+			'vine'          => array(
+				'藤蔓',
+				'藤',
+				'vines',
+				'enredaderas',
+				'vinhas',
+				'ranken',
+				'vignes',
+				'كرمة',
+				'dây leo',
+			),
+			'geometric'     => array(
+				'几何',
+				'geométricos',
+				'geometrico',
+				'geométricas',
+				'geométrico',
+				'géométriques',
+				'geometrique',
+				'هندسية',
+				'hình học',
+			),
+			'moroccan'      => array(
+				'摩洛哥',
+				'marroquíes',
+				'marroqui',
+				'marroquinos',
+				'marokkanische',
+				'marocains',
+				'مغربية',
+				'ma-rốc',
+				'ma rốc',
+			),
+			'arabic'        => array(
+				'阿拉伯',
+				'islamic',
+				'árabes',
+				'arabe',
+				'arabes',
+				'arabische',
+				'عربية',
+				'إسلامي',
+				'اسلامي',
+				'ả rập',
+			),
+			'perforated'    => array(
+				'冲孔',
+				'穿孔',
+				'圆孔',
+				'perforation',
+				'perforados',
+				'perfurados',
+				'perforiert',
+				'lochblech',
+				'perforés',
+				'perfore',
+				'مثقبة',
+				'perforasi',
+				'đục lỗ',
+			),
+			'landscape'     => array(
+				'山水',
+				'风景',
+				'景观',
+				'mountain',
+				'paisajes',
+				'paisagens',
+				'landschaften',
+				'paysages',
+				'طبيعة',
+				'مناظر',
+				'phong cảnh',
+			),
+			'asian'         => array(
+				'东方',
+				'中式',
+				'亚洲',
+				'oriental',
+				'chinese',
+				'japanese',
+				'asiáticos',
+				'asiatico',
+				'asiatiques',
+				'آسيوية',
+				'شرقي',
+				'á đông',
+			),
+			'vintage-retro' => array(
+				'复古',
+				'古典',
+				'classic',
+				'clásico',
+				'clássico',
+				'klassisch',
+				'classique',
+				'كلاسيكي',
+				'ريترو',
+				'antik',
+				'cổ điển',
+			),
+			'abstract'      => array(
+				'抽象',
+				'abstractos',
+				'abstratos',
+				'abstraits',
+				'تجريدية',
+				'trừu tượng',
+			),
+			'organic'       => array(
+				'自然',
+				'有机',
+				'nature',
+				'natural',
+				'orgánicos',
+				'organico',
+				'orgânicos',
+				'organiques',
+				'عضوية',
+				'alami',
+				'tự nhiên',
+			),
+			'garden'        => array(
+				'园林',
+				'花园',
+				'庭院',
+				'gardens',
+				'jardines',
+				'jardins',
+				'gärten',
+				'gaerten',
+				'حدائق',
+			),
+			'lattice'       => array(
+				'格栅',
+				'网格',
+				'花格',
+				'grid',
+				'mesh',
+				'celosías',
+				'celosia',
+				'treliças',
+				'trelica',
+				'treillis',
+				'مشربيات',
+				'شبكة',
+				'kisi',
+				'mắt cáo',
+			),
+		);
+
+		foreach ( $aliases as $motif => $words ) {
+			$target = array(
+				'motifs'   => array( $motif ),
+				'series'   => $motif_to_extra[ $motif ]['series'],
+				'keywords' => $motif_to_extra[ $motif ]['keywords'],
+			);
+			foreach ( $words as $word ) {
+				self::add_semantic_phrase( $index, $word, $target );
+			}
+		}
+
+		$gradient_target = array(
+			'motifs'   => array(),
+			'series'   => array( 'pattern-gradient' ),
+			'keywords' => array( 'Gradient' ),
+		);
+		foreach (
+			array(
+				'渐变',
+				'渐变色',
+				'degradados',
+				'degradado',
+				'gradientes',
+				'verlauf',
+				'farbverlauf',
+				'dégradés',
+				'degrade',
+				'متدرج',
+				'متدرجة',
+				'تدرج',
+				'gradasi',
+				'chuyển sắc',
+			) as $gradient_word
+		) {
+			self::add_semantic_phrase( $index, $gradient_word, $gradient_target );
+		}
+
+		self::$semantic_index = $index;
+		return self::$semantic_index;
+	}
+
+	/**
+	 * Registers a Dictionary label and its split/stripped sub-phrases into the
+	 * semantic index (e.g. "Vintage / Retro", "渐变系列" -> "渐变").
+	 *
+	 * @param array<string, array{motifs: list<string>, series: list<string>, keywords: list<string>}> $index  Index by reference.
+	 * @param string                                                                                   $label  Raw Dictionary label.
+	 * @param array{motifs: list<string>, series: list<string>, keywords: list<string>}                $target Target mapping.
+	 */
+	private static function add_semantic_label_variants( array &$index, string $label, array $target ): void {
+		self::add_semantic_phrase( $index, $label, $target );
+
+		if ( str_ends_with( $label, '系列' ) ) {
+			$stem = substr( $label, 0, -strlen( '系列' ) );
+			self::add_semantic_phrase( $index, $stem, $target );
+		}
+
+		$parts = preg_split( '/\s*(?:\/|&|\by\b|\be\b|\bet\b|与)\s*/iu', $label, -1, PREG_SPLIT_NO_EMPTY );
+		if ( is_array( $parts ) && count( $parts ) > 1 ) {
+			foreach ( $parts as $part ) {
+				self::add_semantic_phrase( $index, $part, $target );
+			}
+		}
+	}
+
+	/**
+	 * Merges one phrase into the semantic index.
+	 *
+	 * @param array<string, array{motifs: list<string>, series: list<string>, keywords: list<string>}> $index  Index by reference.
+	 * @param string                                                                                   $phrase Candidate phrase.
+	 * @param array{motifs: list<string>, series: list<string>, keywords: list<string>}                $target Target mapping.
+	 */
+	private static function add_semantic_phrase( array &$index, string $phrase, array $target ): void {
+		$clean = self::lowercase( trim( $phrase ) );
+		if ( '' === $clean ) {
+			return;
+		}
+		if ( ! isset( $index[ $clean ] ) ) {
+			$index[ $clean ] = array(
+				'motifs'   => array(),
+				'series'   => array(),
+				'keywords' => array(),
+			);
+		}
+		$index[ $clean ]['motifs']   = array_values( array_unique( array_merge( $index[ $clean ]['motifs'], $target['motifs'] ) ) );
+		$index[ $clean ]['series']   = array_values( array_unique( array_merge( $index[ $clean ]['series'], $target['series'] ) ) );
+		$index[ $clean ]['keywords'] = array_values( array_unique( array_merge( $index[ $clean ]['keywords'], $target['keywords'] ) ) );
+	}
+
+	/**
+	 * UTF-8 lowercase helper.
+	 *
+	 * @param string $value Input string.
+	 * @return string Lowercased string.
+	 */
+	private static function lowercase( string $value ): string {
+		return function_exists( 'mb_strtolower' ) ? mb_strtolower( $value, 'UTF-8' ) : strtolower( $value );
 	}
 
 	/**

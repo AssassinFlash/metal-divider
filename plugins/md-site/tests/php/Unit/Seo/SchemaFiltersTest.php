@@ -9,6 +9,8 @@ declare( strict_types = 1 );
 
 namespace MetalDivider\Site\Tests\Unit\Seo;
 
+use MetalDivider\Site\I18n\Dictionary;
+use MetalDivider\Site\I18n\Languages;
 use MetalDivider\Site\Seo\SchemaFilters;
 use MetalDivider\Site\Tests\TestCase;
 use WP_Mock;
@@ -74,17 +76,17 @@ final class SchemaFiltersTest extends TestCase {
 	}
 
 	/**
-	 * No leaked product double between tests.
+	 * No leaked product double or forced language between tests.
 	 */
 	public function tearDown(): void {
 		unset( $GLOBALS['md_wc_product_double'] );
+		Languages::force_for_tests( null );
 		parent::tearDown();
 	}
 
 	/**
-	 * The register() hook: seven filters (five schema assemblies, the
-	 * Home crumb the JSON-LD keeps — the spec's trails begin at Home —
-	 * and the title whitespace trim).
+	 * The register() hook: schema assemblies, breadcrumb trails, localized
+	 * titles/descriptions/OG metadata, and wp_head JSON-LD actions.
 	 */
 	public function test_register_adds_the_hooks(): void {
 		$filters = new SchemaFilters();
@@ -94,6 +96,10 @@ final class SchemaFiltersTest extends TestCase {
 		WP_Mock::expectFilterAdded( 'seopress_schemas_auto_article_json', array( $filters, 'article' ) );
 		WP_Mock::expectFilterAdded( 'seopress_pro_breadcrumbs_crumbs', array( $filters, 'crumbs' ) );
 		WP_Mock::expectFilterAdded( 'seopress_titles_title', array( $filters, 'title' ) );
+		WP_Mock::expectFilterAdded( 'seopress_titles_desc', array( $filters, 'description' ) );
+		WP_Mock::expectFilterAdded( 'seopress_social_og_title', array( $filters, 'og_title' ) );
+		WP_Mock::expectFilterAdded( 'seopress_social_og_desc', array( $filters, 'og_desc' ) );
+		WP_Mock::expectFilterAdded( 'pre_get_document_title', array( $filters, 'title' ), 20 );
 		WP_Mock::expectFilterAdded( 'seopress_pro_breadcrumbs_json_remove_home', '__return_false' );
 		// The catalogue's ItemList: an action, not a filter, because it prints
 		// its own block rather than amending one of SEOPress's.
@@ -438,5 +444,147 @@ final class SchemaFiltersTest extends TestCase {
 		);
 		$this->assertSame( $trail, $filters->crumbs( $trail ) );
 		$this->assertSame( array(), $filters->crumbs( array() ) );
+	}
+
+	/**
+	 * Verifies title() and og_title() decode residual numeric and double-escaped entities
+	 * such as `&#038;`, `&amp;#038;`, and `&#8217;`.
+	 */
+	public function test_title_decodes_residual_numeric_and_double_escaped_entities(): void {
+		$filters = new SchemaFilters();
+
+		$this->assertSame(
+			'Laser-Cut & Geometric Metal Screens — MetalDivider',
+			$filters->title( 'Laser-Cut &#038; Geometric Metal Screens — MetalDivider' )
+		);
+		$this->assertSame(
+			'FAQs & Downloads — MetalDivider',
+			$filters->title( 'FAQs &amp;#038; Downloads — MetalDivider' )
+		);
+		$this->assertSame(
+			'Timothy’s Vine — MetalDivider',
+			$filters->title( 'Timothy&#8217;s Vine — MetalDivider' )
+		);
+		$this->assertSame(
+			'<meta property="og:title" content="FAQs &amp; Downloads — MetalDivider">',
+			$filters->og_title( '<meta property="og:title" content="FAQs &amp;#038; Downloads — MetalDivider">' )
+		);
+	}
+
+	/**
+	 * Verifies non-English front page and pattern catalog archive return localized
+	 * `<title>`, `<meta description>`, `og:title`, and `og:description` (including pagination).
+	 */
+	public function test_non_english_home_and_shop_seo_titles_descriptions_and_og_tags(): void {
+		WP_Mock::userFunction( 'is_admin' )->zeroOrMoreTimes()->andReturn( false );
+		WP_Mock::userFunction( 'wp_doing_ajax' )->zeroOrMoreTimes()->andReturn( false );
+		WP_Mock::userFunction( 'wp_doing_cron' )->zeroOrMoreTimes()->andReturn( false );
+
+		$is_front = true;
+		$is_shop  = false;
+		$paged    = 1;
+
+		WP_Mock::userFunction( 'is_front_page' )->andReturnUsing(
+			static function () use ( &$is_front ): bool {
+				return $is_front;
+			}
+		);
+		WP_Mock::userFunction( 'is_search' )->andReturn( false );
+		WP_Mock::userFunction( 'is_shop' )->andReturnUsing(
+			static function () use ( &$is_shop ): bool {
+				return $is_shop;
+			}
+		);
+		WP_Mock::userFunction( 'is_post_type_archive' )->andReturn( false );
+		WP_Mock::userFunction( 'get_query_var' )->andReturnUsing(
+			static function ( string $query_var ) use ( &$paged ): int {
+				return 'paged' === $query_var ? $paged : 0;
+			}
+		);
+
+		$filters = new SchemaFilters();
+		Languages::force_for_tests( 'zh' );
+
+		// 1. Chinese front page.
+		$this->assertSame(
+			Dictionary::text( 'seo_home_title', 'zh' ),
+			$filters->title( 'Laser-Cut Stainless Steel Metal Screen Patterns — MetalDivider' )
+		);
+		$this->assertSame(
+			Dictionary::text( 'seo_home_desc', 'zh' ),
+			$filters->description( '146 laser-cut stainless steel screen patterns...' )
+		);
+		$this->assertSame(
+			'<meta property="og:title" content="' . Dictionary::text( 'seo_home_title', 'zh' ) . '">',
+			$filters->og_title( '<meta property="og:title" content="Laser-Cut Stainless Steel Metal Screen Patterns — MetalDivider">' )
+		);
+		$this->assertSame(
+			'<meta property="og:description" content="' . Dictionary::text( 'seo_home_desc', 'zh' ) . '">',
+			$filters->og_desc( '<meta property="og:description" content="English desc">' )
+		);
+
+		// 2. Chinese pattern catalog archive (page 1 & page 2).
+		$is_front = false;
+		$is_shop  = true;
+		$this->assertSame(
+			Dictionary::text( 'seo_shop_title', 'zh' ),
+			$filters->title( 'Pattern Library — Laser Cut Metal Screen Patterns' )
+		);
+		$this->assertSame(
+			Dictionary::text( 'seo_shop_desc', 'zh' ),
+			$filters->description( 'Browse all 146 laser-cut stainless steel screen patterns...' )
+		);
+
+		$paged = 2;
+		$this->assertSame(
+			Dictionary::text( 'seo_shop_title', 'zh' ) . ' — 第 2 页',
+			$filters->title( 'Pattern Library — Laser Cut Metal Screen Patterns 2' )
+		);
+	}
+
+	/**
+	 * Verifies crumbs() localizes Home and replaces WooCommerce Shop ("商店" / "Shop" / "Tienda")
+	 * with the localized pattern library label across languages.
+	 */
+	public function test_crumbs_localizes_home_and_replaces_woocommerce_shop_across_languages(): void {
+		WP_Mock::userFunction( 'is_singular' )->andReturn( false );
+		WP_Mock::userFunction( 'is_page' )->andReturn( false );
+		WP_Mock::userFunction( 'get_option' )->zeroOrMoreTimes()->with( 'home' )->andReturn( 'https://metal-divider.com' );
+
+		$filters = new SchemaFilters();
+
+		// Chinese pattern catalog trail: Home -> 首页, 商店 -> 图案库.
+		Languages::force_for_tests( 'zh' );
+		$zh_crumbs = $filters->crumbs(
+			array(
+				array( 'Home', 'https://metal-divider.com/' ),
+				array( '商店', 'https://metal-divider.com/zh/patterns/' ),
+			)
+		);
+		$this->assertSame(
+			array(
+				array( '首页', 'https://metal-divider.com/zh/' ),
+				array( '图案库', 'https://metal-divider.com/zh/patterns/' ),
+			),
+			$zh_crumbs
+		);
+
+		// Arabic series archive trail: Home -> الرئيسية, المتجر -> مكتبة الأنماط.
+		Languages::force_for_tests( 'ar' );
+		$ar_crumbs = $filters->crumbs(
+			array(
+				array( 'Home', 'https://metal-divider.com/' ),
+				array( 'المتجر', 'https://metal-divider.com/patterns/' ),
+				array( 'هندسي', 'https://metal-divider.com/ar/pattern-category/pattern-geometric-ar/' ),
+			)
+		);
+		$this->assertSame(
+			array(
+				array( 'الرئيسية', 'https://metal-divider.com/ar/' ),
+				array( 'مكتبة الأنماط', 'https://metal-divider.com/ar/patterns/' ),
+				array( 'هندسي', 'https://metal-divider.com/ar/pattern-category/pattern-geometric-ar/' ),
+			),
+			$ar_crumbs
+		);
 	}
 }

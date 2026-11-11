@@ -374,3 +374,61 @@ body.widget-chat #messagesBlock .message-row.message-admin .msg-body a.link:hove
   color:#1b3b2c;
 }
 
+/* Arabic RTL support */
+html[dir="rtl"] body.widget-chat{
+  direction:rtl;
+  text-align:right;
+}
+html[dir="rtl"] body.widget-chat .mdv-chat-head,
+body.widget-chat .mdv-chat-head[dir="rtl"],
+html[dir="rtl"] body.widget-chat .mdv-convert-bar,
+body.widget-chat .mdv-convert-bar[dir="rtl"],
+html[dir="rtl"] body.widget-chat .mdv-closed-actions,
+body.widget-chat .mdv-closed-actions[dir="rtl"],
+html[dir="rtl"] body.widget-chat .mdv-danger-actions,
+body.widget-chat .mdv-danger-actions[dir="rtl"],
+html[dir="rtl"] body.widget-chat .mdv-email,
+body.widget-chat .mdv-email[dir="rtl"]{
+  direction:rtl;
+}
+html[dir="rtl"] body.widget-chat .mdv-chat-avatar i,
+body.widget-chat .mdv-chat-head[dir="rtl"] .mdv-chat-avatar i{
+  right:auto;
+  left:0;
+}
+html[dir="rtl"] body.widget-chat #messagesBlock .message-row.message-admin{
+  text-align:right;
+}
+html[dir="rtl"] body.widget-chat #messagesBlock .message-row.message-admin .msg-body{
+  text-align:right;
+  border-radius:16px 16px 4px 16px;
+}
+html[dir="rtl"] body.widget-chat #messagesBlock .message-row.response{
+  text-align:left;
+}
+html[dir="rtl"] body.widget-chat #messagesBlock .message-row.response .msg-body{
+  text-align:right;
+  border-radius:16px 16px 16px 4px;
+}
+html[dir="rtl"] body.widget-chat #messagesBlock .message-row .msg-body .mdv-sources{
+  text-align:right;
+}
+html[dir="rtl"] body.widget-chat .mdv-confirm,
+body.widget-chat .mdv-danger-actions[dir="rtl"] .mdv-confirm,
+html[dir="rtl"] body.widget-chat .mdv-email,
+body.widget-chat .mdv-email[dir="rtl"]{
+  text-align:right;
+}
+html[dir="rtl"] body.widget-chat .mdv-email input[type="email"],
+body.widget-chat .mdv-email[dir="rtl"] input[type="email"]{
+  direction:ltr;
+  text-align:right;
+}
+html[dir="rtl"] body.widget-chat #CSChatMessage{
+  text-align:right;
+}
+html[dir="rtl"] body.widget-chat #lhc-send-icon i{
+  transform:scaleX(-1);
+}
+
+

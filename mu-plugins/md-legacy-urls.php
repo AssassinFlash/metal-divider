@@ -217,46 +217,69 @@ function md_legacy_urls_target( string $path, ?callable $series = null, ?callabl
 	if ( ! $exists( $slug ) ) {
 		return $lang_prefix . MD_LEGACY_URLS_CATALOGUE;
 	}
-	return md_legacy_urls_localize_series_target( $lang_prefix, MD_LEGACY_URLS_SERIES_BASE . $rest );
+	return md_legacy_urls_localize_series_target( $lang_prefix, trailingslashit( MD_LEGACY_URLS_SERIES_BASE . $rest ) );
 }
 
 /**
  * Rewrites `/pattern-category/<en-slug>` to the localized series slug when WPML
  * is active and a non-default language prefix is present.
  *
- * @param string $lang_prefix The language prefix (e.g. `/zh` or `''`).
- * @param string $target      The unprefixed destination path.
+ * Every series archive destination carries a trailing slash so WordPress's
+ * canonical redirect does not spend a second 301 hop appending one.
+ *
+ * @param string        $lang_prefix    The language prefix (e.g. `/zh` or `''`).
+ * @param string        $target         The unprefixed destination path.
+ * @param callable|null $localized_slug Optional slug resolver `(string $slug, string $wpml_code): string`.
  * @return string The prefixed and localized destination path.
  */
-function md_legacy_urls_localize_series_target( string $lang_prefix, string $target ): string {
+function md_legacy_urls_localize_series_target( string $lang_prefix, string $target, ?callable $localized_slug = null ): string {
+	if ( str_starts_with( $target, MD_LEGACY_URLS_SERIES_BASE . '/' ) || MD_LEGACY_URLS_SERIES_BASE === $target ) {
+		$target = trailingslashit( $target );
+	}
 	if ( '' === $lang_prefix || ! str_starts_with( $target, MD_LEGACY_URLS_SERIES_BASE . '/' ) ) {
 		return $lang_prefix . $target;
 	}
-	if ( ! function_exists( 'get_term_by' ) || ! function_exists( 'apply_filters' ) || ! function_exists( 'has_filter' ) || ! has_filter( 'wpml_object_id' ) ) {
-		return $lang_prefix . $target;
-	}
 	$rest  = substr( $target, strlen( MD_LEGACY_URLS_SERIES_BASE . '/' ) );
-	$parts = explode( '/', $rest, 2 );
+	$parts = explode( '/', trim( $rest, '/' ), 2 );
 	$slug  = $parts[0];
-	$tail  = isset( $parts[1] ) ? '/' . $parts[1] : '';
+	$tail  = isset( $parts[1] ) && '' !== $parts[1] ? '/' . trailingslashit( $parts[1] ) : '/';
 	if ( '' === $slug ) {
-		return $lang_prefix . $target;
-	}
-	$term = get_term_by( 'slug', $slug, 'product_cat' );
-	if ( ! ( $term instanceof WP_Term ) ) {
 		return $lang_prefix . $target;
 	}
 	$lang_code = ltrim( $lang_prefix, '/' );
 	$wpml_code = 'zh' === $lang_code ? 'zh-hans' : $lang_code;
+	$resolver  = $localized_slug ?? 'md_legacy_urls_resolve_wpml_series_slug';
+	$tr_slug   = (string) $resolver( $slug, $wpml_code );
+	if ( '' !== $tr_slug ) {
+		return $lang_prefix . MD_LEGACY_URLS_SERIES_BASE . '/' . $tr_slug . $tail;
+	}
+	return $lang_prefix . $target;
+}
+
+/**
+ * Resolves a series slug to its WPML-translated `product_cat` slug when WPML is active.
+ *
+ * @param string $slug      The canonical English series slug.
+ * @param string $wpml_code The WPML language code (e.g. `zh-hans`, `de`).
+ * @return string The translated term slug, or `''` when unavailable.
+ */
+function md_legacy_urls_resolve_wpml_series_slug( string $slug, string $wpml_code ): string {
+	if ( ! function_exists( 'get_term_by' ) || ! function_exists( 'apply_filters' ) || ! function_exists( 'has_filter' ) || ! has_filter( 'wpml_object_id' ) ) {
+		return '';
+	}
+	$term = get_term_by( 'slug', $slug, 'product_cat' );
+	if ( ! ( $term instanceof WP_Term ) ) {
+		return '';
+	}
 	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML standard filter.
 	$tr_id = (int) apply_filters( 'wpml_object_id', (int) $term->term_id, 'product_cat', false, $wpml_code );
 	if ( $tr_id > 0 && function_exists( 'get_term' ) ) {
 		$tr_term = get_term( $tr_id, 'product_cat' );
 		if ( $tr_term instanceof WP_Term && '' !== $tr_term->slug ) {
-			return $lang_prefix . MD_LEGACY_URLS_SERIES_BASE . '/' . $tr_term->slug . $tail;
+			return $tr_term->slug;
 		}
 	}
-	return $lang_prefix . $target;
+	return '';
 }
 
 /**
@@ -328,6 +351,49 @@ function md_legacy_urls_url( string $uri, ?callable $series = null, ?callable $p
 }
 
 /**
+ * Restores a WPML subdirectory prefix onto `$uri` when WPML stripped it from
+ * `REQUEST_URI` during request parsing.
+ *
+ * @param string $uri The raw or WPML-rewritten request URI.
+ * @return string The request URI carrying its active language prefix.
+ */
+function md_legacy_urls_effective_uri( string $uri ): string {
+	if ( '' === $uri ) {
+		return '';
+	}
+	$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
+	if ( '' === $path || preg_match( '#^/(zh|es|pt-br|de|fr|ar|id|vi)(?:/|$)#i', $path ) ) {
+		return $uri;
+	}
+	if ( ! function_exists( 'apply_filters' ) || ! function_exists( 'has_filter' ) || ! has_filter( 'wpml_current_language' ) ) {
+		return $uri;
+	}
+	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML standard filter.
+	$wpml_lang = strtolower( trim( (string) apply_filters( 'wpml_current_language', 'en' ) ) );
+	if ( 'zh-hans' === $wpml_lang || 'zh-hant' === $wpml_lang ) {
+		$wpml_lang = 'zh';
+	}
+	if ( ! in_array( $wpml_lang, array( 'zh', 'es', 'pt-br', 'de', 'fr', 'ar', 'id', 'vi' ), true ) ) {
+		return $uri;
+	}
+	$prefixed_path = '/' . $wpml_lang . '/' . ltrim( $path, '/' );
+	$query         = (string) wp_parse_url( $uri, PHP_URL_QUERY );
+	return '' === $query ? $prefixed_path : $prefixed_path . '?' . $query;
+}
+
+/**
+ * Strips any WPML language subdirectory suffix from the `home` option URL so
+ * concatenating an already-prefixed `$url` never drops or doubles `/<lang>/`.
+ *
+ * @param string $home The `home` option value.
+ * @return string The unprefixed origin + base URL without a trailing slash.
+ */
+function md_legacy_urls_root_home( string $home ): string {
+	$clean = untrailingslashit( trim( $home ) );
+	return (string) preg_replace( '#/(zh|es|pt-br|de|fr|ar|id|vi)$#i', '', $clean );
+}
+
+/**
  * The 301 itself.
  *
  * Admin screens, the REST API and AJAX are left alone: none of them is a
@@ -347,14 +413,15 @@ function md_legacy_urls_redirect(): void {
 	if ( is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 		return;
 	}
-	$uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-	$url = md_legacy_urls_url( $uri );
+	$raw_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+	$uri     = md_legacy_urls_effective_uri( $raw_uri );
+	$url     = md_legacy_urls_url( $uri );
 	if ( '' === $url ) {
 		return;
 	}
 
-	$home        = (string) get_option( 'home' );
-	$destination = '' !== $home ? untrailingslashit( $home ) . $url : home_url( $url );
+	$home        = md_legacy_urls_root_home( (string) get_option( 'home' ) );
+	$destination = '' !== $home ? $home . $url : home_url( $url );
 
 	if ( wp_safe_redirect( $destination, 301 ) ) {
 		exit;

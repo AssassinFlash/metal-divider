@@ -587,6 +587,61 @@ namespace Md\Mu\Tests\Unit {
 
 			unset( $GLOBALS['md_mu_test_has_chat_locale'] );
 		}
+
+		/**
+		 * Inherits the visitor locale from lh_chat.referrer when page_url and lang
+		 * are omitted in the POST body, passing the localized code into the queued
+		 * mail records and stripping localized "Based on:" footers from transcripts.
+		 */
+		public function test_inherits_locale_from_stored_referrer_for_confirmation_mail_and_strips_localized_footers(): void {
+			$GLOBALS['md_mu_test_enqueued_mails'] = array();
+			$GLOBALS['md_mu_test_inquiries']      = array();
+			$GLOBALS['md_mu_test_postmeta']       = array();
+			$GLOBALS['md_mu_test_transients']     = array();
+			$GLOBALS['md_mu_test_lh_msgs']        = array(
+				array(
+					'user_id' => 0,
+					'msg'     => 'أريد عرض سعر لنمط Breeze.',
+				),
+				array(
+					'user_id' => -2,
+					'msg'     => "تبلغ نسبة التفريغ لنمط Breeze ‏30%.\n\nبناءً على: Pattern Breeze",
+				),
+				array(
+					'user_id' => -2,
+					'msg'     => "Breeze 的镂空率为 30%。\n\n参考来源：Pattern Breeze",
+				),
+			);
+
+			$this->answer_row_with(
+				array(
+					'id'         => 144,
+					'hash'       => $this->stored_hash(),
+					'status'     => 0,
+					'anonymized' => 0,
+					'referrer'   => '//staging.metal-divider.com/ar/pattern/breeze/',
+					'nick'       => 'Visitor',
+				)
+			);
+
+			// Omit both page_url and lang so locale must be inherited from lh_chat.referrer.
+			$res = $this->email_request( 144, $this->stored_hash(), 'arabic-client@example.com' );
+			self::assertSame( 200, $res->status );
+			self::assertCount( 1, $GLOBALS['md_mu_test_inquiries'] );
+			$post_ids = array_keys( $GLOBALS['md_mu_test_inquiries'] );
+			$post_id  = $post_ids[0];
+			$meta     = $GLOBALS['md_mu_test_postmeta'][ $post_id ] ?? array();
+			self::assertSame( 'ar', $meta['inquiry_locale'] ?? '' );
+			self::assertSame( 'breeze', $meta['pattern_slug'] ?? '' );
+			self::assertStringNotContainsString( 'بناءً على:', (string) ( $meta['message'] ?? '' ) );
+			self::assertStringNotContainsString( '参考来源：', (string) ( $meta['message'] ?? '' ) );
+
+			self::assertCount( 2, $GLOBALS['md_mu_test_enqueued_mails'] );
+			self::assertSame( 'ar', $GLOBALS['md_mu_test_enqueued_mails'][0]['mail']['record']['locale'] ?? '' );
+			self::assertSame( 'ar', $GLOBALS['md_mu_test_enqueued_mails'][1]['mail']['record']['locale'] ?? '' );
+
+			unset( $GLOBALS['md_mu_test_lh_msgs'] );
+		}
 	}
 }
 

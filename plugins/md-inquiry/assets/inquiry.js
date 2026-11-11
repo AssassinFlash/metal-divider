@@ -53,12 +53,46 @@
 		return form.querySelector('[id^="md-inquiry-' + name + '"]');
 	}
 
+	var NAMED_ENTITIES = {
+		amp: '&',
+		lt: '<',
+		gt: '>',
+		quot: '"',
+		apos: "'",
+		nbsp: ' ',
+		ndash: '\u2013',
+		mdash: '\u2014',
+		lsquo: '\u2018',
+		rsquo: '\u2019',
+		ldquo: '\u201C',
+		rdquo: '\u201D',
+		hellip: '\u2026',
+		middot: '\u00B7'
+	};
+
+	function decodeEntities(value) {
+		return String(value || '').replace(/&(?:#(\d+)|#x([0-9a-fA-F]+)|([a-zA-Z]+));/g, function (full, dec, hex, named) {
+			var code = dec ? parseInt(dec, 10) : (hex ? parseInt(hex, 16) : NaN);
+			if (!isNaN(code) && code > 0 && code <= 0x10FFFF) {
+				try {
+					return String.fromCodePoint ? String.fromCodePoint(code) : String.fromCharCode(code);
+				} catch (err) {
+					return full;
+				}
+			}
+			if (named && Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, named)) {
+				return NAMED_ENTITIES[named];
+			}
+			return full;
+		});
+	}
+
 	// A production product title carries the pattern name and an SEO suffix:
 	// "Agave | Architectural Metal Screen Pattern". The name is the first
 	// segment; every label this file prints goes through here, so the suffix
 	// never reaches a customer through the dialog or the WhatsApp text.
 	function cleanTitle(value) {
-		return String(value || '').split(/[|｜]/)[0].trim();
+		return decodeEntities(value).replace(/\s*[|｜].*$/, '').trim();
 	}
 
 	// Two labels for one pattern are one label too many. The code and the name
@@ -222,6 +256,27 @@
 			return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 		}
 
+		function localizeIntent(intent) {
+			var decoded = decodeEntities(intent).trim();
+			if (!decoded) {
+				return '';
+			}
+			var labels = cfg.i18n && cfg.i18n.intentLabels;
+			if (labels && typeof labels === 'object' && labels[decoded]) {
+				return labels[decoded];
+			}
+			return decoded;
+		}
+
+		function isGenericPatternIntent(intent) {
+			var decoded = decodeEntities(intent).trim();
+			if (!decoded) {
+				return true;
+			}
+			var selPat = (cfg.i18n && cfg.i18n.selectedPattern) || 'Selected pattern';
+			return decoded === 'Selected pattern' || decoded === selPat;
+		}
+
 		function waText() {
 			var name = value('name');
 			var company = value('company');
@@ -238,15 +293,19 @@
 				// code is a second label, not a second fact: when it repeats the
 				// cleaned name, the WhatsApp message names the pattern once.
 				var patternName = cleanTitle(cfg.pattern.name);
-				lines.push(i18n.waPatternIntro || "I'd like a quote for this pattern:");
-				lines.push(!cfg.pattern.code || codeRepeatsName(cfg.pattern.code, patternName)
+				var patternLabel = !cfg.pattern.code || codeRepeatsName(cfg.pattern.code, patternName)
 					? patternName
-					: patternName + ' (' + cfg.pattern.code + ')');
+					: patternName + ' (' + cfg.pattern.code + ')';
+				if (!name && i18n.waPatternQuoteFmt && i18n.waPatternQuoteFmt.indexOf('%s') !== -1) {
+					lines.push(i18n.waPatternQuoteFmt.replace('%s', patternLabel));
+				} else {
+					lines.push(i18n.waPatternIntro || "I'd like a quote for this pattern:");
+					lines.push(patternLabel);
+				}
 			}
-			var defaultEyebrow = (i18n && i18n.selectedPattern) || 'Selected pattern';
-			if (cfg.intent && cfg.intent !== 'Selected pattern' && cfg.intent !== defaultEyebrow) {
+			if (cfg.intent && !isGenericPatternIntent(cfg.intent)) {
 				var intentPrefix = i18n.waInquiryPrefix || 'Inquiry: ';
-				lines.push(intentPrefix + cfg.intent);
+				lines.push(intentPrefix + localizeIntent(cfg.intent));
 			}
 			if (message) {
 				lines.push(message);
@@ -470,10 +529,11 @@
 
 			if (patternSlot) {
 				patternSlot.removeAttribute('hidden');
+				var displayIntent = isGenericPatternIntent(rawIntent) ? '' : localizeIntent(rawIntent);
 				var eyebrowEl = patternSlot.querySelector('[data-md-inquiry-pattern-eyebrow]');
 				if (eyebrowEl) {
 					var selReq = (cfg.i18n && cfg.i18n.selectedRequest) || 'Selected request';
-					eyebrowEl.textContent = (name || code) ? (rawIntent || defaultEyebrowText) : (rawIntent ? selReq : defaultEyebrowText);
+					eyebrowEl.textContent = (name || code) ? (displayIntent || defaultEyebrowText) : (displayIntent ? selReq : defaultEyebrowText);
 				}
 				var titleEl = patternSlot.querySelector('[data-md-inquiry-pattern-title]');
 				var codeEl = patternSlot.querySelector('[data-md-inquiry-pattern-code]');
@@ -488,7 +548,7 @@
 						titleEl.textContent = name + ' (' + code + ')';
 					} else {
 						// No code, or a code that only repeats the name: one label.
-						titleEl.textContent = name || code || rawIntent;
+						titleEl.textContent = name || code || displayIntent;
 						if (codeEl) {
 							codeEl.textContent = '';
 							codeEl.setAttribute('hidden', '');
