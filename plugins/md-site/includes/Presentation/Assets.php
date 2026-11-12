@@ -204,7 +204,7 @@ final class Assets {
 	}
 
 	/**
-	 * Enqueues the four files, in dependency order.
+	 * Enqueues the front-end scripts, in dependency order.
 	 */
 	public function enqueue(): void {
 		$base = \plugin_dir_url( dirname( __DIR__, 2 ) . '/md-site.php' ) . 'assets/js/';
@@ -213,5 +213,8 @@ final class Assets {
 		\wp_enqueue_script( 'md-alpine-collapse', $base . 'alpine-collapse.min.js', array(), '3.17.5', true );
 		\wp_enqueue_script( 'md-alpine-focus', $base . 'alpine-focus.min.js', array(), '3.17.5', true );
 		\wp_enqueue_script( 'md-alpine', $base . 'alpine-csp.min.js', array( 'md-chrome', 'md-alpine-collapse', 'md-alpine-focus' ), '3.17.5', true );
+		if ( ! \is_user_logged_in() ) {
+			\wp_enqueue_script( 'md-clarity', $base . 'md-clarity.js', array(), self::version( 'assets/js/md-clarity.js' ), true );
+		}
 	}
 }
