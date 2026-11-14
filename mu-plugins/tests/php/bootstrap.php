@@ -62,3 +62,4 @@ require_once dirname( __DIR__, 2 ) . '/md-deploy-reset.php';
 require_once dirname( __DIR__, 2 ) . '/md-error-recorder.php';
 require_once dirname( __DIR__, 2 ) . '/md-site-guards.php';
 require_once dirname( __DIR__, 2 ) . '/md-staging-guards.php';
+require_once dirname( __DIR__, 2 ) . '/md-mail-smtp.php';

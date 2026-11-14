@@ -150,7 +150,7 @@ final class QueueTest extends TestCase {
 			42,
 			'internal_notification',
 			array(
-				'to'      => array( 'sales@sunriverinverter.com', 'info@metal-divider.com' ),
+				'to'      => array( 'info@metal-divider.com' ),
 				'subject' => 'New inquiry: Apiary — Jane Chan',
 				'body'    => "A new inquiry arrived.\n",
 				'headers' => array( 'From: MetalDivider <info@metal-divider.com>' ),
@@ -164,7 +164,7 @@ final class QueueTest extends TestCase {
 		$row = $calls[0][1];
 		$this->assertSame( 42, $row['inquiry_id'] );
 		$this->assertSame( 'internal_notification', $row['mail_type'] );
-		$this->assertSame( '["sales@sunriverinverter.com","info@metal-divider.com"]', $row['recipients'] );
+		$this->assertSame( '["info@metal-divider.com"]', $row['recipients'] );
 		$this->assertSame( '["From: MetalDivider <info@metal-divider.com>"]', $row['headers'] );
 		$this->assertSame( 'pending', $row['status'] );
 		$this->assertSame( 0, $row['attempts'] );
@@ -188,7 +188,7 @@ final class QueueTest extends TestCase {
 		);
 
 		$this->assertSame( 1, $queue->tick() );
-		$this->assertSame( array( 'sales@sunriverinverter.com', 'info@metal-divider.com' ), $mail[0] );
+		$this->assertSame( array( 'info@metal-divider.com' ), $mail[0] );
 		$this->assertSame( 'New inquiry: Apiary', $mail[1] );
 		$this->assertSame( array( 'From: MetalDivider <info@metal-divider.com>' ), $mail[2] );
 
@@ -347,7 +347,7 @@ final class QueueTest extends TestCase {
 			'id'           => (string) $id,
 			'inquiry_id'   => '42',
 			'mail_type'    => 'internal_notification',
-			'recipients'   => '["sales@sunriverinverter.com","info@metal-divider.com"]',
+			'recipients'   => '["info@metal-divider.com"]',
 			'subject'      => 'New inquiry: Apiary',
 			'headers'      => '["From: MetalDivider <info@metal-divider.com>"]',
 			'body'         => 'A new inquiry arrived.',

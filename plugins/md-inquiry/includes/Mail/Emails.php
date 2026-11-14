@@ -36,7 +36,7 @@ final class Emails {
 	 * The confirmation's reply-to: the customer's answer lands in the owner's
 	 * primary sales mailbox (spec 07 §5).
 	 */
-	public const REPLY_TO = 'sales@sunriverinverter.com';
+	public const REPLY_TO = 'info@metal-divider.com';
 
 	/**
 	 * The configuration.

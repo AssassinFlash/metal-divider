@@ -68,7 +68,7 @@ final class EmailsTest extends TestCase {
 	public function test_the_internal_notification_routes_to_both_internal_addresses(): void {
 		$mail = ( new Emails( new Config() ) )->internal( self::record() );
 
-		$this->assertSame( array( 'sales@sunriverinverter.com', 'info@metal-divider.com' ), $mail['to'] );
+		$this->assertSame( array( 'info@metal-divider.com' ), $mail['to'] );
 		$this->assertSame( 'New inquiry: Apiary — Jane Chan', $mail['subject'] );
 		$this->assertContains( 'From: MetalDivider <info@metal-divider.com>', $mail['headers'] );
 	}
@@ -100,7 +100,7 @@ final class EmailsTest extends TestCase {
 	 */
 	public function test_the_route_switch_selects_one_recipient(): void {
 		$emails = new Emails( new Config( array( 'MD_INQUIRY_NOTIFICATION_ROUTE' => Config::ROUTE_PRIMARY ) ) );
-		$this->assertSame( array( 'sales@sunriverinverter.com' ), $emails->internal( self::record() )['to'] );
+		$this->assertSame( array( 'info@metal-divider.com' ), $emails->internal( self::record() )['to'] );
 
 		$emails = new Emails( new Config( array( 'MD_INQUIRY_NOTIFICATION_ROUTE' => Config::ROUTE_BACKUP ) ) );
 		$this->assertSame( array( 'info@metal-divider.com' ), $emails->internal( self::record() )['to'] );
@@ -116,7 +116,8 @@ final class EmailsTest extends TestCase {
 		$this->assertSame( array( 'jane@studio.com' ), $mail['to'] );
 		$this->assertSame( "We've received your inquiry about Apiary", $mail['subject'] );
 		$this->assertContains( 'From: MetalDivider <info@metal-divider.com>', $mail['headers'] );
-		$this->assertContains( 'Reply-To: sales@sunriverinverter.com', $mail['headers'] );
+		$this->assertContains( 'Reply-To: info@metal-divider.com', $mail['headers'] );
+		$this->assertNotContains( 'Reply-To: sunriverinverter.com', $mail['headers'], 'the customer-facing reply address stays on our own domain' );
 	}
 
 	/**

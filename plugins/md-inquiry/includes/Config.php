@@ -32,7 +32,7 @@ final class Config {
 	/**
 	 * The internal notification's primary recipient.
 	 */
-	public const INTERNAL_PRIMARY = 'sales@sunriverinverter.com';
+	public const INTERNAL_PRIMARY = 'info@metal-divider.com';
 
 	/**
 	 * The internal notification's backup recipient.
@@ -151,11 +151,14 @@ final class Config {
 	 * @return list<string>
 	 */
 	public function internal_recipients(): array {
-		return match ( $this->notification_route() ) {
+		$recipients = match ( $this->notification_route() ) {
 			self::ROUTE_PRIMARY => array( self::INTERNAL_PRIMARY ),
 			self::ROUTE_BACKUP  => array( self::INTERNAL_BACKUP ),
 			default             => array( self::INTERNAL_PRIMARY, self::INTERNAL_BACKUP ),
 		};
+		// The two slots may name the same mailbox (they do while the site has a
+		// single address); the queue must never dispatch twice to it.
+		return array_values( array_unique( $recipients ) );
 	}
 
 	/**

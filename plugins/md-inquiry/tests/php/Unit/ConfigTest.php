@@ -79,8 +79,10 @@ final class ConfigTest extends TestCase {
 	 */
 	public function test_the_notification_route_selects_the_recipients(): void {
 		WP_Mock::userFunction( 'get_option' )->zeroOrMoreTimes()->andReturn( '' );
+		// Both slots name the site's single mailbox today, so the deduped
+		// route dispatches once; the fallback still never yields no mail.
 		$this->assertSame(
-			array( Config::INTERNAL_PRIMARY, Config::INTERNAL_BACKUP ),
+			array_values( array_unique( array( Config::INTERNAL_PRIMARY, Config::INTERNAL_BACKUP ) ) ),
 			( new Config() )->internal_recipients()
 		);
 		$this->assertSame(
@@ -99,7 +101,7 @@ final class ConfigTest extends TestCase {
 	public function test_an_unknown_route_falls_back_to_both(): void {
 		WP_Mock::userFunction( 'get_option' )->once()->with( 'md_inquiry_notification_route', Config::ROUTE_BOTH )->andReturn( 'nonsense' );
 		$this->assertSame(
-			array( Config::INTERNAL_PRIMARY, Config::INTERNAL_BACKUP ),
+			array_values( array_unique( array( Config::INTERNAL_PRIMARY, Config::INTERNAL_BACKUP ) ) ),
 			( new Config() )->internal_recipients()
 		);
 	}

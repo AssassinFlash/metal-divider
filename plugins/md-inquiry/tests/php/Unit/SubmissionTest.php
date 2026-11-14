@@ -118,7 +118,7 @@ final class SubmissionTest extends TestCase {
 		$this->assertSame( 2, \count( $db->calls_of( 'insert' ) ), 'both mails are queued: the internal notification and the customer confirmation' );
 		$internal     = \json_decode( (string) $db->calls_of( 'insert' )[0][1]['recipients'], true );
 		$confirmation = \json_decode( (string) $db->calls_of( 'insert' )[1][1]['recipients'], true );
-		$this->assertSame( array( 'sales@sunriverinverter.com', 'info@metal-divider.com' ), $internal, 'the internal routing is the queue data, per the mail discipline' );
+		$this->assertSame( array( 'info@metal-divider.com' ), $internal, 'the internal routing is the queue data, per the mail discipline' );
 		$this->assertSame( array( 'jane@studio.com' ), $confirmation );
 		$this->assertSame( 'internal_notification', $db->calls_of( 'insert' )[0][1]['mail_type'] );
 		$this->assertSame( 'customer_confirmation', $db->calls_of( 'insert' )[1][1]['mail_type'] );
