@@ -222,7 +222,7 @@ final class InquirySmokeTest extends TestCase {
 		}
 		self::assertArrayHasKey( 'internal_notification', $by_type );
 		self::assertArrayHasKey( 'customer_confirmation', $by_type );
-		self::assertSame( array( 'sales@sunriverinverter.com', 'info@metal-divider.com' ), \json_decode( $by_type['internal_notification']['recipients'], true ) );
+		self::assertSame( array( 'info@metal-divider.com' ), \json_decode( $by_type['internal_notification']['recipients'], true ) );
 		self::assertSame( array( 'jane@studio.example' ), \json_decode( $by_type['customer_confirmation']['recipients'], true ) );
 		self::assertStringContainsString( 'From: MetalDivider <info@metal-divider.com>', (string) $by_type['customer_confirmation']['headers'] );
 		self::assertStringContainsString( 'Reply-To: info@metal-divider.com', (string) $by_type['customer_confirmation']['headers'] );
@@ -238,7 +238,7 @@ final class InquirySmokeTest extends TestCase {
 		self::assertCount( \count( $before ) + 1, $after, 'exactly one mail left the instance' );
 		$sent = (string) \file_get_contents( $after[ \count( $after ) - 1 ] );
 		self::assertStringContainsString( 'To: ' . self::TEST_TO, $sent, 'the one mail goes to the test mode\'s single address' );
-		self::assertStringNotContainsString( 'To: sales@sunriverinverter.com', $sent );
+		self::assertStringNotContainsString( 'To: sunriverinverter.com', $sent );
 		self::assertStringNotContainsString( 'To: jane@studio.example', $sent );
 
 		// The queue after: one sent, one still waiting — the cap held.

@@ -1079,3 +1079,4 @@ require_once dirname( __DIR__, 2 ) . '/md-chat-email.php';
 require_once dirname( __DIR__, 2 ) . '/md-chat-delete.php';
 require_once dirname( __DIR__, 2 ) . '/md-chat-launcher.php';
 require_once dirname( __DIR__, 2 ) . '/md-legacy-urls.php';
+require_once dirname( __DIR__, 2 ) . '/md-mail-smtp.php';

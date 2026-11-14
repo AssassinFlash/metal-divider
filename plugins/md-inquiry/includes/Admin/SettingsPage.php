@@ -222,8 +222,8 @@ final class SettingsPage {
 		$current = $this->config->notification_route();
 		$out     = '<select name="md_inquiry_notification_route">';
 		foreach ( array(
-			Config::ROUTE_BOTH    => \__( 'Primary and backup', 'md-inquiry' ) . ' — sales@sunriverinverter.com, info@metal-divider.com',
-			Config::ROUTE_PRIMARY => \__( 'Primary only', 'md-inquiry' ) . ' — sales@sunriverinverter.com',
+			Config::ROUTE_BOTH    => \__( 'Primary and backup', 'md-inquiry' ) . ' — info@metal-divider.com',
+			Config::ROUTE_PRIMARY => \__( 'Primary only', 'md-inquiry' ) . ' — info@metal-divider.com',
 			Config::ROUTE_BACKUP  => \__( 'Backup only', 'md-inquiry' ) . ' — info@metal-divider.com',
 		) as $route => $label ) {
 			$out .= '<option value="' . \esc_attr( $route ) . '"' . ( $route === $current ? ' selected' : '' ) . '>' . \esc_html( $label ) . '</option>';
