@@ -211,6 +211,11 @@ final class SchemaFilters {
 		if ( array() !== $points ) {
 			$schema['contactPoint'] = $points;
 		}
+		$schema['sameAs'] = array(
+			'https://www.facebook.com/stainlesssteeleverywhere',
+			'https://www.facebook.com/metaldivider',
+			'https://www.linkedin.com/in/chester-john-1800b4312/',
+		);
 		// The Knowledge Graph field is copied verbatim into the schema, and a
 		// site URL saved before the TLS cutover (or resolved through a proxy
 		// that reports http) would publish an http logo. The site is https-only,

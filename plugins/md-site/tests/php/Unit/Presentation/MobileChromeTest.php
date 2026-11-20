@@ -987,16 +987,16 @@ final class MobileChromeTest extends TestCase {
 	}
 
 	/**
-	 * The footer's social block: one confirmed account, named, and safe.
+	 * The footer's social block: confirmed brand accounts, named, and safe.
 	 *
 	 * The eight competitor sites all carry social links in the footer and the
-	 * owner's 2026-10-30 ruling follows that. Only one account is confirmed
-	 * (Facebook, stainlesssteeleverywhere), so the block holds exactly that
-	 * one and grows as accounts are confirmed. What a later addition must not
-	 * lose: a new-tab link that says so to the browser (`rel="noopener"`), an
-	 * accessible name, and no inline style — styles live in `footer.css`
-	 * (AGENTS §5: the presentation layer is LiveCanvas markup plus a WindPress
-	 * volume, never a `style` attribute).
+	 * owner's 2026-10-30 ruling follows that. Confirmed accounts live here:
+	 * Facebook (stainlesssteeleverywhere, metaldivider) and LinkedIn
+	 * (chester-john-1800b4312). What a later addition must not lose: a new-tab
+	 * link that says so to the browser (`rel="noopener"`), an accessible name,
+	 * and no inline style — styles live in `footer.css` (AGENTS §5: the
+	 * presentation layer is LiveCanvas markup plus a WindPress volume, never
+	 * a `style` attribute).
 	 */
 	public function test_the_footer_social_block_carries_the_confirmed_account_only(): void {
 		$footer = (string) file_get_contents( dirname( __DIR__, 4 ) . '/content/livecanvas/partials/footer.html' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
@@ -1007,17 +1007,29 @@ final class MobileChromeTest extends TestCase {
 			'the social links are a labelled navigation landmark'
 		);
 		$this->assertSame(
-			1,
+			3,
 			preg_match_all( '/class="md-footer__social-link"/', $footer ),
-			'only confirmed accounts ship; a second one arrives with its own confirmation'
+			'only confirmed brand social accounts ship (two Facebook pages and LinkedIn)'
 		);
 		$this->assertStringContainsString(
 			'href="https://www.facebook.com/stainlesssteeleverywhere"',
 			$footer,
-			'the Facebook URL is the confirmed account'
+			'the Stainless Steel Everywhere Facebook page URL is present'
 		);
-		$this->assertStringContainsString( 'aria-label="Metal Divider on Facebook"', $footer, 'the icon link has an accessible name' );
-		$this->assertStringContainsString( 'rel="noopener"', $footer, 'the external link opens safely' );
+		$this->assertStringContainsString(
+			'href="https://www.facebook.com/metaldivider"',
+			$footer,
+			'the Metal Divider Facebook page URL is present'
+		);
+		$this->assertStringContainsString(
+			'href="https://www.linkedin.com/in/chester-john-1800b4312/"',
+			$footer,
+			'the Metal Divider LinkedIn profile URL is present'
+		);
+		$this->assertStringContainsString( 'aria-label="Stainless Steel Everywhere on Facebook"', $footer, 'first Facebook link has an accessible name' );
+		$this->assertStringContainsString( 'aria-label="Metal Divider on Facebook"', $footer, 'second Facebook link has an accessible name' );
+		$this->assertStringContainsString( 'aria-label="Chester John (Metal Divider) on LinkedIn"', $footer, 'LinkedIn link has an accessible name' );
+		$this->assertStringContainsString( 'rel="noopener"', $footer, 'external links open safely' );
 		$this->assertStringNotContainsString( 'style="', $footer, 'no inline style: the presentation rule keeps styling in WindPress' );
 
 		$this->assertMatchesRegularExpression(

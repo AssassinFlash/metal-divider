@@ -223,13 +223,21 @@ final class SchemaFiltersTest extends TestCase {
 			),
 			$schema['contactPoint']
 		);
+		$this->assertSame(
+			array(
+				'https://www.facebook.com/stainlesssteeleverywhere',
+				'https://www.facebook.com/metaldivider',
+				'https://www.linkedin.com/in/chester-john-1800b4312/',
+			),
+			$schema['sameAs']
+		);
 		$this->assertArrayNotHasKey( 'telephone', $schema );
 	}
 
 	/**
 	 * Without SEOPress's service (a site where SEOPress is absent),
 	 * the Organization keeps its builder shape minus the telephone —
-	 * no invented points.
+	 * no invented points, while confirmed brand sameAs profiles still attach.
 	 */
 	public function test_organization_without_seopress_invents_nothing(): void {
 		$schema = ( new SchemaFilters() )->organization(
@@ -240,6 +248,14 @@ final class SchemaFiltersTest extends TestCase {
 		);
 		$this->assertArrayNotHasKey( 'contactPoint', $schema );
 		$this->assertArrayNotHasKey( 'telephone', $schema );
+		$this->assertSame(
+			array(
+				'https://www.facebook.com/stainlesssteeleverywhere',
+				'https://www.facebook.com/metaldivider',
+				'https://www.linkedin.com/in/chester-john-1800b4312/',
+			),
+			$schema['sameAs']
+		);
 	}
 
 	/**
