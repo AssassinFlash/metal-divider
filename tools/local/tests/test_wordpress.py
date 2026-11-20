@@ -12,7 +12,7 @@ def plugins_of(tmp_path: Path) -> Path:
     instance = Instance("dev", 9890, tmp_path)
     plugins = instance.wp_content / "plugins"
     headers = {
-        "woocommerce/woocommerce.php": "* Version: 11.2.1",
+        "woocommerce/woocommerce.php": f"* Version: {versions.WOOCOMMERCE_VERSION}",
         "advanced-custom-fields/acf.php": "* Version: 6.8.11",
         "windpress/windpress.php": "* Version:             3.2.92",
         "wp-seopress/seopress.php": f"* Version: {versions.SEOPRESS_VERSION}",

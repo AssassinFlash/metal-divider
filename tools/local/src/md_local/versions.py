@@ -26,13 +26,13 @@ from __future__ import annotations
 # wordpress.org/wordpress-7.1.4.zip.sha1 returns the hash below. 7.1.3 -> 7.1.4
 # is a minor release, which WordPress applies unattended, so holding the older
 # pin would only mean the contract fails every future deploy.
-WORDPRESS_VERSION = "7.1.4"
-WORDPRESS_SHA1 = "b552c39cd95d89895b4e7a55af53a03687aff4f6"
+WORDPRESS_VERSION = "7.1.5"
+WORDPRESS_SHA1 = "d7d004a092a4e8f2b28dc8f4089a11fea9a38807"
 
 # The wp.org plugins, each installed from downloads.wordpress.org and verified
 # file by file with `wp plugin verify-checksums` (wp.org publishes no archive
 # hash). Versions read from the plugin API on 2026-10-24.
-WOOCOMMERCE_VERSION = "11.2.1"
+WOOCOMMERCE_VERSION = "11.3.0"  # autoupdate on prod 2026-11-20
 ACF_VERSION = "6.8.11"  # ACF free (owner ruling 2026-10-24; ACF Pro is out; 6.8.11 autoupdate on prod 2026-11-10)
 WINDPRESS_VERSION = "3.2.92"
 SEOPRESS_VERSION = "10.4"  # the free base SEOPress PRO builds on
