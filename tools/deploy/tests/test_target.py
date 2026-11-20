@@ -629,6 +629,54 @@ def test_fetch_decompresses_gzip_and_retries_incomplete_read(
     assert body == "<html>ok</html>"
 
 
+def test_fetch_retries_corrupt_or_truncated_gzip_with_short_backoff(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Corrupt or truncated gzip streams (BadGzipFile / EOFError) retry with short backoff."""
+    import gzip
+    from http.client import HTTPMessage
+
+    sleeps = _record_sleeps(monkeypatch)
+    calls = 0
+
+    class _FakeResponse:
+        status = 200
+
+        def __init__(self, body: bytes) -> None:
+            self.headers = HTTPMessage()
+            self.headers["Content-Encoding"] = "gzip"
+            self._body = body
+
+        def __enter__(self) -> _FakeResponse:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return self._body
+
+    valid = gzip.compress(b"<html>recovered</html>")
+
+    def fake_open(request: object, timeout: int = 30) -> _FakeResponse:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return _FakeResponse(b"not-a-gzip-stream")
+        if calls == 2:
+            return _FakeResponse(valid[:10])
+        return _FakeResponse(valid)
+
+    monkeypatch.setattr(target.OPENER, "open", fake_open)
+
+    status, _, body = _remote_site(tmp_path).fetch("/")
+
+    assert calls == 3
+    assert sleeps == [1.0, 1.5]
+    assert status == 200
+    assert body == "<html>recovered</html>"
+
+
 def test_long_remote_shell_streams_via_bash_stdin(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

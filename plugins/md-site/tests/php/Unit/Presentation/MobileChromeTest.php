@@ -1002,9 +1002,9 @@ final class MobileChromeTest extends TestCase {
 		$footer = (string) file_get_contents( dirname( __DIR__, 4 ) . '/content/livecanvas/partials/footer.html' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
 
 		$this->assertMatchesRegularExpression(
-			'/<nav[^>]*aria-label="Social"[^>]*>/',
+			'/<nav[^>]*aria-label="Social"[^>]*dir="ltr"[^>]*>/',
 			$footer,
-			'the social links are a labelled navigation landmark'
+			'the social links are a labelled LTR navigation landmark (protects RTL pages)'
 		);
 		$this->assertSame(
 			3,
@@ -1026,9 +1026,9 @@ final class MobileChromeTest extends TestCase {
 			$footer,
 			'the Metal Divider LinkedIn profile URL is present'
 		);
-		$this->assertStringContainsString( 'aria-label="Stainless Steel Everywhere on Facebook"', $footer, 'first Facebook link has an accessible name' );
-		$this->assertStringContainsString( 'aria-label="Metal Divider on Facebook"', $footer, 'second Facebook link has an accessible name' );
-		$this->assertStringContainsString( 'aria-label="Chester John (Metal Divider) on LinkedIn"', $footer, 'LinkedIn link has an accessible name' );
+		$this->assertStringContainsString( 'aria-label="Facebook · Stainless Steel Everywhere"', $footer, 'first Facebook link accessible name matches visible label (WCAG 2.5.3)' );
+		$this->assertStringContainsString( 'aria-label="Facebook · Metal Divider"', $footer, 'second Facebook link accessible name matches visible label (WCAG 2.5.3)' );
+		$this->assertStringContainsString( 'aria-label="LinkedIn · Chester John (Metal Divider)"', $footer, 'LinkedIn link accessible name starts with visible label (WCAG 2.5.3)' );
 		$this->assertStringContainsString( 'rel="noopener"', $footer, 'external links open safely' );
 		$this->assertStringNotContainsString( 'style="', $footer, 'no inline style: the presentation rule keeps styling in WindPress' );
 

@@ -114,13 +114,20 @@ final class ThankYouTest extends TestCase {
 	}
 
 	/**
-	 * The verified meta tag renders only for verified front-end thank-you
-	 * requests, never in admin or on unverified requests.
+	 * The verified meta tag renders only on the thank-you page (including
+	 * WPML-translated thank-you slugs) for verified front-end requests,
+	 * emits no-cache headers, and stays silent on other pages or forged keys.
 	 */
-	public function test_verified_meta_renders_only_for_verified_requests(): void {
+	public function test_verified_meta_renders_only_for_verified_thank_you_requests(): void {
 		$this->mock_passthroughs();
 		WP_Mock::userFunction( 'is_admin' )->andReturn( false );
+		WP_Mock::userFunction( 'is_page' )->andReturnUsing(
+			static function ( $page = '' ): bool {
+				return '' === $page || ThankYou::PATH === $page;
+			}
+		);
 		WP_Mock::userFunction( 'wp_hash' )->andReturn( 'the-key' );
+		WP_Mock::userFunction( 'nocache_headers' )->once();
 
 		$_GET      = array(
 			'md_inquiry' => '123',
@@ -141,13 +148,14 @@ final class ThankYouTest extends TestCase {
 				'post_type' => 'md_inquiry',
 			)
 		);
-		WP_Mock::userFunction( 'get_post' )->once()->andReturn( $post );
+		WP_Mock::userFunction( 'get_post' )->twice()->andReturn( $post );
 		WP_Mock::userFunction( 'get_post_meta' )->andReturnUsing(
 			static function ( int $id, string $key ): string {
 				return 'pattern_name' === $key ? 'Apiary' : 'APIARY';
 			}
 		);
 
+		$thank_you->send_verified_nocache_headers();
 		\ob_start();
 		$thank_you->render_verified_meta();
 		$html = (string) \ob_get_clean();
@@ -155,6 +163,94 @@ final class ThankYouTest extends TestCase {
 			'<meta name="md-inquiry-verified" content="1" data-inquiry-id="123" data-pattern-name="Apiary" data-pattern-code="APIARY">' . "\n",
 			$html
 		);
+	}
+
+	/**
+	 * Even with a valid id + key query string, non-thank-you pages must not
+	 * emit verified meta or no-cache headers.
+	 */
+	public function test_verified_meta_is_suppressed_on_non_thank_you_pages(): void {
+		$this->mock_passthroughs();
+		WP_Mock::userFunction( 'is_admin' )->andReturn( false );
+		WP_Mock::userFunction( 'is_page' )->andReturnUsing(
+			static function ( $page = '' ): bool {
+				return '' === $page;
+			}
+		);
+		WP_Mock::userFunction( 'get_queried_object_id' )->andReturn( 999 );
+		$base_page = new \WP_Post(
+			(object) array(
+				'ID'        => 42,
+				'post_type' => 'page',
+			)
+		);
+		WP_Mock::userFunction( 'get_page_by_path' )->with( ThankYou::PATH )->andReturn( $base_page );
+		WP_Mock::onFilter( 'wpml_object_id' )->with( 42, 'page', false, 'en' )->reply( 42 );
+		WP_Mock::onFilter( 'wpml_default_language' )->with( 'en' )->reply( 'en' );
+		WP_Mock::onFilter( 'wpml_object_id' )->with( 999, 'page', false, 'en' )->reply( 999 );
+		WP_Mock::userFunction( 'get_post_field' )->with( 'post_content', 999 )->andReturn( 'Regular page content' );
+		WP_Mock::userFunction( 'has_shortcode' )->andReturn( false );
+		WP_Mock::userFunction( 'nocache_headers' )->never();
+
+		$_GET = array(
+			'md_inquiry' => '123',
+			'key'        => 'the-key',
+		);
+
+		$thank_you = new ThankYou();
+		\ob_start();
+		$thank_you->send_verified_nocache_headers();
+		$thank_you->render_verified_meta();
+		$this->assertSame( '', (string) \ob_get_clean() );
+	}
+
+	/**
+	 * A WPML-translated thank-you page with a localized slug still matches via
+	 * wpml_object_id and emits both no-cache headers and verified meta.
+	 */
+	public function test_translated_thank_you_page_emits_nocache_and_verified_meta(): void {
+		$this->mock_passthroughs();
+		WP_Mock::userFunction( 'is_admin' )->andReturn( false );
+		WP_Mock::userFunction( 'is_page' )->andReturnUsing(
+			static function ( $page = '' ): bool {
+				return '' === $page;
+			}
+		);
+		WP_Mock::userFunction( 'get_queried_object_id' )->andReturn( 777 );
+		$base_page = new \WP_Post(
+			(object) array(
+				'ID'        => 42,
+				'post_type' => 'page',
+			)
+		);
+		WP_Mock::userFunction( 'get_page_by_path' )->with( ThankYou::PATH )->andReturn( $base_page );
+		WP_Mock::onFilter( 'wpml_object_id' )->with( 42, 'page', false, 'en' )->reply( 777 );
+		WP_Mock::userFunction( 'wp_hash' )->andReturn( 'the-key' );
+		$post = new \WP_Post(
+			(object) array(
+				'ID'        => 123,
+				'post_type' => 'md_inquiry',
+			)
+		);
+		WP_Mock::userFunction( 'get_post' )->andReturn( $post );
+		WP_Mock::userFunction( 'get_post_meta' )->andReturnUsing(
+			static function ( int $id, string $key ): string {
+				return 'pattern_name' === $key ? 'Apiary' : 'APIARY';
+			}
+		);
+		WP_Mock::userFunction( 'nocache_headers' )->atLeast()->once();
+
+		$_GET = array(
+			'md_inquiry' => '123',
+			'key'        => 'the-key',
+		);
+
+		$thank_you = new ThankYou();
+		$thank_you->send_verified_nocache_headers();
+		\ob_start();
+		$thank_you->render_verified_meta();
+		$html = (string) \ob_get_clean();
+		$this->assertStringContainsString( 'name="md-inquiry-verified"', $html );
 	}
 
 	/**

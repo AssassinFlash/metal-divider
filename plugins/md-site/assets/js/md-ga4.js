@@ -63,18 +63,27 @@
 			'click',
 			function ( event ) {
 				var target = event && event.target;
+				if ( target && typeof target.closest !== 'function' ) {
+					target = target.parentElement || null;
+				}
 				if ( ! target || typeof target.closest !== 'function' ) {
 					return;
 				}
-				var link = target.closest( '.md-inquiry-whatsapp, a[href*="wa.me/85264731687"], a[href*="wa.me/"]' );
+				var link = target.closest(
+					'.md-inquiry-whatsapp, .md-inquiry-whatsapp-link, .inquiry-wa, a[href^="https://wa.me/"], a[href^="https://api.whatsapp.com/"]'
+				);
 				if ( ! link ) {
 					return;
 				}
 				var href = link.getAttribute( 'href' ) || '';
-				var source =
-					link.classList.contains( 'md-inquiry-whatsapp' ) || link.classList.contains( 'md-inquiry-whatsapp-link' )
-						? 'inquiry_form'
-						: 'site_link';
+				var isInquiryWa =
+					link.classList.contains( 'md-inquiry-whatsapp' ) ||
+					link.classList.contains( 'md-inquiry-whatsapp-link' ) ||
+					link.classList.contains( 'inquiry-wa' );
+				if ( ! isInquiryWa && ! /^https:\/\/(?:wa\.me|api\.whatsapp\.com)\//i.test( href ) ) {
+					return;
+				}
+				var source = isInquiryWa ? 'inquiry_form' : 'site_link';
 				w.gtag( 'event', 'whatsapp_click', {
 					link_url: href,
 					link_source: source,

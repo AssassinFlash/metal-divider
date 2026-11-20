@@ -38,6 +38,7 @@ final class ThankYou {
 	 */
 	public function register(): void {
 		\add_shortcode( self::SHORTCODE, array( $this, 'render_pattern' ) );
+		\add_action( 'template_redirect', array( $this, 'send_verified_nocache_headers' ) );
 		\add_action( 'wp_head', array( $this, 'render_verified_meta' ), 5 );
 	}
 
@@ -123,16 +124,76 @@ final class ThankYou {
 	}
 
 	/**
+	 * Checks whether the current front-end request is the thank-you page
+	 * (in English or any WPML-translated language slug).
+	 *
+	 * @return bool
+	 */
+	public static function is_thank_you_page(): bool {
+		if ( ! \is_page() ) {
+			return false;
+		}
+		if ( \is_page( self::PATH ) ) {
+			return true;
+		}
+		$current_id = (int) \get_queried_object_id();
+		$base_page  = \get_page_by_path( self::PATH );
+		if ( $base_page instanceof \WP_Post && $current_id > 0 ) {
+			if ( $current_id === $base_page->ID ) {
+				return true;
+			}
+			$target_lang = Locale::to_wpml( Locale::current() );
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML public filter.
+			$translated_id = (int) \apply_filters( 'wpml_object_id', $base_page->ID, 'page', false, $target_lang );
+			if ( $translated_id > 0 && $current_id === $translated_id ) {
+				return true;
+			}
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML public filter.
+			$default_lang = (string) \apply_filters( 'wpml_default_language', 'en' );
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WooCommerce.Commenting.CommentHooks.MissingHookComment -- WPML public filter.
+			$origin_id = (int) \apply_filters( 'wpml_object_id', $current_id, 'page', false, $default_lang );
+			if ( $origin_id > 0 && $origin_id === $base_page->ID ) {
+				return true;
+			}
+		}
+		if ( $current_id > 0 ) {
+			$content = (string) \get_post_field( 'post_content', $current_id );
+			if ( '' !== $content && \has_shortcode( $content, self::SHORTCODE ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Sends no-cache headers before output when rendering a verified thank-you
+	 * redirect so CDN/page caches never store a customer's inquiry metadata.
+	 */
+	public function send_verified_nocache_headers(): void {
+		if ( \is_admin() || ! self::is_thank_you_page() ) {
+			return;
+		}
+		if ( null === self::context() ) {
+			return;
+		}
+		\nocache_headers();
+	}
+
+	/**
 	 * Emits a CSP-safe verified meta tag in `<head>` for GA4 conversion
-	 * tracking on genuine thank-you redirects (never on forged requests).
+	 * tracking on genuine thank-you redirects (never on forged requests or
+	 * non-thank-you pages).
 	 */
 	public function render_verified_meta(): void {
-		if ( \is_admin() ) {
+		if ( \is_admin() || ! self::is_thank_you_page() ) {
 			return;
 		}
 		$context = self::context();
 		if ( null === $context ) {
 			return;
+		}
+		if ( ! \headers_sent() ) {
+			\nocache_headers();
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification -- verified by self::context() above via hash_equals.
 		$id_raw = isset( $_GET[ self::QUERY_VAR ] ) ? \sanitize_text_field( \wp_unslash( $_GET[ self::QUERY_VAR ] ) ) : '';

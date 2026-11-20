@@ -716,14 +716,21 @@ class Target:
                 ):
                     error.close()
                     last_error = error
-                    time.sleep(1.0)
+                    time.sleep(min(1.0 + 0.5 * attempt, 3.0))
                     continue
                 try:
                     raw = error.read()
                 finally:
                     error.close()
                 if str(error.headers.get("Content-Encoding", "")).lower() == "gzip":
-                    raw = gzip.decompress(raw)
+                    try:
+                        raw = gzip.decompress(raw)
+                    except (EOFError, gzip.BadGzipFile) as gz_error:
+                        last_error = gz_error
+                        if attempt < 7:
+                            time.sleep(min(1.0 + 0.5 * attempt, 3.0))
+                            continue
+                        raise DeployError(f"GET {url}: {gz_error}") from gz_error
                 return (
                     error.code,
                     cast("HTTPMessage", error.headers),
@@ -732,10 +739,12 @@ class Target:
             except (
                 OSError,
                 HTTPException,
-            ) as error:  # connection drop, timeout, or truncated chunked body
+                EOFError,
+                gzip.BadGzipFile,
+            ) as error:  # connection drop, timeout, truncated chunked body, or bad gzip
                 last_error = error
                 if attempt < 7:
-                    time.sleep(1.0)
+                    time.sleep(min(1.0 + 0.5 * attempt, 3.0))
         raise DeployError(f"GET {url}: {last_error}") from last_error
 
     def http(self, path: str, *, cache_buster: str | None = None) -> tuple[int, str]:
