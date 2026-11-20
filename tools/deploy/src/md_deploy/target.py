@@ -24,6 +24,7 @@ the first ssh call with ssh's own "does not resolve" message.
 from __future__ import annotations
 
 import base64
+import gzip
 import json
 import os
 import shlex
@@ -32,7 +33,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from http.client import HTTPMessage
+from http.client import HTTPException, HTTPMessage
 from pathlib import Path, PurePosixPath
 from typing import IO, Any, cast
 
@@ -663,31 +664,43 @@ class Target:
         if cache_buster:
             separator = "&" if "?" in url else "?"
             url = f"{url}{separator}cbq={cache_buster}"
-        headers = {"User-Agent": "md-deploy"}
+        headers = {"User-Agent": "md-deploy", "Accept-Encoding": "gzip"}
         if self.http_auth:
             # Basic auth for the review site's hPanel directory protection;
             # the pair travels in the request, never in the repository.
             encoded = base64.b64encode(self.http_auth.encode()).decode()
             headers["Authorization"] = f"Basic {encoded}"
         request = urllib.request.Request(url, headers=headers)
-        last_error: OSError | None = None
+        last_error: Exception | None = None
         for attempt in range(4):
             try:
                 with OPENER.open(request, timeout=30) as response:
+                    raw = response.read()
+                    if (
+                        str(response.headers.get("Content-Encoding", "")).lower()
+                        == "gzip"
+                    ):
+                        raw = gzip.decompress(raw)
                     return (
                         response.status,
                         cast("HTTPMessage", response.headers),
-                        response.read().decode("utf-8", errors="replace"),
+                        raw.decode("utf-8", errors="replace"),
                     )
             except urllib.error.HTTPError as error:
                 # A 3xx lands here too, by design: `_NoRedirects` leaves it to
                 # the default error handler, which raises with the status.
+                raw = error.read()
+                if str(error.headers.get("Content-Encoding", "")).lower() == "gzip":
+                    raw = gzip.decompress(raw)
                 return (
                     error.code,
                     cast("HTTPMessage", error.headers),
-                    error.read().decode("utf-8", errors="replace"),
+                    raw.decode("utf-8", errors="replace"),
                 )
-            except OSError as error:  # a refused connection, a DNS failure, a timeout
+            except (
+                OSError,
+                HTTPException,
+            ) as error:  # connection drop, timeout, or truncated chunked body
                 last_error = error
                 if attempt < 3:
                     time.sleep(1.0)

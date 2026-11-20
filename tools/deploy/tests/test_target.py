@@ -582,3 +582,48 @@ def test_a_dropped_plugins_size_probe_backs_off_before_the_pull(
     assert ssh_calls == 2
     assert sleeps[0] >= 1
     assert rsyncs == 1
+
+
+def test_fetch_decompresses_gzip_and_retries_incomplete_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Truncated chunked reads retry, and gzipped responses decode cleanly."""
+    import gzip
+    from http.client import HTTPMessage, IncompleteRead
+
+    sleeps = _record_sleeps(monkeypatch)
+    calls = 0
+
+    class _FakeResponse:
+        status = 200
+        headers = HTTPMessage()
+
+        def __init__(self, body: bytes) -> None:
+            self.headers["Content-Encoding"] = "gzip"
+            self._body = body
+
+        def __enter__(self) -> _FakeResponse:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return self._body
+
+    def fake_open(request: object, timeout: int = 30) -> _FakeResponse:
+        nonlocal calls
+        calls += 1
+        assert getattr(request, "headers", {}).get("Accept-encoding") == "gzip"
+        if calls == 1:
+            raise IncompleteRead(b"partial")
+        return _FakeResponse(gzip.compress(b"<html>ok</html>"))
+
+    monkeypatch.setattr(target.OPENER, "open", fake_open)
+
+    status, _, body = _remote_site(tmp_path).fetch("/")
+
+    assert calls == 2
+    assert sleeps == [1.0]
+    assert status == 200
+    assert body == "<html>ok</html>"
