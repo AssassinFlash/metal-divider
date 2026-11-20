@@ -168,9 +168,16 @@ class _NoRedirects(urllib.request.HTTPRedirectHandler):
 OPENER = urllib.request.build_opener(_NoRedirects)
 
 
-def _run(command: list[str], *, cwd: Path | None = None) -> str:
+def _run(
+    command: list[str], *, cwd: Path | None = None, stdin: str | None = None
+) -> str:
     result = subprocess.run(
-        command, capture_output=True, text=True, check=False, cwd=cwd
+        command,
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=cwd,
+        input=stdin,
     )
     if result.returncode != 0:
         detail = (result.stderr or result.stdout).strip()
@@ -308,6 +315,15 @@ class Target:
 
     def shell(self, script: str) -> str:
         """Run a shell script on the machine the site runs on."""
+        if (
+            self.shell_prefix is not None
+            and self.shell_prefix[-1] == "bash -c"
+            and len(script) > 4096
+        ):
+            # OpenSSH ControlMaster packs the entire remote argv into one mux
+            # control message (~12 KB macOS sendmsg limit); streaming long
+            # scripts via `bash -s` keeps the command line tiny.
+            return _run([*self.shell_prefix[:-1], "bash -s"], stdin=script)
         return _run(self.shell_command(script))
 
     def rsync(

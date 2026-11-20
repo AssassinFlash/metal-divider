@@ -627,3 +627,27 @@ def test_fetch_decompresses_gzip_and_retries_incomplete_read(
     assert sleeps == [1.0]
     assert status == 200
     assert body == "<html>ok</html>"
+
+
+def test_long_remote_shell_streams_via_bash_stdin(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Long remote scripts travel on stdin (`bash -s`) so ControlMaster mux stays small."""
+    seen: list[tuple[list[str], str | None]] = []
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        seen.append((command, kwargs.get("input")))  # type: ignore[arg-type]
+        return subprocess.CompletedProcess(command, 0, stdout="ok\n", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    long_script = "echo start\n" + ("# pad\n" * 1000)
+    out = _remote_site(tmp_path).shell(long_script)
+
+    assert out == "ok\n"
+    assert len(seen) == 1
+    cmd, stdin = seen[0]
+    assert cmd[-1] == "bash -s"
+    assert stdin == long_script
