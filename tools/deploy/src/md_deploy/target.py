@@ -688,7 +688,7 @@ class Target:
             headers["Authorization"] = f"Basic {encoded}"
         request = urllib.request.Request(url, headers=headers)
         last_error: Exception | None = None
-        for attempt in range(4):
+        for attempt in range(8):
             try:
                 with OPENER.open(request, timeout=30) as response:
                     raw = response.read()
@@ -712,7 +712,7 @@ class Target:
                 if (
                     error.code in (301, 302, 307, 308)
                     and location == url
-                    and attempt < 3
+                    and attempt < 7
                 ):
                     error.close()
                     last_error = error
@@ -734,7 +734,7 @@ class Target:
                 HTTPException,
             ) as error:  # connection drop, timeout, or truncated chunked body
                 last_error = error
-                if attempt < 3:
+                if attempt < 7:
                     time.sleep(1.0)
         raise DeployError(f"GET {url}: {last_error}") from last_error
 
