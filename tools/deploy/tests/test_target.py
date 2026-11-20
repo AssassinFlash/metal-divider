@@ -651,3 +651,53 @@ def test_long_remote_shell_streams_via_bash_stdin(
     cmd, stdin = seen[0]
     assert cmd[-1] == "bash -s"
     assert stdin == long_script
+
+
+def test_fetch_retries_self_redirect_but_returns_real_redirect(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Transient CDN 301-to-self retries; genuine redirects return immediately."""
+    import urllib.error
+    from email.message import Message
+    from io import BytesIO
+
+    sleeps = _record_sleeps(monkeypatch)
+    calls = 0
+
+    class _Ok:
+        status = 200
+        headers = Message()
+
+        def __enter__(self) -> _Ok:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b"ok"
+
+    def fake_open(request: object, timeout: int = 30) -> _Ok:
+        nonlocal calls
+        calls += 1
+        url = getattr(request, "full_url", "")
+        if calls == 1 and url.endswith("/"):
+            hdrs = Message()
+            hdrs["Location"] = url
+            raise urllib.error.HTTPError(url, 301, "Moved", hdrs, BytesIO(b""))
+        if url.endswith("/shop/"):
+            hdrs = Message()
+            hdrs["Location"] = "https://metal-divider.com/patterns/"
+            raise urllib.error.HTTPError(url, 301, "Moved", hdrs, BytesIO(b""))
+        return _Ok()
+
+    monkeypatch.setattr(target.OPENER, "open", fake_open)
+
+    site = _remote_site(tmp_path)
+    status, _, body = site.fetch("/")
+    assert (calls, sleeps, status, body) == (2, [1.0], 200, "ok")
+
+    real_status, real_headers, _ = site.fetch("/shop/")
+    assert real_status == 301
+    assert real_headers.get("Location") == "https://metal-divider.com/patterns/"
+    assert sleeps == [1.0]

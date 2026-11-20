@@ -705,7 +705,23 @@ class Target:
             except urllib.error.HTTPError as error:
                 # A 3xx lands here too, by design: `_NoRedirects` leaves it to
                 # the default error handler, which raises with the status.
-                raw = error.read()
+                # Hostinger's CDN occasionally answers an edge miss with a 301
+                # whose Location equals the exact request URL; retry that
+                # transient self-redirect while returning real redirects intact.
+                location = str(error.headers.get("Location", "")).strip()
+                if (
+                    error.code in (301, 302, 307, 308)
+                    and location == url
+                    and attempt < 3
+                ):
+                    error.close()
+                    last_error = error
+                    time.sleep(1.0)
+                    continue
+                try:
+                    raw = error.read()
+                finally:
+                    error.close()
                 if str(error.headers.get("Content-Encoding", "")).lower() == "gzip":
                     raw = gzip.decompress(raw)
                 return (
