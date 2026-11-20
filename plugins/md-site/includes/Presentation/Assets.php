@@ -215,6 +215,7 @@ final class Assets {
 		\wp_enqueue_script( 'md-alpine', $base . 'alpine-csp.min.js', array( 'md-chrome', 'md-alpine-collapse', 'md-alpine-focus' ), '3.17.5', true );
 		if ( ! \is_user_logged_in() ) {
 			\wp_enqueue_script( 'md-clarity', $base . 'md-clarity.js', array(), self::version( 'assets/js/md-clarity.js' ), true );
+			\wp_enqueue_script( 'md-ga4', $base . 'md-ga4.js', array(), self::version( 'assets/js/md-ga4.js' ), true );
 		}
 	}
 }

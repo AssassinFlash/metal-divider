@@ -38,6 +38,7 @@ final class ThankYou {
 	 */
 	public function register(): void {
 		\add_shortcode( self::SHORTCODE, array( $this, 'render_pattern' ) );
+		\add_action( 'wp_head', array( $this, 'render_verified_meta' ), 5 );
 	}
 
 	/**
@@ -119,5 +120,27 @@ final class ThankYou {
 			$line .= ' <span class="md-inquiry-thank-you-code">' . \esc_html( $context['pattern_code'] ) . '</span>';
 		}
 		return '<p class="md-inquiry-thank-you-pattern">' . $line . '</p>';
+	}
+
+	/**
+	 * Emits a CSP-safe verified meta tag in `<head>` for GA4 conversion
+	 * tracking on genuine thank-you redirects (never on forged requests).
+	 */
+	public function render_verified_meta(): void {
+		if ( \is_admin() ) {
+			return;
+		}
+		$context = self::context();
+		if ( null === $context ) {
+			return;
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification -- verified by self::context() above via hash_equals.
+		$id_raw = isset( $_GET[ self::QUERY_VAR ] ) ? \sanitize_text_field( \wp_unslash( $_GET[ self::QUERY_VAR ] ) ) : '';
+		printf(
+			'<meta name="md-inquiry-verified" content="1" data-inquiry-id="%s" data-pattern-name="%s" data-pattern-code="%s">' . "\n",
+			\esc_attr( $id_raw ),
+			\esc_attr( $context['pattern_name'] ),
+			\esc_attr( $context['pattern_code'] )
+		);
 	}
 }

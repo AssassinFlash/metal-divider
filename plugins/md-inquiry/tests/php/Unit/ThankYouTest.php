@@ -114,6 +114,50 @@ final class ThankYouTest extends TestCase {
 	}
 
 	/**
+	 * The verified meta tag renders only for verified front-end thank-you
+	 * requests, never in admin or on unverified requests.
+	 */
+	public function test_verified_meta_renders_only_for_verified_requests(): void {
+		$this->mock_passthroughs();
+		WP_Mock::userFunction( 'is_admin' )->andReturn( false );
+		WP_Mock::userFunction( 'wp_hash' )->andReturn( 'the-key' );
+
+		$_GET      = array(
+			'md_inquiry' => '123',
+			'key'        => 'not-the-key',
+		);
+		$thank_you = new ThankYou();
+		\ob_start();
+		$thank_you->render_verified_meta();
+		$this->assertSame( '', (string) \ob_get_clean() );
+
+		$_GET = array(
+			'md_inquiry' => '123',
+			'key'        => 'the-key',
+		);
+		$post = new \WP_Post(
+			(object) array(
+				'ID'        => 123,
+				'post_type' => 'md_inquiry',
+			)
+		);
+		WP_Mock::userFunction( 'get_post' )->once()->andReturn( $post );
+		WP_Mock::userFunction( 'get_post_meta' )->andReturnUsing(
+			static function ( int $id, string $key ): string {
+				return 'pattern_name' === $key ? 'Apiary' : 'APIARY';
+			}
+		);
+
+		\ob_start();
+		$thank_you->render_verified_meta();
+		$html = (string) \ob_get_clean();
+		$this->assertSame(
+			'<meta name="md-inquiry-verified" content="1" data-inquiry-id="123" data-pattern-name="Apiary" data-pattern-code="APIARY">' . "\n",
+			$html
+		);
+	}
+
+	/**
 	 * Housekeeping: the superglobal the tests borrowed goes back.
 	 */
 	public static function tearDownAfterClass(): void {
