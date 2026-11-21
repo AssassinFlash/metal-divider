@@ -64,22 +64,44 @@ final class Translator {
 	private Segmenter $segmenter;
 
 	/**
+	 * Content root directory (`content/` under md-site, overridable for tests).
+	 *
+	 * @var string
+	 */
+	private string $content_dir;
+
+	/**
+	 * Whether template translation runs should also sync git-tracked `content/i18n/tm-<lang>.json`.
+	 *
+	 * @var bool
+	 */
+	private bool $sync_repo_tm;
+
+	/**
 	 * Initializer.
 	 *
 	 * @param DeepSeekClient|null       $client        Client instance.
 	 * @param TranslationValidator|null $validator     Validator instance.
 	 * @param Segmenter|null            $segmenter     Segmenter instance.
 	 * @param string|null               $tm_cache_path Explicit TM cache path.
+	 * @param string|null               $content_dir   Optional custom `content/` root for tests.
+	 * @param bool                      $sync_repo_tm  Whether to write updated template TM files under `$content_dir/i18n/`.
 	 */
 	public function __construct(
 		?DeepSeekClient $client = null,
 		?TranslationValidator $validator = null,
 		?Segmenter $segmenter = null,
-		?string $tm_cache_path = null
+		?string $tm_cache_path = null,
+		?string $content_dir = null,
+		bool $sync_repo_tm = false
 	) {
-		$this->client    = $client ?? new DeepSeekClient();
-		$this->validator = $validator ?? new TranslationValidator();
-		$this->segmenter = $segmenter ?? new Segmenter();
+		$this->client       = $client ?? new DeepSeekClient();
+		$this->validator    = $validator ?? new TranslationValidator();
+		$this->segmenter    = $segmenter ?? new Segmenter();
+		$this->content_dir  = null !== $content_dir && '' !== trim( $content_dir )
+			? rtrim( $content_dir, '/\\' )
+			: TemplateCompiler::default_content_dir();
+		$this->sync_repo_tm = $sync_repo_tm;
 
 		if ( null !== $tm_cache_path && '' !== trim( $tm_cache_path ) ) {
 			$this->tm_cache_path = $tm_cache_path;
@@ -111,7 +133,7 @@ final class Translator {
 			'templates' => 0,
 		);
 
-		$this->prewarm_all( $targets, $only );
+		$this->prewarm_all( $targets, $only, $force );
 
 		if ( in_array( $only, array( 'all', 'terms' ), true ) ) {
 			$report['terms'] = $this->translate_terms( $lang, $force );
@@ -658,54 +680,40 @@ final class Translator {
 		$targets = null !== $target_lang ? array( Languages::from_wpml( $target_lang ) ) : Languages::TARGETS;
 		$count   = 0;
 
-		$base_dir = dirname( __DIR__, 2 ) . '/content/livecanvas';
-		if ( ! is_dir( $base_dir ) ) {
+		$files = TemplateCompiler::template_files( $this->content_dir );
+		if ( array() === $files ) {
 			return 0;
 		}
 
-		// 1. Templates
-		$template_files = glob( $base_dir . '/*.html' );
-		$template_files = false === $template_files ? array() : $template_files;
-
-		// 2. Partials
-		$partial_files = glob( $base_dir . '/partials/*.html' );
-		$partial_files = false === $partial_files ? array() : $partial_files;
+		$this->ensure_tm_loaded();
+		$file_segments = $this->sync_repo_tm ? $this->extract_all_template_segments( $files ) : array();
 
 		foreach ( $targets as $lang ) {
-			foreach ( $template_files as $file ) {
-				$file_key = basename( $file, '.html' );
-				$en_html  = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-				if ( '' === trim( $en_html ) ) {
+			$this->merge_repo_tm_into_cache( $lang );
+			$existing = TemplateStore::load( $lang );
+
+			foreach ( $files as $key => $info ) {
+				$src_hash = $info['src_hash'];
+				if (
+					! $force &&
+					isset( $existing[ $key ] ) &&
+					$existing[ $key ]['src_hash'] === $src_hash &&
+					! empty( $existing[ $key ]['html'] )
+				) {
 					continue;
 				}
 
-				$src_hash = hash( 'sha256', rtrim( $en_html, "\n" ) );
-				$existing = TemplateStore::load( $lang );
-				if ( ! $force && isset( $existing[ 'tpl:' . $file_key ] ) && $existing[ 'tpl:' . $file_key ]['src_hash'] === $src_hash ) {
-					continue;
+				$tr_html = $this->translate_html_document( $info['html'], $lang );
+				if ( 'partial' === $info['kind'] ) {
+					TemplateStore::put_partial( $info['slug'], $info['html'], $tr_html, $lang );
+				} else {
+					TemplateStore::put_template( $info['slug'], $info['html'], $tr_html, $lang );
 				}
-
-				$tr_html = $this->translate_html_document( $en_html, $lang );
-				TemplateStore::put_template( $file_key, $en_html, $tr_html, $lang );
 				++$count;
 			}
 
-			foreach ( $partial_files as $file ) {
-				$slug    = basename( $file, '.html' );
-				$en_html = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-				if ( '' === trim( $en_html ) ) {
-					continue;
-				}
-
-				$src_hash = hash( 'sha256', rtrim( $en_html, "\n" ) );
-				$existing = TemplateStore::load( $lang );
-				if ( ! $force && isset( $existing[ 'part:' . $slug ] ) && $existing[ 'part:' . $slug ]['src_hash'] === $src_hash ) {
-					continue;
-				}
-
-				$tr_html = $this->translate_html_document( $en_html, $lang );
-				TemplateStore::put_partial( $slug, $en_html, $tr_html, $lang );
-				++$count;
+			if ( $this->sync_repo_tm ) {
+				$this->export_repo_tm_for_lang( $lang, $file_segments );
 			}
 		}
 
@@ -720,7 +728,7 @@ final class Translator {
 	 * @param string $lang Target canonical language code.
 	 */
 	public function translate_html_document( string $html, string $lang ): string {
-		$html = $this->transform_template_blocks(
+		$html = TemplateCompiler::transform_template_blocks(
 			$html,
 			fn( string $inner ): string => $this->translate_html_document( $inner, $lang )
 		);
@@ -747,68 +755,73 @@ final class Translator {
 	}
 
 	/**
-	 * Walks `<template ...>...</template>` elements using HtmlTokenizer and applies
-	 * a transformation callback to each top-level template's inner HTML losslessly.
+	 * Merges git-tracked `content/i18n/tm-<lang>.json` entries into the in-memory TM cache
+	 * so committed terminology/spelling fixes take precedence over older local cache entries.
 	 *
-	 * @param string   $html          Source HTML.
-	 * @param callable $inner_handler `fn(string $inner_html): string` callback.
+	 * @param string $lang Canonical target language code.
 	 */
-	private function transform_template_blocks( string $html, callable $inner_handler ): string {
-		if ( false === stripos( $html, '<template' ) ) {
-			return $html;
-		}
-
-		$tokenizer      = new HtmlTokenizer();
-		$tokens         = $tokenizer->tokens( $html );
-		$out            = '';
-		$template_depth = 0;
-		$open_tag       = '';
-		$inner_buf      = '';
-
-		foreach ( $tokens as $token ) {
-			if ( HtmlTokenizer::TYPE_TAG === $token['type'] && 'template' === $token['name'] ) {
-				$self_closing = ! $token['closing'] && str_ends_with( rtrim( substr( $token['raw'], 0, -1 ) ), '/' );
-				if ( ! $token['closing'] && ! $self_closing ) {
-					if ( 0 === $template_depth ) {
-						$open_tag       = $token['raw'];
-						$inner_buf      = '';
-						$template_depth = 1;
-					} else {
-						++$template_depth;
-						$inner_buf .= $token['raw'];
-					}
-					continue;
-				}
-
-				if ( $token['closing'] ) {
-					if ( $template_depth > 1 ) {
-						--$template_depth;
-						$inner_buf .= $token['raw'];
-					} elseif ( 1 === $template_depth ) {
-						$template_depth = 0;
-						$transformed    = (string) $inner_handler( $inner_buf );
-						$out           .= $open_tag . $transformed . $token['raw'];
-						$open_tag       = '';
-						$inner_buf      = '';
-					} else {
-						$out .= $token['raw'];
-					}
-					continue;
-				}
+	private function merge_repo_tm_into_cache( string $lang ): void {
+		$this->ensure_tm_loaded();
+		$repo_tm = TemplateCompiler::load_tm( $lang, $this->content_dir );
+		foreach ( $repo_tm as $hash => $tr ) {
+			if ( '' !== trim( $tr ) ) {
+				$this->tm_cache[ $lang . ':' . $hash ] = $tr;
 			}
+		}
+	}
 
-			if ( $template_depth > 0 ) {
-				$inner_buf .= $token['raw'];
-			} else {
-				$out .= $token['raw'];
+	/**
+	 * Extracts unique translatable segments per template key once so multi-language runs
+	 * do not re-tokenize the same English HTML 8 times.
+	 *
+	 * @param array<string, array{kind: string, key: string, slug: string, path: string, html: string, src_hash: string}> $files Template inventory.
+	 * @return array<string, list<string>>
+	 */
+	private function extract_all_template_segments( array $files ): array {
+		$by_key = array();
+		foreach ( $files as $key => $info ) {
+			$by_key[ $key ] = TemplateCompiler::extract_segments( $info['html'], $this->segmenter );
+		}
+		return $by_key;
+	}
+
+	/**
+	 * Writes the complete, pruned template TM map for a language to `content/i18n/tm-<lang>.json`
+	 * only when its contents differ from the existing file on disk.
+	 *
+	 * @param string                      $lang          Canonical target language code.
+	 * @param array<string, list<string>> $file_segments Extracted template segments keyed by store key.
+	 */
+	private function export_repo_tm_for_lang( string $lang, array $file_segments ): void {
+		$this->ensure_tm_loaded();
+
+		$all_segments = array();
+		foreach ( $file_segments as $segments ) {
+			foreach ( $segments as $seg ) {
+				$all_segments[ $seg ] = true;
 			}
 		}
 
-		if ( $template_depth > 0 ) {
-			$out .= $open_tag . $inner_buf;
+		$unique_segments = array_keys( $all_segments );
+		$translated_map  = $this->translate_segments_cached( $lang, $unique_segments );
+		$repo_tm         = array();
+
+		foreach ( $unique_segments as $seg ) {
+			$hash = hash( 'sha256', $seg );
+			if ( isset( $translated_map[ $seg ] ) && '' !== trim( $translated_map[ $seg ] ) ) {
+				$repo_tm[ $hash ] = $translated_map[ $seg ];
+			}
 		}
 
-		return $out;
+		ksort( $repo_tm, SORT_STRING );
+		$existing_tm = TemplateCompiler::load_tm( $lang, $this->content_dir );
+		ksort( $existing_tm, SORT_STRING );
+
+		if ( $existing_tm === $repo_tm && is_readable( TemplateCompiler::tm_file_path( $lang, $this->content_dir ) ) ) {
+			return;
+		}
+
+		TemplateCompiler::save_tm( $lang, $repo_tm, $this->content_dir );
 	}
 
 	/**
@@ -929,21 +942,38 @@ final class Translator {
 	/**
 	 * Prewarms all missing (language, segment) pairs across requested layers in parallel waves.
 	 *
+	 * For the `templates` layer when `$force` is false, templates and partials whose
+	 * `src_hash` already matches `TemplateStore` are skipped rather than scanning the
+	 * whole directory unnecessarily.
+	 *
 	 * @param array<int, string> $targets Canonical target language codes.
 	 * @param string             $only    Layer selector ('all', 'terms', 'pages', 'products', 'templates').
+	 * @param bool               $force   Whether to force re-translation of already matched templates.
 	 */
-	private function prewarm_all( array $targets, string $only ): void {
-		$source_segments = $this->collect_source_segments( $only );
-		if ( empty( $source_segments ) ) {
-			return;
-		}
-
+	private function prewarm_all( array $targets, string $only, bool $force = false ): void {
 		$this->ensure_tm_loaded();
+
+		$shared_segments = $this->collect_source_segments( $only );
+		$include_tpls    = in_array( $only, array( 'all', 'templates' ), true );
+		$template_files  = $include_tpls ? TemplateCompiler::template_files( $this->content_dir ) : array();
+		$cached_tpl_segs = array();
 
 		$batches = array();
 		foreach ( $targets as $lang ) {
+			if ( $include_tpls ) {
+				$this->merge_repo_tm_into_cache( $lang );
+			}
+
+			$lang_segments = $shared_segments;
+			if ( $include_tpls ) {
+				$tpl_segments = $this->collect_drifted_template_segments( $lang, $force, $template_files, $cached_tpl_segs );
+				if ( array() !== $tpl_segments ) {
+					$lang_segments = array_values( array_unique( array_merge( $lang_segments, $tpl_segments ) ) );
+				}
+			}
+
 			$lang_misses = array();
-			foreach ( $source_segments as $seg ) {
+			foreach ( $lang_segments as $seg ) {
 				$key = $lang . ':' . hash( 'sha256', $seg );
 				if ( ! isset( $this->tm_cache[ $key ] ) ) {
 					$lang_misses[] = $seg;
@@ -1004,7 +1034,53 @@ final class Translator {
 	}
 
 	/**
-	 * Collects unique masked source segments across requested translation layers.
+	 * Collects unique masked source segments for LiveCanvas templates/partials
+	 * that actually need translation for `$lang` (skipping `src_hash`-matched items
+	 * when `$force` is false).
+	 *
+	 * @param string                                                                                                      $lang            Canonical target language code.
+	 * @param bool                                                                                                        $force           Force scanning all templates.
+	 * @param array<string, array{kind: string, key: string, slug: string, path: string, html: string, src_hash: string}> $files           Template inventory.
+	 * @param array<string, list<string>>                                                                                 $cached_tpl_segs Per-key memo of extracted English segments.
+	 * @return list<string>
+	 */
+	private function collect_drifted_template_segments( string $lang, bool $force, array $files, array &$cached_tpl_segs ): array {
+		if ( array() === $files ) {
+			return array();
+		}
+
+		$existing = TemplateStore::load( $lang );
+		$seen     = array();
+
+		foreach ( $files as $key => $info ) {
+			$store_matched = isset( $existing[ $key ] )
+				&& $existing[ $key ]['src_hash'] === $info['src_hash']
+				&& ! empty( $existing[ $key ]['html'] );
+
+			if ( ! $force && $store_matched && ! $this->sync_repo_tm ) {
+				continue;
+			}
+
+			if ( ! isset( $cached_tpl_segs[ $key ] ) ) {
+				$cached_tpl_segs[ $key ] = TemplateCompiler::extract_segments( $info['html'], $this->segmenter );
+			}
+			foreach ( $cached_tpl_segs[ $key ] as $seg ) {
+				if ( ! $force && $store_matched ) {
+					// When syncing repo TM, only collect segments missing from cache.
+					$cache_key = $lang . ':' . hash( 'sha256', $seg );
+					if ( isset( $this->tm_cache[ $cache_key ] ) ) {
+						continue;
+					}
+				}
+				$seen[ $seg ] = true;
+			}
+		}
+
+		return array_keys( $seen );
+	}
+
+	/**
+	 * Collects unique masked source segments across non-template translation layers.
 	 *
 	 * @param string $only Layer selector.
 	 * @return array<int, string>
@@ -1025,24 +1101,9 @@ final class Translator {
 			}
 		};
 
-		$add_html = null;
-		$add_html = function ( string $html ) use ( &$seen, &$add_html ): void {
-			if ( '' === trim( $html ) ) {
-				return;
-			}
-			$this->transform_template_blocks(
-				$html,
-				static function ( string $inner ) use ( &$add_html ): string {
-					$add_html( $inner );
-					return $inner;
-				}
-			);
-			$doc = $this->segmenter->segment_html( $html );
-			foreach ( $doc['segments'] as $seg ) {
-				$s = $seg['text'];
-				if ( '' !== trim( $s ) && 1 === preg_match( '/\p{L}/u', TranslationValidator::strip_placeholders( $s ) ) ) {
-					$seen[ $s ] = true;
-				}
+		$add_html = function ( string $html ) use ( &$seen ): void {
+			foreach ( TemplateCompiler::extract_segments( $html, $this->segmenter ) as $s ) {
+				$seen[ $s ] = true;
 			}
 		};
 
@@ -1091,22 +1152,6 @@ final class Translator {
 					$add_plain( (string) \get_post_meta( $pid, 'notable_effect', true ) );
 					$add_plain( (string) \get_post_meta( $pid, '_seopress_titles_title', true ) );
 					$add_plain( (string) \get_post_meta( $pid, '_seopress_titles_desc', true ) );
-				}
-			}
-		}
-
-		if ( in_array( $only, array( 'all', 'templates' ), true ) ) {
-			$base_dir = dirname( __DIR__, 2 ) . '/content/livecanvas';
-			if ( is_dir( $base_dir ) ) {
-				$tpl_glob  = glob( $base_dir . '/*.html' );
-				$part_glob = glob( $base_dir . '/partials/*.html' );
-				$files     = array_merge(
-					false === $tpl_glob ? array() : $tpl_glob,
-					false === $part_glob ? array() : $part_glob
-				);
-				foreach ( $files as $file ) {
-					$en_html = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-					$add_html( $en_html );
 				}
 			}
 		}

@@ -12,9 +12,11 @@ namespace MetalDivider\Site\Tests\Unit\I18n;
 use MetalDivider\Site\Cli\I18nCommand;
 use MetalDivider\Site\I18n\DeepSeekClient;
 use MetalDivider\Site\I18n\Segmenter;
+use MetalDivider\Site\I18n\TemplateStore;
 use MetalDivider\Site\I18n\TranslationValidator;
 use MetalDivider\Site\I18n\Translator;
 use MetalDivider\Site\Tests\TestCase;
+use WP_Mock;
 
 /**
  * Tests Translator TM caching, batching, and document translation.
@@ -219,5 +221,147 @@ final class TranslatorTest extends TestCase {
 		$this->assertStringNotContainsString( '订单', $zh_clean );
 		$this->assertStringNotContainsString( '产品', $zh_clean );
 		$this->assertSame( $zh_clean, I18nCommand::sanitize_post_html( $zh_clean, 'zh' ) );
+	}
+
+	/**
+	 * Verifies prewarm_all() skips templates whose src_hash already matches TemplateStore
+	 * instead of scanning and translating unchanged templates (ticket #168).
+	 */
+	public function test_prewarm_skips_templates_whose_src_hash_already_matches(): void {
+		TemplateStore::forget();
+		WP_Mock::userFunction( 'get_option' )->andReturn( array() );
+		WP_Mock::userFunction( 'update_option' )->andReturn( true );
+
+		$tmp_content = sys_get_temp_dir() . '/md-prewarm-skip-' . uniqid( '', true );
+		mkdir( $tmp_content . '/livecanvas/partials', 0755, true );
+
+		$matched_html = '<section><h1>Already translated headline</h1></section>';
+		$drifted_html = '<section><h1>Newly edited headline</h1></section>';
+		file_put_contents( $tmp_content . '/livecanvas/about.html', $matched_html );
+		file_put_contents( $tmp_content . '/livecanvas/home.html', $drifted_html );
+
+		// Mark `about` as already up to date in TemplateStore, leaving `home` absent.
+		TemplateStore::put_template( 'about', $matched_html, '<section><h1>已翻译标题</h1></section>', 'zh' );
+
+		$seen_segments = array();
+		$client        = $this->createMock( DeepSeekClient::class );
+		$client->expects( $this->once() )
+			->method( 'translate_batches_parallel' )
+			->with(
+				$this->callback(
+					static function ( array $batches ) use ( &$seen_segments ): bool {
+						foreach ( $batches as $batch ) {
+							foreach ( $batch['segments'] as $seg ) {
+								$seen_segments[] = $seg;
+							}
+						}
+						return 1 === count( $batches )
+							&& array( 'Newly edited headline' ) === $batches[0]['segments'];
+					}
+				)
+			)
+			->willReturn( array( array( '新编辑标题' ) ) );
+
+		try {
+			$translator = new Translator( $client, new TranslationValidator(), new Segmenter(), $this->temp_tm_file, $tmp_content, false );
+			$report     = $translator->translate_all(
+				array(
+					'only'  => 'templates',
+					'lang'  => 'zh',
+					'force' => false,
+				)
+			);
+
+			$this->assertSame( 1, $report['templates'] );
+			$this->assertSame( array( 'Newly edited headline' ), $seen_segments );
+		} finally {
+			TemplateStore::forget();
+			unlink( $tmp_content . '/livecanvas/about.html' );
+			unlink( $tmp_content . '/livecanvas/home.html' );
+			rmdir( $tmp_content . '/livecanvas/partials' );
+			rmdir( $tmp_content . '/livecanvas' );
+			rmdir( $tmp_content );
+		}
+	}
+
+	/**
+	 * Verifies `--write-repo-tm` (`sync_repo_tm = true`) exports only changed repo TM files
+	 * and stays a no-op on subsequent runs when already in sync.
+	 */
+	public function test_write_repo_tm_mode_exports_new_segments_and_skips_unchanged_rewrite(): void {
+		TemplateStore::forget();
+		WP_Mock::userFunction( 'get_option' )->andReturn( array() );
+		WP_Mock::userFunction( 'update_option' )->andReturn( true );
+
+		$tmp_content = sys_get_temp_dir() . '/md-repo-tm-sync-' . uniqid( '', true );
+		mkdir( $tmp_content . '/livecanvas/partials', 0755, true );
+		mkdir( $tmp_content . '/i18n', 0755, true );
+
+		$html = '<section><h1>Stainless architectural screens</h1></section>';
+		file_put_contents( $tmp_content . '/livecanvas/home.html', $html );
+
+		$client = $this->createMock( DeepSeekClient::class );
+		$client->expects( $this->once() )
+			->method( 'translate_batches_parallel' )
+			->willReturn( array( array( '不锈钢建筑屏风' ) ) );
+
+		try {
+			$translator = new Translator( $client, new TranslationValidator(), new Segmenter(), $this->temp_tm_file, $tmp_content, true );
+			$report     = $translator->translate_all(
+				array(
+					'only'  => 'templates',
+					'lang'  => 'zh',
+					'force' => false,
+				)
+			);
+			$this->assertSame( 1, $report['templates'] );
+
+			$tm_file = $tmp_content . '/i18n/tm-zh.json';
+			$this->assertFileExists( $tm_file );
+			$exported = json_decode( (string) file_get_contents( $tm_file ), true );
+			$this->assertIsArray( $exported );
+			$this->assertSame( '不锈钢建筑屏风', $exported[ hash( 'sha256', 'Stainless architectural screens' ) ] );
+
+			// Second run with sync_repo_tm=true must make 0 API calls and leave mtime untouched.
+			touch( $tm_file, 1700000000 );
+			clearstatcache( true, $tm_file );
+			$client2 = $this->createMock( DeepSeekClient::class );
+			$client2->expects( $this->never() )->method( 'translate_batches_parallel' );
+			$translator2 = new Translator( $client2, new TranslationValidator(), new Segmenter(), $this->temp_tm_file, $tmp_content, true );
+			$report2     = $translator2->translate_all(
+				array(
+					'only'  => 'templates',
+					'lang'  => 'zh',
+					'force' => false,
+				)
+			);
+			$this->assertSame( 0, $report2['templates'] );
+			clearstatcache( true, $tm_file );
+			$this->assertSame( 1700000000, filemtime( $tm_file ), 'unchanged repo TM must not be rewritten' );
+		} finally {
+			TemplateStore::forget();
+			foreach (
+				array(
+					$tmp_content . '/i18n/tm-zh.json',
+					$tmp_content . '/livecanvas/home.html',
+				) as $file_path
+			) {
+				if ( is_file( $file_path ) ) {
+					unlink( $file_path );
+				}
+			}
+			foreach (
+				array(
+					$tmp_content . '/i18n',
+					$tmp_content . '/livecanvas/partials',
+					$tmp_content . '/livecanvas',
+					$tmp_content,
+				) as $dir_path
+			) {
+				if ( is_dir( $dir_path ) ) {
+					rmdir( $dir_path );
+				}
+			}
+		}
 	}
 }

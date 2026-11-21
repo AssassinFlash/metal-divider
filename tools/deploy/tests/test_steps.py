@@ -65,8 +65,13 @@ class _Site(Target):
             return self.eval_answers.get(args[1], "")
         if args[:2] == ("post", "list"):
             return self.eval_answers.get("products", "")
-        if args[0] == plan.WINDPRESS_ANCHORS[0]:
+        if (
+            args[0] == plan.WINDPRESS_ANCHORS[0]
+            and args[:2] == plan.WINDPRESS_ANCHORS[:2]
+        ):
             return self.eval_answers.get("anchors", "")
+        if args[:3] == plan.I18N_CHECK[:3]:
+            return self.eval_answers.get("i18n_check", "[]")
         return ""
 
     def http(self, path: str, *, cache_buster: str | None = None) -> tuple[int, str]:
@@ -148,25 +153,27 @@ def test_the_contract_passes_on_the_pinned_face(tmp_path: Path) -> None:
 
 
 def test_the_data_plane_runs_every_step_in_order(tmp_path: Path) -> None:
-    """present → seed-series → seed-tiles → seo, and nothing skipped.
+    """present → i18n compile-templates → seed-series → seed-tiles → seo, and nothing skipped.
 
-    The seeds are data, not files: the atomic code switch cannot carry them,
-    so a deploy that omitted either would leave a switched target rendering
-    the new templates against unseeded WooCommerce data. seed-tiles in
-    particular is the custom-screens tiles' only source of `menu_order` on a
-    clean target.
+    The seeds and compiled i18n stores are data, not files: the atomic code switch
+    cannot carry them, so a deploy that omitted `i18n compile-templates` would leave
+    non-English locales silently falling back to English on any template SHA-256 change.
     """
     site = _site(tmp_path)
     actions: list[str] = []
 
     steps.apply_data_plane(site, actions)
 
-    assert [call[:2] for call in site.wp_calls] == [
+    assert [call[:-1] for call in site.wp_calls] == [
         ("md-site", "present"),
+        ("md-site", "i18n", "compile-templates"),
         ("md-site", "seed-series"),
         ("md-site", "seed-tiles"),
         ("md-site", "seo"),
     ]
+    assert [a for a in actions if "i18n compile-templates" in a], (
+        "i18n compilation is reported"
+    )
     assert [a for a in actions if "seed-tiles" in a], "the run is reported"
     assert all(a.endswith("--user=1") for a in actions), (
         "the data plane runs as an administrator"
@@ -182,6 +189,7 @@ def test_the_data_plane_names_the_seeded_steps_it_ran(tmp_path: Path) -> None:
 
     assert actions == [
         "wp md-site present --user=1",
+        "wp md-site i18n compile-templates --user=1",
         "wp md-site seed-series --user=1",
         "wp md-site seed-tiles --user=1",
         "wp md-site seo --user=1",
@@ -215,14 +223,38 @@ def test_a_failing_seed_fails_the_deploy_instead_of_being_skipped(
     with pytest.raises(DeployError, match="seed-tiles"):
         steps.apply_data_plane(site, actions)
 
-    assert [call[:2] for call in site.wp_calls] == [
+    assert [call[:-1] for call in site.wp_calls] == [
         ("md-site", "present"),
+        ("md-site", "i18n", "compile-templates"),
         ("md-site", "seed-series"),
         ("md-site", "seed-tiles"),
     ], "the failing step is the last one attempted; seo never ran"
     assert not any("seo" in action for action in actions), (
         "a failed seed is not reported as a completed step"
     )
+
+
+def test_a_failing_i18n_compile_aborts_data_plane_before_seeds(tmp_path: Path) -> None:
+    """A missing template TM fails loudly inside apply_data_plane instead of silently falling back."""
+    site = _site(
+        tmp_path,
+        wp_failures={
+            (
+                "md-site",
+                "i18n",
+            ): "Template compilation failed: Missing template TM entry"
+        },
+    )
+    actions: list[str] = []
+
+    with pytest.raises(DeployError, match="Template compilation failed"):
+        steps.apply_data_plane(site, actions)
+
+    assert [call[:-1] for call in site.wp_calls] == [
+        ("md-site", "present"),
+        ("md-site", "i18n", "compile-templates"),
+    ]
+    assert actions == ["wp md-site present --user=1"]
 
 
 def test_the_windpress_mtime_reads_the_cache_inside_uploads(tmp_path: Path) -> None:
@@ -1015,3 +1047,108 @@ def test_the_workspace_name_is_not_the_checkout_path(tmp_path: Path) -> None:
     workspace = cli._workspace(tmp_path / "a b c")
     assert " " not in workspace.name, "the digest is space-free"
     assert len(workspace.name) == 12, "a stable short digest names the checkout"
+
+
+def test_verify_flags_drifted_i18n_templates_and_fails_closed_on_silence(
+    tmp_path: Path,
+) -> None:
+    """Both drifted hashes and a silent check-templates must keep verify red."""
+    drifted = _site(
+        tmp_path,
+        http_answers={"/": (200, "home")},
+        eval_answers={
+            "i18n_check": json.dumps(
+                [
+                    {
+                        "kind": "store_drift",
+                        "lang": "de",
+                        "key": "tpl:home",
+                        "reason": "src_hash_mismatch",
+                    }
+                ]
+            )
+        },
+    )
+    result = steps.verify(drifted, cache_buster="t")
+    assert any(
+        "i18n templates drifted (1)" in note and "de:tpl:home" in note
+        for note in result.notes
+    )
+
+    silent = _site(
+        tmp_path,
+        http_answers={"/": (200, "home")},
+        eval_answers={"i18n_check": ""},
+    )
+    silent_result = steps.verify(silent, cache_buster="t")
+    assert any("printed no JSON answer" in note for note in silent_result.notes)
+
+    noisy_pass = _site(
+        tmp_path,
+        http_answers={"/": (200, "home")},
+        eval_answers={
+            "i18n_check": "PHP Deprecated: something noisy in plugin X\n[]\n"
+        },
+    )
+    noisy_result = steps.verify(noisy_pass, cache_buster="t")
+    assert noisy_result.notes == []
+    assert any("i18n templates: 0 drift" in a for a in noisy_result.actions)
+
+    bad_json = _site(
+        tmp_path,
+        http_answers={"/": (200, "home")},
+        eval_answers={"i18n_check": "[not valid json"},
+    )
+    bad_result = steps.verify(bad_json, cache_buster="t")
+    assert any("invalid JSON" in note for note in bad_result.notes)
+
+
+def test_preflight_template_tm_gate_refuses_empty_stdout_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Empty stdout with exit code 0 must NEVER fail-open as 'no missing translations'."""
+    root = checkout(
+        tmp_path,
+        {
+            "plugins/md-site/content/livecanvas/home.html": "<h1>Hero</h1>\n",
+        },
+    )
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *a, **k: subprocess.CompletedProcess(a[0], 0, stdout="", stderr=""),
+    )
+    with pytest.raises(DeployError, match="empty stdout"):
+        steps.check_template_tm_coverage(root)
+
+
+def test_preflight_template_tm_gate_blocks_untranslated_template_before_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A template edited without updating `tm-<lang>.json` must fail BEFORE snapshot/upload."""
+    import hashlib
+
+    root = checkout(
+        tmp_path,
+        {
+            "plugins/md-site/content/livecanvas/home.html": "<h1>Fresh untranslated hero</h1>\n",
+        },
+    )
+    local = _site(tmp_path)
+    asked: list[str] = []
+    monkeypatch.setattr(snapshot, "take", lambda *a, **k: asked.append("snapshot"))
+
+    with pytest.raises(DeployError, match="i18n template TM is missing translations"):
+        steps.deploy(local, repository=root, staging=tmp_path / "staging")
+    assert asked == [], "preflight must abort before taking a database snapshot"
+
+    # Once every target language has the segment in tm-<lang>.json, preflight passes.
+    seg_hash = hashlib.sha256(b"Fresh untranslated hero").hexdigest()
+    tm_dir = root / "plugins" / "md-site" / "content" / "i18n"
+    tm_dir.mkdir(parents=True, exist_ok=True)
+    for lang in ("zh", "es", "pt-br", "de", "fr", "ar", "id", "vi"):
+        (tm_dir / f"tm-{lang}.json").write_text(
+            json.dumps({seg_hash: f"translated-{lang}"}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    steps.check_template_tm_coverage(root)

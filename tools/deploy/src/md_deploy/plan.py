@@ -74,6 +74,18 @@ STAGING_MU = "md-staging-guards.php"
 # tickets add the guard when they add the templates.
 PRESENT = ("md-site", "present")
 
+# Deterministic offline compilation of localized LiveCanvas templates/partials
+# from git-tracked `content/i18n/tm-<lang>.json` into `uploads/md-i18n/` and
+# `wp_options` (ticket #168). Runs immediately after `present` with zero network
+# or LLM dependency so editing template markup/CSS never leaves non-English
+# locales falling back to English on a SHA-256 mismatch.
+I18N_COMPILE = ("md-site", "i18n", "compile-templates")
+
+# Read-only verification of template TM coverage and live `TemplateStore`
+# `src_hash` parity (`[]` on stdout when 0 drift, non-empty JSON array + exit 1
+# on any missing TM or stale template store entry).
+I18N_CHECK = ("md-site", "i18n", "check-templates", "--format=json")
+
 # The series cards' one-time seed (the hub's card images and copy). It rides
 # the same DB plane as present, and for the same reason: the hub reads
 # WooCommerce's own `thumbnail_id` and the term description, a freshly

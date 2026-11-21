@@ -14,6 +14,8 @@ backups out of the web root.
 from __future__ import annotations
 
 import hashlib
+import json
+import os
 import shlex
 import shutil
 import subprocess
@@ -570,16 +572,128 @@ def contract(target: Target) -> Result:
     return Result("contract", actions, notes)
 
 
+def check_template_tm_coverage(repository: Path) -> None:
+    """Fail-closed preflight gate: every translatable template segment must exist in `tm-<lang>.json`.
+
+    Runs purely offline against the checkout before any snapshot or upload,
+    delegating segmentation to `md-site`'s own PHP `TemplateCompiler` so Python
+    and PHP can never disagree on placeholder masking or `<template>` parsing.
+    """
+    repository = Path(repository)
+    content_dir = repository / plan.REPO / "md-site" / "content"
+    if (
+        "md-site" not in landed_plugins(repository)
+        or not (content_dir / "livecanvas").is_dir()
+    ):
+        return
+
+    i18n_dir = repository / plan.REPO / "md-site" / "includes" / "I18n"
+    if not (i18n_dir / "TemplateCompiler.php").is_file():
+        i18n_dir = (
+            Path(__file__).resolve().parents[4]
+            / plan.REPO
+            / "md-site"
+            / "includes"
+            / "I18n"
+        )
+    if not (i18n_dir / "TemplateCompiler.php").is_file():
+        raise DeployError(
+            "cannot locate md-site TemplateCompiler.php to verify i18n template TM coverage"
+        )
+
+    php = (
+        os.environ.get("PHP")
+        or (
+            "/opt/homebrew/opt/php@8.3/bin/php"
+            if Path("/opt/homebrew/opt/php@8.3/bin/php").is_file()
+            else None
+        )
+        or shutil.which("php")
+    )
+    if not php:
+        raise DeployError("php is required to verify i18n template TM coverage")
+
+    script = (
+        "$dir = $argv[1]; $content = $argv[2]; "
+        "foreach (['Languages.php','HtmlTokenizer.php','TranslationValidator.php',"
+        "'Segmenter.php','TemplateStore.php','TemplateCompiler.php'] as $f) "
+        "{ require_once $dir . '/' . $f; } "
+        "$missing = MetalDivider\\Site\\I18n\\TemplateCompiler::check_tm_coverage(null, $content); "
+        "echo json_encode((object) $missing, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);"
+    )
+    try:
+        completed = subprocess.run(
+            [php, "-r", script, "--", str(i18n_dir), str(content_dir)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError as error:
+        raise DeployError(
+            f"i18n template TM preflight could not invoke {php}: {error}"
+        ) from error
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout).strip()
+        raise DeployError(f"i18n template TM preflight failed: {detail}")
+
+    raw_stdout = completed.stdout.strip()
+    if not raw_stdout:
+        raise DeployError(
+            "i18n template TM preflight returned empty stdout (refusing fail-open)"
+        )
+
+    try:
+        missing = json.loads(raw_stdout)
+    except json.JSONDecodeError as error:
+        raise DeployError(
+            f"i18n template TM preflight returned invalid JSON: {error}"
+        ) from error
+
+    if not isinstance(missing, dict):
+        raise DeployError(
+            f"i18n template TM preflight returned unexpected JSON type: {type(missing).__name__}"
+        )
+
+    if not missing:
+        return
+
+    summary_parts: list[str] = []
+    samples: list[str] = []
+    for lang, items in sorted(missing.items()):
+        if not isinstance(items, list):
+            raise DeployError(
+                f"i18n template TM preflight returned malformed entry for {lang}"
+            )
+        summary_parts.append(f"{lang}:{len(items)}")
+        for item in items[:2]:
+            if len(samples) < 4 and isinstance(item, dict):
+                samples.append(
+                    f"{lang} {item.get('key', '?')}: {str(item.get('segment', ''))[:60]}"
+                )
+    raise DeployError(
+        "i18n template TM is missing translations ("
+        + ", ".join(summary_parts)
+        + "; e.g. "
+        + "; ".join(samples)
+        + "). Run `wp md-site i18n translate --only=templates --write-repo-tm` locally "
+        "and commit plugins/md-site/content/i18n/tm-<lang>.json before deploying."
+    )
+
+
 def apply_data_plane(target: Target, actions: list[str]) -> None:
-    """Install md-site's data plane: templates, seeds, SEO configuration.
+    """Install md-site's data plane: templates, i18n compilation, seeds, SEO configuration.
 
     These steps are data, not files, so the atomic code switch cannot carry
-    them; without them a switched target keeps the previous WindPress volume
-    and the previous seed state while running the new templates.
+    them; without them a switched target keeps the previous WindPress volume,
+    stale localized template caches, and the previous seed state while running
+    the new templates.
 
     The order matters and is asserted by the tests:
 
     * ``present`` first — the templates and the volume the pages render from.
+    * ``i18n compile-templates`` — offline deterministic compilation of all 8
+      non-English template/partial stores from git-tracked `tm-<lang>.json`, so
+      every `src_hash` matches the templates `present` just installed.
     * ``seed-series`` — the hub's card images and copy, which a clean target
       has as empty WooCommerce term fields.
     * ``seed-tiles`` — the custom-screens panels' order, which is WooCommerce's
@@ -590,13 +704,18 @@ def apply_data_plane(target: Target, actions: list[str]) -> None:
     Both seeds mark what they handled and never touch a maintained record
     again, so deploying onto a site someone has been editing is a no-op.
     """
-    for step in (plan.PRESENT, plan.SEED_SERIES, plan.SEED_TILES, plan.SEO):
-        print(f"deploy: {step[1]}", flush=True)
+    for step in (
+        plan.PRESENT,
+        plan.I18N_COMPILE,
+        plan.SEED_SERIES,
+        plan.SEED_TILES,
+        plan.SEO,
+    ):
+        label = " ".join(step[1:])
+        print(f"deploy: {label}", flush=True)
         started = time.monotonic()
         target.wp(*step, "--user=1")
-        print(
-            f"deploy: {step[1]} done in {time.monotonic() - started:.1f}s", flush=True
-        )
+        print(f"deploy: {label} done in {time.monotonic() - started:.1f}s", flush=True)
         actions.append("wp " + " ".join(step) + " --user=1")
 
 
@@ -629,6 +748,7 @@ def deploy(
     remote = target.rsync_remote is not None
     source = source_state(Path(repository))
     _refuse_dirty_remote(source, target)
+    check_template_tm_coverage(Path(repository))
     if remote:
         # The version contract is part of the remote deploy (spec 20 §2.2:
         # 装完读回比对,不一致即失败); locally the stack builds from the same
@@ -893,7 +1013,60 @@ def verify(target: Target, *, cache_buster: str) -> Result:
         cache_actions, cache_notes = _page_cache_check(target)
         actions += cache_actions
         notes += cache_notes
+    i18n_actions, i18n_notes = _i18n_templates_check(target)
+    actions += i18n_actions
+    notes += i18n_notes
     return Result("verify", actions, notes)
+
+
+def _i18n_templates_check(target: Target) -> tuple[list[str], list[str]]:
+    """Read-only gate proving all 8 non-English template stores match live source hashes."""
+    actions: list[str] = []
+    notes: list[str] = []
+    raw = target.wp(*plan.I18N_CHECK, check=False).strip()
+    if not raw:
+        notes.append(
+            "i18n templates: check-templates printed no JSON answer "
+            "(md-site inactive or template check failed)"
+        )
+        return actions, notes
+    payload = raw
+    if not payload.startswith("["):
+        # Tolerate leading WP-CLI PHP warnings/notices on stdout by inspecting
+        # the last non-empty JSON-array line while staying strictly fail-closed.
+        candidates = [
+            line.strip() for line in raw.splitlines() if line.strip().startswith("[")
+        ]
+        if not candidates:
+            notes.append(
+                "i18n templates: check-templates printed no JSON answer "
+                "(md-site inactive or template check failed)"
+            )
+            return actions, notes
+        payload = candidates[-1]
+    try:
+        issues = json.loads(payload)
+    except json.JSONDecodeError as error:
+        notes.append(f"i18n templates: check-templates returned invalid JSON: {error}")
+        return actions, notes
+    if not isinstance(issues, list):
+        notes.append("i18n templates: check-templates returned non-list JSON")
+        return actions, notes
+    if not issues:
+        actions.append("i18n templates: 0 drift")
+        return actions, notes
+    preview = [
+        f"{item.get('lang', '?')}:{item.get('key', '?')}({item.get('reason', '?')})"
+        if isinstance(item, dict)
+        else str(item)
+        for item in issues[:8]
+    ]
+    suffix = f" and {len(issues) - 8} more" if len(issues) > 8 else ""
+    actions.append(f"i18n templates: {len(issues)} drift issue(s)")
+    notes.append(
+        f"i18n templates drifted ({len(issues)}): " + ", ".join(preview) + suffix
+    )
+    return actions, notes
 
 
 def _first_pattern_slug(target: Target) -> str | None:

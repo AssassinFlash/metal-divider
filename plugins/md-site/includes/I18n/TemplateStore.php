@@ -23,6 +23,13 @@ final class TemplateStore {
 	private static array $stores = array();
 
 	/**
+	 * Optional storage directory override used by unit tests instead of `wp_upload_dir()`.
+	 *
+	 * @var string|null
+	 */
+	private static ?string $storage_dir_override = null;
+
+	/**
 	 * Context-aware Simplified Chinese glossary replacements enforcing GLOSSARY.md
 	 * (never "订单" for order/orders; never "产品" for product/products).
 	 *
@@ -85,6 +92,16 @@ final class TemplateStore {
 	 */
 	public static function forget(): void {
 		self::$stores = array();
+	}
+
+	/**
+	 * Overrides the filesystem storage directory for isolated unit tests.
+	 *
+	 * @param string|null $dir Directory path or null to restore `wp_upload_dir()`.
+	 */
+	public static function set_storage_dir_for_tests( ?string $dir ): void {
+		self::$storage_dir_override = null !== $dir ? rtrim( $dir, '/\\' ) : null;
+		self::$stores               = array();
 	}
 
 	/**
@@ -432,6 +449,37 @@ final class TemplateStore {
 	}
 
 	/**
+	 * Replaces an entire language store in one atomic write when its content changed.
+	 *
+	 * Strictly idempotent: when every key, `src_hash`, and `html` already matches
+	 * the persisted store, no filesystem or database write is performed.
+	 *
+	 * @param string                                               $lang  Canonical language code.
+	 * @param array<string, array{src_hash: string, html: string}> $store Complete language store.
+	 * @return bool True when the store changed and was written, false when already up to date.
+	 */
+	public static function replace_store( string $lang, array $store ): bool {
+		$target = Languages::from_wpml( $lang );
+		if ( Languages::SOURCE === $target ) {
+			return false;
+		}
+
+		ksort( $store, SORT_STRING );
+
+		$existing     = self::load( $target );
+		$file         = self::storage_file( $target );
+		$file_present = null === $file || is_readable( $file );
+		ksort( $existing, SORT_STRING );
+
+		if ( $file_present && $existing === $store ) {
+			return false;
+		}
+
+		self::save( $target, $store );
+		return true;
+	}
+
+	/**
 	 * Loads storage map for a language.
 	 *
 	 * @param string $lang Canonical language code.
@@ -474,6 +522,7 @@ final class TemplateStore {
 	 *
 	 * @param string                                               $lang  Canonical language code.
 	 * @param array<string, array{src_hash: string, html: string}> $store Store data.
+	 * @throws \RuntimeException When the localized store file cannot be written atomically.
 	 */
 	private static function save( string $lang, array $store ): void {
 		self::$stores[ $lang ] = $store;
@@ -489,17 +538,32 @@ final class TemplateStore {
 		}
 		// phpcs:enable WordPress.WP.AlternativeFunctions.json_encode_json_encode
 
-		$written = false;
 		if ( null !== $file ) {
 			$dir = dirname( $file );
-			if ( ! is_dir( $dir ) && \function_exists( 'wp_mkdir_p' ) ) {
-				\wp_mkdir_p( $dir );
+			if ( ! is_dir( $dir ) ) {
+				$made = false;
+				if ( \function_exists( 'wp_mkdir_p' ) ) {
+					try {
+						$made = (bool) \wp_mkdir_p( $dir );
+					} catch ( \Throwable ) {
+						$made = false;
+					}
+				}
+				if ( ! $made && ! is_dir( $dir ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir,WordPress.PHP.NoSilencedErrors.Discouraged
+					@mkdir( $dir, 0755, true );
+				}
 			}
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-			$res = @file_put_contents( $file, $json, LOCK_EX );
-			if ( false !== $res ) {
-				$written = true;
+			$temp = $file . '.tmp.' . uniqid( '', true );
+			// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions
+			$res = @file_put_contents( $temp, $json, LOCK_EX );
+			if ( false === $res || ! @rename( $temp, $file ) ) {
+				@unlink( $temp );
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+				throw new \RuntimeException( sprintf( 'Failed to write localized template store: %s', $file ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
+			// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions
 		}
 
 		// Also sync to options fallback with autoload = false.
@@ -514,6 +578,9 @@ final class TemplateStore {
 	 * @param string $lang Canonical language code.
 	 */
 	private static function storage_file( string $lang ): ?string {
+		if ( null !== self::$storage_dir_override && '' !== self::$storage_dir_override ) {
+			return self::$storage_dir_override . '/templates-' . $lang . '.json';
+		}
 		if ( \function_exists( 'wp_upload_dir' ) ) {
 			$uploads = \wp_upload_dir();
 			if ( ! empty( $uploads['basedir'] ) ) {

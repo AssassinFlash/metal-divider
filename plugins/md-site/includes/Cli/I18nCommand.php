@@ -12,6 +12,7 @@ namespace MetalDivider\Site\Cli;
 use MetalDivider\Site\I18n\HtmlTokenizer;
 use MetalDivider\Site\I18n\Languages;
 use MetalDivider\Site\I18n\Setup;
+use MetalDivider\Site\I18n\TemplateCompiler;
 use MetalDivider\Site\I18n\TemplateStore;
 use MetalDivider\Site\I18n\Translator;
 use WP_CLI;
@@ -22,6 +23,22 @@ use WP_Post;
  * metal-divider.com's nine supported languages.
  */
 final class I18nCommand {
+
+	/**
+	 * Optional custom `content/` directory root (used by tests).
+	 *
+	 * @var string|null
+	 */
+	private ?string $content_dir;
+
+	/**
+	 * Initializer.
+	 *
+	 * @param string|null $content_dir Optional custom `content/` root for tests.
+	 */
+	public function __construct( ?string $content_dir = null ) {
+		$this->content_dir = $content_dir;
+	}
 
 	/**
 	 * Configures or verifies the 9-language WPML + ST + WCML + ACFML stack.
@@ -94,6 +111,10 @@ final class I18nCommand {
 	 * [--force]
 	 * : Force re-translation even if already translated.
 	 *
+	 * [--write-repo-tm]
+	 * : Also export updated template segments back to git-tracked `content/i18n/tm-<lang>.json`
+	 *   (local development workflow only; omitted by default so deployed hosts stay read-only).
+	 *
 	 * @when after_wp_load
 	 *
 	 * @param array<int, string>   $args       Positional arguments.
@@ -103,9 +124,10 @@ final class I18nCommand {
 		$only          = (string) ( $assoc_args['only'] ?? 'all' );
 		$lang          = (string) ( $assoc_args['lang'] ?? 'all' );
 		$force         = isset( $assoc_args['force'] );
+		$write_repo_tm = isset( $assoc_args['write-repo-tm'] );
 		$tm_cache_path = isset( $assoc_args['tm-cache'] ) ? (string) $assoc_args['tm-cache'] : null;
 
-		$translator = new Translator( null, null, null, $tm_cache_path );
+		$translator = new Translator( null, null, null, $tm_cache_path, $this->content_dir, $write_repo_tm );
 
 		WP_CLI::log( sprintf( 'Starting I18n translation (scope: %s, lang: %s, force: %s)...', $only, $lang, $force ? 'yes' : 'no' ) );
 
@@ -130,6 +152,148 @@ final class I18nCommand {
 		} catch ( \Throwable $e ) {
 			WP_CLI::error( 'Translation failed: ' . $e->getMessage() );
 		}
+	}
+
+	/**
+	 * Compiles localized LiveCanvas templates and partials purely offline from
+	 * git-tracked `content/i18n/tm-<lang>.json` into `uploads/md-i18n/` and `wp_options`.
+	 *
+	 * Fails closed if any translatable segment is missing from the template TM.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--lang=<code|all>]
+	 * : Target language canonical code or all.
+	 * ---
+	 * default: all
+	 * ---
+	 *
+	 * @subcommand compile-templates
+	 * @when after_wp_load
+	 *
+	 * @param array<int, string>   $args       Positional arguments.
+	 * @param array<string, mixed> $assoc_args Associative flags.
+	 */
+	public function compile_templates( array $args, array $assoc_args ): void {
+		unset( $args );
+		$lang = (string) ( $assoc_args['lang'] ?? 'all' );
+
+		try {
+			$report = TemplateCompiler::compile_all(
+				'all' === $lang ? null : $lang,
+				$this->content_dir
+			);
+
+			if ( \function_exists( 'wp_cache_flush' ) ) {
+				\wp_cache_flush();
+			}
+
+			WP_CLI::success(
+				sprintf(
+					'Compiled %d template/partial entries across %d language(s) (%d updated).',
+					$report['entries'],
+					$report['languages'],
+					$report['updated_languages']
+				)
+			);
+		} catch ( \Throwable $e ) {
+			WP_CLI::error( 'Template compilation failed: ' . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Read-only audit of template TM coverage and live `TemplateStore` SHA-256 integrity.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--lang=<code|all>]
+	 * : Target language canonical code or all.
+	 * ---
+	 * default: all
+	 * ---
+	 *
+	 * [--format=<format>]
+	 * : Output format: table or json. Default: table. `json` prints one JSON array
+	 * (`[]` on pass) on stdout and exits non-zero when any drift or missing TM exists.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 * ---
+	 *
+	 * [--source-only]
+	 * : Only audit repository `content/i18n/tm-<lang>.json` coverage without checking live `TemplateStore`.
+	 *
+	 * @subcommand check-templates
+	 * @when after_wp_load
+	 *
+	 * @param array<int, string>   $args       Positional arguments.
+	 * @param array<string, mixed> $assoc_args Associative flags.
+	 */
+	public function check_templates( array $args, array $assoc_args ): void {
+		unset( $args );
+		$lang        = (string) ( $assoc_args['lang'] ?? 'all' );
+		$format      = (string) ( $assoc_args['format'] ?? 'table' );
+		$source_only = isset( $assoc_args['source-only'] );
+		$lang_list   = 'all' === $lang ? null : array( Languages::from_wpml( $lang ) );
+
+		$issues = array();
+
+		$tm_missing = TemplateCompiler::check_tm_coverage( $lang_list, $this->content_dir );
+		foreach ( $tm_missing as $code => $items ) {
+			foreach ( $items as $item ) {
+				$issues[] = array(
+					'kind'   => 'tm_missing',
+					'lang'   => $code,
+					'key'    => $item['key'],
+					'reason' => 'missing_tm:' . substr( $item['hash'], 0, 12 ),
+				);
+			}
+		}
+
+		if ( ! $source_only ) {
+			$store_drift = TemplateCompiler::check_store_drift(
+				'all' === $lang ? null : $lang,
+				$this->content_dir
+			);
+			foreach ( $store_drift as $drift ) {
+				$issues[] = array(
+					'kind'   => 'store_drift',
+					'lang'   => $drift['lang'],
+					'key'    => $drift['key'],
+					'reason' => $drift['reason'],
+				);
+			}
+		}
+
+		if ( 'json' === $format ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions.json_encode_json_encode
+			try {
+				$encoded = \function_exists( 'wp_json_encode' )
+					? (string) \wp_json_encode( $issues, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
+					: (string) json_encode( $issues, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+			} catch ( \Throwable ) {
+				$encoded = (string) json_encode( $issues, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+			}
+			// phpcs:enable WordPress.WP.AlternativeFunctions.json_encode_json_encode
+			WP_CLI::log( $encoded );
+			if ( array() !== $issues ) {
+				WP_CLI::error( sprintf( 'i18n templates: %d issue(s) detected.', count( $issues ) ) );
+			}
+			return;
+		}
+
+		if ( array() === $issues ) {
+			$scope = $source_only ? 'TM coverage' : 'TM coverage and TemplateStore src_hash';
+			WP_CLI::success( sprintf( 'i18n templates: 0 drift (%s verified).', $scope ) );
+			return;
+		}
+
+		foreach ( $issues as $issue ) {
+			WP_CLI::log( sprintf( '[%s] %s %s (%s)', $issue['kind'], $issue['lang'], $issue['key'], $issue['reason'] ) );
+		}
+		WP_CLI::error( sprintf( 'i18n templates: %d issue(s) detected.', count( $issues ) ) );
 	}
 
 	/**
