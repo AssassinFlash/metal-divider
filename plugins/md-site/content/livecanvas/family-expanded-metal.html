@@ -565,14 +565,18 @@ for Your Screen?</h2>
 
     <!-- View Switch -->
     <div class="mb-10 flex justify-center">
-      <div class="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1.5">
+      <div class="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1.5" role="tablist">
         <button
           data-evp-switch="compare"
           data-active
+          role="tab"
+          aria-selected="true"
           class="rounded-full px-6 py-2 text-sm font-semibold transition-all duration-200"
         >Side by Side</button>
         <button
           data-evp-switch="detail"
+          role="tab"
+          aria-selected="false"
           class="rounded-full px-6 py-2 text-sm font-semibold transition-all duration-200"
         >Method Detail</button>
       </div>
@@ -715,18 +719,24 @@ for Your Screen?</h2>
     <div data-evp-panel="detail" hidden>
 
       <!-- Tab pills -->
-      <div class="mb-8 flex flex-wrap justify-center gap-3">
+      <div class="mb-8 flex flex-wrap justify-center gap-3" role="tablist">
         <button
           data-evp-tab="expanded"
           data-active
+          role="tab"
+          aria-selected="true"
           class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200"
         >Expanded Metal</button>
         <button
           data-evp-tab="perforated"
+          role="tab"
+          aria-selected="false"
           class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200"
         >Perforated</button>
         <button
           data-evp-tab="laser"
+          role="tab"
+          aria-selected="false"
           class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200"
         >Laser-Cut</button>
       </div>
@@ -1352,7 +1362,7 @@ for Your Screen?</h2>
   id="expanded-mid-cta-template--22084675240189__expanded-mid-cta"
   class="relative overflow-hidden md-tcc07631f"
 >
-  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-hd-720p-3-0mbps-68262742.mp4" type="video/mp4"><img role="presentation" src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"></video>
+  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"><source src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-hd-720p-3-0mbps-68262742.mp4" type="video/mp4"><img role="presentation" src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"></video>
 <div class="absolute inset-0 bg-black/55"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(201,169,98,0.12)_0%,_rgba(20,20,20,0.25)_40%,_rgba(20,20,20,0.82)_100%)]"></div>
     <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,20,20,0.28)_0%,rgba(20,20,20,0.72)_100%)]"></div>
@@ -1423,10 +1433,10 @@ for Your Screen?</h2>
         <table class="spec-table" id="expanded-manufacturing-envelope-template--22084675240189__expanded-manufacturing-envelope-table">
           <thead>
             <tr>
-              <th data-sort="param">Parameter<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
-              <th data-sort="range">Range<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
-              <th data-sort="status">Status<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
-              <th data-sort="note">Note<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
+              <th data-sort="param" aria-sort="none">Parameter<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
+              <th data-sort="range" aria-sort="none">Range<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
+              <th data-sort="status" aria-sort="none">Status<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
+              <th data-sort="note" aria-sort="none">Note<svg class="sort-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></th>
             </tr>
           </thead>
           <tbody><tr data-original-order="1">

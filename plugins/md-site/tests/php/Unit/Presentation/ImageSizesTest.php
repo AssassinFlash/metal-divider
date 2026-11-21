@@ -99,25 +99,25 @@ final class ImageSizesTest extends TestCase {
 	);
 
 	/**
-	 * The project-gallery lightbox placeholder.
+	 * Uploads whose `src` is overwritten at runtime by JavaScript.
 	 *
-	 * Its `src` is overwritten by `md-chrome.js` (`image.src = nextSrc`) with
-	 * whichever project the visitor opens, so the element never shows the
-	 * asset named in the markup and no single `srcset` can describe it. A
-	 * `srcset` here would also take precedence over the assigned `src` per
-	 * the HTML spec and pin the lightbox to one image.
-	 *
-	 * This element is nonetheless a real, separate defect: it is
-	 * `loading="eager"` while its dialog is hidden, so every project-gallery
-	 * visit downloads the 2048w placeholder (944 KB measured 2026-10-26)
-	 * before anyone opens a lightbox. `project-gallery.html` is another
-	 * session's face, so that is reported rather than edited here.
+	 * The project-gallery lightbox stage image used to live here while its
+	 * hidden `<img>` carried a static `2048w` `src` (944 KB). Omitting `src`
+	 * on the hidden stage image removed the last entry; the list stays empty
+	 * unless a genuinely JS-managed bare upload returns.
 	 *
 	 * @var list<string> uploads file names.
 	 */
-	private const JAVASCRIPT_MANAGED_IMAGES = array(
-		'our-park-hyatt-mesh-screen-hero-2048w.webp',
-	);
+	private const JAVASCRIPT_MANAGED_IMAGES = array();
+
+	/**
+	 * JS-managed bare upload exemptions, typed as `list<string>` for static analysis.
+	 *
+	 * @return list<string>
+	 */
+	private function javascript_managed_images(): array {
+		return self::JAVASCRIPT_MANAGED_IMAGES;
+	}
 
 	/**
 	 * Every template and partial the inventory names.
@@ -320,7 +320,7 @@ final class ImageSizesTest extends TestCase {
 			$this->assertTrue( $video_names[ $file ], "{$file} is exempted as a video poster fallback but is not inside a <video>" );
 		}
 
-		foreach ( self::JAVASCRIPT_MANAGED_IMAGES as $file ) {
+		foreach ( $this->javascript_managed_images() as $file ) {
 			$this->assertArrayHasKey( $file, $bare, "{$file} is exempted as JS-managed but no template ships it bare" );
 		}
 
@@ -349,7 +349,7 @@ final class ImageSizesTest extends TestCase {
 		if ( $in_video ) {
 			return true;
 		}
-		if ( in_array( $file, self::JAVASCRIPT_MANAGED_IMAGES, true ) ) {
+		if ( in_array( $file, $this->javascript_managed_images(), true ) ) {
 			return true;
 		}
 		if ( in_array( $stem, self::SINGLE_TIER_STEMS, true ) ) {

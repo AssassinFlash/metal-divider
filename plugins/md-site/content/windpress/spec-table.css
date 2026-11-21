@@ -423,6 +423,11 @@ padding-bottom: 80px;
 html.md-js #outdoor-specs-template--21873710596349__outdoor_specs [x-cloak] {
 display: none !important;
 }
+@media (scripting: enabled) {
+#outdoor-specs-template--21873710596349__outdoor_specs [x-cloak] {
+display: none !important;
+}
+}
 #chinese-specs-template--21873710498045__chinese_specs {
 padding-top: 72px;
 padding-bottom: 72px;

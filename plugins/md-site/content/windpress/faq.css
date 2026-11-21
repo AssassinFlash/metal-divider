@@ -339,6 +339,9 @@ padding-bottom: 80px;
 }
 }
 html.md-js #outdoor-faq-template--21873710596349__outdoor_faq [x-cloak] { display: none !important; }
+@media (scripting: enabled) {
+#outdoor-faq-template--21873710596349__outdoor_faq [x-cloak] { display: none !important; }
+}
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer p { margin-bottom: 12px; }
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer strong { color: rgba(255,255,255,0.95); }
 #outdoor-faq-template--21873710596349__outdoor_faq .ofaq-answer p:has(> strong:only-child) {

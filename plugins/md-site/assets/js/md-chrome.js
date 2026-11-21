@@ -4861,12 +4861,21 @@
     var nextBtn = lightbox.querySelector('.lightbox-nav--next');
     var image = lightbox.querySelector('.lightbox-image');
     var fallback = lightbox.querySelector('.lightbox-fallback');
+    var retryBtn = lightbox.querySelector('[data-lightbox-retry]');
     var titleEl = lightbox.querySelector('.lightbox-title');
     var subtitleEl = lightbox.querySelector('.lightbox-subtitle');
     var counterEl = lightbox.querySelector('.lightbox-counter');
     var currentImages = [];
     var currentIndex = 0;
     var currentProject = {};
+    var loadToken = 0;
+    var activeLoadToken = 0;
+    var activeRawSrc = '';
+    var activeTargetSrc = '';
+    var fallbackTried = false;
+    var activeRetryTs = 0;
+    var lastRetryTs = 0;
+    var preloadedUrls = {};
 
     var parseImages = function (value) {
       return (value || '')
@@ -4877,20 +4886,105 @@
         .filter(Boolean);
     };
 
-    var updateLightbox = function () {
+    var displayUrl = function (url) {
+      if (!url) {
+        return '';
+      }
+      return String(url).replace(/-2048w\.webp(?=(?:[?#].*)?$)/i, '-1536w.webp');
+    };
+
+    var withRetryParam = function (url, ts) {
+      var raw = String(url || '');
+      if (!raw) {
+        return '';
+      }
+      var hashIndex = raw.indexOf('#');
+      var basePart = hashIndex === -1 ? raw : raw.slice(0, hashIndex);
+      var hashPart = hashIndex === -1 ? '' : raw.slice(hashIndex);
+      var queryIndex = basePart.indexOf('?');
+      var pathPart = queryIndex === -1 ? basePart : basePart.slice(0, queryIndex);
+      var queryPart = queryIndex === -1 ? '' : basePart.slice(queryIndex + 1);
+      var kept = queryPart
+        ? queryPart.split('&').filter(function (pair) {
+            return pair && !/^mdretry(?:=|$)/i.test(pair);
+          })
+        : [];
+      kept.push('mdretry=' + encodeURIComponent(String(ts)));
+      return pathPart + '?' + kept.join('&') + hashPart;
+    };
+
+    var preloadNext = function () {
+      if (currentImages.length < 2) {
+        return;
+      }
+      var nextRaw = currentImages[(currentIndex + 1) % currentImages.length];
+      var nextUrl = displayUrl(nextRaw);
+      if (!nextUrl || preloadedUrls[nextUrl]) {
+        return;
+      }
+      preloadedUrls[nextUrl] = true;
+      var pre = new Image();
+      pre.decoding = 'async';
+      pre.src = nextUrl;
+    };
+
+    var showImage = function (forceReload) {
       if (!currentImages.length) {
         return;
       }
+      var rawSrc = currentImages[currentIndex] || '';
+      activeRawSrc = rawSrc;
+      fallbackTried = false;
+      if (forceReload) {
+        var now = Date.now();
+        activeRetryTs = now > lastRetryTs ? now : lastRetryTs + 1;
+        lastRetryTs = activeRetryTs;
+      } else {
+        activeRetryTs = 0;
+      }
+      var token = ++loadToken;
+      activeLoadToken = token;
       if (fallback) {
         fallback.hidden = true;
       }
-      if (image) {
-        image.hidden = false;
+      if (!image) {
+        return;
       }
-      var nextSrc = currentImages[currentIndex];
-      if (image && image.getAttribute('src') !== nextSrc) {
-        image.classList.add('is-loading');
-        image.src = nextSrc;
+      image.hidden = false;
+      image.decoding = 'async';
+      var targetSrc = displayUrl(rawSrc);
+      if (activeRetryTs) {
+        targetSrc = withRetryParam(targetSrc, activeRetryTs);
+      }
+      activeTargetSrc = targetSrc;
+      if (!targetSrc) {
+        image.classList.remove('is-loading');
+        image.hidden = true;
+        if (fallback) {
+          fallback.hidden = false;
+        }
+        return;
+      }
+      var currentAttrSrc = image.getAttribute('src');
+      if (!forceReload && currentAttrSrc === targetSrc && image.complete && image.naturalWidth > 0) {
+        image.classList.remove('is-loading');
+        preloadNext();
+        return;
+      }
+      image.classList.add('is-loading');
+      if (currentAttrSrc === targetSrc) {
+        image.removeAttribute('src');
+      }
+      image.src = targetSrc;
+      if (image.complete && image.naturalWidth > 0 && activeLoadToken === loadToken) {
+        image.classList.remove('is-loading');
+        preloadNext();
+      }
+    };
+
+    var updateLightbox = function () {
+      if (!currentImages.length) {
+        return;
       }
       if (image) {
         image.alt = (currentProject.title || 'Project image') + ' (' + (currentIndex + 1) + ')';
@@ -4911,6 +5005,7 @@
       if (nextBtn) {
         nextBtn.hidden = !showNav;
       }
+      showImage(false);
     };
 
     // Focus containment and the page's inert state are the shared surface
@@ -4940,10 +5035,6 @@
       // The opener is the control that invoked the dialog — the standard
       // WAI-ARIA return target.
       opener = trigger || document.activeElement;
-      currentImages.forEach(function (src) {
-        var pre = new Image();
-        pre.src = src;
-      });
       updateLightbox();
       lightbox.hidden = false;
       // The dialog is focusable so it can receive focus when it holds no
@@ -4965,6 +5056,18 @@
       // Same order as closeModal, for the same reason: the opener sits inside
       // the page that is still inert until popSurface runs, so focus is
       // restored only after it can land. One task, no intermediate paint.
+      loadToken += 1;
+      activeRawSrc = '';
+      activeTargetSrc = '';
+      fallbackTried = false;
+      activeRetryTs = 0;
+      if (fallback) {
+        fallback.hidden = true;
+      }
+      if (image) {
+        image.hidden = false;
+        image.classList.remove('is-loading');
+      }
       var restoreTo = opener;
       opener = null;
       popSurface(lightbox);
@@ -4996,14 +5099,51 @@
 
     if (image) {
       image.addEventListener('load', function () {
+        if (activeLoadToken !== loadToken || !activeTargetSrc || image.getAttribute('src') !== activeTargetSrc) {
+          return;
+        }
         image.classList.remove('is-loading');
+        image.hidden = false;
+        if (fallback) {
+          fallback.hidden = true;
+        }
+        preloadNext();
       });
       image.addEventListener('error', function () {
+        if (activeLoadToken !== loadToken || !activeTargetSrc || image.getAttribute('src') !== activeTargetSrc) {
+          return;
+        }
+        if (!fallbackTried && activeRawSrc && displayUrl(activeRawSrc) !== activeRawSrc) {
+          fallbackTried = true;
+          activeLoadToken = ++loadToken;
+          var fallbackSrc = activeRetryTs ? withRetryParam(activeRawSrc, activeRetryTs) : activeRawSrc;
+          activeTargetSrc = fallbackSrc;
+          image.classList.add('is-loading');
+          image.hidden = false;
+          if (fallback) {
+            fallback.hidden = true;
+          }
+          image.src = fallbackSrc;
+          if (image.complete && image.naturalWidth > 0 && activeLoadToken === loadToken) {
+            image.classList.remove('is-loading');
+            preloadNext();
+          }
+          return;
+        }
         image.classList.remove('is-loading');
+        image.hidden = true;
         if (fallback) {
           fallback.hidden = false;
         }
-        image.hidden = true;
+      });
+    }
+    if (retryBtn) {
+      retryBtn.addEventListener('click', function () {
+        var restoreFocusToClose = !!(fallback && fallback.contains(document.activeElement));
+        showImage(true);
+        if (restoreFocusToClose && closeBtn && typeof closeBtn.focus === 'function') {
+          closeBtn.focus({ preventScroll: true });
+        }
       });
     }
 

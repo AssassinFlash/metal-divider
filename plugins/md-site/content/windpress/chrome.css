@@ -1188,10 +1188,15 @@ footer .footer-v21__copyright-payment{ grid-column: span 6; }
    unconditionally it hides content *forever* when the script never runs: the
    family faces carry 24–26 cloaked blocks each, and with JS off the outdoor
    page kept 67% of its words and the Chinese-style page 66% (measured
-   2026-10-27). The footer already solved this shape — it shows every panel
-   until `is-ready` says the script took over. Same rule here: the cloak only
-   applies once `md-js` is on the root, which `md-chrome.js` sets at start. */
+   2026-10-27). Gating solely on `html.md-js`, however, waits until the footer
+   script (`md-chrome.js`) runs, so cloaked non-default panels paint expanded
+   and then collapse (high CLS). Pairing `@media (scripting: enabled)` with
+   `html.md-js` hides cloaked non-default panels at 0ms first paint in all
+   modern JS-enabled browsers while leaving `scripting: none` visitors with
+   every panel visible — zero inline script, zero CSP relaxation, and older
+   browsers still fall back to `html.md-js`. */
 html.md-js [x-cloak]{display:none !important}
+@media (scripting: enabled){[x-cloak]{display:none !important}}
 html.md-modal-open,html.md-modal-open body{overflow:hidden}
 xo-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);overflow-y:auto}
 xo-modal.is-open{display:block}

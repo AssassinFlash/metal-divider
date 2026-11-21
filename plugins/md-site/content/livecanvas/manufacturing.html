@@ -334,8 +334,9 @@ class="xo-container--box"
     <ul class="mfg-tech-nav-template--21844034879741__manufacturing_techniques"><li>
           <button
             type="button"
-            class="mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques mfg-tech-active"
+            class="mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques active"
             data-mfg-tech-nav="0"
+            aria-current="true"
           >
             <span class="mfg-tech-nav-label-template--21844034879741__manufacturing_techniques md-tc593ad00">Laser Cutting</span>
             <span class="md-td8ee4148">01</span>
@@ -387,14 +388,18 @@ for Your Screen?</h2>
 
     <!-- View Switch -->
     <div class="mb-10 flex justify-center">
-      <div class="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1.5">
+      <div class="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1.5" role="tablist">
         <button
           data-mfg-spec-switch="compare"
           data-active
+          role="tab"
+          aria-selected="true"
           class="rounded-full px-6 py-2 text-sm font-semibold transition-all duration-200"
         >Side by Side</button>
         <button
           data-mfg-spec-switch="detail"
+          role="tab"
+          aria-selected="false"
           class="rounded-full px-6 py-2 text-sm font-semibold transition-all duration-200"
         >Method Detail</button>
       </div>
@@ -465,10 +470,10 @@ for Your Screen?</h2>
 
     <!-- ── METHOD DETAIL: tabs + gallery + property cards ── -->
     <div data-mfg-spec-panel="detail" hidden>
-      <div class="mb-8 flex flex-wrap justify-center gap-3">
-        <button data-mfg-spec-tab="expanded" data-active class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Expanded Metal</button>
-        <button data-mfg-spec-tab="perforated" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Perforated</button>
-        <button data-mfg-spec-tab="laser" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Laser-Cut</button>
+      <div class="mb-8 flex flex-wrap justify-center gap-3" role="tablist">
+        <button data-mfg-spec-tab="expanded" data-active role="tab" aria-selected="true" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Expanded Metal</button>
+        <button data-mfg-spec-tab="perforated" role="tab" aria-selected="false" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Perforated</button>
+        <button data-mfg-spec-tab="laser" role="tab" aria-selected="false" class="rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200">Laser-Cut</button>
       </div>
 
       <!-- Expanded detail -->
@@ -971,7 +976,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
   id="manufacturing-mid-cta-template--21844034879741__manufacturing_mid_cta"
   class="relative overflow-hidden md-tcc07631f"
 >
-  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-hd-720p-3-0mbps-68262742.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" alt="Stainless steel screen manufacturing floor preview" width="398" height="720"></video>
+  <div class="absolute inset-0"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="h-full w-full object-cover" poster="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp"><source src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-hd-720p-3-0mbps-68262742.mp4" type="video/mp4"><img src="/wp-content/uploads/2026/10/00af6f1ec2da47bfbb8e296ba63de4f1-thumbnail-0000000000-2200x-398w.webp" alt="Stainless steel screen manufacturing floor preview" width="398" height="720"></video>
 <div class="absolute inset-0 bg-black/55"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(201,169,98,0.12)_0%,_rgba(20,20,20,0.25)_40%,_rgba(20,20,20,0.82)_100%)]"></div>
     <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,20,20,0.28)_0%,rgba(20,20,20,0.72)_100%)]"></div>
@@ -1040,7 +1045,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
             x-show="activeTab === 'mfg-step-1'" x-transition.opacity.duration.300ms
             
             class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center">
-            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-1100x-720w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-hd-1080p-3-3mbps-68939592.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-1100x-720w.webp" alt="Engineering shop drawing review and fabrication route check" width="720" height="1288"></video>
+            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-1100x-720w.webp"><source src="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-hd-1080p-3-3mbps-68939592.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/aa6c9f5ed26e4e199234d89d3f1480e1-thumbnail-0000000000-1100x-720w.webp" alt="Engineering shop drawing review and fabrication route check" width="720" height="1288"></video>
 </div>
             <div class="rounded-[22px] border border-white/[0.1] bg-[linear-gradient(120deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.015)_58%)] p-6 md:p-9 shadow-[0_18px_48px_rgba(0,0,0,0.44)]">
               <div class="w-14 h-[1px] bg-gradient-to-r from-[#c9a962]/50 to-transparent mb-5"></div>
@@ -1059,7 +1064,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
           </article><article id="mfg-proc-tab-mfg-step-2" role="tabpanel"
             x-show="activeTab === 'mfg-step-2'" x-transition.opacity.duration.300ms
             class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba">
-            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-hd-1080p-3-3mbps-68944534.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp" alt="First-article stainless steel screen sample inspection" width="720" height="1288"></video>
+            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp"><source src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-hd-1080p-3-3mbps-68944534.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp" alt="First-article stainless steel screen sample inspection" width="720" height="1288"></video>
 </div>
             <div class="rounded-[22px] border border-white/[0.1] bg-[linear-gradient(120deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.015)_58%)] p-6 md:p-9 shadow-[0_18px_48px_rgba(0,0,0,0.44)]">
               <div class="w-14 h-[1px] bg-gradient-to-r from-[#c9a962]/50 to-transparent mb-5"></div>
@@ -1078,7 +1083,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
           </article><article id="mfg-proc-tab-mfg-step-3" role="tabpanel"
             x-show="activeTab === 'mfg-step-3'" x-transition.opacity.duration.300ms
             class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba">
-            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-hd-1080p-3-3mbps-68943975.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp" alt="CNC fiber laser cutting and perforation batch production" width="720" height="1288"></video>
+            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp"><source src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-hd-1080p-3-3mbps-68943975.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp" alt="CNC fiber laser cutting and perforation batch production" width="720" height="1288"></video>
 </div>
             <div class="rounded-[22px] border border-white/[0.1] bg-[linear-gradient(120deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.015)_58%)] p-6 md:p-9 shadow-[0_18px_48px_rgba(0,0,0,0.44)]">
               <div class="w-14 h-[1px] bg-gradient-to-r from-[#c9a962]/50 to-transparent mb-5"></div>
@@ -1097,7 +1102,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
           </article><article id="mfg-proc-tab-mfg-step-4" role="tabpanel"
             x-show="activeTab === 'mfg-step-4'" x-transition.opacity.duration.300ms
             class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba">
-            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-hd-1080p-3-3mbps-68944534.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp" alt="Edge deburring, polishing, and PVD surface finishing" width="720" height="1288"></video>
+            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp"><source src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-hd-1080p-3-3mbps-68944534.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/63ec62970a9a4ffebeaa1befe9ace3c8-thumbnail-0000000000-1100x-720w.webp" alt="Edge deburring, polishing, and PVD surface finishing" width="720" height="1288"></video>
 </div>
             <div class="rounded-[22px] border border-white/[0.1] bg-[linear-gradient(120deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.015)_58%)] p-6 md:p-9 shadow-[0_18px_48px_rgba(0,0,0,0.44)]">
               <div class="w-14 h-[1px] bg-gradient-to-r from-[#c9a962]/50 to-transparent mb-5"></div>
@@ -1116,7 +1121,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
           </article><article id="mfg-proc-tab-mfg-step-5" role="tabpanel"
             x-show="activeTab === 'mfg-step-5'" x-transition.opacity.duration.300ms
             class="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-12 items-center md-t5790ffba">
-            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-1100x-720w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-hd-1080p-3-3mbps-68944847.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-1100x-720w.webp" alt="Final QC inspection photos and reinforced export crating" width="720" height="1288"></video>
+            <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] shadow-[0_14px_40px_rgba(0,0,0,0.42)] aspect-[16/10]"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" preload="none" class="block w-full h-full object-cover" poster="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-1100x-720w.webp"><source src="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-hd-1080p-3-3mbps-68944847.mp4" type="video/mp4"><img srcset="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/9163b183271e41c698d020c9412e2945-thumbnail-0000000000-1100x-720w.webp" alt="Final QC inspection photos and reinforced export crating" width="720" height="1288"></video>
 </div>
             <div class="rounded-[22px] border border-white/[0.1] bg-[linear-gradient(120deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.015)_58%)] p-6 md:p-9 shadow-[0_18px_48px_rgba(0,0,0,0.44)]">
               <div class="w-14 h-[1px] bg-gradient-to-r from-[#c9a962]/50 to-transparent mb-5"></div>
@@ -1246,7 +1251,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
         <div class="mfg-quality__stack" aria-live="polite">
           
             
-            <article class="mfg-quality__doc is-active" data-mfg-quality-card data-card-index="0" >
+            <article class="mfg-quality__doc is-active" data-mfg-quality-card data-card-index="0" aria-hidden="false">
               <div class="mfg-quality__paper">
                 
                   <div class="mfg-quality__doc-image">
@@ -1278,7 +1283,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
             </article>
           
             
-            <article class="mfg-quality__doc is-next" data-mfg-quality-card data-card-index="1" >
+            <article class="mfg-quality__doc is-next" data-mfg-quality-card data-card-index="1" aria-hidden="true" inert>
               <div class="mfg-quality__paper">
                 
                   <div class="mfg-quality__doc-image">
@@ -1310,7 +1315,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
             </article>
           
             
-            <article class="mfg-quality__doc is-hidden" data-mfg-quality-card data-card-index="2" >
+            <article class="mfg-quality__doc is-hidden" data-mfg-quality-card data-card-index="2" aria-hidden="true" inert>
               <div class="mfg-quality__paper">
                 
                   <div class="mfg-quality__doc-image">
@@ -1342,7 +1347,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
             </article>
           
             
-            <article class="mfg-quality__doc is-prev" data-mfg-quality-card data-card-index="3" >
+            <article class="mfg-quality__doc is-prev" data-mfg-quality-card data-card-index="3" aria-hidden="true" inert>
               <div class="mfg-quality__paper">
                 
                   <div class="mfg-quality__doc-image">
@@ -1392,6 +1397,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
                   type="button"
                   data-mfg-quality-dot
                   data-card-index="0"
+                  aria-current="true"
                   aria-label="Show ISO 9001 Quality System"
                 ></button>
               
@@ -1400,6 +1406,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
                   type="button"
                   data-mfg-quality-dot
                   data-card-index="1"
+                  aria-current="false"
                   aria-label="Show EN 10204 3.1 Mill Certificates"
                 ></button>
               
@@ -1408,6 +1415,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
                   type="button"
                   data-mfg-quality-dot
                   data-card-index="2"
+                  aria-current="false"
                   aria-label="Show ASTM B117 Salt Spray Reports"
                 ></button>
               
@@ -1416,6 +1424,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
                   type="button"
                   data-mfg-quality-dot
                   data-card-index="3"
+                  aria-current="false"
                   aria-label="Show Pre-Shipment Photo Report"
                 ></button>
               
@@ -1441,7 +1450,7 @@ role="presentation" srcset="/wp-content/uploads/2026/10/hero-hotel-lobby-gold-48
 
     <div class="flex flex-col lg:flex-row gap-10 lg:gap-16">
       <div class="lg:w-5/12 lg:sticky lg:self-start md-sticky-rail">
-        <div class="relative rounded-2xl overflow-hidden border border-white/10 lg:aspect-auto lg:h-[680px] md-t16705960"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" controls="controls" preload="none" class="absolute inset-0 w-full h-full object-cover" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp" loading="lazy"><source src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-hd-1080p-3-3mbps-68943975.mp4" type="video/mp4"><img alt="Stainless steel laser cutting, perforation, and surface finishing FAQ preview" width="720" height="1288" srcset="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp"></video>
+        <div class="relative rounded-2xl overflow-hidden border border-white/10 lg:aspect-auto lg:h-[680px] md-t16705960"><video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" controls="controls" preload="none" class="absolute inset-0 w-full h-full object-cover" poster="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp"><source src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-hd-1080p-3-3mbps-68943975.mp4" type="video/mp4"><img alt="Stainless steel laser cutting, perforation, and surface finishing FAQ preview" width="720" height="1288" srcset="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-480w.webp 480w, /wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp 720w" sizes="(min-width: 1400px) 544px, (min-width: 1024px) calc(41.76vw - 41px), calc(100vw - 27px)" src="/wp-content/uploads/2026/10/09254a60368d4d1e87ddf4bec24378d8-thumbnail-0000000000-1100x-720w.webp"></video>
 </div>
       </div>
 

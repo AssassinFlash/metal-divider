@@ -552,6 +552,11 @@ final class MobileChromeTest extends TestCase {
 	 * (measured 2026-10-27). Twenty-two `[x-cloak]` rules across nine volumes
 	 * all said `display:none !important`; each one looked like a local
 	 * decision and none of them was.
+	 *
+	 * A `[x-cloak]` rule is safe when either its selector carries `md-js` (set
+	 * by `md-chrome.js`) or it sits inside a positive `@media (scripting: enabled)`
+	 * block (applied at 0ms first paint only when JavaScript is enabled, leaving
+	 * `scripting: none` visitors with every panel visible).
 	 */
 	public function test_no_style_hides_content_unconditionally(): void {
 		$offenders = array();
@@ -559,25 +564,200 @@ final class MobileChromeTest extends TestCase {
 		foreach ( (array) glob( $this->volume_dir() . '/*.css' ) as $path ) {
 			$name = basename( (string) $path );
 			$css  = (string) file_get_contents( (string) $path ); // phpcs:ignore WordPress.WP.FileSystem.FileGetContents.file_get_contents -- repository file in a test.
-			$css  = (string) preg_replace( '/\/\*.*?\*\//s', '', $css );
 
-			// A selector mentioning `[x-cloak]` must carry the `md-js` gate.
-			preg_match_all( '/([^{}]+)\{([^}]*)\}/', $css, $rules, PREG_SET_ORDER );
-			foreach ( $rules as $rule ) {
-				$selector = trim( $rule[1] );
-				if ( false === strpos( $selector, '[x-cloak]' ) ) {
-					continue;
-				}
-				if ( false === strpos( $selector, 'md-js' ) ) {
-					$offenders[] = $name . ': ' . mb_substr( $selector, 0, 60 );
-				}
+			foreach ( $this->ungated_x_cloak_selectors( $css ) as $selector ) {
+				$offenders[] = $name . ': ' . $selector;
 			}
 		}
 
 		$this->assertSame(
 			array(),
 			$offenders,
-			'a mask that a script cannot lift hides content from every visitor without scripts — gate it on `html.md-js`'
+			'a mask that a script cannot lift hides content from every visitor without scripts — gate it on `html.md-js` or `@media (scripting: enabled)`'
+		);
+	}
+
+	/**
+	 * Self-proof for the lexical `[x-cloak]` gate detector: rejects bare or
+	 * wrongly scoped rules while allowing `html.md-js` and positive
+	 * `@media (scripting: enabled)` blocks.
+	 */
+	public function test_unconditional_x_cloak_detector_rejects_ungated_and_allows_scripting_enabled(): void {
+		// Allowed: `html.md-js` gate, positive `@media (scripting: enabled)`,
+		// and nested `@media` inside `@media (scripting: enabled)`.
+		$allowed_css = <<<'CSS'
+/* [x-cloak] { display: none !important; } */
+html.md-js [x-cloak]{display:none !important}
+@media (scripting: enabled){[x-cloak]{display:none !important}}
+@media screen and (scripting: enabled) {
+  @media (min-width: 750px) {
+    #outdoor-solutions [x-cloak] { display: none !important; }
+  }
+}
+CSS;
+		$this->assertSame(
+			array(),
+			$this->ungated_x_cloak_selectors( $allowed_css ),
+			'md-js and positive @media (scripting: enabled) gates must be allowed'
+		);
+
+		// Rejected: bare `[x-cloak]`, wrong `@media` feature, negated or
+		// disjunctive `@media`, mixed selector list, and a bare rule after a
+		// closed `@media (scripting: enabled)` block.
+		$this->assertNotEmpty(
+			$this->ungated_x_cloak_selectors( '[x-cloak] { display: none !important; }' ),
+			'bare top-level [x-cloak] must be rejected'
+		);
+		$this->assertNotEmpty(
+			$this->ungated_x_cloak_selectors( '@media (min-width: 750px) { #sec [x-cloak] { display: none !important; } }' ),
+			'[x-cloak] inside a non-scripting @media block must be rejected'
+		);
+		$this->assertNotEmpty(
+			$this->ungated_x_cloak_selectors( '@media (scripting: none) { [x-cloak] { display: none !important; } }' ),
+			'@media (scripting: none) must be rejected'
+		);
+		$this->assertNotEmpty(
+			$this->ungated_x_cloak_selectors( '@media not (scripting: enabled) { [x-cloak] { display: none !important; } }' ),
+			'negated @media not (scripting: enabled) must be rejected'
+		);
+		$this->assertNotEmpty(
+			$this->ungated_x_cloak_selectors( '@media (scripting: enabled), (min-width: 750px) { [x-cloak] { display: none !important; } }' ),
+			'comma-separated @media with an ungated branch must be rejected'
+		);
+		$this->assertNotEmpty(
+			$this->ungated_x_cloak_selectors( '@media (scripting: enabled) or (min-width: 750px) { [x-cloak] { display: none !important; } }' ),
+			'disjunctive @media with `or` must be rejected'
+		);
+		$this->assertSame(
+			array( '#leak [x-cloak]' ),
+			$this->ungated_x_cloak_selectors( 'html.md-js [x-cloak], #leak [x-cloak] { display: none !important; }' ),
+			'an ungated selector sharing a rule with an md-js selector must be caught'
+		);
+		$this->assertSame(
+			array( '[x-cloak]' ),
+			$this->ungated_x_cloak_selectors( '@media (scripting: enabled){[x-cloak]{display:none !important}} [x-cloak]{display:none !important}' ),
+			'closing @media (scripting: enabled) must unwind depth so subsequent bare [x-cloak] is caught'
+		);
+	}
+
+	/**
+	 * Outdoor Privacy eliminates first-paint `[x-cloak]` expansion/collapse CLS
+	 * via `@media (scripting: enabled)` while keeping default active panels
+	 * uncloaked, non-default panels cloaked, videos free of invalid `loading=`,
+	 * and the carousel's previous button initially disabled.
+	 */
+	public function test_outdoor_privacy_gates_non_default_cloaks_at_first_paint(): void {
+		$chrome  = $this->volume( 'chrome.css' );
+		$outdoor = $this->volume( 'family-outdoor-privacy.css' );
+		$faq     = $this->volume( 'faq.css' );
+		$specs   = $this->volume( 'spec-table.css' );
+		$html    = $this->template( 'family-outdoor-privacy.html' );
+
+		// 1. `@media (scripting: enabled)` + `html.md-js` dual gate in WindPress volumes.
+		$this->assertStringContainsString( 'html.md-js [x-cloak]{display:none !important}', $chrome, 'chrome.css keeps the html.md-js fallback' );
+		$this->assertMatchesRegularExpression(
+			'/@media\s*\(\s*scripting:\s*enabled\s*\)\s*\{\s*\[x-cloak\]\s*\{\s*display:\s*none\s*!important;?\s*\}\s*\}/',
+			$chrome,
+			'chrome.css gates [x-cloak] on @media (scripting: enabled) for 0ms first paint'
+		);
+
+		$this->assertMatchesRegularExpression(
+			'/@media\s*\(\s*scripting:\s*enabled\s*\)\s*\{[^}]*#outdoor-solutions-template--21873710596349__outdoor_solutions\s+\[x-cloak\]\s*\{\s*display:\s*none\s*!important;?\s*\}\s*\}/s',
+			$outdoor,
+			'family-outdoor-privacy.css gates outdoor_solutions [x-cloak] on @media (scripting: enabled)'
+		);
+		$this->assertMatchesRegularExpression(
+			'/@media\s*\(\s*scripting:\s*enabled\s*\)\s*\{[^}]*#outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider\s+\[x-cloak\]\s*\{\s*display:\s*none\s*!important;?\s*\}\s*\}/s',
+			$outdoor,
+			'family-outdoor-privacy.css gates outdoor_privacy_slider [x-cloak] on @media (scripting: enabled)'
+		);
+		$this->assertMatchesRegularExpression(
+			'/@media\s*\(\s*scripting:\s*enabled\s*\)\s*\{\s*#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes\s+\.ocm-panel-stack\s*\{\s*display:\s*grid;\s*\}\s*#outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes\s+\.ocm-panel-stage\s*\{\s*grid-area:\s*1\s*\/\s*1;\s*min-width:\s*0;\s*\}\s*\}/s',
+			$outdoor,
+			'family-outdoor-privacy.css gates .ocm-panel-stack / .ocm-panel-stage grid on @media (scripting: enabled)'
+		);
+		$this->assertMatchesRegularExpression(
+			'/@media\s*\(\s*scripting:\s*enabled\s*\)\s*\{[^}]*#outdoor-faq-template--21873710596349__outdoor_faq\s+\[x-cloak\]\s*\{\s*display:\s*none\s*!important;?\s*\}\s*\}/s',
+			$faq,
+			'faq.css gates outdoor_faq [x-cloak] on @media (scripting: enabled)'
+		);
+		$this->assertMatchesRegularExpression(
+			'/@media\s*\(\s*scripting:\s*enabled\s*\)\s*\{[^}]*#outdoor-specs-template--21873710596349__outdoor_specs\s+\[x-cloak\]\s*\{\s*display:\s*none\s*!important;?\s*\}\s*\}/s',
+			$specs,
+			'spec-table.css gates outdoor_specs [x-cloak] on @media (scripting: enabled)'
+		);
+
+		// 2. Default initially active panels in family-outdoor-privacy.html must NOT carry x-cloak;
+		// non-default panels MUST retain x-cloak.
+		$default_panels     = array(
+			"activeTab === 'residential'" => 2,
+			'activeIndex === 0'           => 1,
+			'activeStep === 1'            => 1,
+			"activeTab === 'tab_1'"       => 1,
+			'activeQ === 0'               => 1,
+		);
+		$non_default_panels = array(
+			"activeTab === 'commercial'" => 2,
+			"activeTab === 'heritage'"   => 2,
+			'activeIndex === 1'          => 1,
+			'activeIndex === 2'          => 1,
+			'activeStep === 2'           => 1,
+			'activeStep === 3'           => 1,
+			'activeStep === 4'           => 1,
+			'activeStep === 5'           => 1,
+			"activeTab === 'tab_2'"      => 1,
+			"activeTab === 'tab_3'"      => 1,
+			'activeQ === 1'              => 1,
+			'activeQ === 2'              => 1,
+			'activeQ === 3'              => 1,
+			'activeQ === 4'              => 1,
+			'activeQ === 5'              => 1,
+			'activeQ === 6'              => 1,
+		);
+
+		preg_match_all( '/<div\b[^>]*\bx-show="([^"]+)"[^>]*>/s', $html, $panel_matches, PREG_SET_ORDER );
+		$tags_by_expr = array();
+		foreach ( $panel_matches as $match ) {
+			$tags_by_expr[ $match[1] ][] = $match[0];
+		}
+
+		foreach ( $default_panels as $expr => $expected_count ) {
+			$tags = $tags_by_expr[ $expr ] ?? array();
+			$this->assertCount( $expected_count, $tags, 'default panel count for ' . $expr );
+			foreach ( $tags as $tag ) {
+				$this->assertDoesNotMatchRegularExpression(
+					'/\bx-cloak\b/',
+					$tag,
+					'default initially active panel must not carry x-cloak: ' . $expr
+				);
+			}
+		}
+
+		foreach ( $non_default_panels as $expr => $expected_count ) {
+			$tags = $tags_by_expr[ $expr ] ?? array();
+			$this->assertCount( $expected_count, $tags, 'non-default panel count for ' . $expr );
+			foreach ( $tags as $tag ) {
+				$this->assertMatchesRegularExpression(
+					'/\bx-cloak\b/',
+					$tag,
+					'non-default panel must keep x-cloak for 0ms hiding: ' . $expr
+				);
+			}
+		}
+
+		// 3. No invalid `<video loading=...>` or `preload="auto"` on this template.
+		preg_match_all( '/<video\b[^>]*>/is', $html, $video_matches );
+		$this->assertCount( 7, $video_matches[0], 'family-outdoor-privacy.html carries all 7 videos' );
+		foreach ( $video_matches[0] as $video_tag ) {
+			$this->assertDoesNotMatchRegularExpression( '/\bloading\s*=/i', $video_tag, 'video must not carry invalid loading attribute' );
+			$this->assertDoesNotMatchRegularExpression( '/\bpreload\s*=\s*["\']?auto\b/i', $video_tag, 'video must not preload auto' );
+		}
+
+		// 4. Showcase previous button starts disabled (PR #111).
+		$this->assertSame(
+			1,
+			preg_match_all( '/<button\b[^>]*data-showcase-direction="-1"[^>]*\bdisabled\b[^>]*>/is', $html ),
+			'outdoor showcase previous button must start disabled'
 		);
 	}
 
@@ -1165,5 +1345,230 @@ final class MobileChromeTest extends TestCase {
 			return '';
 		}
 		return $matches[1];
+	}
+
+	/**
+	 * Collects every `[x-cloak]` selector in a stylesheet that is neither
+	 * gated on `md-js` nor nested inside a positive `@media (scripting: enabled)`
+	 * block.
+	 *
+	 * Walks the stylesheet lexically (respecting comments, quoted strings,
+	 * escapes, and brace depth) so nested `@media` blocks are tracked accurately
+	 * instead of being flattened by a single-level regex.
+	 *
+	 * @param string $css Raw stylesheet source.
+	 * @return list<string> Offending selector strings (trimmed, truncated to 60 chars).
+	 */
+	private function ungated_x_cloak_selectors( string $css ): array {
+		$offenders     = array();
+		$length        = strlen( $css );
+		$buffer        = '';
+		$paren_depth   = 0;
+		$in_string     = '';
+		$block_stack   = array();
+		$scripting_cnt = 0;
+
+		for ( $i = 0; $i < $length; $i++ ) {
+			$char = $css[ $i ];
+
+			if ( '' !== $in_string ) {
+				if ( '\\' === $char && $i + 1 < $length ) {
+					$buffer .= $char . $css[ $i + 1 ];
+					++$i;
+					continue;
+				}
+				if ( $char === $in_string ) {
+					$in_string = '';
+				}
+				$buffer .= $char;
+				continue;
+			}
+
+			if ( '/' === $char && $i + 1 < $length && '*' === $css[ $i + 1 ] ) {
+				$end = strpos( $css, '*/', $i + 2 );
+				if ( false === $end ) {
+					break;
+				}
+				$i = $end + 1;
+				continue;
+			}
+
+			if ( '"' === $char || "'" === $char ) {
+				$in_string = $char;
+				$buffer   .= $char;
+				continue;
+			}
+
+			if ( '\\' === $char && $i + 1 < $length ) {
+				$buffer .= $char . $css[ $i + 1 ];
+				++$i;
+				continue;
+			}
+
+			if ( '(' === $char ) {
+				++$paren_depth;
+				$buffer .= $char;
+				continue;
+			}
+
+			if ( ')' === $char ) {
+				$paren_depth = max( 0, $paren_depth - 1 );
+				$buffer     .= $char;
+				continue;
+			}
+
+			if ( ';' === $char && 0 === $paren_depth ) {
+				$buffer = '';
+				continue;
+			}
+
+			if ( '{' === $char ) {
+				$prelude = trim( $buffer );
+				$buffer  = '';
+
+				if ( '' !== $prelude && '@' === $prelude[0] ) {
+					$gates_scripting = $this->is_scripting_enabled_media( $prelude );
+					$block_stack[]   = $gates_scripting;
+					if ( $gates_scripting ) {
+						++$scripting_cnt;
+					}
+					continue;
+				}
+
+				$block_stack[] = false;
+
+				if ( 0 === $scripting_cnt && false !== strpos( $prelude, '[x-cloak]' ) ) {
+					foreach ( $this->split_selectors( $prelude ) as $selector ) {
+						if ( false === strpos( $selector, '[x-cloak]' ) ) {
+							continue;
+						}
+						if ( false === strpos( $selector, 'md-js' ) ) {
+							$normalized  = (string) preg_replace( '/\s+/', ' ', $selector );
+							$offenders[] = mb_substr( $normalized, 0, 60 );
+						}
+					}
+				}
+				continue;
+			}
+
+			if ( '}' === $char ) {
+				$buffer = '';
+				if ( array() !== $block_stack ) {
+					$was_scripting = array_pop( $block_stack );
+					if ( true === $was_scripting ) {
+						--$scripting_cnt;
+					}
+				}
+				continue;
+			}
+
+			$buffer .= $char;
+		}
+
+		return $offenders;
+	}
+
+	/**
+	 * Whether an at-rule prelude is an `@media` query that unconditionally
+	 * requires `scripting: enabled` across every branch.
+	 *
+	 * @param string $prelude Trimmed at-rule header before `{`.
+	 */
+	private function is_scripting_enabled_media( string $prelude ): bool {
+		if ( 1 !== preg_match( '/^@media(?:\s+|(?=\())(.*)$/is', $prelude, $match ) ) {
+			return false;
+		}
+		$query_list = trim( $match[1] );
+		if ( '' === $query_list ) {
+			return false;
+		}
+
+		foreach ( explode( ',', $query_list ) as $branch ) {
+			$branch = trim( $branch );
+			if ( '' === $branch ) {
+				return false;
+			}
+			// Reject negated queries (`not ...`) and disjunctive `or` clauses,
+			// either of which can match when scripting is disabled.
+			if ( 1 === preg_match( '/\b(?:not|or)\b/i', $branch ) ) {
+				return false;
+			}
+			if ( 1 !== preg_match( '/\(\s*scripting\s*:\s*enabled\s*\)/i', $branch ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Splits a CSS selector list on top-level commas (outside parentheses,
+	 * brackets, and quoted strings).
+	 *
+	 * @param string $selector_list Raw selector list before `{`.
+	 * @return list<string> Trimmed individual selectors.
+	 */
+	private function split_selectors( string $selector_list ): array {
+		$selectors     = array();
+		$length        = strlen( $selector_list );
+		$current       = '';
+		$paren_depth   = 0;
+		$bracket_depth = 0;
+		$in_string     = '';
+
+		for ( $i = 0; $i < $length; $i++ ) {
+			$char = $selector_list[ $i ];
+
+			if ( '' !== $in_string ) {
+				if ( '\\' === $char && $i + 1 < $length ) {
+					$current .= $char . $selector_list[ $i + 1 ];
+					++$i;
+					continue;
+				}
+				if ( $char === $in_string ) {
+					$in_string = '';
+				}
+				$current .= $char;
+				continue;
+			}
+
+			if ( '"' === $char || "'" === $char ) {
+				$in_string = $char;
+				$current  .= $char;
+				continue;
+			}
+
+			if ( '\\' === $char && $i + 1 < $length ) {
+				$current .= $char . $selector_list[ $i + 1 ];
+				++$i;
+				continue;
+			}
+
+			if ( '(' === $char ) {
+				++$paren_depth;
+			} elseif ( ')' === $char ) {
+				$paren_depth = max( 0, $paren_depth - 1 );
+			} elseif ( '[' === $char ) {
+				++$bracket_depth;
+			} elseif ( ']' === $char ) {
+				$bracket_depth = max( 0, $bracket_depth - 1 );
+			} elseif ( ',' === $char && 0 === $paren_depth && 0 === $bracket_depth ) {
+				$trimmed = trim( $current );
+				if ( '' !== $trimmed ) {
+					$selectors[] = $trimmed;
+				}
+				$current = '';
+				continue;
+			}
+
+			$current .= $char;
+		}
+
+		$trimmed = trim( $current );
+		if ( '' !== $trimmed ) {
+			$selectors[] = $trimmed;
+		}
+
+		return $selectors;
 	}
 }

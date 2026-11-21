@@ -53,6 +53,17 @@ final class ControlFamiliesTest extends TestCase {
 	}
 
 	/**
+	 * A WindPress volume's CSS source.
+	 *
+	 * @param string $name The volume file stem without `.css`.
+	 */
+	private function volume( string $name ): string {
+		$path = dirname( __DIR__, 4 ) . '/content/windpress/' . $name . '.css';
+		$this->assertFileExists( $path );
+		return (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+	}
+
+	/**
 	 * The body of one setup pass, from its signature to the next top-level
 	 * function.
 	 *
@@ -175,6 +186,17 @@ final class ControlFamiliesTest extends TestCase {
 		$this->assertStringContainsString( 'aria-expanded', $body, 'answers state their state' );
 		$this->assertStringContainsString( 'data-md-faq-empty', $html, 'the empty state is wired to setupFaqFilter' );
 		$this->assertStringContainsString( 'data-md-faq-empty', $body, 'setupFaqFilter toggles the empty state' );
+
+		$matched = preg_match_all( '/<button\b[^>]*\bclass="[^"]*\bcat-tab\b[^"]*"[^>]*>/', $html, $tabs );
+		$this->assertSame( 5, $matched, 'five laser FAQ category tabs ship in the markup' );
+		foreach ( $tabs[0] as $index => $tag ) {
+			if ( 0 === $index ) {
+				$this->assertMatchesRegularExpression( '/\bclass="[^"]*(?:^|\s)active(?:\s|")/', $tag, 'the first category tab starts active' );
+				$this->assertStringContainsString( 'aria-pressed="true"', $tag, 'the first category tab ships aria-pressed="true"' );
+			} else {
+				$this->assertStringContainsString( 'aria-pressed="false"', $tag, 'inactive category tab #' . $index . ' ships aria-pressed="false"' );
+			}
+		}
 	}
 
 	/**
@@ -244,6 +266,29 @@ final class ControlFamiliesTest extends TestCase {
 			$html = $this->markup( $pair[0] );
 			$this->assertGreaterThanOrEqual( 2, substr_count( $html, $pair[1] . '=' ), $pair[0] . ': ' . $pair[1] . ' controls exist' );
 			$this->assertGreaterThanOrEqual( 2, substr_count( $html, $pair[2] . '=' ), $pair[0] . ': ' . $pair[2] . ' panels exist' );
+
+			$quoted_attr = preg_quote( $pair[1], '/' );
+			$this->assertSame(
+				1,
+				preg_match( '/<div\b[^>]*\brole="tablist"[^>]*>\s*<button\b[^>]*\b' . $quoted_attr . '=/s', $html ),
+				$pair[0] . ': ' . $pair[1] . ' container ships role="tablist"'
+			);
+
+			$count = preg_match_all( '/<button\b[^>]*\b' . $quoted_attr . '="[^"]+"[^>]*>/', $html, $buttons );
+			$this->assertGreaterThanOrEqual( 2, (int) $count, $pair[0] . ': ' . $pair[1] . ' buttons parse cleanly' );
+
+			$selected_count = 0;
+			foreach ( $buttons[0] as $tag ) {
+				$this->assertStringContainsString( 'role="tab"', $tag, $pair[0] . ': ' . $pair[1] . ' button ships role="tab"' );
+				$is_active = 1 === preg_match( '/\bdata-active\b/', $tag );
+				if ( $is_active ) {
+					++$selected_count;
+					$this->assertStringContainsString( 'aria-selected="true"', $tag, $pair[0] . ': active ' . $pair[1] . ' button ships aria-selected="true"' );
+				} else {
+					$this->assertStringContainsString( 'aria-selected="false"', $tag, $pair[0] . ': inactive ' . $pair[1] . ' button ships aria-selected="false"' );
+				}
+			}
+			$this->assertSame( 1, $selected_count, $pair[0] . ': exactly one ' . $pair[1] . ' control starts active' );
 		}
 	}
 
@@ -385,6 +430,23 @@ final class ControlFamiliesTest extends TestCase {
 		$this->assertStringContainsString( "window.addEventListener('pointermove'", $drag, 'the drag tracks outside the handle' );
 		$this->assertStringContainsString( 'ArrowLeft', $drag, 'the split is operable by keyboard' );
 		$this->assertStringContainsString( 'role', $drag, 'the handle announces itself as a control' );
+
+		$marker_count = preg_match_all( '/<button\b[^>]*\bdata-pa-marker="(\d+)"[^>]*>/', $html, $markers, PREG_SET_ORDER );
+		$this->assertSame( 4, $marker_count, 'four marker buttons parse cleanly' );
+		foreach ( $markers as $match ) {
+			$expected = '1' === $match[1] ? 'true' : 'false';
+			$this->assertStringContainsString(
+				'aria-pressed="' . $expected . '"',
+				$match[0],
+				'marker ' . $match[1] . ' ships aria-pressed="' . $expected . '"'
+			);
+		}
+
+		$slider_matched = preg_match( '/<div\b[^>]*\bdata-pa-slider\b[^>]*>/', $html, $slider );
+		$this->assertSame( 1, $slider_matched, 'one split slider handle ships in the markup' );
+		foreach ( array( 'role="slider"', 'tabindex="0"', 'aria-valuemin="0"', 'aria-valuemax="100"', 'aria-valuenow="50"' ) as $attr ) {
+			$this->assertStringContainsString( $attr, $slider[0], 'split handle ships ' . $attr );
+		}
 	}
 
 	/**
@@ -523,5 +585,186 @@ final class ControlFamiliesTest extends TestCase {
 		$this->assertStringContainsString( "'is-next'", $body, 'the deck positions are set' );
 		$this->assertStringContainsString( 'aria-hidden', $body, 'only the shown card is announced' );
 		$this->assertStringContainsString( "setAttribute('inert'", $body, 'and the stacked cards are unreachable' );
+
+		$card_count = preg_match_all( '/<article\b[^>]*\bdata-mfg-quality-card\b[^>]*>/', $html, $cards );
+		$this->assertSame( 4, $card_count, 'four quality deck cards parse cleanly' );
+		foreach ( $cards[0] as $tag ) {
+			$idx_matched = preg_match( '/\bdata-card-index="(\d+)"/', $tag, $idx );
+			$this->assertSame( 1, $idx_matched, 'quality card declares data-card-index' );
+			$this->assertArrayHasKey( 1, $idx );
+			if ( '0' === $idx[1] ) {
+				$this->assertStringContainsString( 'aria-hidden="false"', $tag, 'first quality card ships aria-hidden="false"' );
+				$this->assertDoesNotMatchRegularExpression( '/\binert\b/', $tag, 'first quality card is not inert' );
+			} else {
+				$this->assertStringContainsString( 'aria-hidden="true"', $tag, 'stacked quality card #' . $idx[1] . ' ships aria-hidden="true"' );
+				$this->assertMatchesRegularExpression( '/\binert\b/', $tag, 'stacked quality card #' . $idx[1] . ' ships inert' );
+			}
+		}
+
+		$dot_count = preg_match_all( '/<button\b[^>]*\bdata-mfg-quality-dot\b[^>]*>/', $html, $dots );
+		$this->assertSame( 4, $dot_count, 'four quality deck dots parse cleanly' );
+		foreach ( $dots[0] as $tag ) {
+			$idx_matched = preg_match( '/\bdata-card-index="(\d+)"/', $tag, $idx );
+			$this->assertSame( 1, $idx_matched, 'quality dot declares data-card-index' );
+			$this->assertArrayHasKey( 1, $idx );
+			$expected = '0' === $idx[1] ? 'true' : 'false';
+			$this->assertStringContainsString(
+				'aria-current="' . $expected . '"',
+				$tag,
+				'quality dot #' . $idx[1] . ' ships aria-current="' . $expected . '"'
+			);
+		}
+	}
+
+	/**
+	 * The manufacturing technique nav rail uses the same active class the
+	 * runtime toggles, and desktop/tablet CSS rules match both `.active` and
+	 * `[aria-current="true"]`.
+	 *
+	 * `md-chrome.js` binds `[data-mfg-tech-nav]` with controlClass `'active'`
+	 * and `aria-current="true"`, while keeping `'mfg-tech-active'` on the
+	 * content panels. Before this fix, button 0 shipped `mfg-tech-active` and
+	 * desktop/tablet CSS only targeted `.mfg-tech-active`, so clicking another
+	 * technique left button 0 permanently highlighted.
+	 */
+	public function test_manufacturing_tech_nav_matches_runtime_active_class_and_css(): void {
+		$html = $this->markup( 'manufacturing' );
+
+		$nav_matched = preg_match( '/<button\b[^>]*\bdata-mfg-tech-nav="0"[^>]*>/', $html, $nav );
+		$this->assertSame( 1, $nav_matched, 'manufacturing technique nav button 0 exists' );
+		$this->assertArrayHasKey( 0, $nav );
+
+		$class_matched = preg_match( '/\bclass="([^"]+)"/', $nav[0], $nav_class );
+		$this->assertSame( 1, $class_matched, 'nav button 0 declares a class attribute' );
+		$this->assertArrayHasKey( 1, $nav_class );
+		$this->assertMatchesRegularExpression( '/(?:^|\s)active(?:\s|$)/', $nav_class[1], 'nav button 0 starts with the runtime active class' );
+		$this->assertStringNotContainsString( 'mfg-tech-active', $nav_class[1], 'nav button 0 no longer carries stale mfg-tech-active' );
+		$this->assertStringContainsString( 'aria-current="true"', $nav[0], 'nav button 0 starts with aria-current="true"' );
+
+		$content_matched = preg_match( '/<div\b[^>]*\bdata-mfg-tech-content="0"[^>]*>/', $html, $content );
+		$this->assertSame( 1, $content_matched, 'manufacturing technique content panel 0 exists' );
+		$this->assertArrayHasKey( 0, $content );
+		$this->assertMatchesRegularExpression(
+			'/\bclass="[^"]*\bmfg-tech-active\b[^"]*"/',
+			$content[0],
+			'content panel 0 keeps mfg-tech-active for the runtime content group'
+		);
+
+		$css          = $this->volume( 'manufacturing' );
+		$tablet_start = strpos( $css, '@media (max-width: 991px)' );
+		$mobile_start = strpos( $css, '@media (max-width: 767px)' );
+		$this->assertNotFalse( $tablet_start, 'manufacturing.css defines the tablet media query' );
+		$this->assertNotFalse( $mobile_start, 'manufacturing.css defines the mobile media query' );
+
+		$desktop_css = substr( $css, 0, (int) $tablet_start );
+		$tablet_css  = substr( $css, (int) $tablet_start, (int) $mobile_start - (int) $tablet_start );
+
+		$btn   = '\.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques';
+		$label = '\.mfg-tech-nav-label-template--21844034879741__manufacturing_techniques';
+
+		$desktop_rule_matched = preg_match( '/([^{}]*' . $btn . '\.mfg-tech-active[^{}]*)\{([^}]*border-left-color:\s*#c9a962[^}]*)\}/s', $desktop_css, $desktop_rule );
+		$this->assertSame( 1, $desktop_rule_matched, 'desktop highlight rule exists in manufacturing.css' );
+		$this->assertArrayHasKey( 1, $desktop_rule );
+		$this->assertStringContainsString( '.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.active', $desktop_rule[1], 'desktop highlight selector matches .active' );
+		$this->assertStringContainsString( '.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques[aria-current="true"]', $desktop_rule[1], 'desktop highlight selector matches [aria-current="true"]' );
+
+		$tablet_color_matched = preg_match( '/([^{}]*' . $btn . '\.mfg-tech-active[^{}]*)\{([^}]*color:\s*#c9a962[^}]*)\}/s', $tablet_css, $tablet_color );
+		$this->assertSame( 1, $tablet_color_matched, 'tablet active color rule exists in manufacturing.css' );
+		$this->assertArrayHasKey( 1, $tablet_color );
+		$this->assertStringContainsString( '.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.active', $tablet_color[1], 'tablet color selector matches .active' );
+		$this->assertStringContainsString( '.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques[aria-current="true"]', $tablet_color[1], 'tablet color selector matches [aria-current="true"]' );
+
+		$tablet_label_matched = preg_match( '/([^{}]*' . $btn . '\.mfg-tech-active\s+' . $label . '[^{}]*)\{([^}]*max-width:\s*192px[^}]*)\}/s', $tablet_css, $tablet_label );
+		$this->assertSame( 1, $tablet_label_matched, 'tablet active label expansion rule exists in manufacturing.css' );
+		$this->assertArrayHasKey( 1, $tablet_label );
+		$this->assertStringContainsString( '.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques.active .mfg-tech-nav-label-template--21844034879741__manufacturing_techniques', $tablet_label[1], 'tablet label selector matches .active' );
+		$this->assertStringContainsString( '.mfg-tech-nav-btn-template--21844034879741__manufacturing_techniques[aria-current="true"] .mfg-tech-nav-label-template--21844034879741__manufacturing_techniques', $tablet_label[1], 'tablet label selector matches [aria-current="true"]' );
+	}
+
+	/**
+	 * Every carousel's initial previous button ships disabled before JS loads.
+	 *
+	 * Every strip opens at index 0 with nothing to scroll back to, so shipping
+	 * `disabled` matches the geometry-derived state `bindCarousel()` writes and
+	 * avoids an enabled-looking dead arrow before hydration or without JS.
+	 */
+	public function test_carousel_prev_buttons_ship_disabled(): void {
+		$targets = array(
+			'series-archive'             => 'data-ppp-direction="-1"',
+			'shop'                       => 'data-ppp-direction="-1"',
+			'family-laser-cut-panels'    => 'data-showcase-direction="-1"',
+			'family-perforated-panels'   => 'data-pp-showcase-direction="-1"',
+			'family-chinese-style'       => 'data-showcase-direction="-1"',
+			'family-glass-hybrid'        => 'data-showcase-direction="-1"',
+			'family-laser-cut-geometric' => 'data-showcase-direction="-1"',
+			'family-outdoor-privacy'     => 'data-showcase-direction="-1"',
+			'home'                       => 'data-home-outcomes-prev',
+		);
+
+		$missing = array();
+		foreach ( $targets as $template => $attr ) {
+			$html    = $this->markup( $template );
+			$matched = preg_match( '/<button\b[^>]*\b' . preg_quote( $attr, '/' ) . '(?=\s|>)[^>]*>/', $html, $button );
+			$this->assertSame( 1, $matched, $template . ': previous button (' . $attr . ') exists' );
+			$this->assertArrayHasKey( 0, $button );
+			if ( 1 !== preg_match( '/\bdisabled\b/', $button[0] ) ) {
+				$missing[] = $template . ' (' . $attr . ')';
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$missing,
+			'every carousel initial previous button ships with disabled'
+		);
+	}
+
+	/**
+	 * All 12 sortable specification table headers ship with `aria-sort="none"`.
+	 */
+	public function test_sortable_spec_headers_ship_with_aria_sort_none(): void {
+		$templates = array(
+			'family-expanded-metal',
+			'family-laser-cut-panels',
+			'family-perforated-panels',
+		);
+
+		$total = 0;
+		foreach ( $templates as $template ) {
+			$html  = $this->markup( $template );
+			$count = preg_match_all( '/<th\b[^>]*\bdata-sort="[^"]+"[^>]*>/', $html, $headers );
+			$this->assertSame( 4, $count, $template . ': four sortable headers exist' );
+			$total += (int) $count;
+			foreach ( $headers[0] as $tag ) {
+				$this->assertStringContainsString(
+					'aria-sort="none"',
+					$tag,
+					$template . ': sortable header ships aria-sort="none" (' . $tag . ')'
+				);
+			}
+		}
+
+		$this->assertSame( 12, $total, 'all 12 sortable specification headers are audited' );
+	}
+
+	/**
+	 * The home outcomes carousel dots declare initial `aria-current` state.
+	 */
+	public function test_home_outcomes_dots_ship_with_initial_aria_current(): void {
+		$html  = $this->markup( 'home' );
+		$count = preg_match_all( '/<button\b[^>]*\bdata-home-outcomes-dot\b[^>]*>/', $html, $dots );
+		$this->assertSame( 4, $count, 'home outcomes strip ships four indicator dots' );
+
+		foreach ( $dots[0] as $tag ) {
+			$idx_matched = preg_match( '/\bdata-index="(\d+)"/', $tag, $idx );
+			$this->assertSame( 1, $idx_matched, 'home outcomes dot declares data-index' );
+			$this->assertArrayHasKey( 1, $idx );
+			$expected = '0' === $idx[1] ? 'true' : 'false';
+			$this->assertStringContainsString(
+				'aria-current="' . $expected . '"',
+				$tag,
+				'home outcomes dot #' . $idx[1] . ' ships aria-current="' . $expected . '"'
+			);
+		}
 	}
 }

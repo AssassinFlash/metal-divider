@@ -17,6 +17,11 @@ padding-bottom: 96px;
 html.md-js #outdoor-solutions-template--21873710596349__outdoor_solutions [x-cloak] {
 display: none !important;
 }
+@media (scripting: enabled) {
+#outdoor-solutions-template--21873710596349__outdoor_solutions [x-cloak] {
+display: none !important;
+}
+}
 #outdoor-solutions-template--21873710596349__outdoor_solutions .os-gallery-stack {
 position: relative;
 min-height: 520px;
@@ -176,6 +181,11 @@ padding-bottom: 80px;
 }
 html.md-js #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider [x-cloak] {
 display: none !important;
+}
+@media (scripting: enabled) {
+#outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider [x-cloak] {
+display: none !important;
+}
 }
 #outdoor-privacy-slider-template--21873710596349__outdoor_privacy_slider .ops-slider-shell {
 padding-top: 6px;
@@ -680,15 +690,26 @@ padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
    declared at any width — nothing to unset below 749, nothing to overflow.
    Alpine runs enter (300ms) and leave (180ms) at the same time, so for that
    180ms two panels share the cell and the row takes the taller one rather than
-   stacking them and shoving the page down. Gated on `html.md-js`: with scripts
-   off no `x-cloak` rule applies and all five panels are visible at once, and a
-   plain vertical stack is what those visitors should get. */
+   stacking them and shoving the page down. Gated on `html.md-js` and
+   `@media (scripting: enabled)`: modern JS-enabled browsers enter the one-cell
+   grid at 0ms first paint (before the footer script adds `md-js`), while with
+   scripts off (`scripting: none`) neither gate matches, all five panels stay
+   visible, and a plain vertical stack is what those visitors should get. */
 html.md-js #outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-panel-stack {
   display: grid;
 }
 html.md-js #outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-panel-stage {
   grid-area: 1 / 1;
   min-width: 0;
+}
+@media (scripting: enabled) {
+  #outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-panel-stack {
+    display: grid;
+  }
+  #outdoor-collaboration-modes-template--21873710596349__outdoor_collaboration_modes .ocm-panel-stage {
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
 }
 
 @media (max-width: 749px) {

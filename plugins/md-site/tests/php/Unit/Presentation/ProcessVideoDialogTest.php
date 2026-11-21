@@ -137,6 +137,32 @@ final class ProcessVideoDialogTest extends TestCase {
 	}
 
 	/**
+	 * Every template and partial under content/livecanvas, keyed by relative
+	 * path, with HTML comments stripped.
+	 *
+	 * @return array<string, string>
+	 */
+	private function all_template_files(): array {
+		$dir   = dirname( __DIR__, 4 ) . '/content/livecanvas';
+		$top   = glob( $dir . '/*.html' );
+		$parts = glob( $dir . '/partials/*.html' );
+		$paths = array_merge(
+			is_array( $top ) ? $top : array(),
+			is_array( $parts ) ? $parts : array()
+		);
+		sort( $paths );
+
+		$templates = array();
+		foreach ( $paths as $path ) {
+			$relative               = ltrim( str_replace( $dir, '', $path ), '/' );
+			$source                 = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$templates[ $relative ] = (string) preg_replace( '/<!--.*?-->/s', '', $source );
+		}
+
+		return $templates;
+	}
+
+	/**
 	 * A `<video>` has no `loading` attribute.
 	 *
 	 * `loading` is the `<img>`/`<iframe>` attribute; on `<video>` it is an
@@ -145,15 +171,59 @@ final class ProcessVideoDialogTest extends TestCase {
 	 * element's own control and is what stays.
 	 */
 	public function test_no_video_carries_an_invalid_loading_attribute(): void {
-		foreach ( $this->pages() as $label => $file ) {
-			$html = $this->markup( $file );
+		$templates = $this->all_template_files();
+		$this->assertNotEmpty( $templates, 'the template directory is scanned' );
 
-			$this->assertSame(
-				0,
-				preg_match_all( '/<video\b[^>]*\bloading=/', $html ),
-				$label . ': no video element carries a loading attribute'
-			);
+		$total_videos = 0;
+		$offenders    = array();
+
+		foreach ( $templates as $relative => $html ) {
+			$video_count = preg_match_all( '/<video\b/i', $html );
+			if ( is_int( $video_count ) ) {
+				$total_videos += $video_count;
+			}
+
+			$loading_count = preg_match_all( '/<video\b[^>]*\bloading=/i', $html );
+			if ( is_int( $loading_count ) && $loading_count > 0 ) {
+				$offenders[] = $relative . ' (' . $loading_count . ')';
+			}
 		}
+
+		$this->assertGreaterThanOrEqual(
+			40,
+			$total_videos,
+			'the repo-wide scan covers all shipped <video> elements'
+		);
+		$this->assertSame(
+			array(),
+			$offenders,
+			'no video element in any template carries an invalid loading attribute'
+		);
+	}
+
+	/**
+	 * No `<video>` preloads the whole stream eagerly.
+	 *
+	 * Below-the-fold videos set to `preload="auto"` download megabytes of MP4 on
+	 * initial page load even when the visitor never opens the accordion step.
+	 */
+	public function test_no_video_preloads_auto(): void {
+		$templates = $this->all_template_files();
+		$this->assertNotEmpty( $templates, 'the template directory is scanned' );
+
+		$offenders = array();
+		foreach ( $templates as $relative => $html ) {
+			$count = preg_match_all( '/<video\b[^>]*\bpreload=(["\']?)auto\1/i', $html );
+			if ( is_int( $count ) && $count > 0 ) {
+				$offenders[] = $relative . ' (' . $count . ')';
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$offenders,
+			'no video element in any template ships with preload="auto"'
+		);
 	}
 
 	/**
