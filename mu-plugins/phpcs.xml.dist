@@ -11,6 +11,7 @@
 	<file>md-chat-email.php</file>
 	<file>md-chat-launcher.php</file>
 	<file>md-legacy-urls.php</file>
+	<file>md-mail-smtp.php</file>
 	<file>tests</file>
 	<exclude-pattern>tests/php/bootstrap.php</exclude-pattern>
 	<exclude-pattern>tests/php/Doubles/*</exclude-pattern>

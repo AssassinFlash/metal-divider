@@ -19,6 +19,7 @@ parameters:
 		- md-wecom-notify.php
 		- md-kb-endpoint.php
 		- md-legacy-urls.php
+		- md-mail-smtp.php
 		- tests/php
 	excludePaths:
 		# The bootstrap defines WordPress's own hook functions for the tests;
