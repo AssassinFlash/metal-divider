@@ -615,6 +615,29 @@
 			}
 		});
 
+		var inModal = form.closest ? !!form.closest('#md-quote-modal, #quote-modal') : false;
+		if (!inModal) {
+			try {
+				var storedSource = window.sessionStorage ? window.sessionStorage.getItem('md_inquiry_source') : null;
+				if (storedSource) {
+					var parsedSource = JSON.parse(storedSource);
+					if (parsedSource && typeof parsedSource === 'object' && !Array.isArray(parsedSource)) {
+						window.sessionStorage.removeItem('md_inquiry_source');
+						var safeToken = /^[a-z0-9_-]{1,64}$/;
+						['page', 'module', 'button'].forEach(function (part) {
+							var val = typeof parsedSource[part] === 'string' ? parsedSource[part].trim() : '';
+							if (val && safeToken.test(val)) {
+								var hidden = form.querySelector('[name="md_inquiry_source_' + part + '"]');
+								if (hidden) {
+									hidden.value = val;
+								}
+							}
+						});
+					}
+				}
+			} catch (err) {}
+		}
+
 		updateWhatsApp();
 
 		var widgetId = null;

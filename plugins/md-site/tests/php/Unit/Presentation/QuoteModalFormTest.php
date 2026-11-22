@@ -159,25 +159,110 @@ final class QuoteModalFormTest extends TestCase {
 	}
 
 	/**
-	 * Every page that offers a quote CTA resolves to this one dialog.
-	 *
-	 * The PDP's two CTAs (hero and FAQ) both point at `#open-quote`; if a page
-	 * grew its own link to `/inquiry/` instead, the pattern context would be
-	 * lost there without any test noticing.
+	 * Every primary quote CTA on the PDP resolves to this one dialog, while
+	 * secondary contact-form links target clean `/inquiry/` URLs with
+	 * `data-source-*` attributes.
 	 */
 	public function test_the_pdp_quote_ctas_target_the_dialog(): void {
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
-		$pdp = (string) file_get_contents( Templates::path( 'pdp' ) );
+		$pdp = $this->markup( 'pdp.html' );
 
 		$this->assertGreaterThanOrEqual(
 			1,
 			substr_count( $pdp, 'href="#open-quote"' ),
 			'the PDP opens the quote dialog rather than linking away'
 		);
-		$this->assertStringNotContainsString(
-			'href="/inquiry/"',
-			$pdp,
-			'the PDP must not send quote intent to the generic inquiry page'
+
+		preg_match_all( '/<a\b[^>]*>/is', $pdp, $matches );
+		$primary_quote_ctas = 0;
+		$secondary_links    = 0;
+
+		foreach ( $matches[0] as $tag ) {
+			$href = '';
+			if ( 1 === preg_match( '/\bhref\s*=\s*(?:"([^"]*)"|\'([^\']*)\')/i', $tag, $hm ) ) {
+				$href = '' !== $hm[1] ? $hm[1] : ( $hm[2] ?? '' );
+			}
+
+			$is_primary_cta = 1 === preg_match( '/\bclass\s*=\s*(?:"[^"]*\bpdp-btn-primary\b[^"]*"|\'[^\']*\bpdp-btn-primary\b[^\']*\')/i', $tag )
+				|| 1 === preg_match( '/\bdata-quote-source\s*=/i', $tag );
+
+			if ( $is_primary_cta ) {
+				++$primary_quote_ctas;
+				$this->assertSame(
+					'#open-quote',
+					$href,
+					'every PDP primary or data-quote-source CTA must target #open-quote rather than /inquiry/: ' . $tag
+				);
+				continue;
+			}
+
+			if ( str_starts_with( $href, '/inquiry/' ) ) {
+				++$secondary_links;
+				$this->assertSame(
+					'/inquiry/',
+					$href,
+					'secondary PDP contact-form links must target clean /inquiry/ without query parameters: ' . $tag
+				);
+				$this->assertMatchesRegularExpression(
+					'/\bdata-source-page="pattern-pdp"/',
+					$tag,
+					'secondary PDP inquiry links must carry data-source-page: ' . $tag
+				);
+				$this->assertMatchesRegularExpression(
+					'/\bdata-source-module="(?:hero|faq)"/',
+					$tag,
+					'secondary PDP inquiry links must carry data-source-module: ' . $tag
+				);
+				$this->assertMatchesRegularExpression(
+					'/\bdata-source-button="request_quote"/',
+					$tag,
+					'secondary PDP inquiry links must carry data-source-button: ' . $tag
+				);
+			}
+		}
+
+		$this->assertGreaterThanOrEqual( 4, $primary_quote_ctas, 'expected PDP primary / data-quote-source CTAs' );
+		$this->assertSame( 2, $secondary_links, 'expected two secondary contact-form links on the PDP' );
+	}
+
+	/**
+	 * Full-repository SEO hygiene guard: no LiveCanvas template or partial may
+	 * emit an internal `<a href="/...">` link carrying `?` query parameters.
+	 */
+	public function test_no_livecanvas_template_or_partial_contains_parameterized_internal_links(): void {
+		$base_dir  = dirname( Templates::path( 'pdp' ) );
+		$templates = glob( $base_dir . '/*.html' );
+		$partials  = glob( $base_dir . '/partials/*.html' );
+		$files     = array_merge(
+			false === $templates ? array() : $templates,
+			false === $partials ? array() : $partials
+		);
+		sort( $files, SORT_STRING );
+
+		$this->assertGreaterThanOrEqual( 40, count( $files ), 'expected all LiveCanvas templates and partials to be scanned' );
+
+		$violations = array();
+		foreach ( $files as $file ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a repository file in a test.
+			$source = (string) file_get_contents( $file );
+			$html   = (string) preg_replace( '/<!--.*?-->/s', '', $source );
+			$rel    = ltrim( str_replace( $base_dir, '', $file ), '/' );
+
+			preg_match_all( '/<a\b[^>]*>/is', $html, $matches );
+			foreach ( $matches[0] as $tag ) {
+				if ( 1 !== preg_match( '/\bhref\s*=\s*(?:"([^"]*)"|\'([^\']*)\')/i', $tag, $hm ) ) {
+					continue;
+				}
+				$href = '' !== $hm[1] ? $hm[1] : ( $hm[2] ?? '' );
+				if ( str_starts_with( $href, '/' ) && ! str_starts_with( $href, '//' ) && str_contains( $href, '?' ) ) {
+					$violations[] = $rel . ' -> ' . $href;
+				}
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$violations,
+			'LiveCanvas templates and partials must not contain internal links with ? query parameters'
 		);
 	}
 }

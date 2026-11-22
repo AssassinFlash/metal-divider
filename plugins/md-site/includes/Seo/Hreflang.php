@@ -26,7 +26,8 @@ final class Hreflang {
 	 * Filters the hreflang tags array.
 	 *
 	 * Drops hreflangs on search results, 404s, paged archives, parameter-driven
-	 * catalog filter views, and noindexed singular posts.
+	 * catalog filter views, non-canonical query-parameter views, and noindexed
+	 * singular posts.
 	 * For indexable canonical pages, normalizes hreflang tags (e.g. zh-Hans, pt-BR)
 	 * and injects x-default pointing to the English URL.
 	 *
@@ -48,6 +49,10 @@ final class Hreflang {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! empty( $_GET['pattern_search'] ) || ! empty( $_GET['q'] ) || ! empty( $_GET['sort_by'] ) ) {
+			return array();
+		}
+
+		if ( QueryParamRobots::has_non_canonical_param() ) {
 			return array();
 		}
 

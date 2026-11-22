@@ -20,8 +20,11 @@ use MetalDivider\Site\Presentation\Partials;
 use MetalDivider\Site\Presentation\Shortcodes;
 use MetalDivider\Site\Seo\CatalogRobots;
 use MetalDivider\Site\Seo\Hreflang;
+use MetalDivider\Site\Seo\LlmsTxt;
 use MetalDivider\Site\Seo\PageNoindex;
+use MetalDivider\Site\Seo\QueryParamRobots;
 use MetalDivider\Site\Seo\SitemapDedupe;
+use MetalDivider\Site\Seo\SitemapLastmod;
 use MetalDivider\Site\Seo\SchemaFilters;
 
 /**
@@ -89,8 +92,11 @@ final class Plugin {
 		$this->fields->register();
 		$this->schemas->register();
 		$this->catalog_robots->register();
+		( new QueryParamRobots() )->register();
 		$this->page_noindex->register();
 		$this->sitemap_dedupe->register();
+		( new SitemapLastmod() )->register();
+		( new LlmsTxt() )->register();
 		$this->assets->register();
 		$this->catalog->register();
 		$this->media_sizes->register();

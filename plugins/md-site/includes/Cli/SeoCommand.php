@@ -10,6 +10,8 @@ declare( strict_types = 1 );
 namespace MetalDivider\Site\Cli;
 
 use MetalDivider\Site\Seo\Config;
+use MetalDivider\Site\Seo\LlmsTxt;
+use MetalDivider\Site\Seo\SitemapLastmod;
 use WP_CLI;
 
 /**
@@ -55,6 +57,16 @@ final class SeoCommand {
 		foreach ( $config->apply() as $line ) {
 			WP_CLI::log( $line );
 		}
+		( new LlmsTxt() )->invalidate_cache();
+		$lastmod = SitemapLastmod::sync_post_modified_from_templates();
+		WP_CLI::log(
+			sprintf(
+				'sitemap lastmod: %d pages updated, %d products updated, %d transients cleared',
+				$lastmod['pages_updated'],
+				$lastmod['products_updated'],
+				$lastmod['transients_cleared']
+			)
+		);
 		WP_CLI::success( 'SEO configuration installed.' );
 	}
 }

@@ -11,13 +11,14 @@ namespace MetalDivider\Site\Seo;
 
 /**
  * The data-assembly hooks of the SEO plane (spec 22 §3, ticket #34). The
- * builders own every field they can map — these hooks only add the parts
- * the structured data builder has no field for: the WebSite's
- * SearchAction, the Organization's two contact points, the Product's
- * material / ACF properties / QuoteAction and gallery, the article's
- * publisher reference, the breadcrumb trails' shape (the pixel-gate
- * replica's two-level trails, not SEOPress's four-level defaults), and
- * the title whitespace the empty pagination variable leaves behind.
+ * builders own every field they can map — these hooks converge the
+ * WebSite and Organization blocks onto single global root-domain
+ * entities (without a disallowed SearchAction), attach the
+ * Organization's 512w logo and two contact points, complete the
+ * Product's material / ACF properties / QuoteAction and gallery, attach
+ * the article's publisher reference, shape the breadcrumb trails (the
+ * pixel-gate replica's two-level trails, not SEOPress's four-level
+ * defaults), and normalize title whitespace and entities.
  * Values still come from the site's data — nothing here invents a fact.
  */
 final class SchemaFilters {
@@ -151,34 +152,47 @@ final class SchemaFilters {
 	}
 
 	/**
-	 * The WebSite block's SearchAction (spec 22 S3): the blog's search
-	 * face is /?s=, and SEOPress's native block carries no action.
+	 * The WebSite block: converges to one global singleton entity at the root
+	 * domain across all WPML languages and removes SearchAction because `/?s=`
+	 * is disallowed in robots.txt.
 	 *
 	 * @param array<string, mixed> $schema The WebSite schema.
-	 * @return array<string, mixed> The schema with the SearchAction.
+	 * @return array<string, mixed> The converged WebSite schema without SearchAction.
 	 */
 	public function website( array $schema ): array {
-		$schema['potentialAction'] = array(
-			'@type'       => 'SearchAction',
-			'target'      => array(
-				'@type'       => 'EntryPoint',
-				'urlTemplate' => home_url( '/' ) . '?s={search_term_string}',
-			),
-			'query-input' => 'required name=search_term_string',
-		);
+		$schema['@id']       = $this->entity_id( 'website' );
+		$schema['url']       = $this->root_home_url();
+		$schema['name']      = 'MetalDivider';
+		$schema['publisher'] = array( '@id' => $this->entity_id( 'organization' ) );
+
+		$alternate = isset( $schema['alternateName'] ) && is_string( $schema['alternateName'] ) ? trim( $schema['alternateName'] ) : '';
+		if (
+			'' === $alternate
+			|| 0 === strcasecmp( $alternate, 'MetalDivider' )
+			|| 1 === preg_match( '#^(?:https?://)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+/?$#i', $alternate )
+		) {
+			$schema['alternateName'] = 'Metal Divider';
+		} else {
+			$schema['alternateName'] = $alternate;
+		}
+
+		unset( $schema['potentialAction'] );
 		return $schema;
 	}
 
 	/**
-	 * The Organization's contact points (spec 22 §3.3): one sales
-	 * point carrying the email, one WhatsApp point carrying the phone
-	 * — both from the Knowledge Graph fields this plugin's config
-	 * wrote, never literals of their own.
+	 * The Organization block: converges to one global singleton entity at the
+	 * root domain across all WPML languages, upgrades any empty or 240w logo
+	 * to the 512×512 PNG brand mark over https, and carries the two contact
+	 * points (sales email and WhatsApp) read from Knowledge Graph config.
 	 *
 	 * @param array<string, mixed> $schema The Organization schema.
-	 * @return array<string, mixed> The schema with the two points.
+	 * @return array<string, mixed> The converged Organization schema.
 	 */
 	public function organization( array $schema ): array {
+		$schema['@id'] = $this->entity_id( 'organization' );
+		$schema['url'] = $this->root_home_url();
+
 		$email = '';
 		$phone = '';
 		if ( function_exists( 'seopress_get_service' ) ) {
@@ -216,19 +230,95 @@ final class SchemaFilters {
 			'https://www.facebook.com/metaldivider',
 			'https://www.linkedin.com/in/chester-john-1800b4312/',
 		);
-		// The Knowledge Graph field is copied verbatim into the schema, and a
-		// site URL saved before the TLS cutover (or resolved through a proxy
-		// that reports http) would publish an http logo. The site is https-only,
-		// so the schema asserts the scheme every visitor is actually served:
-		// a mixed-content image and a second entity URL otherwise.
-		if ( isset( $schema['logo'] ) ) {
-			$schema['logo'] = $this->https( $schema['logo'] );
-		}
+		// Upgrade an empty or legacy 240w logo to the native 512×512 PNG brand
+		// mark and force https on all URL fields so structured data never emits
+		// http or an undersized 240w image.
+		$schema['logo'] = $this->normalize_logo( $schema['logo'] ?? null );
 		// The builder copies the phone into a top-level telephone as
 		// well; the spec's skeleton carries it on the contact point
 		// only.
 		unset( $schema['telephone'] );
 		return $schema;
+	}
+
+	/**
+	 * The canonical 512×512 PNG brand mark URL over https on the root origin.
+	 *
+	 * @return string The absolute https URL to the 512w logo asset.
+	 */
+	private function brand_logo_url(): string {
+		$relative = 'assets/brand/metal-divider-icon-512.png';
+		$root     = \defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR . '/md-site' : '';
+		if ( '' !== $root && \is_readable( $root . '/' . $relative ) ) {
+			$url = (string) \plugins_url( $relative, $root . '/md-site.php' );
+			if ( '' !== $url ) {
+				$https = $this->https( $url );
+				return is_string( $https ) ? $https : $url;
+			}
+		}
+		$fallback = \rtrim( $this->root_home_url(), '/' ) . '/wp-content/plugins/md-site/' . $relative;
+		$https    = $this->https( $fallback );
+		return is_string( $https ) ? $https : $fallback;
+	}
+
+	/**
+	 * Normalizes the Organization logo value: upgrades an empty value or the
+	 * legacy 240w asset to the 512×512 PNG brand mark and forces https on all
+	 * URL fields.
+	 *
+	 * @param mixed $value The incoming logo field (string, ImageObject array, or empty).
+	 * @return mixed The normalized logo value over https.
+	 */
+	private function normalize_logo( $value ) {
+		$canonical = $this->brand_logo_url();
+		if ( null === $value || '' === $value || array() === $value ) {
+			return $canonical;
+		}
+		if ( is_string( $value ) ) {
+			$trimmed = trim( $value );
+			if ( '' === $trimmed || str_contains( $trimmed, 'metal-divider-logo-240w.webp' ) ) {
+				return $canonical;
+			}
+			return $this->https( $trimmed );
+		}
+		if ( is_array( $value ) ) {
+			$upgraded = false;
+			$has_url  = false;
+			foreach ( array( 'url', 'contentUrl' ) as $key ) {
+				if ( ! isset( $value[ $key ] ) || ! is_string( $value[ $key ] ) ) {
+					continue;
+				}
+				$trimmed = trim( $value[ $key ] );
+				if ( '' === $trimmed || str_contains( $trimmed, 'metal-divider-logo-240w.webp' ) ) {
+					$value[ $key ] = $canonical;
+					$upgraded      = true;
+					$has_url       = true;
+				} else {
+					$has_url = true;
+				}
+			}
+			if ( isset( $value['@id'] ) && is_string( $value['@id'] ) ) {
+				$trimmed_id = trim( $value['@id'] );
+				if ( str_contains( $trimmed_id, 'metal-divider-logo-240w.webp' ) ) {
+					$value['@id'] = $canonical;
+					$upgraded     = true;
+				}
+			}
+			if ( ! $has_url ) {
+				$value['url'] = $canonical;
+				$upgraded     = true;
+			}
+			if ( $upgraded ) {
+				if ( array_key_exists( 'width', $value ) ) {
+					$value['width'] = 512;
+				}
+				if ( array_key_exists( 'height', $value ) ) {
+					$value['height'] = 512;
+				}
+			}
+			return $this->https( $value );
+		}
+		return $canonical;
 	}
 
 	/**
@@ -684,20 +774,39 @@ final class SchemaFilters {
 	}
 
 	/**
-	 * A site entity's @id, SEOPress's own helper when it is loaded
-	 * (so a filter that moves the entity moves with it).
+	 * The site's canonical root home URL without any WPML language prefix,
+	 * always ending with a single trailing slash (e.g. `https://metal-divider.com/`).
+	 *
+	 * @return string The unprefixed root home URL.
+	 */
+	private function root_home_url(): string {
+		$raw   = \MetalDivider\Site\I18n\Languages::unfiltered_home_url( '/' );
+		$clean = (string) \preg_replace( '#/(?:zh|es|pt-br|de|fr|ar|id|vi)/?$#i', '', \rtrim( $raw, '/' ) );
+		return \rtrim( $clean, '/' ) . '/';
+	}
+
+	/**
+	 * A site entity's global singleton @id at the root domain.
+	 *
+	 * Under WPML, SEOPress's `SchemaEntityId::for_home()` reads the language-filtered
+	 * `home_url()` and splits `@id` per locale (`/de/#website`, `/zh/#organization`).
+	 * Resolving through `root_home_url()` keeps one canonical entity graph across
+	 * all nine languages.
 	 *
 	 * @param string $entity The entity name (organization, website).
 	 * @return string The absolute @id.
 	 */
 	private function entity_id( string $entity ): string {
-		if ( \function_exists( 'has_filter' ) && \has_filter( 'wpml_current_language' ) ) {
-			return \MetalDivider\Site\I18n\Languages::unfiltered_home_url( '/#' . $entity );
+		if (
+			( \function_exists( 'has_filter' ) && \has_filter( 'wpml_current_language' ) )
+			|| \MetalDivider\Site\I18n\Languages::SOURCE !== \MetalDivider\Site\I18n\Languages::current()
+		) {
+			return $this->root_home_url() . '#' . $entity;
 		}
 		if ( class_exists( '\SEOPress\Helpers\SchemaEntityId' ) ) {
 			return (string) \SEOPress\Helpers\SchemaEntityId::for_home( $entity );
 		}
-		return home_url( '/#' . $entity );
+		return $this->root_home_url() . '#' . $entity;
 	}
 
 	/**

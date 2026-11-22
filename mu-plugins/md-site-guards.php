@@ -12,6 +12,17 @@
 
 declare( strict_types = 1 );
 
+/**
+ * Strips PHP's `X-Powered-By` response header so runtime versions are not
+ * exposed in HTTP responses.
+ */
+function md_site_guards_strip_powered_by(): void {
+	if ( ! headers_sent() && function_exists( 'header_remove' ) ) {
+		header_remove( 'X-Powered-By' );
+	}
+}
+md_site_guards_strip_powered_by();
+
 /*
  * XML-RPC is off for the whole site: no client exists for it (no Jetpack, no
  * mobile app, no pingbacks), and on a shared host behind Cloudflare
@@ -75,6 +86,7 @@ function md_site_guards_headers(): void {
 	if ( headers_sent() ) {
 		return;
 	}
+	md_site_guards_strip_powered_by();
 	foreach ( md_site_guards_header_lines() as $line ) {
 		header( $line );
 	}
@@ -101,14 +113,14 @@ function md_site_guards_dequeue_wpml_scripts(): void {
 add_action( 'wp_enqueue_scripts', 'md_site_guards_dequeue_wpml_scripts', 100 );
 
 /**
- * Removes the X-Pingback header: pingback is a use of XML-RPC, and XML-RPC
- * is off.
+ * Removes the X-Pingback and X-Powered-By headers: pingback is a use of
+ * XML-RPC (which is off), and X-Powered-By leaks the server/PHP stack.
  *
  * @param array<string, string> $headers The headers WordPress is about to send.
- * @return array<string, string> The headers without the pingback one.
+ * @return array<string, string> The headers without pingback or X-Powered-By.
  */
 function md_site_guards_remove_pingback( array $headers ): array {
-	unset( $headers['X-Pingback'] );
+	unset( $headers['X-Pingback'], $headers['X-Powered-By'], $headers['x-powered-by'] );
 	return $headers;
 }
 add_filter( 'wp_headers', 'md_site_guards_remove_pingback' );

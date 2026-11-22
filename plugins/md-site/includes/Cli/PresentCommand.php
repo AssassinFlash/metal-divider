@@ -13,6 +13,7 @@ use MetalDivider\Site\Presentation\LiveCanvasOptions;
 use MetalDivider\Site\Presentation\Templates;
 use MetalDivider\Site\Presentation\Tokens;
 use MetalDivider\Site\Presentation\WindPressVolume;
+use MetalDivider\Site\Seo\SitemapLastmod;
 use WP_CLI;
 
 /**
@@ -87,6 +88,16 @@ final class PresentCommand {
 		if ( array() !== $report['pages_missing'] ) {
 			WP_CLI::warning( 'pages not installed (the migrator creates them, ticket #31): ' . implode( ', ', $report['pages_missing'] ) );
 		}
+
+		$lastmod = SitemapLastmod::sync_post_modified_from_templates();
+		WP_CLI::log(
+			sprintf(
+				'sitemap lastmod: %d pages updated, %d products updated, %d transients cleared',
+				$lastmod['pages_updated'],
+				$lastmod['products_updated'],
+				$lastmod['transients_cleared']
+			)
+		);
 
 		WP_CLI::success( 'Presentation installed.' );
 	}

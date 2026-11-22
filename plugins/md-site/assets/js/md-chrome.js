@@ -5229,40 +5229,72 @@
       }
     });
 
-    // Deep links: ?category=…, ?project=…, ?image=N — the old section's entry
-    // points from the home page and the series pages.
-    var params = new URLSearchParams(window.location.search);
-    var requestedCategory = (params.get('category') || '').toLowerCase();
-    var requestedProject = (params.get('project') || '').toLowerCase();
-    var requestedImage = Number(params.get('image') || '1');
-    var requestedStartIndex = Number.isFinite(requestedImage) ? Math.max(0, requestedImage - 1) : 0;
-
-    setActiveFilter(requestedCategory || 'all', true);
-
-    if (requestedProject) {
-      var targetCard = cards.filter(function (card) {
-        return (card.getAttribute('data-project') || '').toLowerCase() === requestedProject;
-      })[0];
-      if (targetCard) {
-        var targetCategory = (targetCard.getAttribute('data-category') || '').toLowerCase();
-        if (activeFilter !== 'all' && targetCategory !== activeFilter) {
-          setActiveFilter(targetCategory, true);
+    // Deep links: #category=…, #project=…, #image=N (preferred, crawl-clean
+    // hash syntax) with ?search fallback for legacy bookmarks and external links.
+    var deepLinkTimer = null;
+    var applyGalleryDeepLink = function (fromHashChange) {
+      var rawHash = String(window.location.hash || '').replace(/^#/, '');
+      var params = null;
+      if (rawHash) {
+        if (rawHash.indexOf('=') !== -1) {
+          var hashParams = new URLSearchParams(rawHash);
+          if (hashParams.get('category') || hashParams.get('project') || hashParams.get('image')) {
+            params = hashParams;
+          }
         }
-        var matching = matchingCards();
-        var targetIndex = matching.indexOf(targetCard);
-        if (targetIndex >= 0 && targetIndex >= visibleCount) {
-          visibleCount = targetIndex + 1;
-          applyFilterAndPaging();
-        }
-        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-        var images = parseImages(targetCard.getAttribute('data-images'));
-        if (images.length) {
-          window.setTimeout(function () {
-            openLightbox(images, projectOf(targetCard), requestedStartIndex);
-          }, 220);
+        if (!params && fromHashChange) {
+          return;
         }
       }
-    }
+      if (!params) {
+        params = new URLSearchParams(window.location.search);
+      }
+
+      var requestedCategory = (params.get('category') || '').toLowerCase();
+      var requestedProject = (params.get('project') || '').toLowerCase();
+      var requestedImage = Number(params.get('image') || '1');
+      var requestedStartIndex = Number.isFinite(requestedImage) ? Math.max(0, requestedImage - 1) : 0;
+
+      setActiveFilter(requestedCategory || 'all', true);
+
+      if (deepLinkTimer) {
+        window.clearTimeout(deepLinkTimer);
+        deepLinkTimer = null;
+      }
+
+      if (requestedProject) {
+        var targetCard = cards.filter(function (card) {
+          return (card.getAttribute('data-project') || '').toLowerCase() === requestedProject;
+        })[0];
+        if (targetCard) {
+          var targetCategory = (targetCard.getAttribute('data-category') || '').toLowerCase();
+          if (activeFilter !== 'all' && targetCategory !== activeFilter) {
+            setActiveFilter(targetCategory, true);
+          }
+          var matching = matchingCards();
+          var targetIndex = matching.indexOf(targetCard);
+          if (targetIndex >= 0 && targetIndex >= visibleCount) {
+            visibleCount = targetIndex + 1;
+            applyFilterAndPaging();
+          }
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+          var images = parseImages(targetCard.getAttribute('data-images'));
+          if (images.length) {
+            deepLinkTimer = window.setTimeout(function () {
+              deepLinkTimer = null;
+              openLightbox(images, projectOf(targetCard), requestedStartIndex);
+            }, 220);
+          }
+        }
+      } else if (fromHashChange && !lightbox.hidden) {
+        closeLightbox();
+      }
+    };
+
+    applyGalleryDeepLink(false);
+    window.addEventListener('hashchange', function () {
+      applyGalleryDeepLink(true);
+    });
   }
 
   // The catalog's category rail is a sidebar on wide screens and a bottom
@@ -5730,6 +5762,53 @@
     );
   }
 
+  // Lightweight cross-page source attribution passthrough for clean `/inquiry/`
+  // (and `/<lang>/inquiry/`) links carrying `data-source-page`. Keeps internal
+  // navigation URLs free of `?source_*` query parameters while letting
+  // `inquiry.js` backfill the hidden attribution fields on the destination page.
+  function setupInquirySourceTracking() {
+    document.addEventListener('click', function (event) {
+      var link = event.target && event.target.closest
+        ? event.target.closest('a[href][data-source-page]')
+        : null;
+      if (!link) {
+        return;
+      }
+      var rawHref = (link.getAttribute('href') || '').trim();
+      if (!rawHref || rawHref.charAt(0) === '#') {
+        return;
+      }
+      var targetUrl;
+      try {
+        targetUrl = new URL(rawHref, window.location.origin);
+      } catch (err) {
+        return;
+      }
+      if (targetUrl.origin !== window.location.origin) {
+        return;
+      }
+      if (!/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?inquiry\/?$/i.test(targetUrl.pathname)) {
+        return;
+      }
+      var page = (link.getAttribute('data-source-page') || '').trim();
+      if (!page) {
+        return;
+      }
+      var module = (link.getAttribute('data-source-module') || '').trim();
+      var button = (link.getAttribute('data-source-button') || '').trim();
+      try {
+        window.sessionStorage.setItem(
+          'md_inquiry_source',
+          JSON.stringify({
+            page: page,
+            module: module,
+            button: button
+          })
+        );
+      } catch (err) {}
+    });
+  }
+
   function start() {
     // `md-js` is what makes `x-cloak` mean anything: the CSS only hides a
     // cloaked block once this class is on the root, so a visitor without
@@ -5742,6 +5821,7 @@
     // Before any dialog can open: a page that renders the inquiry form itself
     // must not also carry the dialog's copy (duplicate ids, inert controls).
     dropDuplicateModalForm();
+    setupInquirySourceTracking();
     setupLocalizedWhatsAppLinks();
     setupModals();
     setupTabs();

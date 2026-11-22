@@ -23,6 +23,7 @@ use PHPUnit\Framework\TestCase;
  * @covers ::md_site_guards_is_legacy_author_path
  * @covers ::md_site_guards_is_users_route
  * @covers ::md_site_guards_remove_pingback
+ * @covers ::md_site_guards_strip_powered_by
  */
 final class SiteGuardsTest extends TestCase {
 
@@ -141,19 +142,35 @@ final class SiteGuardsTest extends TestCase {
 	}
 
 	/**
-	 * The pingback header is filtered out of the response, and the rest of
-	 * the headers survive the filter untouched.
+	 * The pingback and X-Powered-By headers are filtered out of the response,
+	 * and the rest of the headers survive the filter untouched.
 	 */
 	public function test_the_pingback_header_is_removed_and_the_rest_kept(): void {
+		$hooks = $this->recorded( 'md_mu_test_hooks' );
+		self::assertContains( array( 'md_site_guards_remove_pingback', 10, 1 ), $hooks['wp_headers'] ?? array() );
+
 		$headers = array(
 			'X-Pingback'   => 'https://example.org/xmlrpc.php',
+			'X-Powered-By' => 'PHP/8.3.0',
+			'x-powered-by' => 'PHP/8.3.0',
 			'Content-Type' => 'text/html; charset=UTF-8',
 		);
 
 		$kept = md_site_guards_remove_pingback( $headers );
 
 		self::assertArrayNotHasKey( 'X-Pingback', $kept );
+		self::assertArrayNotHasKey( 'X-Powered-By', $kept );
+		self::assertArrayNotHasKey( 'x-powered-by', $kept );
 		self::assertSame( 'text/html; charset=UTF-8', $kept['Content-Type'] );
+	}
+
+	/**
+	 * The X-Powered-By strip helper executes safely in CLI and web runtimes.
+	 */
+	public function test_strip_powered_by_helper_runs_safely(): void {
+		md_site_guards_strip_powered_by();
+
+		self::assertTrue( function_exists( 'md_site_guards_strip_powered_by' ) );
 	}
 
 	/**

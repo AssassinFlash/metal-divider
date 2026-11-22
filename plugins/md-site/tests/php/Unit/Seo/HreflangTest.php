@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace MetalDivider\Site\Tests\Unit\Seo;
 
 use MetalDivider\Site\Seo\Hreflang;
+use MetalDivider\Site\Seo\QueryParamRobots;
 use MetalDivider\Site\Tests\TestCase;
 use WP_Mock;
 
@@ -25,7 +26,7 @@ final class HreflangTest extends TestCase {
 	 * Clean up superglobals after each test.
 	 */
 	public function tearDown(): void {
-		unset( $_GET['pattern_search'], $_GET['sort_by'] );
+		$_GET = array();
 		parent::tearDown();
 	}
 
@@ -155,5 +156,95 @@ final class HreflangTest extends TestCase {
 		);
 
 		$this->assertSame( $expected, $out );
+	}
+
+	/**
+	 * All six non-canonical tracking and gallery-state query parameters drop hreflangs.
+	 *
+	 * @dataProvider non_canonical_params_provider
+	 *
+	 * @param string $param Non-canonical query parameter name.
+	 * @param string $value Non-empty sample value.
+	 */
+	public function test_non_canonical_query_params_drop_hreflangs( string $param, string $value ): void {
+		WP_Mock::userFunction( 'is_search' )->andReturn( false );
+		WP_Mock::userFunction( 'is_404' )->andReturn( false );
+		WP_Mock::userFunction( 'is_paged' )->andReturn( false );
+		WP_Mock::userFunction( 'wp_unslash' )->andReturnUsing( static fn( $v ) => $v );
+		WP_Mock::userFunction( 'sanitize_text_field' )->andReturnUsing( static fn( $v ) => trim( (string) $v ) );
+
+		$_GET[ $param ] = $value;
+
+		$rule = new Hreflang();
+		$out  = $rule->filter( $this->nine_language_hreflangs() );
+		$this->assertSame( array(), $out );
+	}
+
+	/**
+	 * Data provider for all six QueryParamRobots non-canonical parameters.
+	 *
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public static function non_canonical_params_provider(): array {
+		$cases = array();
+		foreach ( QueryParamRobots::NON_CANONICAL_PARAMS as $param ) {
+			$cases[ $param ] = array( $param, 'sample-value' );
+		}
+		return $cases;
+	}
+
+	/**
+	 * Clean URLs and marketing utm_source URLs preserve all 10 hreflang tags (9 languages + x-default).
+	 */
+	public function test_clean_and_utm_source_views_emit_all_ten_hreflangs(): void {
+		WP_Mock::userFunction( 'is_search' )->andReturn( false );
+		WP_Mock::userFunction( 'is_404' )->andReturn( false );
+		WP_Mock::userFunction( 'is_paged' )->andReturn( false );
+		WP_Mock::userFunction( 'is_singular' )->andReturn( true );
+		WP_Mock::userFunction( 'get_queried_object_id' )->andReturn( 77 );
+		WP_Mock::userFunction( 'get_post_meta' )->with( 77, '_seopress_robots_index', true )->andReturn( '' );
+
+		$rule     = new Hreflang();
+		$raw      = $this->nine_language_hreflangs();
+		$expected = array(
+			'en'        => 'https://metal-divider.com/project-gallery/',
+			'zh-Hans'   => 'https://metal-divider.com/zh/project-gallery/',
+			'es'        => 'https://metal-divider.com/es/project-gallery/',
+			'pt-BR'     => 'https://metal-divider.com/pt-br/project-gallery/',
+			'de'        => 'https://metal-divider.com/de/project-gallery/',
+			'fr'        => 'https://metal-divider.com/fr/project-gallery/',
+			'ar'        => 'https://metal-divider.com/ar/project-gallery/',
+			'id'        => 'https://metal-divider.com/id/project-gallery/',
+			'vi'        => 'https://metal-divider.com/vi/project-gallery/',
+			'x-default' => 'https://metal-divider.com/project-gallery/',
+		);
+
+		$clean_out = $rule->filter( $raw );
+		$this->assertCount( 10, $clean_out );
+		$this->assertSame( $expected, $clean_out );
+
+		$_GET['utm_source'] = 'newsletter';
+		$utm_out            = $rule->filter( $raw );
+		$this->assertCount( 10, $utm_out );
+		$this->assertSame( $expected, $utm_out );
+	}
+
+	/**
+	 * Full 9-language WPML hreflang input map.
+	 *
+	 * @return array<string, string>
+	 */
+	private function nine_language_hreflangs(): array {
+		return array(
+			'en'      => 'https://metal-divider.com/project-gallery/',
+			'zh-hans' => 'https://metal-divider.com/zh/project-gallery/',
+			'es'      => 'https://metal-divider.com/es/project-gallery/',
+			'pt-br'   => 'https://metal-divider.com/pt-br/project-gallery/',
+			'de'      => 'https://metal-divider.com/de/project-gallery/',
+			'fr'      => 'https://metal-divider.com/fr/project-gallery/',
+			'ar'      => 'https://metal-divider.com/ar/project-gallery/',
+			'id'      => 'https://metal-divider.com/id/project-gallery/',
+			'vi'      => 'https://metal-divider.com/vi/project-gallery/',
+		);
 	}
 }

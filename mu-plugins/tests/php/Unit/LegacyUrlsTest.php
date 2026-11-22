@@ -82,18 +82,22 @@ final class LegacyUrlsTest extends TestCase {
 	 */
 	public static function catalogue_paths(): array {
 		return array(
-			'bare'          => array( '/shop/', '/patterns/' ),
-			'no slash'      => array( '/shop', '/patterns/' ),
-			'page two'      => array( '/shop/page/2/', '/patterns/page/2/' ),
-			'page ten'      => array( '/shop/page/10/', '/patterns/page/10/' ),
-			'deep fragment' => array( '/shop/anything/else', '/patterns/anything/else' ),
-			'de bare'       => array( '/de/shop/', '/de/patterns/' ),
-			'zh bare'       => array( '/zh/shop/', '/zh/patterns/' ),
-			'zh no slash'   => array( '/zh/shop', '/zh/patterns/' ),
-			'pt-br bare'    => array( '/pt-br/shop/', '/pt-br/patterns/' ),
-			'fr no slash'   => array( '/fr/shop', '/fr/patterns/' ),
-			'es page two'   => array( '/es/shop/page/2/', '/es/patterns/page/2/' ),
-			'ar deep'       => array( '/ar/shop/anything/else', '/ar/patterns/anything/else' ),
+			'bare'                 => array( '/shop/', '/patterns/' ),
+			'no slash'             => array( '/shop', '/patterns/' ),
+			'page two'             => array( '/shop/page/2/', '/patterns/page/2/' ),
+			'page two no slash'    => array( '/shop/page/2', '/patterns/page/2/' ),
+			'page five no slash'   => array( '/shop/page/5', '/patterns/page/5/' ),
+			'page ten'             => array( '/shop/page/10/', '/patterns/page/10/' ),
+			'deep fragment'        => array( '/shop/anything/else', '/patterns/anything/else/' ),
+			'de bare'              => array( '/de/shop/', '/de/patterns/' ),
+			'de page two no slash' => array( '/de/shop/page/2', '/de/patterns/page/2/' ),
+			'zh bare'              => array( '/zh/shop/', '/zh/patterns/' ),
+			'zh no slash'          => array( '/zh/shop', '/zh/patterns/' ),
+			'pt-br bare'           => array( '/pt-br/shop/', '/pt-br/patterns/' ),
+			'fr no slash'          => array( '/fr/shop', '/fr/patterns/' ),
+			'es page two'          => array( '/es/shop/page/2/', '/es/patterns/page/2/' ),
+			'es page two no slash' => array( '/es/shop/page/2', '/es/patterns/page/2/' ),
+			'ar deep'              => array( '/ar/shop/anything/else', '/ar/patterns/anything/else/' ),
 		);
 	}
 
@@ -151,7 +155,9 @@ final class LegacyUrlsTest extends TestCase {
 		self::assertSame( '/patterns/', md_legacy_urls_target( '/products/', $live ) );
 		self::assertSame( '/patterns/', md_legacy_urls_target( '/products', $live ) );
 		self::assertSame( '/patterns/page/2/', md_legacy_urls_target( '/shop/page/2/', $live ), 'the pager is not a product' );
-		self::assertSame( '/patterns/anything/else', md_legacy_urls_target( '/shop/anything/else', $live ), 'a deeper path is not a product either' );
+		self::assertSame( '/patterns/page/2/', md_legacy_urls_target( '/shop/page/2', $live ), 'the pager without a trailing slash still lands in one hop' );
+		self::assertSame( '/patterns/page/2/?sort_by=name', md_legacy_urls_url( '/shop/page/2?sort_by=name', $live ), 'the pager query string travels with the trailing slash' );
+		self::assertSame( '/patterns/anything/else/', md_legacy_urls_target( '/shop/anything/else', $live ), 'a deeper path is not a product either' );
 		self::assertSame(
 			'/pattern/agave/?pattern_search=lattice',
 			md_legacy_urls_url( '/shop/agave/?pattern_search=lattice', $live ),

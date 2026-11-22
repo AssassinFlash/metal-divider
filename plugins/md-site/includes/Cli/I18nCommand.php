@@ -15,6 +15,7 @@ use MetalDivider\Site\I18n\Setup;
 use MetalDivider\Site\I18n\TemplateCompiler;
 use MetalDivider\Site\I18n\TemplateStore;
 use MetalDivider\Site\I18n\Translator;
+use MetalDivider\Site\Seo\SitemapLastmod;
 use WP_CLI;
 use WP_Post;
 
@@ -187,6 +188,16 @@ final class I18nCommand {
 			if ( \function_exists( 'wp_cache_flush' ) ) {
 				\wp_cache_flush();
 			}
+
+			$lastmod = SitemapLastmod::sync_post_modified_from_templates();
+			WP_CLI::log(
+				sprintf(
+					'sitemap lastmod: %d pages updated, %d products updated, %d transients cleared',
+					$lastmod['pages_updated'],
+					$lastmod['products_updated'],
+					$lastmod['transients_cleared']
+				)
+			);
 
 			WP_CLI::success(
 				sprintf(

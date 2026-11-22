@@ -20,10 +20,11 @@ use WP_Mock;
 // where the filters' function_exists() probes look).
 
 /**
- * Tests for SchemaFilters: the five data-assembly hooks of the schema
- * plane — the SearchAction on the WebSite block, the Organization's
- * two contact points, the Product's completed facts (never offers),
- * the article's entity reference, and the two-level breadcrumb trails.
+ * Tests for SchemaFilters: the data-assembly hooks of the schema
+ * plane — the global singleton WebSite block (without SearchAction),
+ * the global singleton Organization with 512w logo and two contact
+ * points, the Product's completed facts (never offers), the article's
+ * entity reference, and the two-level breadcrumb trails.
  *
  * @covers \MetalDivider\Site\Seo\SchemaFilters
  */
@@ -183,19 +184,75 @@ final class SchemaFiltersTest extends TestCase {
 	}
 
 	/**
-	 * The WebSite block gains the SearchAction at /?s= (spec 22 S3).
+	 * The WebSite block converges onto one global singleton entity at the root
+	 * domain across English and non-English WPML locales, fixes `name` and
+	 * `alternateName`, links `publisher` to the root Organization, and strips
+	 * `potentialAction` (`SearchAction` points at `/?s=` which robots.txt disallows).
 	 */
-	public function test_website_gains_the_search_action(): void {
-		$schema = ( new SchemaFilters() )->website( array( '@type' => 'WebSite' ) );
-		$this->assertSame( 'SearchAction', $schema['potentialAction']['@type'] );
-		$this->assertSame( 'https://metal-divider.com/?s={search_term_string}', $schema['potentialAction']['target']['urlTemplate'] );
-		$this->assertSame( 'required name=search_term_string', $schema['potentialAction']['query-input'] );
+	public function test_website_is_global_singleton_without_search_action(): void {
+		$filters = new SchemaFilters();
+
+		// English home with SEOPress's long page title, bare domain alternateName, and SearchAction.
+		$en = $filters->website(
+			array(
+				'@type'           => 'WebSite',
+				'@id'             => 'https://metal-divider.com/#website',
+				'url'             => 'https://metal-divider.com/',
+				'name'            => 'Laser-Cut Stainless Steel Metal Screen Patterns — MetalDivider',
+				'alternateName'   => 'metal-divider.com',
+				'publisher'       => array( '@id' => 'https://metal-divider.com/#organization' ),
+				'potentialAction' => array(
+					'@type'  => 'SearchAction',
+					'target' => 'https://metal-divider.com/?s={search_term_string}',
+				),
+			)
+		);
+		$this->assertSame( 'https://metal-divider.com/#website', $en['@id'] );
+		$this->assertSame( 'https://metal-divider.com/', $en['url'] );
+		$this->assertSame( 'MetalDivider', $en['name'] );
+		$this->assertSame( 'Metal Divider', $en['alternateName'] );
+		$this->assertSame( array( '@id' => 'https://metal-divider.com/#organization' ), $en['publisher'] );
+		$this->assertArrayNotHasKey( 'potentialAction', $en );
+
+		// Empty / missing alternateName normalizes to 'Metal Divider'.
+		$minimal = $filters->website( array( '@type' => 'WebSite' ) );
+		$this->assertSame( 'Metal Divider', $minimal['alternateName'] );
+		$this->assertArrayNotHasKey( 'potentialAction', $minimal );
+
+		// Non-English WPML page (/de/) where SEOPress emitted split /de/ entity IDs and URLs.
+		Languages::force_for_tests( 'de' );
+		WP_Mock::userFunction( 'get_option' )->zeroOrMoreTimes()->with( 'home' )->andReturn( 'https://metal-divider.com' );
+		WP_Mock::userFunction( 'home_url' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( string $path = '/' ): string => 'https://metal-divider.com/de' . $path
+		);
+
+		$de = $filters->website(
+			array(
+				'@type'           => 'WebSite',
+				'@id'             => 'https://metal-divider.com/de/#website',
+				'url'             => 'https://metal-divider.com/de/',
+				'name'            => 'Laser-Cut Stainless Steel Metal Screen Patterns — MetalDivider',
+				'alternateName'   => 'https://metal-divider.com/',
+				'publisher'       => array( '@id' => 'https://metal-divider.com/de/#organization' ),
+				'potentialAction' => array(
+					'@type'  => 'SearchAction',
+					'target' => 'https://metal-divider.com/de/?s={search_term_string}',
+				),
+			)
+		);
+		$this->assertSame( 'https://metal-divider.com/#website', $de['@id'] );
+		$this->assertSame( 'https://metal-divider.com/', $de['url'] );
+		$this->assertSame( 'MetalDivider', $de['name'] );
+		$this->assertSame( 'Metal Divider', $de['alternateName'] );
+		$this->assertSame( array( '@id' => 'https://metal-divider.com/#organization' ), $de['publisher'] );
+		$this->assertArrayNotHasKey( 'potentialAction', $de );
 	}
 
 	/**
 	 * The Organization carries the two contact points — sales with the
 	 * email, WhatsApp with the phone — both read from the Knowledge Graph
-	 * fields, and no top-level telephone.
+	 * fields, converges onto the root singleton identity, upgrades empty logo
+	 * to the 512w PNG over https, and removes top-level telephone.
 	 */
 	public function test_organization_carries_the_two_contact_points(): void {
 		self::$services['SocialOption'] = $this->social_service();
@@ -205,6 +262,12 @@ final class SchemaFiltersTest extends TestCase {
 				'telephone'    => '+85264731687',
 				'contactPoint' => array( array( '@type' => 'ContactPoint' ) ),
 			)
+		);
+		$this->assertSame( 'https://metal-divider.com/#organization', $schema['@id'] );
+		$this->assertSame( 'https://metal-divider.com/', $schema['url'] );
+		$this->assertSame(
+			'https://metal-divider.com/wp-content/plugins/md-site/assets/brand/metal-divider-icon-512.png',
+			$schema['logo']
 		);
 		$this->assertSame(
 			array(
@@ -232,6 +295,68 @@ final class SchemaFiltersTest extends TestCase {
 			$schema['sameAs']
 		);
 		$this->assertArrayNotHasKey( 'telephone', $schema );
+	}
+
+	/**
+	 * Under non-English WPML locales, Organization converges `@id` and `url`
+	 * onto the root domain and upgrades empty or legacy 240w logos (string or
+	 * ImageObject) to the 512w PNG over https while enforcing https on custom logos.
+	 */
+	public function test_organization_converges_singleton_identity_and_upgrades_logo_to_512w(): void {
+		Languages::force_for_tests( 'de' );
+		WP_Mock::userFunction( 'get_option' )->zeroOrMoreTimes()->with( 'home' )->andReturn( 'https://metal-divider.com/de/' );
+		WP_Mock::userFunction( 'home_url' )->zeroOrMoreTimes()->andReturnUsing(
+			static fn( string $path = '/' ): string => 'https://metal-divider.com/de' . $path
+		);
+
+		$filters       = new SchemaFilters();
+		$expected_logo = 'https://metal-divider.com/wp-content/plugins/md-site/assets/brand/metal-divider-icon-512.png';
+
+		// Legacy 240w http string logo + split /de/ entity ID and URL.
+		$from_240w = $filters->organization(
+			array(
+				'@type' => 'Organization',
+				'@id'   => 'https://metal-divider.com/de/#organization',
+				'url'   => 'https://metal-divider.com/de/',
+				'logo'  => 'http://metal-divider.com/wp-content/plugins/md-site/assets/brand/metal-divider-logo-240w.webp',
+			)
+		);
+		$this->assertSame( 'https://metal-divider.com/#organization', $from_240w['@id'] );
+		$this->assertSame( 'https://metal-divider.com/', $from_240w['url'] );
+		$this->assertSame( $expected_logo, $from_240w['logo'] );
+
+		// Legacy 240w ImageObject array logo with stale 240w dimensions.
+		$from_image_object = $filters->organization(
+			array(
+				'@type' => 'Organization',
+				'logo'  => array(
+					'@type'      => 'ImageObject',
+					'url'        => 'http://metal-divider.com/wp-content/plugins/md-site/assets/brand/metal-divider-logo-240w.webp',
+					'contentUrl' => 'http://metal-divider.com/wp-content/plugins/md-site/assets/brand/metal-divider-logo-240w.webp',
+					'width'      => 240,
+					'height'     => 106,
+				),
+			)
+		);
+		$this->assertSame(
+			array(
+				'@type'      => 'ImageObject',
+				'url'        => $expected_logo,
+				'contentUrl' => $expected_logo,
+				'width'      => 512,
+				'height'     => 512,
+			),
+			$from_image_object['logo']
+		);
+
+		// Custom non-240w http logo keeps its path and is forced onto https.
+		$from_custom = $filters->organization(
+			array(
+				'@type' => 'Organization',
+				'logo'  => 'http://metal-divider.com/wp-content/uploads/brand-mark-512.png',
+			)
+		);
+		$this->assertSame( 'https://metal-divider.com/wp-content/uploads/brand-mark-512.png', $from_custom['logo'] );
 	}
 
 	/**

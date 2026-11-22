@@ -406,6 +406,15 @@ final class Config {
 		$lines = array_merge( $lines, $this->apply_builder_posts() );
 		$lines = array_merge( $lines, $this->apply_redirects() );
 		$lines = array_merge( $lines, $this->apply_page_metas() );
+
+		$abspath   = \defined( 'ABSPATH' ) ? (string) ABSPATH : '';
+		$hostinger = LlmsTxt::disable_hostinger_generator( $abspath );
+		$lines[]   = sprintf(
+			'hostinger llms.txt: option %s, legacy file %s',
+			$hostinger['option_updated'] ? 'disabled' : 'unchanged',
+			$hostinger['file_deleted'] ? 'removed' : 'absent'
+		);
+
 		return $lines;
 	}
 
@@ -479,6 +488,10 @@ final class Config {
 				}
 			}
 		}
+
+		$abspath = \defined( 'ABSPATH' ) ? (string) ABSPATH : '';
+		$rows    = array_merge( $rows, LlmsTxt::hostinger_drift( $abspath ) );
+
 		return $rows;
 	}
 
@@ -798,20 +811,20 @@ final class Config {
 	}
 
 	/**
-	 * The chrome logo's URL, the one image the Knowledge Graph and the
-	 * default og:image share. The template layer already pins its
-	 * uploads path; the schema may only reference an attachment that
-	 * exists.
+	 * The brand logo's URL, the one image the Knowledge Graph and the
+	 * default og:image share. Prefers the shipped 512×512 PNG brand mark
+	 * (falling back to 480w / 240w webp) when no media-library attachment
+	 * is installed, so structured data never settles for a 240w asset.
 	 *
-	 * @return string The URL, '' when the attachment is not in the library yet.
+	 * @return string The URL, '' when no attachment or shipped brand asset is available.
 	 */
 	private function logo_url(): string {
 		// The brand mark ships with the plugin and the header template already
 		// points at it; only the media-library copy was ever awaited, and on
 		// production that attachment has never existed — so the Organization
 		// logo and the default og:image were blank on eight of eleven pages.
-		// Either source will do, and the shipped asset is the one that is
-		// actually served.
+		// Prefer the native 512×512 PNG original for Knowledge Graph / OG use,
+		// falling back to the 480w and 240w assets without upscaling.
 		$attachment = get_page_by_path( 'metal-divider-primary-logo--120w', OBJECT, 'attachment' );
 		if ( null !== $attachment ) {
 			$url = (string) wp_get_attachment_url( (int) $attachment->ID );
@@ -820,7 +833,7 @@ final class Config {
 			}
 		}
 		$root = \defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR . '/md-site' : '';
-		foreach ( array( 'metal-divider-logo-240w.webp', 'metal-divider-icon-512.png' ) as $file ) {
+		foreach ( array( 'metal-divider-icon-512.png', 'metal-divider-logo-480w.webp', 'metal-divider-logo-240w.webp' ) as $file ) {
 			if ( '' !== $root && \is_readable( $root . '/assets/brand/' . $file ) ) {
 				return \plugins_url( 'assets/brand/' . $file, $root . '/md-site.php' );
 			}

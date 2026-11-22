@@ -190,4 +190,37 @@ final class DictionaryTest extends TestCase {
 			$this->assertStringNotContainsString( '商店', $zh_val );
 		}
 	}
+
+	/**
+	 * Verifies item_list_name across all 9 languages uses Pattern Library wording
+	 * and contains no legacy inquiry-list or banned glossary terms.
+	 */
+	public function test_item_list_name_is_localized_and_glossary_clean_across_all_nine_languages(): void {
+		$expected = array(
+			'en'    => 'Metal Screen Pattern Library',
+			'zh'    => '金属屏风图案库',
+			'es'    => 'Biblioteca de patrones de pantallas metálicas',
+			'pt-br' => 'Biblioteca de padrões de painéis metálicos',
+			'de'    => 'Metalltrennwand-Musterbibliothek',
+			'fr'    => 'Bibliothèque de motifs de claustras métalliques',
+			'ar'    => 'مكتبة أنماط الفواصل المعدنية',
+			'id'    => 'Pustaka Pola Partisi Logam',
+			'vi'    => 'Thư viện mẫu vách ngăn kim loại',
+		);
+
+		foreach ( Languages::ALL as $code ) {
+			$val = Dictionary::text( 'item_list_name', $code );
+			$this->assertNotEmpty( $val, "item_list_name empty in {$code}" );
+			$this->assertSame( $expected[ $code ], $val, "Unexpected item_list_name in {$code}" );
+			$this->assertStringNotContainsStringIgnoringCase( 'inquir', $val, "Legacy inquiry wording in {$code}" );
+		}
+
+		$zh_val = Dictionary::text( 'item_list_name', 'zh' );
+		foreach ( array( '清单', '款式', '花型', '订单', '产品', '商店' ) as $banned ) {
+			$this->assertStringNotContainsString( $banned, $zh_val );
+		}
+
+		$en_val = Dictionary::text( 'item_list_name', 'en' );
+		$this->assertStringNotContainsStringIgnoringCase( 'product', $en_val );
+	}
 }

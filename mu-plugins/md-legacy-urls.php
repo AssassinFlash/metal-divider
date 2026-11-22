@@ -199,7 +199,7 @@ function md_legacy_urls_target( string $path, ?callable $series = null, ?callabl
 			return $lang_prefix . MD_LEGACY_URLS_PATTERN_BASE . '/' . $product_slug . '/';
 		}
 
-		return $lang_prefix . rtrim( MD_LEGACY_URLS_CATALOGUE, '/' ) . $rest;
+		return $lang_prefix . trailingslashit( rtrim( MD_LEGACY_URLS_CATALOGUE, '/' ) . $rest );
 	}
 
 	if ( ! md_legacy_urls_is_under( $subpath, MD_LEGACY_URLS_OLD_SERIES_BASE ) ) {

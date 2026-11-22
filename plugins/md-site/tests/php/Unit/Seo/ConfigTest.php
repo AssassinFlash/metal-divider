@@ -175,6 +175,83 @@ final class ConfigTest extends TestCase {
 	}
 
 	/**
+	 * When no media-library attachment exists, logo_url() prefers the shipped
+	 * 512×512 PNG brand mark over smaller webp variants.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_logo_url_prefers_shipped_512w_png_over_smaller_webp_assets(): void {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- WordPress core constant defined in an isolated test process.
+		define( 'WP_PLUGIN_DIR', dirname( __DIR__, 5 ) );
+		WP_Mock::userFunction( 'get_page_by_path' )->andReturn( null );
+		WP_Mock::userFunction( 'plugins_url' )->andReturnUsing(
+			static fn( string $path ): string => 'https://metal-divider.com/wp-content/plugins/md-site/' . ltrim( $path, '/' )
+		);
+
+		$config = new Config();
+		$method = new \ReflectionMethod( Config::class, 'logo_url' );
+		$url    = $method->invoke( $config );
+
+		$this->assertSame(
+			'https://metal-divider.com/wp-content/plugins/md-site/assets/brand/metal-divider-icon-512.png',
+			$url
+		);
+
+		$social_method = new \ReflectionMethod( Config::class, 'social_with_logo' );
+		$social        = $social_method->invoke( $config );
+		$this->assertIsArray( $social );
+		$this->assertSame( $url, $social['seopress_social_knowledge_img'] );
+		$this->assertSame( $url, $social['seopress_social_facebook_img_default'] );
+	}
+
+	/**
+	 * When the 512w PNG is absent, logo_url() falls back to 480w webp first
+	 * and then 240w webp, preserving the declared priority order.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_logo_url_falls_back_from_480w_to_240w_when_512w_is_absent(): void {
+		$tmp_root  = sys_get_temp_dir() . '/md-config-logo-test-' . uniqid( '', true );
+		$brand_dir = $tmp_root . '/md-site/assets/brand';
+		mkdir( $brand_dir, 0755, true );
+
+		try {
+			file_put_contents( $brand_dir . '/metal-divider-logo-480w.webp', '480w' );
+			file_put_contents( $brand_dir . '/metal-divider-logo-240w.webp', '240w' );
+
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- WordPress core constant defined in an isolated test process.
+			define( 'WP_PLUGIN_DIR', $tmp_root );
+			WP_Mock::userFunction( 'get_page_by_path' )->andReturn( null );
+			WP_Mock::userFunction( 'plugins_url' )->andReturnUsing(
+				static fn( string $path ): string => 'https://metal-divider.com/wp-content/plugins/md-site/' . ltrim( $path, '/' )
+			);
+
+			$config = new Config();
+			$method = new \ReflectionMethod( Config::class, 'logo_url' );
+
+			$this->assertSame(
+				'https://metal-divider.com/wp-content/plugins/md-site/assets/brand/metal-divider-logo-480w.webp',
+				$method->invoke( $config )
+			);
+
+			unlink( $brand_dir . '/metal-divider-logo-480w.webp' );
+			$this->assertSame(
+				'https://metal-divider.com/wp-content/plugins/md-site/assets/brand/metal-divider-logo-240w.webp',
+				$method->invoke( $config )
+			);
+		} finally {
+			@unlink( $brand_dir . '/metal-divider-logo-480w.webp' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- cleanup.
+			@unlink( $brand_dir . '/metal-divider-logo-240w.webp' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- cleanup.
+			@rmdir( $brand_dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- cleanup.
+			@rmdir( $tmp_root . '/md-site/assets' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- cleanup.
+			@rmdir( $tmp_root . '/md-site' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- cleanup.
+			@rmdir( $tmp_root ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- cleanup.
+		}
+	}
+
+	/**
 	 * The SEO-owned pages' metas (T9/T10/T11/T6): inquiry and privacy
 	 * titles, the blog index's title, the thank-you noindex, and the
 	 * seventeen page descriptions. Eighteen keys; the thank-you page stays noindex only.
