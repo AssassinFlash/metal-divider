@@ -681,7 +681,11 @@ class Target:
         if cache_buster:
             separator = "&" if "?" in url else "?"
             url = f"{url}{separator}cbq={cache_buster}"
-        headers = {"User-Agent": "md-deploy", "Accept-Encoding": "gzip"}
+        headers = {
+            "User-Agent": "md-deploy",
+            "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+            "Accept-Encoding": "gzip",
+        }
         if self.http_auth:
             # Basic auth for the review site's hPanel directory protection;
             # the pair travels in the request, never in the repository.
@@ -689,7 +693,7 @@ class Target:
             headers["Authorization"] = f"Basic {encoded}"
         request = urllib.request.Request(url, headers=headers)
         last_error: Exception | None = None
-        for attempt in range(8):
+        for attempt in range(10):
             try:
                 with OPENER.open(request, timeout=30) as response:
                     raw = response.read()
@@ -721,7 +725,7 @@ class Target:
                 if (
                     error.code in (301, 302, 307, 308)
                     and (same_target or location == "")
-                    and attempt < 7
+                    and attempt < 9
                 ):
                     error.close()
                     last_error = error
@@ -731,7 +735,7 @@ class Target:
                     raw = error.read()
                 except (OSError, HTTPException, EOFError) as read_error:
                     last_error = read_error
-                    if attempt < 7:
+                    if attempt < 9:
                         time.sleep(min(1.0 + 0.5 * attempt, 3.0))
                         continue
                     raise DeployError(f"GET {url}: {read_error}") from read_error
@@ -742,7 +746,7 @@ class Target:
                         raw = gzip.decompress(raw)
                     except (EOFError, gzip.BadGzipFile) as gz_error:
                         last_error = gz_error
-                        if attempt < 7:
+                        if attempt < 9:
                             time.sleep(min(1.0 + 0.5 * attempt, 3.0))
                             continue
                         raise DeployError(f"GET {url}: {gz_error}") from gz_error
@@ -758,7 +762,7 @@ class Target:
                 gzip.BadGzipFile,
             ) as error:  # connection drop, timeout, truncated chunked body, or bad gzip
                 last_error = error
-                if attempt < 7:
+                if attempt < 9:
                     time.sleep(min(1.0 + 0.5 * attempt, 3.0))
         raise DeployError(f"GET {url}: {last_error}") from last_error
 
