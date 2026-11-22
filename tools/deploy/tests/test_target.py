@@ -749,3 +749,62 @@ def test_fetch_retries_self_redirect_but_returns_real_redirect(
     assert real_status == 301
     assert real_headers.get("Location") == "https://metal-divider.com/patterns/"
     assert sleeps == [1.0]
+
+
+def test_fetch_retries_truncated_error_body_and_cbq_stripped_self_redirect(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """IncompleteRead while draining an HTTPError body or a cbq-stripped 301 retries."""
+    import urllib.error
+    from email.message import Message
+    from http.client import IncompleteRead
+    from io import BytesIO
+
+    sleeps = _record_sleeps(monkeypatch)
+    calls = 0
+
+    class _TruncatedStream:
+        def read(self) -> bytes:
+            raise IncompleteRead(b"", 795)
+
+        def close(self) -> None:
+            return None
+
+    class _Ok:
+        status = 200
+        headers = Message()
+
+        def __enter__(self) -> _Ok:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b"recovered"
+
+    def fake_open(request: object, timeout: int = 30) -> _Ok:
+        nonlocal calls
+        calls += 1
+        url = getattr(request, "full_url", "")
+        if calls == 1:
+            hdrs = Message()
+            hdrs["Location"] = "https://metal-divider.com/"
+            raise urllib.error.HTTPError(url, 301, "Moved", hdrs, BytesIO(b""))
+        if calls == 2:
+            hdrs = Message()
+            hdrs["Location"] = "https://metal-divider.com/other/"
+            raise urllib.error.HTTPError(
+                url,
+                301,
+                "Moved",
+                hdrs,
+                _TruncatedStream(),  # type: ignore[arg-type]
+            )
+        return _Ok()
+
+    monkeypatch.setattr(target.OPENER, "open", fake_open)
+
+    status, _, body = _remote_site(tmp_path).fetch("/", cache_buster="abc")
+    assert (calls, status, body) == (3, 200, "recovered")
+    assert sleeps == [1.0, 1.5]

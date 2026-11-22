@@ -31,6 +31,7 @@ import shlex
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from http.client import HTTPException, HTTPMessage
@@ -709,9 +710,17 @@ class Target:
                 # whose Location equals the exact request URL; retry that
                 # transient self-redirect while returning real redirects intact.
                 location = str(error.headers.get("Location", "")).strip()
+                req_parts = urllib.parse.urlsplit(url)
+                loc_parts = urllib.parse.urlsplit(location) if location else None
+                same_target = location == url or (
+                    loc_parts is not None
+                    and loc_parts.scheme == req_parts.scheme
+                    and loc_parts.netloc == req_parts.netloc
+                    and loc_parts.path == req_parts.path
+                )
                 if (
                     error.code in (301, 302, 307, 308)
-                    and location == url
+                    and (same_target or location == "")
                     and attempt < 7
                 ):
                     error.close()
@@ -720,6 +729,12 @@ class Target:
                     continue
                 try:
                     raw = error.read()
+                except (OSError, HTTPException, EOFError) as read_error:
+                    last_error = read_error
+                    if attempt < 7:
+                        time.sleep(min(1.0 + 0.5 * attempt, 3.0))
+                        continue
+                    raise DeployError(f"GET {url}: {read_error}") from read_error
                 finally:
                     error.close()
                 if str(error.headers.get("Content-Encoding", "")).lower() == "gzip":
