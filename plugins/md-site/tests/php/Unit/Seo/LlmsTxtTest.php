@@ -37,7 +37,9 @@ final class LlmsTxtTest extends TestCase {
 	public function test_register_hooks_route_head_and_cache_invalidation(): void {
 		$llms = new LlmsTxt();
 
-		WP_Mock::expectActionAdded( 'parse_request', array( $llms, 'maybe_serve' ), 1, 0 );
+		WP_Mock::expectFilterAdded( 'do_parse_request', array( $llms, 'maybe_serve_early' ), -10, 1 );
+		WP_Mock::expectActionAdded( 'init', array( $llms, 'unhook_seopress_llms_txt' ), 100, 0 );
+		WP_Mock::expectFilterAdded( 'seopress_llms_txt_file', array( $llms, 'filter_seopress_llms_txt' ), 99, 1 );
 		WP_Mock::expectActionAdded( 'wp_head', array( $llms, 'output_head_link' ), 5, 0 );
 		WP_Mock::expectActionAdded( 'save_post_product', array( $llms, 'invalidate_cache' ), 10, 0 );
 		WP_Mock::expectActionAdded( 'deleted_post', array( $llms, 'invalidate_cache' ), 10, 0 );

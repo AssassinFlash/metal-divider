@@ -329,12 +329,20 @@ final class SitemapLastmod {
 	 * is non-empty and the block does not already carry a `<lastmod>` element.
 	 *
 	 * Post/page/product sitemaps already emit `<lastmod>` natively and pass through untouched.
+	 * Accepts `mixed` inputs because SEOPress's `templates/sitemap/single.php` can pass `null`
+	 * as `$seopress_url` on empty/excluded entries.
 	 *
-	 * @param string               $xml          Assembled `<url>...</url>` XML fragment.
-	 * @param array<string, mixed> $seopress_url Sitemap URL payload from SEOPress.
+	 * @param mixed $xml          Assembled `<url>...</url>` XML fragment.
+	 * @param mixed $seopress_url Sitemap URL payload from SEOPress (may be null).
 	 * @return string Filtered `<url>...</url>` XML fragment.
 	 */
-	public function inject_url_lastmod( string $xml, array $seopress_url ): string {
+	public function inject_url_lastmod( mixed $xml, mixed $seopress_url = array() ): string {
+		if ( ! is_string( $xml ) ) {
+			return '';
+		}
+		if ( ! is_array( $seopress_url ) ) {
+			return $xml;
+		}
 		$mod = isset( $seopress_url['mod'] ) && is_string( $seopress_url['mod'] ) ? trim( $seopress_url['mod'] ) : '';
 		if ( '' === $mod ) {
 			return $xml;

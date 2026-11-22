@@ -290,8 +290,10 @@ final class SitemapLastmodTest extends TestCase {
 		$this->assertSame( $post_xml, $kept, 'existing <lastmod> must never be duplicated' );
 		$this->assertSame( 1, substr_count( $kept, '<lastmod>' ) );
 
-		// Empty mod or dropped archive link: unchanged.
+		// Empty mod, null payload (SEOPress single.php:500), or dropped archive link: unchanged.
 		$this->assertSame( $term_xml, $rule->inject_url_lastmod( $term_xml, array( 'mod' => '' ) ) );
+		$this->assertSame( $term_xml, $rule->inject_url_lastmod( $term_xml, null ) );
+		$this->assertSame( '', $rule->inject_url_lastmod( '', null ) );
 		$this->assertSame( '', $rule->inject_url_lastmod( '', array( 'mod' => '2026-11-21T18:53:02+00:00' ) ) );
 	}
 

@@ -168,9 +168,15 @@ final class LlmsTxt {
 
 	/**
 	 * Registers request routing, discovery link emission, and catalog cache invalidation.
+	 *
+	 * Hooks `do_parse_request` at priority -10 (ahead of SEOPress PRO's `seopress_serve_llms_txt`
+	 * at priority 0), unhooks SEOPress PRO's responder on `init`, and also filters
+	 * `seopress_llms_txt_file` as a belt-and-suspenders fallback.
 	 */
 	public function register(): void {
-		\add_action( 'parse_request', array( $this, 'maybe_serve' ), 1, 0 );
+		\add_filter( 'do_parse_request', array( $this, 'maybe_serve_early' ), -10, 1 );
+		\add_action( 'init', array( $this, 'unhook_seopress_llms_txt' ), 100, 0 );
+		\add_filter( 'seopress_llms_txt_file', array( $this, 'filter_seopress_llms_txt' ), 99, 1 );
 		\add_action( 'wp_head', array( $this, 'output_head_link' ), 5, 0 );
 
 		\add_action( 'save_post_product', array( $this, 'invalidate_cache' ), 10, 0 );
@@ -180,6 +186,37 @@ final class LlmsTxt {
 		\add_action( 'edited_product_cat', array( $this, 'invalidate_cache' ), 10, 0 );
 		\add_action( 'created_product_cat', array( $this, 'invalidate_cache' ), 10, 0 );
 		\add_action( 'delete_product_cat', array( $this, 'invalidate_cache' ), 10, 0 );
+	}
+
+	/**
+	 * Unhooks SEOPress PRO's built-in `/llms.txt` responder so this plugin owns `/llms.txt`.
+	 */
+	public function unhook_seopress_llms_txt(): void {
+		if ( \function_exists( 'remove_filter' ) ) {
+			\remove_filter( 'do_parse_request', 'seopress_serve_llms_txt', 0 );
+		}
+	}
+
+	/**
+	 * Intercepts `/llms.txt` on `do_parse_request` before WordPress routing or SEOPress PRO.
+	 *
+	 * @param mixed $do_parse Incoming `do_parse_request` boolean.
+	 * @return mixed Unchanged `$do_parse` when the request is not `/llms.txt`.
+	 */
+	public function maybe_serve_early( mixed $do_parse ): mixed {
+		$this->maybe_serve();
+		return $do_parse;
+	}
+
+	/**
+	 * Fallback filter for SEOPress PRO's `seopress_llms_txt_file` hook.
+	 *
+	 * @param mixed $content SEOPress PRO generated content (ignored).
+	 * @return string Curated `/llms.txt` Markdown body.
+	 */
+	public function filter_seopress_llms_txt( mixed $content = '' ): string {
+		unset( $content );
+		return $this->render();
 	}
 
 	/**
